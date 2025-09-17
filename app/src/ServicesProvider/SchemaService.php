@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
-use UserFrosting\ServicesProvider\ServicesProviderInterface;
 use DI\Container;
 
 /**

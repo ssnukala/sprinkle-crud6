@@ -3,6 +3,8 @@ CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer
 
 A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserFrosting 6 that allows you to dynamically perform CRUD operations on any database table using JSON schema definitions. Designed for headless/API-first architecture with Vue.js frontend integration.
 
+**Compatible with UserFrosting 6.0.4 beta and later.**
+
 ## Features
 
 - **JSON Schema-Driven**: Define your models using simple JSON configuration files
@@ -17,12 +19,22 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 
 ## Installation
 
-1. Add to your UserFrosting 6 project via composer:
+> **Note**: This sprinkle requires UserFrosting 6.0.4 beta or later. Since UserFrosting 6 is still in beta, you'll need to configure your project to accept beta packages.
+
+1. First, ensure your project accepts beta packages by setting minimum-stability in your `composer.json`:
+```json
+{
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
+```
+
+2. Add to your UserFrosting 6 project via composer:
 ```bash
 composer require ssnukala/sprinkle-crud6
 ```
 
-2. Add the sprinkle to your sprinkles configuration in your app's main sprinkle class:
+3. Add the sprinkle to your sprinkles configuration in your app's main sprinkle class:
 ```php
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
 

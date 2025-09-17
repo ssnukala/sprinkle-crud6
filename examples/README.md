@@ -150,11 +150,10 @@ CREATE TABLE products (
 );
 ```
 
-### 3. Access the Interface
+### 3. Access the API
 
-Once the schema is created, you can access:
+Once the schema is created, you can access the API endpoints:
 
-- **Web Interface**: `http://yoursite.com/crud6/products`
 - **API Endpoints**:
   - List: `GET /api/crud6/products`
   - Create: `POST /api/crud6/products`
@@ -209,17 +208,9 @@ DELETE /api/crud6/products/123
 
 ## Advanced Configuration
 
-### Custom Template
+### Vue.js Integration
 
-You can specify a custom template in your schema:
-
-```json
-{
-    "model": "products",
-    "template": "pages/custom-product-list.html.twig",
-    ...
-}
-```
+This API is designed to work seamlessly with Vue.js frontends. Use the endpoints with libraries like `userfrosting/pink-cup-cake` for rich frontend interfaces.
 
 ### Soft Delete
 

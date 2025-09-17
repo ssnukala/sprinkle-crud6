@@ -25,10 +25,10 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ServicesProvider;
  * Provides dynamic CRUD operations on any database table using JSON schema definitions.
  * Features:
  * - JSON-based schema definitions for flexible table configuration
- * - Dynamic routing for any model (/crud6/{model})
- * - RESTful API endpoints for CRUD operations
- * - Automatic form generation and validation
- * - Sortable and filterable data tables
+ * - RESTful API endpoints for CRUD operations (/api/crud6/{model})
+ * - Dynamic routing for any model with automatic validation
+ * - Sortable and filterable data queries
+ * - Frontend-agnostic design for Vue.js integration
  */
 class CRUD6 implements SprinkleRecipe
 {

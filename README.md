@@ -1,19 +1,19 @@
 # sprinkle-crud6
 CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer
 
-A powerful and flexible CRUD (Create, Read, Update, Delete) system for UserFrosting 6 that allows you to dynamically perform CRUD operations on any database table using JSON schema definitions.
+A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserFrosting 6 that allows you to dynamically perform CRUD operations on any database table using JSON schema definitions. Designed for headless/API-first architecture with Vue.js frontend integration.
 
 ## Features
 
 - **JSON Schema-Driven**: Define your models using simple JSON configuration files
-- **Dynamic Routing**: Automatic routes for any model (`/crud6/{model}` and `/api/crud6/{model}`)
-- **RESTful API**: Full REST API support for all CRUD operations
+- **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
+- **Frontend-Agnostic**: Pure API backend designed for Vue.js integration
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
 - **Sorting & Filtering**: Automatic sortable and filterable columns
 - **Soft Delete Support**: Optional soft delete functionality
 - **Type System**: Support for various field types (string, integer, boolean, date, json, etc.)
-- **Template System**: Customizable templates for different models
+- **Pagination**: Built-in pagination support
 
 ## Installation
 
@@ -111,14 +111,10 @@ Each field in the schema can have the following properties:
 
 ## Usage
 
-### Routes
+### API Endpoints
 
-Once you have a schema file, the following routes are automatically available:
+Once you have a schema file, the following API routes are automatically available:
 
-#### Web Interface
-- `GET /crud6/{model}` - List view page for the model
-
-#### API Endpoints
 - `GET /api/crud6/{model}` - List records with pagination, sorting, and filtering
 - `POST /api/crud6/{model}` - Create new record
 - `GET /api/crud6/{model}/{id}` - Read single record
@@ -128,7 +124,6 @@ Once you have a schema file, the following routes are automatically available:
 ### Examples
 
 With a `users.json` schema file, you can access:
-- Web interface: `http://yoursite.com/crud6/users`
 - API list: `http://yoursite.com/api/crud6/users`
 - API create: `POST http://yoursite.com/api/crud6/users`
 - API read: `GET http://yoursite.com/api/crud6/users/123`
@@ -152,17 +147,9 @@ GET /api/crud6/users?size=50&page=2&sorts[user_name]=asc&filters[group_id]=1&sea
 
 ## Advanced Features
 
-### Custom Templates
+### Vue.js Integration
 
-You can override the default template by specifying a custom template in your schema:
-
-```json
-{
-  "model": "users",
-  "template": "pages/custom-user-list.html.twig",
-  // ... rest of schema
-}
-```
+This sprinkle is designed to work seamlessly with Vue.js frontends. The API endpoints provide all the necessary data and functionality for building rich frontend interfaces using libraries like `userfrosting/pink-cup-cake`.
 
 ### Soft Delete
 

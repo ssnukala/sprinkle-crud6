@@ -27,8 +27,7 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
 /**
  * Routes for CRUD6 operations.
  * 
- * Provides dynamic routing for any model defined in JSON schema:
- * - GET /crud6/{model} - List view page
+ * Provides API routing for any model defined in JSON schema:
  * - GET /api/crud6/{model} - List data API
  * - POST /api/crud6/{model} - Create record
  * - GET /api/crud6/{model}/{id} - Read single record
@@ -39,14 +38,6 @@ class CRUD6Routes implements RouteDefinitionInterface
 {
     public function register(App $app): void
     {
-        // Web interface routes
-        $app->group('/crud6/{model}', function (RouteCollectorProxy $group) {
-            $group->get('', BaseListController::class)
-                ->setName('crud6.list');
-            $group->get('/{id}', BaseReadController::class)
-                ->setName('crud6.view');
-        })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
-
         // API routes for CRUD operations
         $app->group('/api/crud6/{model}', function (RouteCollectorProxy $group) {
             // List with optional filtering, sorting, pagination

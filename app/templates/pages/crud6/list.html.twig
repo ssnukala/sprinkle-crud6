@@ -87,6 +87,7 @@
 {% endblock %}
 
 {% block page_scripts %}
+<script src="{{ assets.compiled('js/crud6-table.js') }}"></script>
 <script>
 $(document).ready(function() {
     const model = '{{ crud6.model }}';

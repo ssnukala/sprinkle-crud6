@@ -147,7 +147,7 @@ class BaseUpdateController extends BaseController
             $errors = $validator->validate($transformedData);
             
             if (count($errors) > 0) {
-                throw new \UserFrosting\Sprinkle\Core\Exceptions\ValidationException($errors);
+                throw new \UserFrosting\Framework\Exception\ValidationException($errors);
             }
         }
     }

@@ -1,0 +1,141 @@
+{
+  "model": "products",
+  "title": "Product Management",
+  "description": "Manage your product catalog",
+  "table": "products",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": false,
+  "permissions": {
+    "read": "view_products",
+    "create": "create_product",
+    "update": "edit_product",
+    "delete": "delete_product"
+  },
+  "default_sort": {
+    "name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "name": {
+      "type": "string",
+      "label": "Product Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 255
+        }
+      }
+    },
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "filter_type": "starts_with",
+      "validation": {
+        "required": true,
+        "unique": true
+      }
+    },
+    "price": {
+      "type": "decimal",
+      "label": "Price",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "filter_type": "between",
+      "validation": {
+        "required": true,
+        "numeric": true,
+        "min": 0
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": true
+    },
+    "category_id": {
+      "type": "integer",
+      "label": "Category",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "filter_type": "equals"
+    },
+    "tags": {
+      "type": "string",
+      "label": "Tags",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "searchable": true,
+      "filter_type": "like"
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "launch_date": {
+      "type": "date",
+      "label": "Launch Date",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "filter_type": "greater_than",
+      "date_format": "Y-m-d"
+    },
+    "metadata": {
+      "type": "json",
+      "label": "Metadata",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

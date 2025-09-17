@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Exceptions;
 
-use UserFrosting\Support\Exception\HttpException;
+use UserFrosting\Framework\Exception\HttpException;
 
 /**
  * Schema Not Found Exception

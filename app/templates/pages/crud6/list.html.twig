@@ -1,0 +1,108 @@
+{% extends "@admin-lte/layouts/dashboard.html.twig" %}
+
+{# Implements a basic list page for CRUD6 models #}
+
+{% block page_title %}{{ crud6.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-list-ul fa-fw"></i>
+                    {{ crud6.title }}
+                </h3>
+                {% if crud6.description %}
+                <div class="card-description">
+                    {{ crud6.description }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="dataTables_length">
+                            <label>
+                                Show 
+                                <select name="size" class="form-control form-control-sm">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                entries
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="dataTables_filter">
+                            <label>
+                                Search:
+                                <input type="search" class="form-control form-control-sm" placeholder="Search..." name="search">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="crud6-table-{{ crud6.model }}" class="table table-striped table-hover" data-model="{{ crud6.model }}">
+                        <thead>
+                            <tr>
+                                {% for fieldName, field in crud6.schema.fields %}
+                                    {% if not field.hidden|default(false) %}
+                                    <th data-field="{{ fieldName }}" 
+                                        {% if field.sortable|default(false) %}data-sortable="true"{% endif %}>
+                                        {{ field.label }}
+                                    </th>
+                                    {% endif %}
+                                {% endfor %}
+                                <th data-field="actions" data-sortable="false">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-5">
+                        <div class="dataTables_info" id="crud6-info-{{ crud6.model }}">
+                            <!-- Info will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="dataTables_paginate">
+                            <ul class="pagination" id="crud6-pagination-{{ crud6.model }}">
+                                <!-- Pagination will be populated by JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+$(document).ready(function() {
+    const model = '{{ crud6.model }}';
+    const schema = {{ crud6.schema|json_encode|raw }};
+    
+    // Initialize CRUD6 table
+    const crud6Table = new CRUD6Table('#crud6-table-' + model, {
+        model: model,
+        schema: schema,
+        apiUrl: '{{ url_for("api.crud6.list", {"model": crud6.model}) }}',
+        createUrl: '{{ url_for("api.crud6.create", {"model": crud6.model}) }}',
+        updateUrl: '{{ url_for("api.crud6.update", {"model": crud6.model, "id": "__ID__"}) }}',
+        deleteUrl: '{{ url_for("api.crud6.delete", {"model": crud6.model, "id": "__ID__"}) }}'
+    });
+    
+    crud6Table.init();
+});
+</script>
+{% endblock %}

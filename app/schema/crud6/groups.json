@@ -1,0 +1,98 @@
+{
+  "model": "groups",
+  "title": "Group Management",
+  "description": "Manage user groups and roles",
+  "table": "groups",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": false,
+  "permissions": {
+    "read": "uri_groups",
+    "create": "create_group",
+    "update": "update_group",
+    "delete": "delete_group"
+  },
+  "default_sort": {
+    "name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "name": {
+      "type": "string",
+      "label": "Group Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 100
+        }
+      }
+    },
+    "slug": {
+      "type": "string",
+      "label": "Slug",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "required": true,
+        "slug": true
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": true
+    },
+    "icon": {
+      "type": "string",
+      "label": "Icon",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "is_default": {
+      "type": "boolean",
+      "label": "Default Group",
+      "default": false,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

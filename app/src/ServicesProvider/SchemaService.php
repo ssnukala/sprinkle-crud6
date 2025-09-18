@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use DI\Container;
+use DI\NotFoundException;
 
 /**
  * Schema Service
@@ -29,7 +30,11 @@ class SchemaService
         protected Container $container
     ) {
         // Default schema path - can be overridden via configuration
-        $this->schemaPath = $this->container->get('config.schema_path') ?? 'app/schema/crud6';
+        try {
+            $this->schemaPath = $this->container->get('config.schema_path') ?? 'app/schema/crud6';
+        } catch (NotFoundException $e) {
+            $this->schemaPath = 'app/schema/crud6';
+        }
     }
 
     /**

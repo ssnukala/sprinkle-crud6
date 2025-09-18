@@ -108,6 +108,23 @@ class SchemaService
     }
 
     /**
+     * Get a configured CRUD6Model instance for a model
+     *
+     * @param string $model The model name
+     * @return \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     */
+    public function getModelInstance(string $model): \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
+    {
+        $schema = $this->getSchema($model);
+        
+        $modelInstance = new \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model();
+        $modelInstance->configureFromSchema($schema);
+        
+        return $modelInstance;
+    }
+
+    /**
      * Clear schema cache
      */
     public function clearCache(): void

@@ -22,17 +22,25 @@ use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseCreateController;
 use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseReadController;
 use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseUpdateController;
 use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseDeleteController;
+use UserFrosting\Sprinkle\CRUD6\Controller\Base\ModelBasedController;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
 
 /**
  * Routes for CRUD6 operations.
  * 
  * Provides API routing for any model defined in JSON schema:
+ * 
+ * Traditional Query Builder API:
  * - GET /api/crud6/{model} - List data API
  * - POST /api/crud6/{model} - Create record
  * - GET /api/crud6/{model}/{id} - Read single record
  * - PUT /api/crud6/{model}/{id} - Update record
  * - DELETE /api/crud6/{model}/{id} - Delete record
+ * 
+ * Generic Model API (using Eloquent ORM):
+ * - GET /api/crud6-model/{model} - List data using generic model
+ * - POST /api/crud6-model/{model} - Create record using generic model
+ * - GET /api/crud6-model/{model}/{id} - Read single record using generic model
  */
 class CRUD6Routes implements RouteDefinitionInterface
 {
@@ -59,6 +67,21 @@ class CRUD6Routes implements RouteDefinitionInterface
             // Delete record
             $group->delete('/{id}', BaseDeleteController::class)
                 ->setName('api.crud6.delete');
+        })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
+
+        // Model-based API routes (demonstrating generic model usage)
+        $app->group('/api/crud6-model/{model}', function (RouteCollectorProxy $group) {
+            // List using generic model
+            $group->get('', [ModelBasedController::class, 'listRecords'])
+                ->setName('api.crud6.model.list');
+            
+            // Create using generic model
+            $group->post('', [ModelBasedController::class, 'createRecord'])
+                ->setName('api.crud6.model.create');
+            
+            // Read single record using generic model
+            $group->get('/{id}', [ModelBasedController::class, 'readRecord'])
+                ->setName('api.crud6.model.read');
         })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
     }
 }

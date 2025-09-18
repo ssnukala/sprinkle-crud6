@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Sprunje;
+namespace UserFrosting\Sprinkle\CRUD6\SprunjeAction;
 
 use UserFrosting\Sprinkle\Core\Sprunje\Sprunje;
 use UserFrosting\Sprinkle\Core\Database\Connection;

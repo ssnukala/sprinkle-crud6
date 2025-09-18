@@ -11,7 +11,7 @@ use UserFrosting\Sprinkle\Core\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 
-class ApiAction extends Controller
+class ApiAction extends Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

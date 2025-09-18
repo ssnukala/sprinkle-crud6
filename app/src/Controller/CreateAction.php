@@ -16,7 +16,7 @@ use UserFrosting\Fortress\ServerSideValidator;
 use UserFrosting\Alert\AlertStream;
 use UserFrosting\Sprinkle\Core\I18n\Translator;
 
-class CreateAction extends Controller
+class CreateAction extends Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

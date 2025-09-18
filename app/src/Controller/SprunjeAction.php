@@ -12,7 +12,7 @@ use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 
-class SprunjeAction extends Controller
+class SprunjeAction extends Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

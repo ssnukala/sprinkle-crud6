@@ -22,12 +22,12 @@ use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 
 /**
- * Controller for CRUD6 operations
+ * Base controller for CRUD6 operations
  * 
  * Provides common functionality for all CRUD6 controllers including
  * schema access, authentication, and authorization.
  */
-abstract class Controller
+abstract class Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

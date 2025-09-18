@@ -13,7 +13,7 @@ use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Core\Database\Connection;
 use UserFrosting\Alert\AlertStream;
 
-class EditAction extends Controller
+class EditAction extends Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

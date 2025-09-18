@@ -13,7 +13,7 @@ use UserFrosting\Sprinkle\Core\Database\Connection;
 use UserFrosting\Alert\AlertStream;
 use UserFrosting\Sprinkle\Core\I18n\Translator;
 
-class DeleteAction extends Controller
+class DeleteAction extends Base
 {
     public function __construct(
         protected AuthorizationManager $authorizer,

@@ -17,6 +17,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Routing\RouteContext;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -39,13 +40,13 @@ class SchemaInjector implements MiddlewareInterface
         $route = $routeContext->getRoute();
         
         if ($route === null) {
-            throw new \RuntimeException('Route not found');
+            throw new NotFoundException('Route not found');
         }
 
         $model = $route->getArgument('model');
         
         if ($model === null) {
-            throw new \RuntimeException('Model parameter not found in route');
+            throw new NotFoundException('Model parameter not found in route');
         }
 
         try {

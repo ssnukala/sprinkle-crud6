@@ -14,9 +14,11 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller\Base;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Slim\Routing\RouteContext;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 
 /**
@@ -41,7 +43,7 @@ abstract class BaseController
     {
         $model = $request->getAttribute('crud6_model');
         if ($model === null) {
-            throw new \RuntimeException('Model not found in request attributes');
+            throw new NotFoundException('Model not found in request attributes');
         }
         return $model;
     }
@@ -53,7 +55,7 @@ abstract class BaseController
     {
         $schema = $request->getAttribute('crud6_schema');
         if ($schema === null) {
-            throw new \RuntimeException('Schema not found in request attributes');
+            throw new NotFoundException('Schema not found in request attributes');
         }
         return $schema;
     }
@@ -63,16 +65,16 @@ abstract class BaseController
      */
     protected function getRecordId(ServerRequestInterface $request): int
     {
-        $routeContext = \Slim\Routing\RouteContext::fromRequest($request);
+        $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
         
         if ($route === null) {
-            throw new \RuntimeException('Route not found');
+            throw new NotFoundException('Route not found');
         }
 
         $id = $route->getArgument('id');
         if ($id === null) {
-            throw new \RuntimeException('Record ID not found in route');
+            throw new NotFoundException('Record ID not found in route');
         }
 
         return (int) $id;

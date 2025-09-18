@@ -13,7 +13,9 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use DI\Container;
-use DI\NotFoundException;
+use DI\NotFoundException as DINotFoundException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
+use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
 
 /**
  * Schema Service
@@ -32,7 +34,7 @@ class SchemaService
         // Default schema path - can be overridden via configuration
         try {
             $this->schemaPath = $this->container->get('config.schema_path') ?? 'app/schema/crud6';
-        } catch (NotFoundException $e) {
+        } catch (DINotFoundException $e) {
             $this->schemaPath = 'app/schema/crud6';
         }
     }
@@ -42,7 +44,7 @@ class SchemaService
      *
      * @param string $model The model name
      * @return array The schema configuration
-     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     * @throws SchemaNotFoundException
      */
     public function getSchema(string $model): array
     {
@@ -54,7 +56,7 @@ class SchemaService
         $schemaFile = $this->getSchemaFilePath($model);
         
         if (!file_exists($schemaFile)) {
-            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException(
+            throw new SchemaNotFoundException(
                 "Schema file not found: {$schemaFile}"
             );
         }
@@ -62,7 +64,7 @@ class SchemaService
         $schema = json_decode(file_get_contents($schemaFile), true);
         
         if ($schema === null) {
-            throw new \RuntimeException("Invalid JSON in schema file: {$schemaFile}");
+            throw new NotFoundException("Invalid JSON in schema file: {$schemaFile}");
         }
 
         // Validate schema structure
@@ -91,7 +93,7 @@ class SchemaService
         
         foreach ($requiredFields as $field) {
             if (!isset($schema[$field])) {
-                throw new \RuntimeException(
+                throw new NotFoundException(
                     "Schema for model '{$model}' is missing required field: {$field}"
                 );
             }
@@ -99,14 +101,14 @@ class SchemaService
 
         // Validate that model name matches
         if ($schema['model'] !== $model) {
-            throw new \RuntimeException(
+            throw new NotFoundException(
                 "Schema model name '{$schema['model']}' does not match requested model '{$model}'"
             );
         }
 
         // Validate fields structure
         if (!is_array($schema['fields']) || empty($schema['fields'])) {
-            throw new \RuntimeException(
+            throw new NotFoundException(
                 "Schema for model '{$model}' must have a non-empty 'fields' array"
             );
         }
@@ -117,7 +119,7 @@ class SchemaService
      *
      * @param string $model The model name
      * @return \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
-     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     * @throws SchemaNotFoundException
      */
     public function getModelInstance(string $model): \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
     {

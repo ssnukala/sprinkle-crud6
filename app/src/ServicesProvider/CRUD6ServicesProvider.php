@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use UserFrosting\ServicesProvider\ServicesProviderInterface;
-use DI\Container;
 
 /**
  * CRUD6 Services Provider
@@ -22,10 +21,10 @@ use DI\Container;
  */
 class CRUD6ServicesProvider implements ServicesProviderInterface
 {
-    public function register(Container $container): void
+    public function register(): array
     {
-        $container->set(SchemaService::class, function (Container $container) {
-            return new SchemaService($container);
-        });
+        return [
+            SchemaService::class => \DI\autowire(SchemaService::class),
+        ];
     }
 }

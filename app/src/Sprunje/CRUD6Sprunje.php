@@ -14,6 +14,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Sprunje;
 
 use UserFrosting\Sprinkle\Core\Sprunje\Sprunje;
 use UserFrosting\Sprinkle\Core\Database\Connection;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -58,7 +59,7 @@ class CRUD6Sprunje extends Sprunje
     protected function baseQuery(): Builder
     {
         if (empty($this->tableName)) {
-            throw new \RuntimeException('Table name not set. Call setupSprunje() first.');
+            throw new NotFoundException('Table name not set. Call setupSprunje() first.');
         }
         
         $query = $this->db->table($this->tableName);

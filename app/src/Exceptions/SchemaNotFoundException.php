@@ -12,15 +12,35 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Exceptions;
 
-use UserFrosting\Framework\Exception\HttpException;
-
 /**
  * Schema Not Found Exception
  * 
  * Thrown when a requested schema file cannot be found or loaded.
+ * This exception represents a 404-type error when a schema cannot be found.
  */
-class SchemaNotFoundException extends HttpException
+class SchemaNotFoundException extends \RuntimeException
 {
     protected string $title = 'Schema Not Found';
     protected int $httpErrorCode = 404;
+
+    public function __construct(string $message = "", int $code = 0, ?\Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Get the HTTP error code associated with this exception
+     */
+    public function getHttpErrorCode(): int
+    {
+        return $this->httpErrorCode;
+    }
+
+    /**
+     * Get the title of this exception
+     */
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
 }

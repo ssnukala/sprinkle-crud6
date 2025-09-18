@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Exceptions;
+namespace UserFrosting\Sprinkle\CRUD6\Exception;
 
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 

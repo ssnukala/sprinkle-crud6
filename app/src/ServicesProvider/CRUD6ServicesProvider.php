@@ -25,6 +25,7 @@ class CRUD6ServicesProvider implements ServicesProviderInterface
     {
         return [
             SchemaService::class => \DI\autowire(SchemaService::class),
+            \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::class => \DI\create(\UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::class),
         ];
     }
 }

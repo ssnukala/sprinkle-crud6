@@ -8,6 +8,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 ## Features
 
 - **JSON Schema-Driven**: Define your models using simple JSON configuration files
+- **Generic Model System**: Dynamic Eloquent models for any database table without pre-defined model classes
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Frontend-Agnostic**: Pure API backend designed for Vue.js integration
 - **Flexible Permissions**: Schema-based permission system
@@ -16,6 +17,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **Soft Delete Support**: Optional soft delete functionality
 - **Type System**: Support for various field types (string, integer, boolean, date, json, etc.)
 - **Pagination**: Built-in pagination support
+- **Eloquent ORM Integration**: Full Eloquent ORM support with dynamic model configuration
 
 ## Installation
 
@@ -190,6 +192,49 @@ Enable automatic timestamp management:
 ```
 
 This will automatically set `created_at` and `updated_at` fields.
+
+### Generic Model System
+
+CRUD6 includes a powerful generic model system that allows you to work with any database table using Eloquent ORM without requiring pre-defined model classes.
+
+#### Using the Generic Model
+
+```php
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+
+// Get a configured model instance for any table
+$schemaService = $container->get(SchemaService::class);
+$userModel = $schemaService->getModelInstance('users');
+
+// Now use it like any Eloquent model
+$users = $userModel->where('is_active', true)->get();
+$newUser = $userModel->create([
+    'user_name' => 'john_doe',
+    'email' => 'john@example.com'
+]);
+```
+
+#### Manual Model Configuration
+
+```php
+use UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model;
+
+$model = new CRUD6Model();
+$model->setTable('products')
+      ->setFillable(['name', 'price', 'description']);
+
+// Or configure from schema
+$model->configureFromSchema($schema);
+```
+
+#### Features
+
+- **Dynamic Configuration**: Models are configured at runtime based on JSON schemas
+- **Eloquent ORM**: Full support for all Eloquent features (relationships, scopes, etc.)
+- **Type Casting**: Automatic field casting based on schema field types
+- **Soft Deletes**: Built-in soft delete support when enabled in schema
+- **Mass Assignment Protection**: Fillable attributes automatically set from schema
+- **Timestamp Management**: Automatic handling of created_at/updated_at fields
 
 ## Contributing
 

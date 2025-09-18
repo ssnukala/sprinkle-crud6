@@ -17,12 +17,12 @@ use Slim\Routing\RouteCollectorProxy;
 use UserFrosting\Routes\RouteDefinitionInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\AuthGuard;
 use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseListController;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseCreateController;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseReadController;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseUpdateController;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\BaseDeleteController;
-use UserFrosting\Sprinkle\CRUD6\Controller\Base\ModelBasedController;
+use UserFrosting\Sprinkle\CRUD6\Controller\Api;
+use UserFrosting\Sprinkle\CRUD6\Controller\Create;
+use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\Edit;
+use UserFrosting\Sprinkle\CRUD6\Controller\Delete;
+use UserFrosting\Sprinkle\CRUD6\Controller\ModelBasedController;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
 
 /**
@@ -49,23 +49,23 @@ class CRUD6Routes implements RouteDefinitionInterface
         // API routes for CRUD operations
         $app->group('/api/crud6/{model}', function (RouteCollectorProxy $group) {
             // List with optional filtering, sorting, pagination
-            $group->get('', [BaseListController::class, 'apiList'])
+            $group->get('', Api::class)
                 ->setName('api.crud6.list');
             
             // Create new record
-            $group->post('', BaseCreateController::class)
+            $group->post('', Create::class)
                 ->setName('api.crud6.create');
             
             // Read single record
-            $group->get('/{id}', BaseReadController::class)
+            $group->get('/{id}', SprunjeAction::class)
                 ->setName('api.crud6.read');
             
             // Update record
-            $group->put('/{id}', BaseUpdateController::class)
+            $group->put('/{id}', Edit::class)
                 ->setName('api.crud6.update');
             
             // Delete record
-            $group->delete('/{id}', BaseDeleteController::class)
+            $group->delete('/{id}', Delete::class)
                 ->setName('api.crud6.delete');
         })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
 

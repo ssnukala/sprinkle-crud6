@@ -13,9 +13,11 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use DI\Container;
-use DI\NotFoundException as DINotFoundException;
-use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
-use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
+use UserFrosting\Fortress\RequestSchema;
+use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
+use UserFrosting\Support\Repository\Loader\YamlFileLoader;
+
+//use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 
 /**
  * Schema Service
@@ -25,18 +27,12 @@ use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
  */
 class SchemaService
 {
-    protected array $schemaCache = [];
-    protected string $schemaPath;
+    protected string $schemaPath = 'schema://crud6/';
 
     public function __construct(
         protected Container $container
     ) {
         // Default schema path - can be overridden via configuration
-        try {
-            $this->schemaPath = $this->container->get('config.schema_path') ?? 'app/schema/crud6';
-        } catch (DINotFoundException $e) {
-            $this->schemaPath = 'app/schema/crud6';
-        }
     }
 
     /**
@@ -44,37 +40,8 @@ class SchemaService
      *
      * @param string $model The model name
      * @return array The schema configuration
-     * @throws SchemaNotFoundException
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
      */
-    public function getSchema(string $model): array
-    {
-        // Check cache first
-        if (isset($this->schemaCache[$model])) {
-            return $this->schemaCache[$model];
-        }
-
-        $schemaFile = $this->getSchemaFilePath($model);
-        
-        if (!file_exists($schemaFile)) {
-            throw new SchemaNotFoundException(
-                "Schema file not found: {$schemaFile}"
-            );
-        }
-
-        $schema = json_decode(file_get_contents($schemaFile), true);
-        
-        if ($schema === null) {
-            throw new NotFoundException("Invalid JSON in schema file: {$schemaFile}");
-        }
-
-        // Validate schema structure
-        $this->validateSchema($schema, $model);
-        
-        // Cache the schema
-        $this->schemaCache[$model] = $schema;
-        
-        return $schema;
-    }
 
     /**
      * Get the file path for a model's schema
@@ -84,16 +51,17 @@ class SchemaService
         return rtrim($this->schemaPath, '/') . "/{$model}.json";
     }
 
+
     /**
      * Validate schema structure
      */
     protected function validateSchema(array $schema, string $model): void
     {
         $requiredFields = ['model', 'table', 'fields'];
-        
+
         foreach ($requiredFields as $field) {
             if (!isset($schema[$field])) {
-                throw new NotFoundException(
+                throw new \RuntimeException(
                     "Schema for model '{$model}' is missing required field: {$field}"
                 );
             }
@@ -101,17 +69,36 @@ class SchemaService
 
         // Validate that model name matches
         if ($schema['model'] !== $model) {
-            throw new NotFoundException(
+            throw new \RuntimeException(
                 "Schema model name '{$schema['model']}' does not match requested model '{$model}'"
             );
         }
 
         // Validate fields structure
         if (!is_array($schema['fields']) || empty($schema['fields'])) {
-            throw new NotFoundException(
+            throw new \RuntimeException(
                 "Schema for model '{$model}' must have a non-empty 'fields' array"
             );
         }
+    }
+
+
+    public function getSchema(string $model): array
+    {
+        $schemaPath = $this->getSchemaFilePath($model);
+
+        // Load schema file
+        $loader = new YamlFileLoader($schemaPath);
+        $schema = $loader->load(false);
+
+        if ($schema === null) {
+            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
+        }
+
+        // Validate schema structure
+        $this->validateSchema($schema, $model);
+
+        return $schema;
     }
 
     /**
@@ -119,32 +106,15 @@ class SchemaService
      *
      * @param string $model The model name
      * @return \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
-     * @throws SchemaNotFoundException
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
      */
     public function getModelInstance(string $model): \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
     {
         $schema = $this->getSchema($model);
-        
+
         $modelInstance = new \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model();
         $modelInstance->configureFromSchema($schema);
-        
+
         return $modelInstance;
-    }
-
-    /**
-     * Clear schema cache
-     */
-    public function clearCache(): void
-    {
-        $this->schemaCache = [];
-    }
-
-    /**
-     * Set custom schema path
-     */
-    public function setSchemaPath(string $path): void
-    {
-        $this->schemaPath = $path;
-        $this->clearCache();
     }
 }

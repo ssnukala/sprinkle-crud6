@@ -79,7 +79,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function configureFromSchema(array $schema): static
     {
         $this->schema = $schema;
-        
+
         // Set table name
         if (isset($schema['table'])) {
             $this->table = $schema['table'];
@@ -103,9 +103,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      * Set the table name for this model instance
      *
      * @param string $table
-     * @return static
+     * @return $this
      */
-    public function setTable(string $table): static
+    public function setTable($table): static
     {
         $this->table = $table;
         return $this;
@@ -168,8 +168,10 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         if (isset($schema['fields']) && is_array($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
                 // Skip auto-increment fields from fillable
-                if (!($fieldConfig['auto_increment'] ?? false) && 
-                    !($fieldConfig['readonly'] ?? false)) {
+                if (
+                    !($fieldConfig['auto_increment'] ?? false) &&
+                    !($fieldConfig['readonly'] ?? false)
+                ) {
                     $fillable[] = $fieldName;
                 }
 
@@ -216,7 +218,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         if ($this->schema['soft_delete'] ?? false) {
             return $query->whereNull('deleted_at');
         }
-        
+
         return $query;
     }
 
@@ -231,7 +233,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         if ($this->schema['soft_delete'] ?? false) {
             return $query->whereNotNull('deleted_at');
         }
-        
+
         return $query;
     }
 
@@ -312,12 +314,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function newQuery(): Builder
     {
         $query = parent::newQuery();
-        
+
         // Automatically apply soft delete filter if enabled (but only if deleted_at column exists)
         if (($this->schema['soft_delete'] ?? false) && $this->deleted_at) {
             $query->whereNull($this->getDeletedAtColumn());
         }
-        
+
         return $query;
     }
 

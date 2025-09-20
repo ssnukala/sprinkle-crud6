@@ -17,7 +17,7 @@ use UserFrosting\Sprinkle\Admin\Admin;
 use UserFrosting\Sprinkle\Core\Core;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
-use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ServicesProvider;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 
 /**
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6
@@ -76,7 +76,7 @@ class CRUD6 implements SprinkleRecipe
     public function getServices(): array
     {
         return [
-            CRUD6ServicesProvider::class,
+            CRUD6ModelService::class,
         ];
     }
 }

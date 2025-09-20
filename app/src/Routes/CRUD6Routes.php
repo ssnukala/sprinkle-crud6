@@ -17,12 +17,11 @@ use Slim\Routing\RouteCollectorProxy;
 use UserFrosting\Routes\RouteDefinitionInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\AuthGuard;
 use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
-use UserFrosting\Sprinkle\CRUD6\Controller\ListController;
-use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
-use UserFrosting\Sprinkle\CRUD6\Controller\ReadController;
-use UserFrosting\Sprinkle\CRUD6\Controller\UpdateController;
+use UserFrosting\Sprinkle\CRUD6\Controller\ApiAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
-use UserFrosting\Sprinkle\CRUD6\Controller\ModelController;
+use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
 
 /**
@@ -46,36 +45,26 @@ class CRUD6Routes implements RouteDefinitionInterface
 {
     public function register(App $app): void
     {
-        // API routes for CRUD operations
+        // CRUD6 API routes (Action-based, matching sprinkle-admin pattern)
         $app->group('/api/crud6/{model}', function (RouteCollectorProxy $group) {
-            // List with optional filtering, sorting, pagination
-            $group->get('', [ListController::class, 'apiList'])
+            // Sprunje listing (filter/sort/paginate)
+            $group->get('', SprunjeAction::class)
                 ->setName('api.crud6.list');
             // Create new record
             $group->post('', CreateAction::class)
                 ->setName('api.crud6.create');
             // Read single record
-            $group->get('/{id}', ReadController::class)
+            $group->get('/{id}', EditAction::class)
                 ->setName('api.crud6.read');
-            // Update record
-            $group->put('/{id}', UpdateController::class)
+            // Update record (reuse EditAction for update)
+            $group->put('/{id}', EditAction::class)
                 ->setName('api.crud6.update');
             // Delete record
             $group->delete('/{id}', DeleteAction::class)
                 ->setName('api.crud6.delete');
-        })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
-
-        // Model-based API routes (demonstrating generic model usage)
-        $app->group('/api/crud6-model/{model}', function (RouteCollectorProxy $group) {
-            // List using generic model
-            $group->get('', [ModelController::class, 'listRecords'])
-                ->setName('api.crud6.model.list');
-            // Create using generic model
-            $group->post('', [ModelController::class, 'createRecord'])
-                ->setName('api.crud6.model.create');
-            // Read single record using generic model
-            $group->get('/{id}', [ModelController::class, 'readRecord'])
-                ->setName('api.crud6.model.read');
+            // API meta/schema endpoint
+            $group->get('/schema', ApiAction::class)
+                ->setName('api.crud6.schema');
         })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
     }
 }

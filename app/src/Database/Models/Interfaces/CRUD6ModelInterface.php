@@ -78,4 +78,6 @@ interface CRUD6ModelInterface
      * @return bool
      */
     public function isSoftDeleted(): bool;
+
+    public function setCasts(array $casts): static;
 }

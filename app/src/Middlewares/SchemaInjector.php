@@ -17,9 +17,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Routing\RouteContext;
+use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+
 
 /**
  * Schema Injector Middleware
@@ -30,35 +32,34 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 class SchemaInjector implements MiddlewareInterface
 {
     public function __construct(
-        protected SchemaService $schemaService
-    ) {
-    }
+        protected SchemaService $schemaService,
+        protected Translator $translator,
+    ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
-        
+
         if ($route === null) {
             throw new NotFoundException('Route not found');
         }
 
         $model = $route->getArgument('model');
-        
+        //echo "Line 62: CRUD6: SchemaInjector for model: {$model}\n";
         if ($model === null) {
             throw new NotFoundException('Model parameter not found in route');
         }
 
         try {
             $schema = $this->schemaService->getSchema($model);
-            
+
             // Inject schema and model into request attributes
             $request = $request
                 ->withAttribute('crud6_model', $model)
                 ->withAttribute('crud6_schema', $schema);
-                
         } catch (SchemaNotFoundException $e) {
-            throw new SchemaNotFoundException("Schema not found for model: {$model}");
+            throw new SchemaNotFoundException("Line 62: Schema not found for model: {$model}");
         }
 
         return $handler->handle($request);

@@ -33,8 +33,7 @@ abstract class Base
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger
-    ) {
-    }
+    ) {}
 
     protected function getModel(ServerRequestInterface $request): string
     {
@@ -42,6 +41,7 @@ abstract class Base
         if ($model === null) {
             throw new NotFoundException('Model not found in request attributes');
         }
+        //echo "Line 32: CRUD6: Base controller for model: {$model}\n";
         return $model;
     }
 

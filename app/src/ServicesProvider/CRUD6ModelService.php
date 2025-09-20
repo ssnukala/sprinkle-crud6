@@ -13,19 +13,21 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use UserFrosting\ServicesProvider\ServicesProviderInterface;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model;
 
 /**
- * CRUD6 Services Provider
- * 
- * Registers services for the CRUD6 sprinkle.
+ * Map models interface to the class.
+ *
+ * Note both class are map using class-string, since Models are not instantiated
+ * by the container in the Eloquent world.
  */
-class CRUD6ServicesProvider implements ServicesProviderInterface
+class CRUD6ModelService implements ServicesProviderInterface
 {
     public function register(): array
     {
         return [
-            SchemaService::class => \DI\autowire(SchemaService::class),
-            \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::class => \DI\create(\UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::class),
+            CRUD6ModelInterface::class      => \DI\autowire(CRUD6Model::class)
         ];
     }
 }

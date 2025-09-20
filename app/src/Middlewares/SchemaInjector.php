@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Middleware;
+namespace UserFrosting\Sprinkle\CRUD6\Middlewares;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

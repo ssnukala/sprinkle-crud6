@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Route;
+namespace UserFrosting\Sprinkle\CRUD6\Routes;
 
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;

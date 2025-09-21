@@ -5,20 +5,19 @@ import type { CRUD6SprunjerResponse } from '../interfaces'
 import type { CRUD6Interface } from '../interfaces'
 
 /**
- * API used to fetch a list of groups.
+ * API used to fetch a list of CRUD6 records for a specific model.
  *
- * This interface is tied to the `GroupsSprunjeAction` API, accessed at the
- * GET `/api/groups` endpoint and the `GroupsSprunjerResponse` Typescript
+ * This interface is tied to the `CRUD6SprunjeAction` API, accessed at the
+ * GET `/api/crud6/{model}` endpoint and the `CRUD6SprunjerResponse` Typescript
  * interface.
  *
- * This composable can be used to access a list of groups, for select purpose
- * for example. While it uses the Sprunjer on the backend, it doesn't filter
- * nor sort the data. The Sprunjer should be used directly for that.
+ * This composable can be used to access a list of records, for select purpose
+ * for example. While it uses the Sprunje on the backend, it doesn't filter
+ * nor sort the data. The Sprunje should be used directly for that.
  *
- * NOTE: This group list is not access controlled. It return all groups, so use
- * it wisely.
+ * NOTE: This list respects access controls based on the model's permissions.
  */
-export function useCRUD6sApi() {
+export function useCRUD6sApi(model: string) {
     const loading = ref(false)
     const error = ref<AlertInterface | null>()
     const crud6Rows = ref<CRUD6Interface[]>([])
@@ -28,7 +27,7 @@ export function useCRUD6sApi() {
         error.value = null
 
         await axios
-            .get<CRUD6SprunjerResponse>('/api/crud6')
+            .get<CRUD6SprunjerResponse>(`/api/crud6/${model}`)
             .then((response) => {
                 crud6Rows.value = response.data.rows
             })

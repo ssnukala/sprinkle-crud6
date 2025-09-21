@@ -19,10 +19,10 @@ import { useRoute } from 'vue-router'
  * Vue composable for CRUD6 CRUD operations.
  *
  * Endpoints:
- * - GET    /api/CRUD6s/g/{slug}  -> CRUD6Response
- * - POST   /api/CRUD6s           -> CRUD6CreateResponse
- * - PUT    /api/CRUD6s/g/{slug}  -> CRUD6EditResponse
- * - DELETE /api/CRUD6s/g/{slug}  -> CRUD6DeleteResponse
+ * - GET    /api/crud6/{model}/{id}  -> CRUD6Response
+ * - POST   /api/crud6/{model}       -> CRUD6CreateResponse
+ * - PUT    /api/crud6/{model}/{id}  -> CRUD6EditResponse
+ * - DELETE /api/crud6/{model}/{id}  -> CRUD6DeleteResponse
  *
  * Reactive state:
  * - apiLoading: boolean
@@ -31,15 +31,14 @@ import { useRoute } from 'vue-router'
  * - r$: validation state from Regle for formData
  *
  * Methods:
- * - fetchCRUD6(slug: string): Promise<CRUD6Response>
+ * - fetchCRUD6(id: string): Promise<CRUD6Response>
  * - createCRUD6(data: CRUD6CreateRequest): Promise<void>
- * - updateCRUD6(slug: string, data: CRUD6EditRequest): Promise<void>
- * - deleteCRUD6(slug: string): Promise<void>
+ * - updateCRUD6(id: string, data: CRUD6EditRequest): Promise<void>
+ * - deleteCRUD6(id: string): Promise<void>
  * - resetForm(): void
  */
-export function useCRUD6Api() {
-    const defaultFormData = (): CRUD6CreateRequest => ({
-    })
+export function useCRUD6Api(modelName?: string) {
+    const defaultFormData = (): CRUD6CreateRequest => ({})
 
     const slugLocked = ref<boolean>(true)
     const apiLoading = ref<boolean>(false)
@@ -47,24 +46,28 @@ export function useCRUD6Api() {
     const formData = ref<CRUD6CreateRequest>(defaultFormData())
 
     const route = useRoute()
-    const model = route.params.model as string
+    const model = modelName || (route.params.model as string)
 
     // Dynamically load the schema file for the current model
     async function loadSchema() {
-        const response = await axios.get(`/schema/requests/${model}.yaml`)
-        // If you need JSON, convert YAML to JSON here
-        return response.data
+        try {
+            const response = await axios.get(`/api/crud6/${model}/schema`)
+            return response.data
+        } catch (error) {
+            console.error('Failed to load schema:', error)
+            return {}
+        }
     }
 
     // Load the schema and set up the validator
     const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(loadSchema()))
 
-    async function fetchCRUD6(slug: string) {
+    async function fetchCRUD6(id: string) {
         apiLoading.value = true
         apiError.value = null
 
         return axios
-            .get<CRUD6Response>(`/api/${model}/g/${toValue(slug)}`)
+            .get<CRUD6Response>(`/api/crud6/${model}/${toValue(id)}`)
             .then((response) => response.data)
             .catch((err) => {
                 apiError.value = err.response.data
@@ -79,7 +82,7 @@ export function useCRUD6Api() {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .post<CRUD6CreateResponse>(`/api/${model}`, data)
+            .post<CRUD6CreateResponse>(`/api/crud6/${model}`, data)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,
@@ -96,11 +99,11 @@ export function useCRUD6Api() {
             })
     }
 
-    async function updateCRUD6(slug: string, data: CRUD6EditRequest) {
+    async function updateCRUD6(id: string, data: CRUD6EditRequest) {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .put<CRUD6EditResponse>(`/api/${model}/g/${slug}`, data)
+            .put<CRUD6EditResponse>(`/api/crud6/${model}/${id}`, data)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,
@@ -117,11 +120,11 @@ export function useCRUD6Api() {
             })
     }
 
-    async function deleteCRUD6(slug: string) {
+    async function deleteCRUD6(id: string) {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .delete<CRUD6DeleteResponse>(`/api/${model}/g/${slug}`)
+            .delete<CRUD6DeleteResponse>(`/api/crud6/${model}/${id}`)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,
@@ -145,7 +148,7 @@ export function useCRUD6Api() {
     watch(
         () => formData.value.name,
         (name) => {
-            if (slugLocked.value) {
+            if (slugLocked.value && name) {
                 formData.value.slug = slug(name)
             }
         }

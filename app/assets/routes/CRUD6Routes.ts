@@ -15,7 +15,7 @@ export default [
                         slug: 'uri_crud6'
                     }
                 },
-                component: () => import('../views/PageCRUD6s.vue')
+                component: () => import('../views/PageList.vue')
             },
             {
                 path: ':id',
@@ -27,7 +27,7 @@ export default [
                         slug: 'uri_crud6'
                     }
                 },
-                component: () => import('../views/PageCRUD6.vue')
+                component: () => import('../views/PageRow.vue')
             }
         ]
     }

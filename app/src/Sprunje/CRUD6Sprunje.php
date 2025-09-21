@@ -42,9 +42,9 @@ class CRUD6Sprunje extends Sprunje
 
     public function setupSprunje($name, $sortable = [], $filterable = []): void
     {
-        $this->debugLogger->debug("Line 45: CRUD5 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
+        //$this->debugLogger->debug("Line 45: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->model->setTable($name);
-        $this->debugLogger->debug("Line 47: CRUD5 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
+        //$this->debugLogger->debug("Line 47: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->name = $name;
         $this->sortable = $sortable;
         $this->filterable = $filterable;
@@ -64,7 +64,7 @@ class CRUD6Sprunje extends Sprunje
     protected function baseQuery()
     {
         // @phpstan-ignore-next-line Model implement Model.
-        $this->debugLogger->debug("Line 53: CRUD5 Sprunje:  Model table is " . $this->model->getTable());
+        //$this->debugLogger->debug("Line 53: CRUD6 Sprunje:  Model table is " . $this->model->getTable());
         return $this->model;
     }
 }

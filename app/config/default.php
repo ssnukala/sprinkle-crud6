@@ -11,7 +11,5 @@ declare(strict_types=1);
  */
 
 return [
-    'crud6' => [
-        'schema_path' => 'app/schema/crud6'
-    ]
+    'crud6' => []
 ];

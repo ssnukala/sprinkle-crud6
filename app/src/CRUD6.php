@@ -21,6 +21,7 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SeedService;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\RolePermSeed;
 
 /**
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6
@@ -94,6 +95,16 @@ class CRUD6 implements SprinkleRecipe
         return [
             CRUD6ModelService::class,
             SeedService::class,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getMigrations(): array
+    {
+        return [
+            RolePermSeed::class,
         ];
     }
 }

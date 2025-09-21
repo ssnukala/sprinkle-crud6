@@ -1,105 +1,118 @@
 <template>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3>{{ modelName.charAt(0).toUpperCase() + modelName.slice(1) }} List</h3>
-                        <button @click="createNew" class="btn btn-primary">
-                            Create New
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div v-if="loading" class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                        <div v-else-if="error" class="alert alert-danger">
-                            {{ error.description || 'Error loading data' }}
-                        </div>
-                        <div v-else-if="crud6Rows.length > 0">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th v-for="column in columns" :key="column.key">
-                                                {{ column.label }}
-                                            </th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="item in crud6Rows" :key="item.id || item.slug" 
-                                            @click="goToDetail(item)" 
-                                            style="cursor: pointer;">
-                                            <td v-for="column in columns" :key="column.key">
-                                                {{ formatValue(item[column.key]) }}
-                                            </td>
-                                            <td>
-                                                <button @click.stop="goToDetail(item)" class="btn btn-sm btn-outline-primary">
-                                                    View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div v-else class="text-center">
-                            <p>No {{ modelName }} records found.</p>
-                            <button @click="createNew" class="btn btn-primary">
-                                Create First {{ modelName.charAt(0).toUpperCase() + modelName.slice(1) }}
-                            </button>
-                        </div>
+    <div class="crud6-list-page">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    {{ schema?.title || `${model} Management` }}
+                </h3>
+                <div class="card-tools">
+                    <button
+                        v-if="hasCreatePermission"
+                        type="button"
+                        class="btn btn-primary"
+                        @click="createNew"
+                    >
+                        <i class="fas fa-plus"></i>
+                        {{ $t('CREATE_NEW') }}
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <p v-if="schema?.description" class="text-muted">
+                    {{ schema.description }}
+                </p>
+                
+                <!-- Loading state -->
+                <div v-if="schemaLoading" class="text-center p-4">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
                     </div>
                 </div>
+                
+                <!-- Error state -->
+                <div v-else-if="schemaError" class="alert alert-danger">
+                    <h5>{{ schemaError.title }}</h5>
+                    <p>{{ schemaError.description }}</p>
+                </div>
+                
+                <!-- Table -->
+                <UFTableCRUD6
+                    v-else-if="schema"
+                    :model="model"
+                    :schema="schema"
+                    :readonly="!hasEditPermission"
+                    @edit="editRecord"
+                    @delete="deleteRecord"
+                    @row-click="viewRecord"
+                />
+
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCRUD6sApi } from '../composables'
+import { useCRUD6Schema } from '../composables/useCRUD6Schema'
+import UFTableCRUD6 from '../components/UFTableCRUD6.vue'
+import type { CRUD6Interface } from '../interfaces'
 
 const route = useRoute()
 const router = useRouter()
-const { crud6Rows, error, loading, updateCRUD6s } = useCRUD6sApi()
 
-const modelName = computed(() => route.params.model as string)
+// Get model from route parameter
+const model = computed(() => route.params.model as string)
 
-// Default columns - this should ideally be loaded from schema
-const columns = ref([
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Name' },
-    { key: 'created_at', label: 'Created' },
-    { key: 'updated_at', label: 'Updated' }
-])
+// Use schema composable
+const {
+    schema,
+    loading: schemaLoading,
+    error: schemaError,
+    loadSchema,
+    hasPermission
+} = useCRUD6Schema()
 
-function formatValue(value: any): string {
-    if (value === null || value === undefined) return 'N/A'
-    if (typeof value === 'object') return JSON.stringify(value)
-    if (typeof value === 'string' && value.length > 50) {
-        return value.substring(0, 50) + '...'
-    }
-    return String(value)
-}
+// Permission checks
+const hasCreatePermission = computed(() => hasPermission('create'))
+const hasEditPermission = computed(() => hasPermission('update'))
+const hasDeletePermission = computed(() => hasPermission('delete'))
 
-function goToDetail(item: any) {
-    router.push({
-        name: 'admin.crud6',
-        params: { model: modelName.value, id: item.id || item.slug }
-    })
-}
-
+// Actions
 function createNew() {
-    // Navigate to create page - this could be implemented later
-    console.log('Create new', modelName.value)
+    router.push(`/crud6/${model.value}/create`)
 }
 
+function editRecord(record: CRUD6Interface) {
+    const id = record[schema.value?.primary_key || 'id']
+    router.push(`/crud6/${model.value}/${id}/edit`)
+}
+
+function viewRecord(record: CRUD6Interface) {
+    const id = record[schema.value?.primary_key || 'id']
+    router.push(`/crud6/${model.value}/${id}`)
+}
+
+function deleteRecord(record: CRUD6Interface) {
+    // TODO: Implement delete confirmation modal
+    console.log('Delete record:', record)
+}
+
+// Load schema when component mounts or model changes
 onMounted(() => {
-    updateCRUD6s()
+    if (model.value) {
+        loadSchema(model.value)
+    }
 })
 </script>
+
+<style scoped>
+.crud6-list-page {
+    padding: 1rem;
+}
+
+.card-tools .btn {
+    margin-left: 0.5rem;
+}
+</style>
+

@@ -1,4 +1,5 @@
-import type { CRUD6Interface } from '@ssnukala/sprinkle-account/interfaces'
+import type { CRUD6Interface } from './models/CRUD6Interface'
+
 import type { SprunjerResponse } from '@userfrosting/sprinkle-core/interfaces'
 
 /**

@@ -5,3 +5,4 @@ export type { CRUD6DeleteResponse } from './CRUD6DeleteApi'
 export type { CRUD6EditRequest, CRUD6EditResponse } from './CRUD6EditApi'
 export type { CRUD6SprunjerResponse } from './CRUD6sApi'
 
+export type { CRUD6Interface } from './models/CRUD6Interface'

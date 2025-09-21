@@ -4,67 +4,70 @@ import { useRegle } from '@regle/core'
 import slug from 'limax'
 import { Severity, type ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import type {
-    GroupCreateRequest,
-    GroupCreateResponse,
-    GroupDeleteResponse,
-    GroupEditRequest,
-    GroupEditResponse,
-    GroupResponse
+    CRUD6CreateRequest,
+    CRUD6CreateResponse,
+    CRUD6DeleteResponse,
+    CRUD6EditRequest,
+    CRUD6EditResponse,
+    CRUD6Response
 } from '../interfaces'
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
 import { useRuleSchemaAdapter } from '@userfrosting/sprinkle-core/composables'
-import schemaFile from '../../schema/requests/group.yaml'
+import { useRoute } from 'vue-router'
 
 /**
- * Vue composable for Group CRUD operations.
+ * Vue composable for CRUD6 CRUD operations.
  *
  * Endpoints:
- * - GET    /api/groups/g/{slug}  -> GroupResponse
- * - POST   /api/groups           -> GroupCreateResponse
- * - PUT    /api/groups/g/{slug}  -> GroupEditResponse
- * - DELETE /api/groups/g/{slug}  -> GroupDeleteResponse
+ * - GET    /api/CRUD6s/g/{slug}  -> CRUD6Response
+ * - POST   /api/CRUD6s           -> CRUD6CreateResponse
+ * - PUT    /api/CRUD6s/g/{slug}  -> CRUD6EditResponse
+ * - DELETE /api/CRUD6s/g/{slug}  -> CRUD6DeleteResponse
  *
  * Reactive state:
  * - apiLoading: boolean
  * - apiError: ApiErrorResponse | null
- * - formData: GroupCreateRequest
+ * - formData: CRUD6CreateRequest
  * - r$: validation state from Regle for formData
  *
  * Methods:
- * - fetchGroup(slug: string): Promise<GroupResponse>
- * - createGroup(data: GroupCreateRequest): Promise<void>
- * - updateGroup(slug: string, data: GroupEditRequest): Promise<void>
- * - deleteGroup(slug: string): Promise<void>
+ * - fetchCRUD6(slug: string): Promise<CRUD6Response>
+ * - createCRUD6(data: CRUD6CreateRequest): Promise<void>
+ * - updateCRUD6(slug: string, data: CRUD6EditRequest): Promise<void>
+ * - deleteCRUD6(slug: string): Promise<void>
  * - resetForm(): void
  */
-export function useGroupApi() {
-    const defaultFormData = (): GroupCreateRequest => ({
-        slug: '',
-        name: '',
-        description: '',
-        icon: 'users'
+export function useCRUD6Api() {
+    const defaultFormData = (): CRUD6CreateRequest => ({
     })
 
     const slugLocked = ref<boolean>(true)
     const apiLoading = ref<boolean>(false)
     const apiError = ref<ApiErrorResponse | null>(null)
-    const formData = ref<GroupCreateRequest>(defaultFormData())
+    const formData = ref<CRUD6CreateRequest>(defaultFormData())
+
+    const route = useRoute()
+    const model = route.params.model as string
+
+    // Dynamically load the schema file for the current model
+    async function loadSchema() {
+        const response = await axios.get(`/schema/requests/${model}.yaml`)
+        // If you need JSON, convert YAML to JSON here
+        return response.data
+    }
 
     // Load the schema and set up the validator
-    const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(schemaFile))
+    const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(loadSchema()))
 
-    async function fetchGroup(slug: string) {
+    async function fetchCRUD6(slug: string) {
         apiLoading.value = true
         apiError.value = null
 
         return axios
-            .get<GroupResponse>('/api/groups/g/' + toValue(slug))
-            .then((response) => {
-                return response.data
-            })
+            .get<CRUD6Response>(`/api/${model}/g/${toValue(slug)}`)
+            .then((response) => response.data)
             .catch((err) => {
                 apiError.value = err.response.data
-
                 throw apiError.value
             })
             .finally(() => {
@@ -72,13 +75,12 @@ export function useGroupApi() {
             })
     }
 
-    async function createGroup(data: GroupCreateRequest) {
+    async function createCRUD6(data: CRUD6CreateRequest) {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .post<GroupCreateResponse>('/api/groups', data)
+            .post<CRUD6CreateResponse>(`/api/${model}`, data)
             .then((response) => {
-                // Add the message to the alert stream
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -87,7 +89,6 @@ export function useGroupApi() {
             })
             .catch((err) => {
                 apiError.value = err.response.data
-
                 throw apiError.value
             })
             .finally(() => {
@@ -95,13 +96,12 @@ export function useGroupApi() {
             })
     }
 
-    async function updateGroup(slug: string, data: GroupEditRequest) {
+    async function updateCRUD6(slug: string, data: CRUD6EditRequest) {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .put<GroupEditResponse>('/api/groups/g/' + slug, data)
+            .put<CRUD6EditResponse>(`/api/${model}/g/${slug}`, data)
             .then((response) => {
-                // Add the message to the alert stream
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -110,7 +110,6 @@ export function useGroupApi() {
             })
             .catch((err) => {
                 apiError.value = err.response.data
-
                 throw apiError.value
             })
             .finally(() => {
@@ -118,13 +117,12 @@ export function useGroupApi() {
             })
     }
 
-    async function deleteGroup(slug: string) {
+    async function deleteCRUD6(slug: string) {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .delete<GroupDeleteResponse>('/api/groups/g/' + slug)
+            .delete<CRUD6DeleteResponse>(`/api/${model}/g/${slug}`)
             .then((response) => {
-                // Add the message to the alert stream
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -133,7 +131,6 @@ export function useGroupApi() {
             })
             .catch((err) => {
                 apiError.value = err.response.data
-
                 throw apiError.value
             })
             .finally(() => {
@@ -155,10 +152,10 @@ export function useGroupApi() {
     )
 
     return {
-        fetchGroup,
-        createGroup,
-        updateGroup,
-        deleteGroup,
+        fetchCRUD6,
+        createCRUD6,
+        updateCRUD6,
+        deleteCRUD6,
         apiLoading,
         apiError,
         formData,

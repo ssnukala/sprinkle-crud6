@@ -1,6 +1,6 @@
 export default [
     {
-        path: 'crud6',
+        path: 'crud6/:model',
         meta: {
             auth: {},
             title: 'CRUD6.PAGE',
@@ -9,7 +9,7 @@ export default [
         children: [
             {
                 path: '',
-                name: 'admin.crud6',
+                name: 'admin.crud6.list',
                 meta: {
                     permission: {
                         slug: 'uri_crud6'

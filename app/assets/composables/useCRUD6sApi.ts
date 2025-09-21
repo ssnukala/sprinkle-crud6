@@ -1,8 +1,8 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { type AlertInterface } from '@userfrosting/sprinkle-core/interfaces'
-import type { GroupsSprunjerResponse } from '../interfaces'
-import type { GroupInterface } from '@userfrosting/sprinkle-account/interfaces'
+import type { CRUD6SprunjerResponse } from '../interfaces'
+import type { CRUD6Interface } from '../interfaces'
 
 /**
  * API used to fetch a list of groups.
@@ -18,19 +18,19 @@ import type { GroupInterface } from '@userfrosting/sprinkle-account/interfaces'
  * NOTE: This group list is not access controlled. It return all groups, so use
  * it wisely.
  */
-export function useGroupsApi() {
+export function useCRUD6sApi() {
     const loading = ref(false)
     const error = ref<AlertInterface | null>()
-    const groups = ref<GroupInterface[]>([])
+    const crud6Rows = ref<CRUD6Interface[]>([])
 
-    async function updateGroups() {
+    async function updateCRUD6s() {
         loading.value = true
         error.value = null
 
         await axios
-            .get<GroupsSprunjerResponse>('/api/groups')
+            .get<CRUD6SprunjerResponse>('/api/crud6')
             .then((response) => {
-                groups.value = response.data.rows
+                crud6Rows.value = response.data.rows
             })
             .catch((err) => {
                 error.value = err.response.data
@@ -40,5 +40,5 @@ export function useGroupsApi() {
             })
     }
 
-    return { groups, error, loading, updateGroups }
+    return { crud6Rows, error, loading, updateCRUD6s }
 }

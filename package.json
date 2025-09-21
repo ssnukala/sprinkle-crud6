@@ -1,14 +1,49 @@
 {
-  "name": "sprinkle-crud6",
-  "version": "1.0.0",
+  "name": "@ssnukala/sprinkle-crud6",
+  "version": "0.2.0",
+  "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
-  "keywords": [
-    "userfrosting",
-    "sprinkle",
-    "crud",
-    "api",
-    "php"
+  "funding": "https://opencollective.com/userfrosting",
+  "license": "MIT",
+  "author": "Srinivas Nukala (https://srinivasnukala.com/)",
+  "contributors": [
+    "Alexander Weissman (https://alexanderweissman.com/)",
+    "Louis Charette (https://bbqsoftwares.com/)",
+    "Jordan Mele <SiliconSoldier@outlook.com.au> (https://djmm.me/)"
   ],
-  "author": "Srinivas Nukala",
-  "license": "MIT"
+  "keywords": [
+    "CRUD6",
+    "UserFrosting",
+    "Admin panel",
+    "Sprinkle"
+  ],
+  "homepage": "https://github.com/userfrosting/sprinkle-crud6#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/userfrosting/sprinkle-crud6.git"
+  },
+  "bugs": {
+    "url": "https://github.com/userfrosting/UserFrosting/issues"
+  },
+  "exports": {
+    ".": "./app/assets/index.ts",
+    "./composables": "./app/assets/composables/index.ts",
+    "./interfaces": "./app/assets/interfaces/index.ts",
+    "./routes": "./app/assets/routes/index.ts",
+    "./views": "./app/assets/views/index.ts"
+  },
+  "files": [
+    "app/assets",
+    "app/schema/"
+  ],
+  "peerDependencies": {
+    "@userfrosting/sprinkle-admin": "^6.0.0-beta",
+    "@userfrosting/sprinkle-core": "^6.0.0-beta",
+    "axios": "^1.12.0",
+    "limax": "^4.1.0",
+    "pinia": "^2.1.6",
+    "pinia-plugin-persistedstate": "^3.2.0",
+    "vue": "^3.4.21",
+    "vue-router": "^4.2.4"
+  }
 }

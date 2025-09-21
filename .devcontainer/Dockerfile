@@ -1,4 +1,5 @@
-# UserFrosting CRUD6 Development Container
+# UserFrosting CRUD6 Full Stack Development Container
+# Combines PHP (UserFrosting/CRUD6 Sprinkle) + Node.js (Theme Development)
 FROM php:8.2-fpm
 
 # Install system dependencies
@@ -19,6 +20,10 @@ RUN apt-get update && apt-get install -y \
     sudo \
     vim \
     nano \
+    bash \
+    python3 \
+    g++ \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure and install PHP extensions
@@ -68,10 +73,10 @@ RUN useradd -m -s /bin/bash vscode \
     && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set working directory
-WORKDIR /app
+WORKDIR /workspace
 
 # Change ownership of the working directory
-RUN chown -R vscode:vscode /app
+RUN chown -R vscode:vscode /workspace
 
 # Switch to non-root user
 USER vscode
@@ -81,3 +86,9 @@ RUN php --version \
     && composer --version \
     && node --version \
     && npm --version
+
+# Expose ports
+EXPOSE 8080 5173 9003
+
+# Default command
+CMD ["bash"]

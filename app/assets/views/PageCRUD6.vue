@@ -4,13 +4,13 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3>{{ $t('CRUD6.DETAIL', { model: modelName }) }}</h3>
+                        <h3>{{ modelName.charAt(0).toUpperCase() + modelName.slice(1) }} Details</h3>
                         <div>
                             <button @click="goBack" class="btn btn-secondary">
-                                {{ $t('CRUD6.BACK') }}
+                                Back
                             </button>
                             <button @click="editMode = !editMode" class="btn btn-primary ms-2">
-                                {{ editMode ? $t('CRUD6.CANCEL') : $t('CRUD6.EDIT') }}
+                                {{ editMode ? 'Cancel' : 'Edit' }}
                             </button>
                         </div>
                     </div>
@@ -45,10 +45,10 @@
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-success" :disabled="apiLoading">
-                                        {{ apiLoading ? 'Saving...' : $t('CRUD6.SAVE') }}
+                                        {{ apiLoading ? 'Saving...' : 'Save' }}
                                     </button>
                                     <button type="button" @click="resetForm" class="btn btn-secondary">
-                                        {{ $t('CRUD6.RESET') }}
+                                        Reset
                                     </button>
                                 </div>
                             </form>
@@ -76,7 +76,7 @@ const router = useRouter()
 const { fetchCRUD6, updateCRUD6, apiLoading, apiError, resetForm } = useCRUD6Api()
 
 const modelName = computed(() => route.params.model as string)
-const slug = computed(() => route.params.slug as string)
+const slug = computed(() => route.params.id as string)
 
 const editMode = ref(false)
 const data = ref<any>(null)

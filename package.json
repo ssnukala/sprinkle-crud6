@@ -1,6 +1,6 @@
 {
   "name": "@ssnukala/sprinkle-crud6",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",
@@ -51,6 +51,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^18.0.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@ssnukala/theme-crud6": "git+https://github.com/ssnukala/theme-crud6.git#latest"
   }
 }

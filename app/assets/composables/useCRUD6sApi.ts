@@ -3,6 +3,7 @@ import axios from 'axios'
 import { type AlertInterface } from '@userfrosting/sprinkle-core/interfaces'
 import type { CRUD6SprunjerResponse } from '../interfaces'
 import type { CRUD6Interface } from '../interfaces'
+import { useRoute } from 'vue-router'
 
 /**
  * API used to fetch a list of CRUD6 records for a specific model.
@@ -16,11 +17,15 @@ import type { CRUD6Interface } from '../interfaces'
  * nor sort the data. The Sprunje should be used directly for that.
  *
  * NOTE: This list respects access controls based on the model's permissions.
+
  */
 export function useCRUD6sApi(model: string) {
     const loading = ref(false)
     const error = ref<AlertInterface | null>()
     const crud6Rows = ref<CRUD6Interface[]>([])
+    
+    const route = useRoute()
+    const model = route.params.model as string
 
     async function updateCRUD6s() {
         loading.value = true

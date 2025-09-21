@@ -45,6 +45,7 @@
                     @delete="deleteRecord"
                     @row-click="viewRecord"
                 />
+
             </div>
         </div>
     </div>
@@ -114,3 +115,4 @@ onMounted(() => {
     margin-left: 0.5rem;
 }
 </style>
+

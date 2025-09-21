@@ -1,0 +1,72 @@
+{
+    "name": "UserFrosting CRUD6 Development",
+    "dockerFile": "Dockerfile",
+    "context": "..",
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "containerEnv": {
+        "PACKAGE_DIR": "/app/userfrosting",
+        "COMPOSER_ALLOW_SUPERUSER": "1"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "php.suggest.basic": false,
+                "php.validate.executablePath": "/usr/local/bin/php",
+                "php.debug.executablePath": "/usr/local/bin/php",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.fixAll": true
+                },
+                "files.associations": {
+                    "*.twig": "twig"
+                },
+                "emmet.includeLanguages": {
+                    "twig": "html"
+                }
+            },
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "xdebug.php-debug",
+                "junstyle.php-cs-fixer",
+                "phpstan.phpstan-vscode",
+                "bradlc.vscode-tailwindcss",
+                "vue.volar",
+                "vue.vscode-typescript-vue-plugin",
+                "esbenp.prettier-vscode",
+                "ms-vscode.vscode-typescript-next",
+                "formulahendry.auto-rename-tag",
+                "whatwedo.twig",
+                "mikestead.dotenv"
+            ]
+        }
+    },
+    "forwardPorts": [
+        8080,
+        3000,
+        9003
+    ],
+    "portsAttributes": {
+        "8080": {
+            "label": "UserFrosting App",
+            "onAutoForward": "notify"
+        },
+        "3000": {
+            "label": "Vite Dev Server",
+            "onAutoForward": "openBrowser"
+        },
+        "9003": {
+            "label": "XDebug"
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/setup-project.sh",
+    "remoteUser": "vscode",
+    "mounts": [
+        "source=crud6-node_modules,target=/app/node_modules,type=volume",
+        "source=crud6-vendor,target=/app/vendor,type=volume"
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    }
+}

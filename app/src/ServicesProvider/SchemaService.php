@@ -15,7 +15,6 @@ namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 use DI\Container;
 use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
-use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 
 //use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 
@@ -48,7 +47,19 @@ class SchemaService
      */
     protected function getSchemaFilePath(string $model): string
     {
-        return rtrim($this->schemaPath, '/') . "/{$model}.json";
+        // Handle both stream wrapper and direct file paths
+        $schemaPath = rtrim($this->schemaPath, '/') . "/{$model}.json";
+        
+        // If using schema:// stream wrapper, resolve to actual file path
+        if (str_starts_with($schemaPath, 'schema://')) {
+            // For CRUD6, schemas are in app/schema/crud6/ directory
+            $relativePath = str_replace('schema://', '', $schemaPath);
+            // Use the directory where this class is located to find the app directory
+            $appDir = dirname(dirname(__DIR__));
+            $schemaPath = $appDir . '/schema/' . $relativePath;
+        }
+        
+        return $schemaPath;
     }
 
 
@@ -87,12 +98,19 @@ class SchemaService
     {
         $schemaPath = $this->getSchemaFilePath($model);
 
-        // Load schema file
-        $loader = new YamlFileLoader($schemaPath);
-        $schema = $loader->load(false);
+        // Load JSON schema file
+        if (!file_exists($schemaPath)) {
+            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model} at path: {$schemaPath}");
+        }
 
+        $schemaContent = file_get_contents($schemaPath);
+        if ($schemaContent === false) {
+            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Could not read schema file for model: {$model}");
+        }
+
+        $schema = json_decode($schemaContent, true);
         if ($schema === null) {
-            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
+            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Invalid JSON in schema file for model: {$model}. Error: " . json_last_error_msg());
         }
 
         // Validate schema structure

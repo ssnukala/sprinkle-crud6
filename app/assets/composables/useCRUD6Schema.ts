@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import axios from 'axios'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 
@@ -126,7 +126,7 @@ export function useCRUD6Schema(modelName?: string) {
     /**
      * Check if user has permission for an action
      */
-    function hasPermission(action: 'read' | 'create' | 'update' | 'delete'): boolean {
+    function hasPermission(_action: 'read' | 'create' | 'update' | 'delete'): boolean {
         // This would typically check against the current user's permissions
         // For now, we'll return true - this should be implemented based on 
         // UserFrosting's authorization system

@@ -1,5 +1,4 @@
 {
-    "extends": "@vue/tsconfig/tsconfig.dom.json",
     "include": [
         "env.d.ts",
         "app/assets/**/*.ts",
@@ -8,16 +7,24 @@
     ],
     "exclude": ["vite.config.ts"],
     "compilerOptions": {
-        "composite": true,
-        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+        "target": "ES2020",
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "moduleResolution": "node",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "preserve",
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
         "baseUrl": ".",
         "rootDir": "app/assets",
         "allowJs": true,
-        "types": ["@modyfi/vite-plugin-yaml/modules"]
-    },
-    "references": [
-        {
-            "path": "./tsconfig.node.json"
-        }
-    ]
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
+    }
 }

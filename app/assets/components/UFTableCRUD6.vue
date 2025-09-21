@@ -43,6 +43,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import type { CRUD6Interface } from '../interfaces'
+import { useCRUD6sApi } from '../composables/useCRUD6sApi'
 
 interface Props {
     model: string
@@ -62,8 +63,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const data = ref<CRUD6Interface[]>([])
-const loading = ref(false)
+// Use the composable for data loading
+const { crud6Rows, loading, error, updateCRUD6s } = useCRUD6sApi(props.model)
+const data = computed(() => crud6Rows.value)
 
 const tableState = ref({
     currentPage: 1,
@@ -71,8 +73,6 @@ const tableState = ref({
     sorts: {} as Record<string, string>,
     filters: {} as Record<string, any>
 })
-
-const apiUrl = computed(() => `/api/crud6/${props.model}`)
 
 const columns = computed(() => {
     if (!props.schema?.fields) return []
@@ -129,16 +129,7 @@ function formatValue(value: any, type: string): string {
 
 // Load data when component mounts
 onMounted(async () => {
-    loading.value = true
-    try {
-        const response = await fetch(apiUrl.value)
-        const result = await response.json()
-        data.value = result.rows || []
-    } catch (error) {
-        console.error('Failed to load data:', error)
-    } finally {
-        loading.value = false
-    }
+    await updateCRUD6s()
 })
 </script>
 

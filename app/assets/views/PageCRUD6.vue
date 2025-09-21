@@ -15,7 +15,7 @@
                         @click="goBack"
                     >
                         <i class="fas fa-arrow-left"></i>
-                        {{ $t('BACK') }}
+                        Back
                     </button>
                     <button
                         v-if="!isEditMode && hasEditPermission"
@@ -24,7 +24,7 @@
                         @click="toggleEditMode"
                     >
                         <i class="fas fa-edit"></i>
-                        {{ $t('EDIT') }}
+                        Edit
                     </button>
                     <button
                         v-if="isEditMode"
@@ -34,7 +34,7 @@
                         :disabled="loading"
                     >
                         <i class="fas fa-save"></i>
-                        {{ $t('SAVE') }}
+                        Save
                     </button>
                     <button
                         v-if="isEditMode"
@@ -43,7 +43,7 @@
                         @click="cancelEdit"
                     >
                         <i class="fas fa-times"></i>
-                        {{ $t('CANCEL') }}
+                        Cancel
                     </button>
                 </div>
             </div>

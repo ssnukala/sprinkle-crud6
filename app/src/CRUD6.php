@@ -18,6 +18,9 @@ use UserFrosting\Sprinkle\Core\Core;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SeedService;
 
 /**
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6
@@ -72,11 +75,25 @@ class CRUD6 implements SprinkleRecipe
 
     /**
      * {@inheritDoc}
+     *
+     * @codeCoverageIgnore
+     */
+    public function getSeeds(): array
+    {
+        return [
+            DefaultRoles::class,
+            DefaultPermissions::class,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function getServices(): array
     {
         return [
             CRUD6ModelService::class,
+            SeedService::class,
         ];
     }
 }

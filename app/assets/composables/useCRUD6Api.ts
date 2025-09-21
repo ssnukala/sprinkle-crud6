@@ -19,10 +19,10 @@ import { useRoute } from 'vue-router'
  * Vue composable for CRUD6 CRUD operations.
  *
  * Endpoints:
- * - GET    /api/CRUD6s/g/{slug}  -> CRUD6Response
- * - POST   /api/CRUD6s           -> CRUD6CreateResponse
- * - PUT    /api/CRUD6s/g/{slug}  -> CRUD6EditResponse
- * - DELETE /api/CRUD6s/g/{slug}  -> CRUD6DeleteResponse
+ * - GET    /api/crud6/{model}/{id}  -> CRUD6Response
+ * - POST   /api/crud6/{model}       -> CRUD6CreateResponse
+ * - PUT    /api/crud6/{model}/{id}  -> CRUD6EditResponse
+ * - DELETE /api/crud6/{model}/{id}  -> CRUD6DeleteResponse
  *
  * Reactive state:
  * - apiLoading: boolean
@@ -64,7 +64,7 @@ export function useCRUD6Api() {
         apiError.value = null
 
         return axios
-            .get<CRUD6Response>(`/api/${model}/g/${toValue(slug)}`)
+            .get<CRUD6Response>(`/api/crud6/${model}/${toValue(slug)}`)
             .then((response) => response.data)
             .catch((err) => {
                 apiError.value = err.response.data
@@ -79,7 +79,7 @@ export function useCRUD6Api() {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .post<CRUD6CreateResponse>(`/api/${model}`, data)
+            .post<CRUD6CreateResponse>(`/api/crud6/${model}`, data)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,
@@ -100,7 +100,7 @@ export function useCRUD6Api() {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .put<CRUD6EditResponse>(`/api/${model}/g/${slug}`, data)
+            .put<CRUD6EditResponse>(`/api/crud6/${model}/${slug}`, data)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,
@@ -121,7 +121,7 @@ export function useCRUD6Api() {
         apiLoading.value = true
         apiError.value = null
         return axios
-            .delete<CRUD6DeleteResponse>(`/api/${model}/g/${slug}`)
+            .delete<CRUD6DeleteResponse>(`/api/crud6/${model}/${slug}`)
             .then((response) => {
                 useAlertsStore().push({
                     title: response.data.title,

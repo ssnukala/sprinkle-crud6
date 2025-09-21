@@ -154,8 +154,16 @@ export function useCRUD6Api(modelName?: string) {
         }
     )
 
+    /**
+     * Alias for fetchCRUD6 to maintain compatibility with theme components
+     */
+    function fetchCRUD6Row(id: string) {
+        return fetchCRUD6(id)
+    }
+
     return {
         fetchCRUD6,
+        fetchCRUD6Row,
         createCRUD6,
         updateCRUD6,
         deleteCRUD6,

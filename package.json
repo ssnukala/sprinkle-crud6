@@ -48,10 +48,10 @@
   },
   "dependencies": {
     "@modyfi/vite-plugin-yaml": "^1.1.1",
+    "@ssnukala/theme-crud6": "git+https://github.com/ssnukala/theme-crud6.git#main",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^18.0.1",
-    "vitest": "^3.2.4",
-    "@ssnukala/theme-crud6": "git+https://github.com/ssnukala/theme-crud6.git#latest"
+    "vitest": "^3.2.4"
   }
 }

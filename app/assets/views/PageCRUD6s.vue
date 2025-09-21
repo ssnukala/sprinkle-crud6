@@ -115,7 +115,8 @@ function viewRecord(record: CRUD6Interface) {
 }
 
 function deleteRecord(record: CRUD6Interface) {
-    // TODO: Implement delete confirmation modal
+    // TODO: Implement delete confirmation modal using UserFrosting components
+    // Should use CRUD6.DELETE_CONFIRM translation key
     console.log('Delete record:', record)
 }
 

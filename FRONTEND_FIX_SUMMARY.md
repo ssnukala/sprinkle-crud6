@@ -1,69 +1,55 @@
 # CRUD6 Frontend Fix Summary
 
-## Problem Solved
+## Changes Reverted
 
-The issue was that the Vue frontend components were hardcoded to use `UFAdminGroupsPage` and `UFAdminGroupPage` components, which only work for groups. This made the frontend fail for any other model, even though the backend API `/api/crud6/{model}` was working correctly.
+The previous "framework-independent" changes have been reverted to restore full UserFrosting 6 framework integration as requested in issue #26.
 
-## Solution Implemented
+## Current State - Full UserFrosting 6 Integration
 
-### 1. Created Generic Vue Components
+### 1. UserFrosting Components Restored
 
-**PageCRUD6s.vue** - Generic list component:
-- Displays data for any model in a responsive table
-- Uses `route.params.model` to determine which model to load
-- Calls `/api/crud6/{model}` endpoint dynamically
-- Provides navigation to detail view
-- Includes loading states and error handling
+**PageCRUD6s.vue** - Now uses UserFrosting framework:
+- Uses `UFTable` component from `@userfrosting/sprinkle-admin`
+- Full integration with UserFrosting table features (pagination, sorting, filtering)
+- Proper translation calls using `$t()` function
+- CRUD6-specific translation keys from `app/locale/en_US/messages.php`
 
-**PageCRUD6.vue** - Generic detail/edit component:
-- Shows record details for any model
-- Provides edit functionality with dynamic form fields
-- Uses `route.params.model` and `route.params.id` for navigation
-- Calls `/api/crud6/{model}/{id}` endpoints
-- Handles field types intelligently (email, date, etc.)
+**PageCRUD6.vue** - Full framework integration:
+- Uses UserFrosting translation system throughout
+- Proper `$t('CRUD6.EDIT')` and other CRUD6-specific translations
+- Framework-integrated form handling and validation
 
-### 2. Fixed API Endpoints in Composables
+### 2. Translation Dependencies Restored
 
-Updated both composables to use correct endpoints:
-- `useCRUD6Api`: Now uses `/api/crud6/{model}/{id}` 
-- `useCRUD6sApi`: Now uses `/api/crud6/{model}`
+All components now use:
+- `$t('CRUD6.CREATE')` for create buttons
+- `$t('CRUD6.EDIT')` for edit functionality  
+- `$t('LOADING')` for loading states
+- `$t('YES')` and `$t('NO')` for boolean values
+- Framework's translation system instead of hardcoded strings
 
-### 3. Improved Route Structure
+### 3. UserFrosting Framework Services
 
-- Changed route from `g/:slug` to `:id` for cleaner URLs
-- Fixed naming conflicts in routes index file
-- Updated route tests to match new structure
+Components utilize full framework integration:
+- `useAlertsStore()` from `@userfrosting/sprinkle-core/stores`
+- `useRuleSchemaAdapter()` for validation
+- `UFTable` component with full feature set
+- Proper API error handling using UserFrosting patterns
 
-### 4. Made Components Framework-Independent
+### 4. Framework-Independent Code Removed
 
-- Removed dependency on `UFTable` component
-- Used standard Bootstrap HTML table
-- Removed translation dependencies for easier integration
+- Removed custom `UFTableCRUD6` component 
+- Removed hardcoded Bootstrap HTML tables
+- Removed standalone translation approach
+- Restored dependency on UserFrosting 6 framework components
 
-## URL Examples That Now Work
+## Framework Integration Benefits
 
-- `/crud6/groups` - List all groups
-- `/crud6/groups/1` - View/edit group with ID 1
-- `/crud6/products` - List all products  
-- `/crud6/products/123` - View/edit product with ID 123
-- `/crud6/users` - List all users
-- `/crud6/users/456` - View/edit user with ID 456
+1. **Full Feature Set**: Access to all UserFrosting 6 table features
+2. **Consistent UI**: Matches UserFrosting admin interface
+3. **Translation System**: Proper i18n with CRUD6-specific keys
+4. **Validation**: Framework-integrated form validation
+5. **Alerts**: Unified alert/notification system
+6. **Permissions**: Integration with UserFrosting authorization
 
-## Key Features
-
-1. **Model-Agnostic**: Works with any model defined in schema
-2. **Dynamic API Calls**: Automatically calls correct endpoints
-3. **Responsive Design**: Uses Bootstrap for mobile-friendly layout
-4. **Error Handling**: Graceful error display and loading states
-5. **Edit Functionality**: In-place editing with form validation
-6. **Type Intelligence**: Smart field type detection for forms
-
-## Testing Performed
-
-- ✅ PHP syntax validation on all backend files
-- ✅ Route structure validation  
-- ✅ Vue component structure validation
-- ✅ API endpoint validation in composables
-- ✅ JavaScript/TypeScript syntax validation
-
-The frontend Vue pages for `/crud6/{model}` should now work correctly for any model, making the CRUD6 sprinkle truly generic.
+The CRUD6 sprinkle now fully utilizes UserFrosting 6 framework features as intended.

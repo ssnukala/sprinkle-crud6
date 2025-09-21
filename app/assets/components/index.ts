@@ -1,1 +1,1 @@
-export { default as UFTableCRUD6 } from './UFTableCRUD6.vue'
+// No custom components - using UserFrosting framework components

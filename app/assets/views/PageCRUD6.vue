@@ -4,7 +4,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <h3 class="card-title mb-0">
-                        {{ isEditMode ? 'Edit' : 'View' }} {{ schema?.title || model }}
+                        {{ isEditMode ? $t('CRUD6.EDIT') : $t('VIEW') }} {{ schema?.title || model }}
                     </h3>
                     <small v-if="recordId" class="text-muted">ID: {{ recordId }}</small>
                 </div>
@@ -24,7 +24,7 @@
                         @click="toggleEditMode"
                     >
                         <i class="fas fa-edit"></i>
-                        {{ $t('EDIT') }}
+                        {{ $t('CRUD6.EDIT') }}
                     </button>
                     <button
                         v-if="isEditMode"
@@ -51,7 +51,7 @@
                 <!-- Loading state -->
                 <div v-if="loading" class="text-center p-4">
                     <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
+                        <span class="sr-only">{{ $t('LOADING') }}</span>
                     </div>
                 </div>
                 
@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCRUD6Schema } from '../composables/useCRUD6Schema'
 import { useCRUD6Api } from '../composables/useCRUD6Api'
@@ -265,7 +265,7 @@ function formatFieldValue(value: any, field: any): string {
     
     switch (field.type) {
         case 'boolean':
-            return value ? 'Yes' : 'No'
+            return value ? $t('YES') : $t('NO')
         case 'date':
         case 'datetime':
             return new Date(value).toLocaleDateString()

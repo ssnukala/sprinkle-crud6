@@ -13,7 +13,7 @@
                         @click="createNew"
                     >
                         <i class="fas fa-plus"></i>
-                        {{ $t('CREATE_NEW') }}
+                        {{ $t('CRUD6.CREATE') }}
                     </button>
                 </div>
             </div>
@@ -25,7 +25,7 @@
                 <!-- Loading state -->
                 <div v-if="schemaLoading" class="text-center p-4">
                     <div class="spinner-border" role="status">
-                        <span class="sr-only">Loading...</span>
+                        <span class="sr-only">{{ $t('LOADING') }}</span>
                     </div>
                 </div>
                 
@@ -36,14 +36,15 @@
                 </div>
                 
                 <!-- Table -->
-                <UFTableCRUD6
+                <UFTable
                     v-else-if="schema"
-                    :model="model"
-                    :schema="schema"
-                    :readonly="!hasEditPermission"
+                    :api-url="`/api/crud6/${model}`"
+                    :table-state="tableState"
+                    :columns="tableColumns"
+                    :table-options="tableOptions"
+                    @row-click="viewRecord"
                     @edit="editRecord"
                     @delete="deleteRecord"
-                    @row-click="viewRecord"
                 />
 
             </div>
@@ -52,10 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCRUD6Schema } from '../composables/useCRUD6Schema'
-import UFTableCRUD6 from '../components/UFTableCRUD6.vue'
+import { UFTable } from '@userfrosting/sprinkle-admin'
 import type { CRUD6Interface } from '../interfaces'
 
 const route = useRoute()
@@ -70,8 +71,28 @@ const {
     loading: schemaLoading,
     error: schemaError,
     loadSchema,
-    hasPermission
+    hasPermission,
+    tableColumns,
+    defaultSort
 } = useCRUD6Schema()
+
+// UFTable state
+const tableState = ref({
+    currentPage: 1,
+    pageSize: 10,
+    sorts: defaultSort.value || {},
+    filters: {}
+})
+
+// UFTable options
+const tableOptions = computed(() => ({
+    pagination: true,
+    sorting: true,
+    filtering: true,
+    searching: true,
+    rowActions: hasEditPermission.value,
+    responsive: true
+}))
 
 // Permission checks
 const hasCreatePermission = computed(() => hasPermission('create'))
@@ -94,7 +115,8 @@ function viewRecord(record: CRUD6Interface) {
 }
 
 function deleteRecord(record: CRUD6Interface) {
-    // TODO: Implement delete confirmation modal
+    // TODO: Implement delete confirmation modal using UserFrosting components
+    // Should use CRUD6.DELETE_CONFIRM translation key
     console.log('Delete record:', record)
 }
 

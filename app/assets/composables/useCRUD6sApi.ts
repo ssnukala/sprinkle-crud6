@@ -19,13 +19,13 @@ import { useRoute } from 'vue-router'
  * NOTE: This list respects access controls based on the model's permissions.
 
  */
-export function useCRUD6sApi(model: string) {
+export function useCRUD6sApi(modelName?: string) {
     const loading = ref(false)
     const error = ref<AlertInterface | null>()
     const crud6Rows = ref<CRUD6Interface[]>([])
     
     const route = useRoute()
-    const model = route.params.model as string
+    const model = modelName || (route.params.model as string)
 
     async function updateCRUD6s() {
         loading.value = true

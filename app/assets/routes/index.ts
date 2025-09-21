@@ -6,7 +6,3 @@ const CRUD6Routes = [
 ]
 
 export default CRUD6Routes
-
-export {
-    CRUD6RoutesImport as CRUD6Routes
-}

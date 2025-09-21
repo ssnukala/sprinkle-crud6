@@ -13,7 +13,7 @@
                         @click="createNew"
                     >
                         <i class="fas fa-plus"></i>
-                        {{ $t('CRUD6.CREATE') }}
+                        {{ $t('CREATE') }}
                     </button>
                 </div>
             </div>

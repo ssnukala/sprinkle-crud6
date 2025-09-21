@@ -1,12 +1,14 @@
 {
-    "name": "UserFrosting CRUD6 Development",
-    "dockerFile": "Dockerfile",
-    "context": "..",
-    "workspaceFolder": "/app",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "name": "UserFrosting CRUD6 Development (Full Stack)",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "sprinkle-crud6",
+    "workspaceFolder": "/workspace",
+    "shutdownAction": "stopCompose",
     "containerEnv": {
-        "PACKAGE_DIR": "/app/userfrosting",
-        "COMPOSER_ALLOW_SUPERUSER": "1"
+        "NODE_ENV": "development",
+        "COMPOSER_ALLOW_SUPERUSER": "1",
+        "PACKAGE_DIR": "/workspace/userfrosting",
+        "SPRINKLE_DIR": "/workspace"
     },
     "customizations": {
         "vscode": {
@@ -18,32 +20,43 @@
                 "editor.codeActionsOnSave": {
                     "source.fixAll": true
                 },
+                "typescript.preferences.quoteStyle": "single",
+                "javascript.preferences.quoteStyle": "single",
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
                 "files.associations": {
                     "*.twig": "twig"
                 },
                 "emmet.includeLanguages": {
-                    "twig": "html"
-                }
+                    "twig": "html",
+                    "vue": "html"
+                },
+                "vetur.format.defaultFormatter.html": "prettier",
+                "vetur.format.defaultFormatter.js": "prettier",
+                "vetur.format.defaultFormatter.ts": "prettier"
             },
             "extensions": [
                 "bmewburn.vscode-intelephense-client",
                 "xdebug.php-debug",
                 "junstyle.php-cs-fixer",
                 "phpstan.phpstan-vscode",
-                "bradlc.vscode-tailwindcss",
                 "vue.volar",
                 "vue.vscode-typescript-vue-plugin",
                 "esbenp.prettier-vscode",
                 "ms-vscode.vscode-typescript-next",
                 "formulahendry.auto-rename-tag",
+                "bradlc.vscode-tailwindcss",
                 "whatwedo.twig",
-                "mikestead.dotenv"
+                "mikestead.dotenv",
+                "ms-vscode.vscode-json",
+                "GitHub.copilot",
+                "GitHub.copilot-chat"
             ]
         }
     },
     "forwardPorts": [
         8080,
-        3000,
+        5173,
+        3306,
         9003
     ],
     "portsAttributes": {
@@ -51,9 +64,12 @@
             "label": "UserFrosting App",
             "onAutoForward": "notify"
         },
-        "3000": {
-            "label": "Vite Dev Server",
+        "5173": {
+            "label": "Vite Dev Server (Theme)",
             "onAutoForward": "openBrowser"
+        },
+        "3306": {
+            "label": "MySQL Database"
         },
         "9003": {
             "label": "XDebug"
@@ -62,8 +78,8 @@
     "postCreateCommand": "bash .devcontainer/setup-project.sh",
     "remoteUser": "vscode",
     "mounts": [
-        "source=crud6-node_modules,target=/app/node_modules,type=volume",
-        "source=crud6-vendor,target=/app/vendor,type=volume"
+        "source=sprinkle-crud6-node_modules,target=/workspace/node_modules,type=volume",
+        "source=sprinkle-crud6-vendor,target=/workspace/userfrosting/vendor,type=volume"
     ],
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},

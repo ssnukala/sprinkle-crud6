@@ -8,13 +8,14 @@ set -e  # Exit on any error
 echo "🚀 Setting up UserFrosting CRUD6 development environment..."
 
 # Environment variables
-PACKAGE_DIR=${PACKAGE_DIR:-"/app/userfrosting"}
-SPRINKLE_DIR="/app"
+PACKAGE_DIR=${PACKAGE_DIR:-"/workspace/userfrosting"}
+SPRINKLE_DIR=${SPRINKLE_DIR:-"/workspace"}
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Function to print colored output
@@ -29,6 +30,16 @@ print_info() {
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+print_header() {
+    echo -e "${BLUE}[====]${NC} $1"
+}
+
+print_header "Verifying environment..."
+node --version
+npm --version
+php --version
+composer --version
 
 print_step "Checking if UserFrosting project exists..."
 
@@ -114,6 +125,26 @@ if [ ! -L "app/sprinkles/crud6" ]; then
     mkdir -p app/sprinkles
     ln -sf "$SPRINKLE_DIR" app/sprinkles/crud6
     print_info "Created symbolic link: app/sprinkles/crud6 -> $SPRINKLE_DIR"
+fi
+
+print_step "Setting up database configuration..."
+if [ ! -f "app/.env" ]; then
+    cat > app/.env << EOF
+# Database Configuration for Development
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=userfrosting
+DB_USERNAME=userfrosting
+DB_PASSWORD=userfrosting
+
+# Debug Configuration
+DEBUG=true
+CACHE_ENABLED=false
+
+# UserFrosting Configuration
+UF_MODE=development
+EOF
+    print_info "Created development .env file"
 fi
 
 print_step "Running initial validations..."

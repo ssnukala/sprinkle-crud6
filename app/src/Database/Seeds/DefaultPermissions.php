@@ -120,42 +120,15 @@ class DefaultPermissions implements SeedInterface
     protected function syncPermissionsRole(array $permissions): void
     {
         /** @var Role|null */
-        $roleUser = Role::where('slug', 'user')->first();
-        if ($roleUser !== null) {
-            $roleUser->permissions()->sync([
-                $permissions['update_account_settings']->id,
-                $permissions['uri_account_settings']->id,
-                $permissions['uri_dashboard']->id,
-            ]);
-        }
-
-        /** @var Role|null */
         $roleSiteAdmin = Role::where('slug', 'site-admin')->first();
         if ($roleSiteAdmin !== null) {
             $roleSiteAdmin->permissions()->sync([
                 $permissions['create_crud6']->id,
-                $permissions['create_user']->id,
-                $permissions['create_user_field']->id,
-                $permissions['create_role']->id,
                 $permissions['delete_crud6']->id,
-                $permissions['delete_role']->id,
-                $permissions['delete_user']->id,
                 $permissions['update_crud6_field']->id,
-                $permissions['update_role_field']->id,
-                $permissions['update_user_field']->id,
-                $permissions['update_user_field_role']->id,
-                $permissions['uri_activities']->id,
                 $permissions['uri_crud6']->id,
-                $permissions['uri_crud6s']->id,
-                $permissions['uri_permissions']->id,
-                $permissions['uri_roles']->id,
-                $permissions['uri_role']->id,
-                $permissions['uri_user']->id,
-                $permissions['uri_users']->id,
+                $permissions['uri_crud6_list']->id,
                 $permissions['view_crud6_field']->id,
-                $permissions['view_role_field']->id,
-                $permissions['view_user_field']->id,
-                $permissions['view_user_field_permissions']->id,
             ]);
         }
 
@@ -163,12 +136,12 @@ class DefaultPermissions implements SeedInterface
         $rolecrud6Admin = Role::where('slug', 'crud6-admin')->first();
         if ($rolecrud6Admin !== null) {
             $rolecrud6Admin->permissions()->sync([
-                $permissions['create_user']->id,
-                $permissions['update_user_field_crud6']->id,
-                $permissions['uri_crud6_own']->id,
-                $permissions['uri_user_in_crud6']->id,
-                $permissions['view_crud6_field_own']->id,
-                $permissions['view_user_field_crud6']->id,
+                $permissions['create_crud6']->id,
+                $permissions['delete_crud6']->id,
+                $permissions['update_crud6_field']->id,
+                $permissions['uri_crud6']->id,
+                $permissions['uri_crud6_list']->id,
+                $permissions['view_crud6_field']->id,
             ]);
         }
     }

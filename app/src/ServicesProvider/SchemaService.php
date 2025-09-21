@@ -26,12 +26,18 @@ use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
  */
 class SchemaService
 {
-    protected string $schemaPath = 'schema://crud6/';
+    protected string $schemaPath;
 
     public function __construct(
         protected Container $container
     ) {
-        // Default schema path - can be overridden via configuration
+        // Get schema path from config or use default
+        $configPath = null;
+        if ($container->has('config.schema_path')) {
+            $configPath = $container->get('config.schema_path');
+        }
+        
+        $this->schemaPath = $configPath ?: 'app/schema/crud6';
     }
 
     /**
@@ -57,6 +63,11 @@ class SchemaService
             // Use the directory where this class is located to find the app directory
             $appDir = dirname(dirname(__DIR__));
             $schemaPath = $appDir . '/schema/' . $relativePath;
+        } elseif (!str_starts_with($schemaPath, '/')) {
+            // If it's a relative path, resolve it relative to the project root
+            // SchemaService is in app/src/ServicesProvider, so go up 3 levels to project root
+            $projectRoot = dirname(dirname(dirname(__DIR__)));
+            $schemaPath = $projectRoot . '/' . $schemaPath;
         }
         
         return $schemaPath;

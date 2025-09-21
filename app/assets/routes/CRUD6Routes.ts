@@ -18,7 +18,7 @@ export default [
                 component: () => import('../views/PageCRUD6s.vue')
             },
             {
-                path: 'g/:slug',
+                path: ':id',
                 name: 'admin.crud6',
                 meta: {
                     title: 'CRUD6.PAGE',

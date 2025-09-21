@@ -1,12 +1,12 @@
-import CRUD6Routes from './CRUD6Routes'
+import CRUD6RoutesImport from './CRUD6Routes'
 
 const CRUD6Routes = [
     { path: '', redirect: { name: 'admin.dashboard' } },
-    ...CRUD6Routes,
+    ...CRUD6RoutesImport,
 ]
 
 export default CRUD6Routes
 
 export {
-    CRUD6Routes
+    CRUD6RoutesImport as CRUD6Routes
 }

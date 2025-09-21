@@ -45,5 +45,12 @@
     "pinia-plugin-persistedstate": "^3.2.0",
     "vue": "^3.4.21",
     "vue-router": "^4.2.4"
+  },
+  "dependencies": {
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "happy-dom": "^18.0.1",
+    "vitest": "^3.2.4"
   }
 }

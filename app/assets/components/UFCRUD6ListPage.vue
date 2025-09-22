@@ -18,7 +18,11 @@
             </div>
         </div>
         <div class="card-body">
-            <div v-if="loading" class="text-center">
+            <div v-if="!modelName" class="alert alert-warning">
+                <h4>Model Not Specified</h4>
+                <p>No model name provided in the route. Please navigate to a specific CRUD6 model.</p>
+            </div>
+            <div v-else-if="loading" class="text-center">
                 <i class="fas fa-spinner fa-spin"></i>
                 Loading...
             </div>
@@ -58,6 +62,8 @@ const { schema, loading, error, loadSchema, hasPermission } = useCRUD6Schema()
 onMounted(async () => {
     if (modelName.value) {
         await loadSchema(modelName.value)
+    } else {
+        console.error('CRUD6 model name not provided in route parameters')
     }
 })
 

@@ -47,6 +47,9 @@ class CRUD6Routes implements RouteDefinitionInterface
     {
         // CRUD6 API routes (Action-based, matching sprinkle-admin pattern)
         $app->group('/api/crud6/{model}', function (RouteCollectorProxy $group) {
+            // API meta/schema endpoint (must be before /{id} routes)
+            $group->get('/schema', ApiAction::class)
+                ->setName('api.crud6.schema');
             // Sprunje listing (filter/sort/paginate)
             $group->get('', SprunjeAction::class)
                 ->setName('api.crud6.list');
@@ -62,9 +65,6 @@ class CRUD6Routes implements RouteDefinitionInterface
             // Delete record
             $group->delete('/{id}', DeleteAction::class)
                 ->setName('api.crud6.delete');
-            // API meta/schema endpoint
-            $group->get('/schema', ApiAction::class)
-                ->setName('api.crud6.schema');
         })->add(CRUD6Injector::class)->add(AuthGuard::class)->add(NoCache::class);
     }
 }

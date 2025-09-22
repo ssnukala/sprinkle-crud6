@@ -129,6 +129,7 @@ Each field in the schema can have the following properties:
 
 Once you have a schema file, the following API routes are automatically available:
 
+- `GET /api/crud6/{model}/schema` - Get schema definition for the model
 - `GET /api/crud6/{model}` - List records with pagination, sorting, and filtering
 - `POST /api/crud6/{model}` - Create new record
 - `GET /api/crud6/{model}/{id}` - Read single record
@@ -138,7 +139,8 @@ Once you have a schema file, the following API routes are automatically availabl
 ### Examples
 
 With a `users.json` schema file, you can access:
-- API list: `http://yoursite.com/api/crud6/users`
+- API schema: `GET http://yoursite.com/api/crud6/users/schema`
+- API list: `GET http://yoursite.com/api/crud6/users`
 - API create: `POST http://yoursite.com/api/crud6/users`
 - API read: `GET http://yoursite.com/api/crud6/users/123`
 - API update: `PUT http://yoursite.com/api/crud6/users/123`

@@ -23,6 +23,7 @@ use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
+use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**
  * Routes for CRUD6 operations.
@@ -65,6 +66,6 @@ class CRUD6Routes implements RouteDefinitionInterface
             // API meta/schema endpoint
             $group->get('/schema', ApiAction::class)
                 ->setName('api.crud6.schema');
-        })->add(SchemaInjector::class)->add(AuthGuard::class)->add(NoCache::class);
+        })->add(CRUD6Injector::class)->add(AuthGuard::class)->add(NoCache::class);
     }
 }

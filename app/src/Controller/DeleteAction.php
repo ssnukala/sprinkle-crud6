@@ -9,9 +9,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Database\Connection;
 use UserFrosting\Alert\AlertStream;
-use UserFrosting\Sprinkle\Core\I18n\Translator;
+use UserFrosting\I18n\Translator;
+use Illuminate\Database\Connection;
 
 class DeleteAction extends Base
 {

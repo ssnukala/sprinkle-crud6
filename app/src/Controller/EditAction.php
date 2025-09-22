@@ -7,10 +7,10 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
-use UserFrosting\Sprinkle\Core\Database\Connection;
+use UserFrosting\I18n\Translator;
+use Illuminate\Database\Connection;
 use UserFrosting\Alert\AlertStream;
 
 class EditAction extends Base

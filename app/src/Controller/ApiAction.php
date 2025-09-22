@@ -11,6 +11,7 @@ use UserFrosting\Sprinkle\Core\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 class ApiAction extends Base
 {
@@ -18,15 +19,17 @@ class ApiAction extends Base
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
-        protected Translator $translator
+        protected Translator $translator,
+        protected SchemaService $schemaService
     ) {
-        parent::__construct($authorizer, $authenticator, $logger);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $schema = $crudModel->getSchema();
-        $this->validateAccess($crudModel, 'read');
+        $modelName = $this->getModelNameFromRequest($request);
+        $schema = $this->schemaService->getSchema($modelName);
+        $this->validateAccess($modelName, 'read');
         
         $this->logger->debug("CRUD6: API request for model: {$schema['model']}");
         

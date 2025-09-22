@@ -21,6 +21,7 @@ use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
  * Base controller for CRUD6 operations
@@ -34,18 +35,19 @@ abstract class Base
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
-        protected DebugLoggerInterface $logger
+        protected DebugLoggerInterface $logger,
+        protected SchemaService $schemaService
     ) {}
 
     /**
      * Validate user access permissions for CRUD operations.
      *
-     * @param CRUD6ModelInterface $crudModel The configured model instance
+     * @param string $modelName The model name
      * @param string $action The action to validate (read, create, edit, delete)
      */
-    protected function validateAccess(CRUD6ModelInterface $crudModel, string $action = 'read'): void
+    protected function validateAccess(string $modelName, string $action = 'read'): void
     {
-        $schema = $crudModel->getSchema();
+        $schema = $this->schemaService->getSchema($modelName);
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
         
         if (!$this->authenticator->checkAccess($permission)) {
@@ -53,30 +55,24 @@ abstract class Base
         }
     }
 
-    /**
-     * Get the table name from the model.
-     */
-    protected function getTableName(CRUD6ModelInterface $crudModel): string
-    {
-        return $crudModel->getTable();
-    }
+
 
     /**
-     * Get the schema fields from the model.
+     * Get the schema fields from the model name.
      */
-    protected function getFields(CRUD6ModelInterface $crudModel): array
+    protected function getFields(string $modelName): array
     {
-        $schema = $crudModel->getSchema();
+        $schema = $this->schemaService->getSchema($modelName);
         return $schema['fields'] ?? [];
     }
 
     /**
      * Get sortable fields from the model schema.
      */
-    protected function getSortableFields(CRUD6ModelInterface $crudModel): array
+    protected function getSortableFields(string $modelName): array
     {
         $sortable = [];
-        $fields = $this->getFields($crudModel);
+        $fields = $this->getFields($modelName);
         
         foreach ($fields as $name => $field) {
             if ($field['sortable'] ?? false) {
@@ -89,10 +85,10 @@ abstract class Base
     /**
      * Get filterable fields from the model schema.
      */
-    protected function getFilterableFields(CRUD6ModelInterface $crudModel): array
+    protected function getFilterableFields(string $modelName): array
     {
         $filterable = [];
-        $fields = $this->getFields($crudModel);
+        $fields = $this->getFields($modelName);
         
         foreach ($fields as $name => $field) {
             if ($field['filterable'] ?? false) {
@@ -102,8 +98,9 @@ abstract class Base
         return $filterable;
     }
 
-    protected function getValidationRules(array $schema): array
+    protected function getValidationRules(string $modelName): array
     {
+        $schema = $this->schemaService->getSchema($modelName);
         $rules = [];
         foreach ($schema['fields'] as $name => $field) {
             if (isset($field['validation'])) {
@@ -111,5 +108,15 @@ abstract class Base
             }
         }
         return $rules;
+    }
+
+    /**
+     * Get model name from the request route
+     */
+    protected function getModelNameFromRequest(ServerRequestInterface $request): string
+    {
+        $routeContext = RouteContext::fromRequest($request);
+        $route = $routeContext->getRoute();
+        return $route?->getArgument('model') ?? '';
     }
 }

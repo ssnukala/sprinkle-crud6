@@ -16,6 +16,7 @@ use UserFrosting\Alert\AlertStream;
 use UserFrosting\I18n\Translator;
 use Illuminate\Database\Connection;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 class CreateAction extends Base
 {
@@ -25,23 +26,25 @@ class CreateAction extends Base
         protected DebugLoggerInterface $logger,
         protected Connection $db,
         protected AlertStream $alert,
-        protected Translator $translator
+        protected Translator $translator,
+        protected SchemaService $schemaService
     ) {
-        parent::__construct($authorizer, $authenticator, $logger);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $schema = $crudModel->getSchema();
-        $this->validateAccess($crudModel, 'create');
+        $modelName = $this->getModelNameFromRequest($request);
+        $schema = $this->schemaService->getSchema($modelName);
+        $this->validateAccess($modelName, 'create');
         
         $this->logger->debug("CRUD6: Creating new record for model: {$schema['model']}");
         
         $data = $request->getParsedBody();
-        $this->validateInputData($schema, $data);
+        $this->validateInputData($modelName, $data);
         
         try {
-            $table = $this->getTableName($crudModel);
+            $table = $crudModel->getTable();
             $insertData = $this->prepareInsertData($schema, $data);
             $insertId = $this->db->table($table)->insertGetId($insertData);
             
@@ -76,9 +79,9 @@ class CreateAction extends Base
         }
     }
 
-    protected function validateInputData(array $schema, array $data): void
+    protected function validateInputData(string $modelName, array $data): void
     {
-        $rules = $this->getValidationRules($schema);
+        $rules = $this->getValidationRules($modelName);
         if (!empty($rules)) {
             $requestSchema = new RequestSchema($rules);
             $transformer = new RequestDataTransformer($requestSchema);
@@ -94,7 +97,7 @@ class CreateAction extends Base
     protected function prepareInsertData(array $schema, array $data): array
     {
         $insertData = [];
-        $fields = $this->getFields($schema);
+        $fields = $schema['fields'] ?? [];
         foreach ($fields as $fieldName => $fieldConfig) {
             if ($fieldConfig['auto_increment'] ?? false || $fieldConfig['computed'] ?? false) {
                 continue;

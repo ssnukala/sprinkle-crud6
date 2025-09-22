@@ -83,7 +83,7 @@ function example2_schemaBasedConfiguration()
     echo "Model configured for table: " . $userModel->getTable() . "\n";
     echo "Timestamps enabled: " . ($userModel->timestamps ? 'Yes' : 'No') . "\n";
     echo "Fillable fields: " . implode(', ', $userModel->getFillable()) . "\n";
-    echo "Schema stored: " . (empty($userModel->getSchema()) ? 'No' : 'Yes') . "\n";
+    echo "Model configured: " . ($userModel->getTable() !== 'CRUD6_NOT_SET' ? 'Yes' : 'No') . "\n";
     echo "\n";
 }
 

@@ -15,6 +15,7 @@ use UserFrosting\Fortress\ServerSideValidator;
 use UserFrosting\Alert\AlertStream;
 use UserFrosting\I18n\Translator;
 use Illuminate\Database\Connection;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 class CreateAction extends Base
 {
@@ -29,39 +30,47 @@ class CreateAction extends Base
         parent::__construct($authorizer, $authenticator, $logger);
     }
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $model = $this->getModel($request);
-        $schema = $this->getSchema($request);
-        $this->validateAccess($schema, 'create');
-        $this->logger->debug("CRUD6: Creating new record for model: {$model}");
+        $schema = $crudModel->getSchema();
+        $this->validateAccess($crudModel, 'create');
+        
+        $this->logger->debug("CRUD6: Creating new record for model: {$schema['model']}");
+        
         $data = $request->getParsedBody();
         $this->validateInputData($schema, $data);
+        
         try {
-            $table = $this->getTableName($schema);
+            $table = $this->getTableName($crudModel);
             $insertData = $this->prepareInsertData($schema, $data);
             $insertId = $this->db->table($table)->insertGetId($insertData);
-            $this->logger->debug("CRUD6: Created record with ID: {$insertId} for model: {$model}");
+            
+            $this->logger->debug("CRUD6: Created record with ID: {$insertId} for model: {$schema['model']}");
+            
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $schema['title'] ?? $model]),
-                'model' => $model,
+                'message' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $schema['title'] ?? $schema['model']]),
+                'model' => $schema['model'],
                 'id' => $insertId,
                 'data' => $insertData
             ];
+            
             $this->alert->addMessageTranslated('success', 'CRUD6.CREATE.SUCCESS', [
-                'model' => $schema['title'] ?? $model
+                'model' => $schema['title'] ?? $schema['model']
             ]);
+            
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6: Failed to create record for model: {$model}", [
+            $this->logger->error("CRUD6: Failed to create record for model: {$schema['model']}", [
                 'error' => $e->getMessage(),
                 'data' => $data
             ]);
+            
             $errorData = [
-                'error' => $this->translator->translate('CRUD6.CREATE.ERROR', ['model' => $model]),
+                'error' => $this->translator->translate('CRUD6.CREATE.ERROR', ['model' => $schema['model']]),
                 'message' => $e->getMessage()
             ];
+            
             $response->getBody()->write(json_encode($errorData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }

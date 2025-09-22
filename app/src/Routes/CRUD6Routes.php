@@ -22,7 +22,6 @@ use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
-use UserFrosting\Sprinkle\CRUD6\Middlewares\SchemaInjector;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**

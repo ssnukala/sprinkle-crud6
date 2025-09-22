@@ -23,7 +23,8 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "name": {
       "type": "string",
@@ -32,6 +33,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "length": {
@@ -47,6 +49,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "filter_type": "starts_with",
       "validation": {
         "required": true,
@@ -60,6 +63,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": false,
+      "listable": true,
       "filter_type": "between",
       "validation": {
         "required": true,
@@ -73,7 +77,8 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": true
+      "searchable": true,
+      "listable": false
     },
     "category_id": {
       "type": "integer",
@@ -82,6 +87,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": false,
+      "listable": true,
       "filter_type": "equals"
     },
     "tags": {
@@ -91,6 +97,7 @@
       "sortable": false,
       "filterable": true,
       "searchable": true,
+      "listable": false,
       "filter_type": "like"
     },
     "is_active": {
@@ -99,7 +106,8 @@
       "default": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "launch_date": {
       "type": "date",
@@ -108,6 +116,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": false,
+      "listable": true,
       "filter_type": "greater_than",
       "date_format": "Y-m-d"
     },
@@ -117,7 +126,8 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": false
+      "searchable": false,
+      "listable": false
     },
     "created_at": {
       "type": "datetime",
@@ -126,6 +136,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
@@ -135,6 +146,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": false,
       "date_format": "Y-m-d H:i:s"
     }
   }

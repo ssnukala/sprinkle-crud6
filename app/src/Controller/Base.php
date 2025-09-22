@@ -98,6 +98,22 @@ abstract class Base
         return $filterable;
     }
 
+    /**
+     * Get listable fields from the model schema.
+     */
+    protected function getListableFields(string $modelName): array
+    {
+        $listable = [];
+        $fields = $this->getFields($modelName);
+        
+        foreach ($fields as $name => $field) {
+            if ($field['listable'] ?? false) {
+                $listable[] = $name;
+            }
+        }
+        return $listable;
+    }
+
     protected function getValidationRules(string $modelName): array
     {
         $schema = $this->schemaService->getSchema($modelName);

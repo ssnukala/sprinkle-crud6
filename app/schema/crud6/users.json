@@ -23,7 +23,8 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "user_name": {
       "type": "string",
@@ -32,6 +33,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "length": {
@@ -47,6 +49,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "length": {
@@ -61,6 +64,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "length": {
@@ -75,6 +79,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "email": true
@@ -86,7 +91,8 @@
       "default": "en_US",
       "sortable": true,
       "filterable": true,
-      "searchable": false
+      "searchable": false,
+      "listable": false
     },
     "group_id": {
       "type": "integer",
@@ -95,6 +101,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": false,
+      "listable": true,
       "filter_type": "equals"
     },
     "flag_verified": {
@@ -103,7 +110,8 @@
       "default": false,
       "sortable": true,
       "filterable": true,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "flag_enabled": {
       "type": "boolean",
@@ -111,7 +119,8 @@
       "default": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "created_at": {
       "type": "datetime",
@@ -120,6 +129,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
@@ -129,6 +139,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": false,
       "date_format": "Y-m-d H:i:s"
     }
   }

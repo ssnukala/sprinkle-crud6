@@ -94,8 +94,9 @@ class CRUD6ModelTest extends TestCase
         $this->assertNotContains('created_at', $fillable); // readonly
         $this->assertNotContains('updated_at', $fillable); // readonly
 
-        // Check schema is stored
-        $this->assertEquals($schema, $model->getSchema());
+        // Check that model is properly configured (table name and timestamps)
+        $this->assertEquals('users', $model->getTable());
+        $this->assertTrue($model->timestamps);
     }
 
     /**

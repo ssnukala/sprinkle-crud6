@@ -13,6 +13,7 @@ use UserFrosting\Alert\AlertStream;
 use UserFrosting\I18n\Translator;
 use Illuminate\Database\Connection;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 class DeleteAction extends Base
 {
@@ -22,15 +23,17 @@ class DeleteAction extends Base
         protected DebugLoggerInterface $logger,
         protected Connection $db,
         protected AlertStream $alert,
-        protected Translator $translator
+        protected Translator $translator,
+        protected SchemaService $schemaService
     ) {
-        parent::__construct($authorizer, $authenticator, $logger);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $schema = $crudModel->getSchema();
-        $this->validateAccess($crudModel, 'delete');
+        $modelName = $this->getModelNameFromRequest($request);
+        $schema = $this->schemaService->getSchema($modelName);
+        $this->validateAccess($modelName, 'delete');
         
         // For DeleteAction, the crudModel should contain the specific record since ID is in the route
         $primaryKey = $schema['primary_key'] ?? 'id';

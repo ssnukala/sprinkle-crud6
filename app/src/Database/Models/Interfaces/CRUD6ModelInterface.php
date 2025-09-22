@@ -51,12 +51,7 @@ interface CRUD6ModelInterface
      */
     public function getFillable(): array;
 
-    /**
-     * Get the schema configuration
-     *
-     * @return array
-     */
-    public function getSchema(): array;
+
 
     /**
      * Soft delete this model instance

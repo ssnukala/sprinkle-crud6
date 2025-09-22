@@ -66,11 +66,6 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     protected $deleted_at = null;
 
     /**
-     * @var array Schema configuration for this model instance
-     */
-    protected array $schema = [];
-
-    /**
      * Configure the model with schema information
      *
      * @param array $schema The JSON schema configuration
@@ -78,8 +73,6 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function configureFromSchema(array $schema): static
     {
-        $this->schema = $schema;
-
         // Set table name
         if (isset($schema['table'])) {
             $this->table = $schema['table'];
@@ -145,15 +138,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         return $this;
     }
 
-    /**
-     * Get the schema configuration
-     *
-     * @return array
-     */
-    public function getSchema(): array
-    {
-        return $this->schema;
-    }
+
 
     /**
      * Configure fillable attributes and casts based on schema
@@ -215,8 +200,8 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeWithoutSoftDeleted(Builder $query): Builder
     {
-        if ($this->schema['soft_delete'] ?? false) {
-            return $query->whereNull('deleted_at');
+        if ($this->deleted_at) {
+            return $query->whereNull($this->getDeletedAtColumn());
         }
 
         return $query;
@@ -230,8 +215,8 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeOnlySoftDeleted(Builder $query): Builder
     {
-        if ($this->schema['soft_delete'] ?? false) {
-            return $query->whereNotNull('deleted_at');
+        if ($this->deleted_at) {
+            return $query->whereNotNull($this->getDeletedAtColumn());
         }
 
         return $query;
@@ -256,7 +241,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function softDelete(): bool
     {
-        if ($this->schema['soft_delete'] ?? false) {
+        if ($this->deleted_at) {
             $this->{$this->getDeletedAtColumn()} = now();
             return $this->save();
         }
@@ -271,7 +256,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function restore(): bool
     {
-        if ($this->schema['soft_delete'] ?? false) {
+        if ($this->deleted_at) {
             $this->{$this->getDeletedAtColumn()} = null;
             return $this->save();
         }
@@ -286,7 +271,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function isSoftDeleted(): bool
     {
-        if (!($this->schema['soft_delete'] ?? false)) {
+        if (!$this->deleted_at) {
             return false;
         }
 
@@ -316,7 +301,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $query = parent::newQuery();
 
         // Automatically apply soft delete filter if enabled (but only if deleted_at column exists)
-        if (($this->schema['soft_delete'] ?? false) && $this->deleted_at) {
+        if ($this->deleted_at) {
             $query->whereNull($this->getDeletedAtColumn());
         }
 

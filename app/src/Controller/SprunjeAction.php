@@ -12,6 +12,7 @@ use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 class SprunjeAction extends Base
 {
@@ -20,24 +21,26 @@ class SprunjeAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected Translator $translator,
-        protected CRUD6Sprunje $sprunje
+        protected CRUD6Sprunje $sprunje,
+        protected SchemaService $schemaService
     ) {
-        parent::__construct($authorizer, $authenticator, $logger);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $schema = $crudModel->getSchema();
-        $this->validateAccess($crudModel, 'read');
+        $modelName = $this->getModelNameFromRequest($request);
+        $schema = $this->schemaService->getSchema($modelName);
+        $this->validateAccess($modelName, 'read');
         
         $this->logger->debug("CRUD6: Sprunje action for model: {$schema['model']}");
         
         $params = $request->getQueryParams();
         
         $this->sprunje->setupSprunje(
-            $this->getTableName($crudModel),
-            $this->getSortableFields($crudModel),
-            $this->getFilterableFields($crudModel),
+            $crudModel->getTable(),
+            $this->getSortableFields($modelName),
+            $this->getFilterableFields($modelName),
             $schema
         );
         

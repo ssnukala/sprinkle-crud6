@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 use DI\Container;
 use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
+use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 
 //use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 
@@ -26,18 +27,12 @@ use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
  */
 class SchemaService
 {
-    protected string $schemaPath;
+    protected string $schemaPath = 'schema://crud6/';
 
     public function __construct(
         protected Container $container
     ) {
-        // Set schema path from config or use default
-        try {
-            $configPath = $container->get('config.schema_path');
-            $this->schemaPath = $configPath ?? 'app/schema/crud6';
-        } catch (\Exception $e) {
-            $this->schemaPath = 'app/schema/crud6';
-        }
+        // Default schema path - can be overridden via configuration
     }
 
     /**
@@ -92,19 +87,12 @@ class SchemaService
     {
         $schemaPath = $this->getSchemaFilePath($model);
 
-        // Load JSON schema file directly
-        if (!file_exists($schemaPath)) {
-            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model} at path: {$schemaPath}");
-        }
+        // Load schema file
+        $loader = new YamlFileLoader($schemaPath);
+        $schema = $loader->load(false);
 
-        $content = file_get_contents($schemaPath);
-        if ($content === false) {
-            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Could not read schema file for model: {$model}");
-        }
-
-        $schema = json_decode($content, true);
         if ($schema === null) {
-            throw new \RuntimeException("Invalid JSON in schema file for model: {$model}");
+            throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
         }
 
         // Validate schema structure

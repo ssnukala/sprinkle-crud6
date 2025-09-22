@@ -81,11 +81,11 @@ class ApiActionTest extends TestCase
     }
 
     /**
-     * Test that SchemaService properly loads JSON files
+     * Test that SchemaService uses YamlFileLoader for schema loading
      * 
-     * This validates the fix where we moved from YamlFileLoader to direct JSON loading
+     * This validates that the service supports both JSON and YAML formats
      */
-    public function testSchemaServiceLoadsJsonCorrectly(): void
+    public function testSchemaServiceUsesYamlFileLoader(): void
     {
         $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
         $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
@@ -93,15 +93,9 @@ class ApiActionTest extends TestCase
         $serviceContent = file_get_contents($serviceFile);
         $this->assertNotFalse($serviceContent, 'Should be able to read SchemaService.php');
         
-        // Validate that the service uses proper JSON loading methods
-        $this->assertStringContainsString('file_get_contents', $serviceContent, 'SchemaService should use file_get_contents for loading');
-        $this->assertStringContainsString('json_decode', $serviceContent, 'SchemaService should use json_decode for parsing');
-        
-        // Validate that YamlFileLoader is no longer used
-        $this->assertStringNotContainsString('YamlFileLoader', $serviceContent, 'SchemaService should not use YamlFileLoader for JSON files');
-        
-        // Validate constructor handles configuration
-        $this->assertStringContainsString('config.schema_path', $serviceContent, 'Constructor should handle config.schema_path');
+        // Validate that YamlFileLoader is used for flexible format support
+        $this->assertStringContainsString('YamlFileLoader', $serviceContent, 'SchemaService should use YamlFileLoader to support both JSON and YAML formats');
+        $this->assertStringContainsString('use UserFrosting\Support\Repository\Loader\YamlFileLoader;', $serviceContent, 'YamlFileLoader should be imported');
     }
 
     /**

@@ -41,5 +41,6 @@ return [
         'UPDATE'              => 'Details updated for CRUD6 <strong>{{name}}</strong>',
         'USERS'               => 'Users in this CRUD6',
     ],
+    'CRUD6_PANEL'               => 'CRUD6 Management',
 
 ];

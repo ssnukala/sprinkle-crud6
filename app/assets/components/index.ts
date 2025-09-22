@@ -1,9 +1,5 @@
-import UFTableCRUD6 from './UFTableCRUD6.vue'
-import UFCRUD6ListPage from './UFCRUD6ListPage.vue'
-import UFCRUD6RowPage from './UFCRUD6RowPage.vue'
+// Import components from theme-crud6
+export { UFCRUD6ListPage, UFCRUD6RowPage } from '@ssnukala/theme-crud6'
 
-export {
-    UFTableCRUD6,
-    UFCRUD6ListPage,
-    UFCRUD6RowPage
-}
+// Export local components
+export { default as UFTableCRUD6 } from './UFTableCRUD6.vue'

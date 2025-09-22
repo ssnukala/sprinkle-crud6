@@ -20,12 +20,14 @@ use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 /**
  * Base controller for CRUD6 operations
  * 
- * Provides common functionality for all CRUD6 controllers including
- * schema access, authentication, and authorization.
+ * Provides common functionality for all CRUD6 controllers.
+ * Controllers receive a configured CRUD6ModelInterface instance that contains
+ * the schema configuration and database access.
  */
 abstract class Base
 {
@@ -35,61 +37,48 @@ abstract class Base
         protected DebugLoggerInterface $logger
     ) {}
 
-    protected function getModel(ServerRequestInterface $request): string
+    /**
+     * Validate user access permissions for CRUD operations.
+     *
+     * @param CRUD6ModelInterface $crudModel The configured model instance
+     * @param string $action The action to validate (read, create, edit, delete)
+     */
+    protected function validateAccess(CRUD6ModelInterface $crudModel, string $action = 'read'): void
     {
-        $model = $request->getAttribute('crud6_model');
-        if ($model === null) {
-            throw new NotFoundException('Model not found in request attributes');
-        }
-        //echo "Line 32: CRUD6: Base controller for model: {$model}\n";
-        return $model;
-    }
-
-    protected function getSchema(ServerRequestInterface $request): array
-    {
-        $schema = $request->getAttribute('crud6_schema');
-        if ($schema === null) {
-            throw new NotFoundException('Schema not found in request attributes');
-        }
-        return $schema;
-    }
-
-    protected function getRecordId(ServerRequestInterface $request): int
-    {
-        $routeContext = RouteContext::fromRequest($request);
-        $route = $routeContext->getRoute();
-        if ($route === null) {
-            throw new NotFoundException('Route not found');
-        }
-        $id = $route->getArgument('id');
-        if ($id === null) {
-            throw new NotFoundException('Record ID not found in route');
-        }
-        return (int) $id;
-    }
-
-    protected function validateAccess(array $schema, string $action = 'read'): void
-    {
+        $schema = $crudModel->getSchema();
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
+        
         if (!$this->authenticator->checkAccess($permission)) {
             throw new ForbiddenException("Access denied for {$action} on {$schema['model']}");
         }
     }
 
-    protected function getTableName(array $schema): string
+    /**
+     * Get the table name from the model.
+     */
+    protected function getTableName(CRUD6ModelInterface $crudModel): string
     {
-        return $schema['table'];
+        return $crudModel->getTable();
     }
 
-    protected function getFields(array $schema): array
+    /**
+     * Get the schema fields from the model.
+     */
+    protected function getFields(CRUD6ModelInterface $crudModel): array
     {
-        return $schema['fields'];
+        $schema = $crudModel->getSchema();
+        return $schema['fields'] ?? [];
     }
 
-    protected function getSortableFields(array $schema): array
+    /**
+     * Get sortable fields from the model schema.
+     */
+    protected function getSortableFields(CRUD6ModelInterface $crudModel): array
     {
         $sortable = [];
-        foreach ($schema['fields'] as $name => $field) {
+        $fields = $this->getFields($crudModel);
+        
+        foreach ($fields as $name => $field) {
             if ($field['sortable'] ?? false) {
                 $sortable[] = $name;
             }
@@ -97,10 +86,15 @@ abstract class Base
         return $sortable;
     }
 
-    protected function getFilterableFields(array $schema): array
+    /**
+     * Get filterable fields from the model schema.
+     */
+    protected function getFilterableFields(CRUD6ModelInterface $crudModel): array
     {
         $filterable = [];
-        foreach ($schema['fields'] as $name => $field) {
+        $fields = $this->getFields($crudModel);
+        
+        foreach ($fields as $name => $field) {
             if ($field['filterable'] ?? false) {
                 $filterable[] = $name;
             }

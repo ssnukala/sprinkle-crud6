@@ -12,6 +12,7 @@ use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Alert\AlertStream;
 use UserFrosting\I18n\Translator;
 use Illuminate\Database\Connection;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 class DeleteAction extends Base
 {
@@ -26,71 +27,61 @@ class DeleteAction extends Base
         parent::__construct($authorizer, $authenticator, $logger);
     }
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $model = $this->getModel($request);
-        $schema = $this->getSchema($request);
-        $recordId = $this->getRecordId($request);
-        $this->validateAccess($schema, 'delete');
-        $this->logger->debug("CRUD6: Deleting record ID: {$recordId} for model: {$model}");
+        $schema = $crudModel->getSchema();
+        $this->validateAccess($crudModel, 'delete');
+        
+        // For DeleteAction, the crudModel should contain the specific record since ID is in the route
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $recordId = $crudModel->getAttribute($primaryKey);
+        
+        $this->logger->debug("CRUD6: Deleting record ID: {$recordId} for model: {$schema['model']}");
+        
         try {
-            $table = $this->getTableName($schema);
-            $primaryKey = $schema['primary_key'] ?? 'id';
-            $existingRecord = $this->db->table($table)
-                ->where($primaryKey, $recordId)
-                ->first();
-            if (!$existingRecord) {
-                $errorData = [
-                    'error' => $this->translator->translate('CRUD6.DELETE.NOT_FOUND', ['model' => $model]),
-                    'model' => $model,
-                    'id' => $recordId
-                ];
-                $response->getBody()->write(json_encode($errorData));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-            }
+            // Use the model instance for deletion instead of raw query builder
             if ($schema['soft_delete'] ?? false) {
-                $deleteData = [
-                    'deleted_at' => date('Y-m-d H:i:s')
-                ];
-                $affectedRows = $this->db->table($table)
-                    ->where($primaryKey, $recordId)
-                    ->update($deleteData);
-                $this->logger->debug("CRUD6: Soft deleted record ID: {$recordId} for model: {$model}");
+                $success = $crudModel->softDelete();
+                $this->logger->debug("CRUD6: Soft deleted record ID: {$recordId} for model: {$schema['model']}");
             } else {
-                $affectedRows = $this->db->table($table)
-                    ->where($primaryKey, $recordId)
-                    ->delete();
-                $this->logger->debug("CRUD6: Hard deleted record ID: {$recordId} for model: {$model}");
+                $success = $crudModel->delete();
+                $this->logger->debug("CRUD6: Hard deleted record ID: {$recordId} for model: {$schema['model']}");
             }
-            if ($affectedRows === 0) {
+            
+            if (!$success) {
                 $errorData = [
-                    'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $model]),
-                    'model' => $model,
+                    'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $schema['model']]),
+                    'model' => $schema['model'],
                     'id' => $recordId
                 ];
                 $response->getBody()->write(json_encode($errorData));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
             }
+            
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $model]),
-                'model' => $model,
+                'message' => $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $schema['model']]),
+                'model' => $schema['model'],
                 'id' => $recordId,
                 'soft_delete' => $schema['soft_delete'] ?? false
             ];
+            
             $this->alert->addMessageTranslated('success', 'CRUD6.DELETE.SUCCESS', [
-                'model' => $schema['title'] ?? $model
+                'model' => $schema['title'] ?? $schema['model']
             ]);
+            
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6: Failed to delete record for model: {$model}", [
+            $this->logger->error("CRUD6: Failed to delete record for model: {$schema['model']}", [
                 'error' => $e->getMessage(),
                 'id' => $recordId
             ]);
+            
             $errorData = [
-                'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $model]),
+                'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $schema['model']]),
                 'message' => $e->getMessage()
             ];
+            
             $response->getBody()->write(json_encode($errorData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }

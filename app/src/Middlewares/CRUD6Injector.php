@@ -3,13 +3,12 @@
 declare(strict_types=1);
 
 /*
- * UserFrosting Admin Sprinkle (http://www.userfrosting.com)
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/userfrosting/sprinkle-admin
- * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette
- * @license   https://github.com/userfrosting/sprinkle-admin/blob/master/LICENSE.md (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2024 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
-
 
 namespace UserFrosting\Sprinkle\CRUD6\Middlewares;
 
@@ -17,28 +16,24 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Routing\RouteContext;
-
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\Exceptions\CRUD6Exception;
 use UserFrosting\Sprinkle\CRUD6\Exceptions\CRUD6NotFoundException;
 use UserFrosting\Sprinkle\Core\Middlewares\Injector\AbstractInjector;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-//use UserFrosting\I18n\Translator;
-//use Psr\Http\Message\ServerRequestInterface as Request;
-//use Psr\Http\Server\RequestHandlerInterface as Handler;
-//use Slim\Psr7\JsonResponse;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
-
 /**
- * Route middleware to inject group when its slug is passed via placeholder in the URL or request query.
+ * Route middleware to inject configured CRUD6 model when the model name is passed via placeholder in the URL.
+ * 
+ * For routes that include an ID, it will inject the specific record.
+ * For routes without an ID, it will inject a configured model instance ready for operations.
  */
 class CRUD6Injector extends AbstractInjector
 {
     protected string $placeholder = 'id';
     protected string $crud_slug = 'model';
     protected string $attribute = 'crudModel';
-    protected string $schema_attribute = 'crudSchema';
 
     public function __construct(
         protected CRUD6ModelInterface $crudModel,
@@ -47,84 +42,82 @@ class CRUD6Injector extends AbstractInjector
     ) {}
 
     /**
-     * Returns the CRUD6 instance.
+     * Returns the configured CRUD6 model instance for the specific record, or a configured empty model.
      *
-     * @param string|null $slug
+     * @param string|null $id The record ID, null for model-only injection
      *
      * @return CRUD6ModelInterface
      */
-
-    protected function getInstance(?string $slug): CRUD6ModelInterface
+    protected function getInstance(?string $id): CRUD6ModelInterface
     {
-        /*
-        if (!$slug || !is_numeric($slug)) {
-            throw new CRUD6Exception("Invalid or missing ID: '{$slug}'.");
-        }*/
-
-        $record = $this->crudModel->where($this->placeholder, $slug)->first();
-        if (!$record) {
-            throw new CRUD6NotFoundException("No record found with ID '{$slug}' in table '{$this->crudModel->getTable()}'.");
+        // Get the model name from the route
+        $modelName = $this->currentModelName;
+        
+        // Load schema and configure model
+        $schema = $this->schemaService->getSchema($modelName);
+        $modelInstance = clone $this->crudModel;
+        $modelInstance->configureFromSchema($schema);
+        
+        $this->debugLogger->debug("CRUD6Injector: Configured model for '{$modelName}' with table '{$modelInstance->getTable()}'.");
+        
+        // If no ID provided, return the configured empty model
+        if ($id === null) {
+            return $modelInstance;
         }
-        //$this->debugLogger->debug("Line 44 - CRUD5Injector: Getting id : $slug " . $this->placeholder . " Placeholer", $record->toArray());
-
+        
+        // Find the specific record
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $record = $modelInstance->where($primaryKey, $id)->first();
+        
+        if (!$record) {
+            throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$modelInstance->getTable()}'.");
+        }
+        
+        $this->debugLogger->debug("CRUD6Injector: Found record with ID '{$id}' in table '{$modelInstance->getTable()}'.");
+        
         return $record;
     }
 
+    /**
+     * Store the current model name for use in getInstance.
+     */
+    private ?string $currentModelName = null;
 
+    /**
+     * Override the process method to handle both ID-based and model-only injection.
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $crud_slug = $this->getParameter($request, $this->crud_slug);
-        $id = $this->getParameter($request, $this->placeholder);
-
-        if (!$this->validateSlug($crud_slug)) {
-            throw new CRUD6Exception("Invalid CRUD slug: '{$crud_slug}'.");
-        }
-
-        // Clone the model to prevent modifying a shared instance
-        $this->crudModel->setTable($crud_slug);
-        //$modelInstance = clone $this->crudModel;
-        //$modelInstance->setTable($crud_slug);
-
-        $schema = $this->schemaService->getSchema($crud_slug);
-        $request = $request->withAttribute($this->schema_attribute, $schema);
-
-        $this->debugLogger->debug("CRUD6Injector: Table set to '{$crud_slug}'.");
-
-        // ⚡ Return early if model injection is all that's needed
-        if ($this->shouldInjectOnly($request)) {
-            $this->debugLogger->debug('Model injected successfully');
-            $modelInstance = clone $this->crudModel;
-            $modelInstance->setTable($crud_slug);
-            $request = $request->withAttribute($this->attribute, $modelInstance);
-            return $handler->handle($request);
-        } else {
-            try {
-                $instance = $this->getInstance($id);
-                $request = $request->withAttribute($this->attribute, $instance);
-            } catch (CRUD6NotFoundException $e) {
-                $this->debugLogger->error("CRUD6Injector: Record not found with ID '{$id}' in table '{$crud_slug}'.");
-            }
-
-            return $handler->handle($request);
-        }
-    }
-
-    protected function getParameter(ServerRequestInterface $request, string $key): ?string
     {
         $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
-        return $route?->getArgument($key) ?? $request->getQueryParams()[$key] ?? null;
+        
+        $this->currentModelName = $route?->getArgument($this->crud_slug);
+        
+        if ($this->currentModelName === null) {
+            throw new CRUD6Exception("Model parameter not found in route.");
+        }
+        
+        if (!$this->validateModelName($this->currentModelName)) {
+            throw new CRUD6Exception("Invalid model name: '{$this->currentModelName}'.");
+        }
+        
+        // Get ID from route (can be null for non-ID routes)
+        $id = $this->getIdFromRoute($request);
+        
+        // Get configured model instance (with or without specific record)
+        $instance = $this->getInstance($id);
+        
+        // Inject the model instance
+        $request = $request->withAttribute($this->attribute, $instance);
+        
+        return $handler->handle($request);
     }
 
-    protected function validateSlug(string $slug): bool
+    /**
+     * Validate model name format.
+     */
+    protected function validateModelName(string $modelName): bool
     {
-        return preg_match('/^[a-zA-Z0-9_]+$/', $slug) === 1;
-    }
-
-    protected function shouldInjectOnly(ServerRequestInterface $request): bool
-    {
-        $injectonly  = $this->getParameter($request, 'inject_only');
-        $this->debugLogger->debug("Line 121 : CRUD6Injector: Inject only: " . $injectonly);
-        return $injectonly ? true : false;
+        return preg_match('/^[a-zA-Z0-9_]+$/', $modelName) === 1;
     }
 }

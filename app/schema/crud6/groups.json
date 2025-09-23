@@ -73,34 +73,5 @@
       "searchable": false,
       "listable": false
     },
-    "is_default": {
-      "type": "boolean",
-      "label": "Default Group",
-      "default": false,
-      "sortable": true,
-      "filterable": true,
-      "searchable": false,
-      "listable": true
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "readonly": true,
-      "sortable": true,
-      "filterable": false,
-      "searchable": false,
-      "listable": true,
-      "date_format": "Y-m-d H:i:s"
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "readonly": true,
-      "sortable": true,
-      "filterable": false,
-      "searchable": false,
-      "listable": false,
-      "date_format": "Y-m-d H:i:s"
-    }
   }
 }

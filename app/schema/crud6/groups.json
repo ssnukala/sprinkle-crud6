@@ -23,7 +23,8 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "name": {
       "type": "string",
@@ -32,6 +33,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "length": {
@@ -47,6 +49,7 @@
       "sortable": true,
       "filterable": true,
       "searchable": true,
+      "listable": true,
       "validation": {
         "required": true,
         "slug": true
@@ -58,7 +61,8 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": true
+      "searchable": true,
+      "listable": true
     },
     "icon": {
       "type": "string",
@@ -66,7 +70,8 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": false
+      "searchable": false,
+      "listable": false
     },
     "is_default": {
       "type": "boolean",
@@ -74,7 +79,8 @@
       "default": false,
       "sortable": true,
       "filterable": true,
-      "searchable": false
+      "searchable": false,
+      "listable": true
     },
     "created_at": {
       "type": "datetime",
@@ -83,6 +89,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
@@ -92,6 +99,7 @@
       "sortable": true,
       "filterable": false,
       "searchable": false,
+      "listable": false,
       "date_format": "Y-m-d H:i:s"
     }
   }

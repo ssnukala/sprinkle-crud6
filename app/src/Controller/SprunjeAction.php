@@ -41,7 +41,7 @@ class SprunjeAction extends Base
             $crudModel->getTable(),
             $this->getSortableFields($modelName),
             $this->getFilterableFields($modelName),
-            $schema
+            $this->getListableFields($modelName)
         );
         
         $this->sprunje->setOptions($params);

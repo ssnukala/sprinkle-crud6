@@ -31,6 +31,8 @@ class CRUD6Sprunje extends Sprunje
 
     protected array $filterable = [];
 
+    protected array $listable = [];
+
     public function __construct(
         protected CRUD6ModelInterface $model,
         protected Request $request,
@@ -40,7 +42,7 @@ class CRUD6Sprunje extends Sprunje
     }
 
 
-    public function setupSprunje($name, $sortable = [], $filterable = []): void
+    public function setupSprunje($name, $sortable = [], $filterable = [], $listable = []): void
     {
         //$this->debugLogger->debug("Line 45: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->model->setTable($name);
@@ -48,6 +50,7 @@ class CRUD6Sprunje extends Sprunje
         $this->name = $name;
         $this->sortable = $sortable;
         $this->filterable = $filterable;
+        $this->listable = $listable;
 
         $query = $this->baseQuery();
 

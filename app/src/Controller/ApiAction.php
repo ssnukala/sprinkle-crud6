@@ -7,7 +7,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\I18n\Translator;
+use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
@@ -30,15 +30,15 @@ class ApiAction extends Base
         $modelName = $this->getModelNameFromRequest($request);
         $schema = $this->schemaService->getSchema($modelName);
         $this->validateAccess($modelName, 'read');
-        
+
         $this->logger->debug("CRUD6: API request for model: {$schema['model']}");
-        
+
         $responseData = [
             'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $schema['title'] ?? $schema['model']]),
             'model' => $schema['model'],
             'schema' => $schema
         ];
-        
+
         $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');
     }

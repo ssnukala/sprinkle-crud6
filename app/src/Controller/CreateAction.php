@@ -37,30 +37,30 @@ class CreateAction extends Base
         $modelName = $this->getModelNameFromRequest($request);
         $schema = $this->schemaService->getSchema($modelName);
         $this->validateAccess($modelName, 'create');
-        
+
         $this->logger->debug("CRUD6: Creating new record for model: {$schema['model']}");
-        
+
         $data = $request->getParsedBody();
         $this->validateInputData($modelName, $data);
-        
+
         try {
             $table = $crudModel->getTable();
             $insertData = $this->prepareInsertData($schema, $data);
             $insertId = $this->db->table($table)->insertGetId($insertData);
-            
+
             $this->logger->debug("CRUD6: Created record with ID: {$insertId} for model: {$schema['model']}");
-            
+
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $schema['title'] ?? $schema['model']]),
                 'model' => $schema['model'],
                 'id' => $insertId,
                 'data' => $insertData
             ];
-            
+
             $this->alert->addMessageTranslated('success', 'CRUD6.CREATE.SUCCESS', [
                 'model' => $schema['title'] ?? $schema['model']
             ]);
-            
+
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
         } catch (\Exception $e) {
@@ -68,12 +68,12 @@ class CreateAction extends Base
                 'error' => $e->getMessage(),
                 'data' => $data
             ]);
-            
+
             $errorData = [
                 'error' => $this->translator->translate('CRUD6.CREATE.ERROR', ['model' => $schema['model']]),
                 'message' => $e->getMessage()
             ];
-            
+
             $response->getBody()->write(json_encode($errorData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }

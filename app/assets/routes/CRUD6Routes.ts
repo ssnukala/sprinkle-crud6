@@ -9,7 +9,7 @@ export default [
         children: [
             {
                 path: '',
-                name: 'admin.crud6.list',
+                name: 'crud6.list',
                 meta: {
                     permission: {
                         slug: 'uri_crud6'
@@ -19,7 +19,7 @@ export default [
             },
             {
                 path: ':id',
-                name: 'admin.crud6',
+                name: 'crud6.view',
                 meta: {
                     title: 'CRUD6.PAGE',
                     description: 'CRUD6.INFO_PAGE',

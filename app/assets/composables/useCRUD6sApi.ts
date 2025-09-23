@@ -28,6 +28,14 @@ export function useCRUD6sApi(modelName?: string) {
     const model = modelName || (route.params.model as string)
 
     async function updateCRUD6s() {
+        if (!model) {
+            error.value = {
+                title: 'Model Not Specified',
+                description: 'No model name provided for CRUD6 operations'
+            }
+            return
+        }
+
         loading.value = true
         error.value = null
 

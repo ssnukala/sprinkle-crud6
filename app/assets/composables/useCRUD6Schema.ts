@@ -53,8 +53,17 @@ export function useCRUD6Schema(modelName?: string) {
 
         try {
             const response = await axios.get<CRUD6Schema>(`/api/crud6/${model}/schema`)
-            schema.value = response.data.schema
-            //console.log('Loaded schema for model:', model, response.data)
+
+            // Suggested fix:
+            if (response.data.schema) {
+                schema.value = response.data.schema
+            } else if (response.data.fields) {
+                schema.value = response.data
+            } else {
+                console.error('Invalid schema response structure:', response.data)
+                throw new Error('Invalid schema response')
+            }
+            console.log('Line 57 useCRUD6Schema: Loaded schema for model:', model, schema.value)
             return response.data
         } catch (err: any) {
             error.value = err.response?.data || { 

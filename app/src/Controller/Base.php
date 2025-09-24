@@ -150,7 +150,7 @@ abstract class Base
         return $rules;
     }
 
-    protected function getParameter(ServerRequestInterface $request, string $key)
+    protected function getParameter(ServerRequestInterface $request, string $key, $default = null): mixed
     {
         // if routeParams are already set (injected), use them first if not fetch from request and set routeParams and return
         if (count($this->routeParams) === 0) {
@@ -158,7 +158,7 @@ abstract class Base
             $route = $routeContext->getRoute();
             $this->routeParams = $route?->getArguments() ?? [];
         }
-        $routeParam = $this->routeParams[$key] ?? null;
+        $routeParam = $this->routeParams[$key] ?? $default;
         return $routeParam;
     }
 

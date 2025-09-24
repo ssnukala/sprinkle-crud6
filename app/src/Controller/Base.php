@@ -32,12 +32,26 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 abstract class Base
 {
+    protected array $cachedSchema = [];
+    protected array $routeParams = [];
+
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService
     ) {}
+
+
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response)
+    {
+        // Common logic here, e.g. logging, validation, etc.
+        $modelName = $this->getModelNameFromRequest($request);
+        $this->cachedSchema[$modelName] = $crudSchema;
+        $this->validateAccess($modelName, 'read');
+        $this->logger->debug("Line 52 : Base::__invoke called for model: {$modelName}");
+        // You can set up other shared state here
+    }
 
     /**
      * Validate user access permissions for CRUD operations.
@@ -47,22 +61,32 @@ abstract class Base
      */
     protected function validateAccess(string $modelName, string $action = 'read'): void
     {
-        $schema = $this->schemaService->getSchema($modelName);
+        $schema = $this->getSchema($modelName);
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
-        
+
         if (!$this->authenticator->checkAccess($permission)) {
             throw new ForbiddenException("Access denied for {$action} on {$schema['model']}");
         }
     }
 
-
+    /**
+     * Get the schema for the model name.
+     */
+    protected function getSchema(string $modelName): array
+    {
+        if (!isset($this->cachedSchema[$modelName])) {
+            $this->cachedSchema[$modelName] = $this->schemaService->getSchema($modelName);
+        }
+        return $this->cachedSchema[$modelName];
+    }
 
     /**
      * Get the schema fields from the model name.
+     * this can just return the cached fields if already loaded in cachedSchema.
      */
     protected function getFields(string $modelName): array
     {
-        $schema = $this->schemaService->getSchema($modelName);
+        $schema = $this->getSchema($modelName);
         return $schema['fields'] ?? [];
     }
 
@@ -73,7 +97,7 @@ abstract class Base
     {
         $sortable = [];
         $fields = $this->getFields($modelName);
-        
+
         foreach ($fields as $name => $field) {
             if ($field['sortable'] ?? false) {
                 $sortable[] = $name;
@@ -89,7 +113,7 @@ abstract class Base
     {
         $filterable = [];
         $fields = $this->getFields($modelName);
-        
+
         foreach ($fields as $name => $field) {
             if ($field['filterable'] ?? false) {
                 $filterable[] = $name;
@@ -105,7 +129,7 @@ abstract class Base
     {
         $listable = [];
         $fields = $this->getFields($modelName);
-        
+
         foreach ($fields as $name => $field) {
             if ($field['listable'] ?? false) {
                 $listable[] = $name;
@@ -126,13 +150,31 @@ abstract class Base
         return $rules;
     }
 
+    protected function getParameter(ServerRequestInterface $request, string $key)
+    {
+        // if routeParams are already set (injected), use them first if not fetch from request and set routeParams and return
+        if (count($this->routeParams) === 0) {
+            $routeContext = RouteContext::fromRequest($request);
+            $route = $routeContext->getRoute();
+            $this->routeParams = $route?->getArguments() ?? [];
+        }
+        $routeParam = $this->routeParams[$key] ?? null;
+        return $routeParam;
+    }
+
     /**
      * Get model name from the request route
      */
     protected function getModelNameFromRequest(ServerRequestInterface $request): string
     {
-        $routeContext = RouteContext::fromRequest($request);
-        $route = $routeContext->getRoute();
-        return $route?->getArgument('model') ?? '';
+        return $this->getParameter($request, 'model'); // to set routeParams if not already set
+    }
+
+    /**
+     * Get the schema from the request attributes.
+     */
+    protected function getSchemaFromRequest(ServerRequestInterface $request): array
+    {
+        return $this->getParameter($request, 'crudSchema'); // to set routeParams if not already set
     }
 }

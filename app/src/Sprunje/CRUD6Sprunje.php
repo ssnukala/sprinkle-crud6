@@ -20,7 +20,7 @@ use Slim\Routing\RouteContext;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 
 /**
- * Implements Sprunje for the groups API.
+ * Implements Sprunje for the CRUD6 API.
  */
 class CRUD6Sprunje extends Sprunje
 {

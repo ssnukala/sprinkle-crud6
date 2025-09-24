@@ -62,6 +62,8 @@ class CRUD6Routes implements RouteDefinitionInterface
             // Update record (reuse EditAction for update)
             $group->put('/{id}', EditAction::class)
                 ->setName('api.crud6.update');
+            $group->get('/{id}/users', SprunjeAction::class);
+
             // Delete record
             $group->delete('/{id}', DeleteAction::class)
                 ->setName('api.crud6.delete');

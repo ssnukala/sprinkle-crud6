@@ -33,7 +33,8 @@ class CRUD6Injector extends AbstractInjector
 {
     protected string $placeholder = 'id';
     protected string $crud_slug = 'model';
-    protected string $attribute = 'crudModel';
+    protected string $model_attribute = 'crudModel';
+    protected string $schema_attribute = 'crudSchema';
 
     public function __construct(
         protected CRUD6ModelInterface $crudModel,
@@ -52,29 +53,29 @@ class CRUD6Injector extends AbstractInjector
     {
         // Get the model name from the route
         $modelName = $this->currentModelName;
-        
+
         // Load schema and configure model
         $schema = $this->schemaService->getSchema($modelName);
         $modelInstance = clone $this->crudModel;
         $modelInstance->configureFromSchema($schema);
-        
-        $this->debugLogger->debug("CRUD6Injector: Configured model for '{$modelName}' with table '{$modelInstance->getTable()}'.");
-        
+
+        //$this->debugLogger->debug("CRUD6Injector: Configured model for '{$modelName}' with table '{$modelInstance->getTable()}'.");
+
         // If no ID provided, return the configured empty model
         if ($id === null) {
             return $modelInstance;
         }
-        
+
         // Find the specific record
         $primaryKey = $schema['primary_key'] ?? 'id';
         $record = $modelInstance->where($primaryKey, $id)->first();
-        
+
         if (!$record) {
             throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$modelInstance->getTable()}'.");
         }
-        
-        $this->debugLogger->debug("CRUD6Injector: Found record with ID '{$id}' in table '{$modelInstance->getTable()}'.");
-        
+
+        //$this->debugLogger->debug("CRUD6Injector: Found record with ID '{$id}' in table '{$modelInstance->getTable()}'.");
+
         return $record;
     }
 
@@ -90,26 +91,30 @@ class CRUD6Injector extends AbstractInjector
     {
         $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
-        
+
         $this->currentModelName = $route?->getArgument($this->crud_slug);
-        
+
         if ($this->currentModelName === null) {
             throw new CRUD6Exception("Model parameter not found in route.");
         }
-        
+
         if (!$this->validateModelName($this->currentModelName)) {
             throw new CRUD6Exception("Invalid model name: '{$this->currentModelName}'.");
         }
-        
-        // Get ID from route (can be null for non-ID routes)
+
         $id = $this->getIdFromRoute($request);
-        
-        // Get configured model instance (with or without specific record)
+
+        // Get configured model instance
         $instance = $this->getInstance($id);
-        
-        // Inject the model instance
-        $request = $request->withAttribute($this->attribute, $instance);
-        
+
+        // Get schema
+        $schema = $this->schemaService->getSchema($this->currentModelName);
+        //$this->debugLogger->debug("CRUD6Injector: Loaded schema for model '{$this->currentModelName}'.", ['schema' => $schema]);
+        // Inject both model and schema
+        $request = $request
+            ->withAttribute($this->model_attribute, $instance)
+            ->withAttribute($this->schema_attribute, $schema);
+
         return $handler->handle($request);
     }
 

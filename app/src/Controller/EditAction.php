@@ -29,39 +29,37 @@ class EditAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
-    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $modelName = $this->getModelNameFromRequest($request);
-        $schema = $this->schemaService->getSchema($modelName);
-        $this->validateAccess($modelName, 'edit');
-        
+        parent::__invoke($crudSchema, $crudModel, $request, $response);
+
         // For EditAction, the crudModel should contain the specific record since ID is in the route
-        $primaryKey = $schema['primary_key'] ?? 'id';
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
-        
-        $this->logger->debug("CRUD6: Edit request for record ID: {$recordId} model: {$schema['model']}");
-        
+
+        $this->logger->debug("CRUD6: Edit request for record ID: {$recordId} model: {$crudSchema['model']}");
+
         try {
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $schema['model']]),
-                'model' => $schema['model'],
+                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $crudSchema['model']]),
+                'model' => $crudSchema['model'],
                 'id' => $recordId,
                 'data' => $crudModel->toArray()
             ];
-            
+
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6: Failed to edit record for model: {$schema['model']}", [
+            $this->logger->error("CRUD6: Failed to edit record for model: {$crudSchema['model']}", [
                 'error' => $e->getMessage(),
                 'id' => $recordId
             ]);
-            
+
             $errorData = [
-                'error' => $this->translator->translate('CRUD6.EDIT.ERROR', ['model' => $schema['model']]),
+                'error' => $this->translator->translate('CRUD6.EDIT.ERROR', ['model' => $crudSchema['model']]),
                 'message' => $e->getMessage()
             ];
-            
+
             $response->getBody()->write(json_encode($errorData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }

@@ -25,18 +25,18 @@ class ApiAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
-    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $modelName = $this->getModelNameFromRequest($request);
-        $schema = $this->schemaService->getSchema($modelName);
-        $this->validateAccess($modelName, 'read');
+        //$modelName = $this->getModelNameFromRequest($request);
+        ///$schema = $this->getSchema($modelName);
+        //$this->validateAccess($modelName, 'read');
 
-        $this->logger->debug("CRUD6: API request for model: {$schema['model']}");
+        $this->logger->debug("Line 34 : CRUD6: API request for model: {$crudSchema['model']}");
 
         $responseData = [
-            'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $schema['title'] ?? $schema['model']]),
-            'model' => $schema['model'],
-            'schema' => $schema
+            'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $crudSchema['title'] ?? $crudSchema['model']]),
+            'model' => $crudSchema['model'],
+            'schema' => $crudSchema
         ];
 
         $response->getBody()->write(json_encode($responseData));

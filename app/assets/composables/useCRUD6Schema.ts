@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 
-interface SchemaField {
+export interface SchemaField {
     type: string
     label: string
     required?: boolean
@@ -15,7 +15,7 @@ interface SchemaField {
     [key: string]: any
 }
 
-interface CRUD6Schema {
+export interface CRUD6Schema {
     model: string
     title: string
     description?: string

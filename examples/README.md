@@ -212,6 +212,23 @@ DELETE /api/crud6/products/123
 
 This API is designed to work seamlessly with Vue.js frontends. Use the endpoints with libraries like `userfrosting/pink-cup-cake` for rich frontend interfaces.
 
+**Schema Optimization**: The `useCRUD6Schema` composable now includes automatic caching to prevent duplicate API calls. See [Preventing Duplicate Schema Calls](../docs/Preventing-Duplicate-Schema-Calls.md) for optimization patterns.
+
+Example usage in Vue components:
+
+```typescript
+import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+
+// Automatically loads and caches schema
+const { schema, loadSchema, setSchema } = useCRUD6Schema('products')
+
+// First call - makes API request
+await loadSchema('products')
+
+// Subsequent calls - uses cached schema (no API call)
+await loadSchema('products')
+```
+
 ### Soft Delete
 
 Enable soft delete for your model:

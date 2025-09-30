@@ -47,18 +47,27 @@ Detail/Edit view page for individual records. Features:
 ## Composables
 
 ### useCRUD6Schema
-Manages schema loading and provides reactive access to schema data:
+Manages schema loading and provides reactive access to schema data with automatic caching to prevent duplicate API calls:
 
 ```typescript
 const { 
     schema, 
     loading, 
     error, 
+    currentModel,
     loadSchema,
+    setSchema,
     tableColumns,
     sortableFields
 } = useCRUD6Schema('users')
 ```
+
+**Key Features:**
+- **Auto-caching**: Automatically caches schemas and prevents duplicate API calls for the same model
+- **Direct setting**: Use `setSchema()` to set schema without API call when already available
+- **Smart loading**: `loadSchema()` checks cache before making API requests
+
+See [Preventing Duplicate Schema Calls](./Preventing-Duplicate-Schema-Calls.md) for detailed usage patterns.
 
 ### useCRUD6Api
 Handles CRUD operations for a specific model:

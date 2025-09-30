@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 
-interface SchemaField {
+export interface SchemaField {
     type: string
     label: string
     required?: boolean
@@ -15,7 +15,7 @@ interface SchemaField {
     [key: string]: any
 }
 
-interface CRUD6Schema {
+export interface CRUD6Schema {
     model: string
     title: string
     description?: string
@@ -43,18 +43,38 @@ export function useCRUD6Schema(modelName?: string) {
     const loading = ref(false)
     const error = ref<ApiErrorResponse | null>(null)
     const schema = ref<CRUD6Schema | null>(null)
+    const currentModel = ref<string | null>(null)
+
+    /**
+     * Set schema directly without making an API call
+     * Useful when schema is already available from parent component
+     */
+    function setSchema(schemaData: CRUD6Schema, model?: string): void {
+        schema.value = schemaData
+        if (model) {
+            currentModel.value = model
+        }
+        error.value = null
+    }
 
     /**
      * Load schema for a specific model
+     * Skips API call if schema is already loaded for the same model
      */
-    async function loadSchema(model: string): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
+        // Skip loading if schema is already loaded for the same model (unless forced)
+        if (!force && currentModel.value === model && schema.value) {
+            console.log('useCRUD6Schema: Using cached schema for model:', model)
+            return schema.value
+        }
+
         loading.value = true
         error.value = null
 
         try {
             const response = await axios.get<CRUD6Schema>(`/api/crud6/${model}/schema`)
 
-            // Suggested fix:
+            // Handle different response structures
             if (response.data.schema) {
                 schema.value = response.data.schema
             } else if (response.data.fields) {
@@ -63,7 +83,9 @@ export function useCRUD6Schema(modelName?: string) {
                 console.error('Invalid schema response structure:', response.data)
                 throw new Error('Invalid schema response')
             }
-            console.log('Line 57 useCRUD6Schema: Loaded schema for model:', model, schema.value)
+            
+            currentModel.value = model
+            console.log('useCRUD6Schema: Loaded schema for model:', model, schema.value)
             return response.data
         } catch (err: any) {
             error.value = err.response?.data || { 
@@ -152,7 +174,9 @@ export function useCRUD6Schema(modelName?: string) {
         schema,
         loading,
         error,
+        currentModel,
         loadSchema,
+        setSchema,
         sortableFields,
         filterableFields,
         searchableFields,

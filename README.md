@@ -123,6 +123,54 @@ Each field in the schema can have the following properties:
 - **validation**: Validation rules for the field
 - **filter_type**: Type of filter (`equals`, `like`, `starts_with`, `ends_with`, `in`, `between`, `greater_than`, `less_than`, `not_equals`)
 
+### Database Connection Configuration
+
+You can specify a database connection in your schema file to use a non-default database:
+
+```json
+{
+  "model": "products",
+  "table": "products",
+  "connection": "mysql_analytics",
+  "fields": {
+    "id": {
+      "type": "integer",
+      "auto_increment": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
+```
+
+The `connection` field specifies which database connection to use. If omitted, the default database connection will be used. This connection can be overridden at runtime using the URL syntax (`/api/crud6/products@db2`).
+
+### Path-Based Connection Configuration
+
+You can also organize schemas by database connection using folder structure:
+
+```
+app/schema/crud6/
+├── users.json              # Default connection
+├── products.json           # Default connection
+├── db1/
+│   └── users.json         # Implicitly uses db1 connection
+└── analytics/
+    └── page_views.json    # Implicitly uses analytics connection
+```
+
+When accessing `/api/crud6/users@db1`:
+1. First looks for schema at `app/schema/crud6/db1/users.json`
+2. If found, automatically applies `db1` connection
+3. If not found, falls back to `app/schema/crud6/users.json` and applies `db1` connection from URL
+
+This approach provides flexibility to either:
+- Use explicit `"connection"` field in schema
+- Organize schemas in connection-specific folders
+- Override connection via URL parameter
+
 ## Usage
 
 ### API Endpoints
@@ -135,6 +183,22 @@ Once you have a schema file, the following API routes are automatically availabl
 - `GET /api/crud6/{model}/{id}` - Read single record
 - `PUT /api/crud6/{model}/{id}` - Update record
 - `DELETE /api/crud6/{model}/{id}` - Delete record
+
+### Database Connection Selection
+
+You can specify which database connection to use for a model by using the `@` syntax in the URL:
+
+- `GET /api/crud6/users` - Uses the default database connection (or connection defined in schema)
+- `GET /api/crud6/users@db1` - Uses the `db1` database connection
+- `POST /api/crud6/products@analytics` - Creates a product record using the `analytics` database connection
+
+The connection name specified in the URL (e.g., `@db1`) will override any connection defined in the model's JSON schema. This allows you to:
+- Access the same model from different databases
+- Implement multi-tenant applications
+- Query replicas or analytics databases
+- Perform operations across multiple database servers
+
+**Note**: Database connections must be configured in your UserFrosting application's database configuration file.
 
 ### Examples
 

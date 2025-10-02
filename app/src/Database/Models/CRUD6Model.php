@@ -26,6 +26,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
  *
  * Features:
  * - Dynamic table name assignment
+ * - Dynamic database connection selection
  * - Dynamic fillable attributes configuration
  * - Schema-based field casting
  * - Soft delete support when enabled in schema
@@ -76,6 +77,11 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         // Set table name
         if (isset($schema['table'])) {
             $this->table = $schema['table'];
+        }
+
+        // Configure database connection if specified in schema
+        if (isset($schema['connection'])) {
+            $this->setConnection($schema['connection']);
         }
 
         // Configure timestamps

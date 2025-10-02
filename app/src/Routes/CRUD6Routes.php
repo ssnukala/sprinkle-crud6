@@ -36,6 +36,10 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
  * - PUT /api/crud6/{model}/{id} - Update record
  * - DELETE /api/crud6/{model}/{id} - Delete record
  * 
+ * Database Connection Selection:
+ * - /api/crud6/users - Uses default connection (or schema connection)
+ * - /api/crud6/users@db1 - Uses db1 connection (overrides schema connection)
+ * 
  * Generic Model API (using Eloquent ORM):
  * - GET /api/crud6-model/{model} - List data using generic model
  * - POST /api/crud6-model/{model} - Create record using generic model

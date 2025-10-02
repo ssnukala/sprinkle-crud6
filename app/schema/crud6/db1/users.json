@@ -1,0 +1,88 @@
+{
+  "model": "users",
+  "title": "User Management (DB1)",
+  "description": "Users from secondary database db1",
+  "table": "users",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": false,
+  "permissions": {
+    "read": "uri_users",
+    "create": "create_user",
+    "update": "update_user_field",
+    "delete": "delete_user"
+  },
+  "default_sort": {
+    "user_name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": true
+    },
+    "user_name": {
+      "type": "string",
+      "label": "Username",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 3,
+          "max": 50
+        }
+      }
+    },
+    "email": {
+      "type": "string",
+      "label": "Email Address",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "email": true
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": true,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": false,
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

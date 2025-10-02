@@ -75,4 +75,12 @@ interface CRUD6ModelInterface
     public function isSoftDeleted(): bool;
 
     public function setCasts(array $casts): static;
+
+    /**
+     * Set the database connection for this model instance
+     *
+     * @param string|null $connection
+     * @return static
+     */
+    public function setConnection(?string $connection): static;
 }

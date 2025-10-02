@@ -211,4 +211,95 @@ class CRUD6ModelTest extends TestCase
         $this->assertNull($method->invoke($model, 'text'));
         $this->assertNull($method->invoke($model, 'unknown_type'));
     }
+
+    /**
+     * Test database connection configuration from schema
+     */
+    public function testConnectionConfigurationFromSchema(): void
+    {
+        $schema = [
+            'model' => 'users',
+            'table' => 'users',
+            'connection' => 'mysql_secondary',
+            'fields' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string']
+            ]
+        ];
+
+        $model = new CRUD6Model();
+        $model->configureFromSchema($schema);
+
+        // Access the connection property using reflection since it's protected
+        $reflection = new \ReflectionClass($model);
+        $connectionProperty = $reflection->getProperty('connection');
+        $connectionProperty->setAccessible(true);
+        $connection = $connectionProperty->getValue($model);
+
+        $this->assertEquals('mysql_secondary', $connection);
+    }
+
+    /**
+     * Test manual connection configuration
+     */
+    public function testManualConnectionConfiguration(): void
+    {
+        $model = new CRUD6Model();
+        $model->setConnection('custom_db');
+
+        // Access the connection property using reflection
+        $reflection = new \ReflectionClass($model);
+        $connectionProperty = $reflection->getProperty('connection');
+        $connectionProperty->setAccessible(true);
+        $connection = $connectionProperty->getValue($model);
+
+        $this->assertEquals('custom_db', $connection);
+    }
+
+    /**
+     * Test connection override (schema connection overridden by setConnection)
+     */
+    public function testConnectionOverride(): void
+    {
+        $schema = [
+            'model' => 'users',
+            'table' => 'users',
+            'connection' => 'mysql_primary',
+            'fields' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string']
+            ]
+        ];
+
+        $model = new CRUD6Model();
+        $model->configureFromSchema($schema);
+
+        // Override the connection
+        $model->setConnection('mysql_override');
+
+        // Access the connection property using reflection
+        $reflection = new \ReflectionClass($model);
+        $connectionProperty = $reflection->getProperty('connection');
+        $connectionProperty->setAccessible(true);
+        $connection = $connectionProperty->getValue($model);
+
+        $this->assertEquals('mysql_override', $connection);
+    }
+
+    /**
+     * Test null connection (use default)
+     */
+    public function testNullConnection(): void
+    {
+        $model = new CRUD6Model();
+        $model->setConnection(null);
+
+        // Access the connection property using reflection
+        $reflection = new \ReflectionClass($model);
+        $connectionProperty = $reflection->getProperty('connection');
+        $connectionProperty->setAccessible(true);
+        $connection = $connectionProperty->getValue($model);
+
+        $this->assertNull($connection);
+    }
 }

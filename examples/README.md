@@ -208,6 +208,64 @@ DELETE /api/crud6/products/123
 
 ## Advanced Configuration
 
+### Database Connection Selection
+
+You can configure models to use different database connections, allowing for multi-database architectures, read replicas, or analytics databases.
+
+#### Schema-Based Connection Configuration
+
+Define the connection in the schema file:
+
+```json
+{
+  "model": "analytics",
+  "table": "page_views",
+  "connection": "mysql_analytics",
+  "fields": {
+    "id": {
+      "type": "integer",
+      "auto_increment": true
+    },
+    "page_url": {
+      "type": "string",
+      "required": true
+    },
+    "viewed_at": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}
+```
+
+#### URL-Based Connection Override
+
+Override the schema connection or specify a connection at runtime:
+
+```bash
+# Uses default connection (or schema connection if specified)
+GET /api/crud6/analytics
+
+# Uses mysql_analytics connection (overrides schema)
+GET /api/crud6/analytics@mysql_analytics
+
+# Uses mysql_replica connection
+GET /api/crud6/users@mysql_replica
+
+# Create product on secondary database
+POST /api/crud6/products@db_secondary
+```
+
+#### Use Cases
+
+- **Multi-tenancy**: Route requests to different database connections per tenant
+- **Analytics**: Keep analytics data in a separate database
+- **Read Replicas**: Query read replicas for heavy read operations
+- **Data Migration**: Access legacy databases alongside new ones
+- **Microservices**: Access different databases per service boundary
+
+**Note**: Connections must be configured in your UserFrosting application's database configuration.
+
 ### Vue.js Integration
 
 This API is designed to work seamlessly with Vue.js frontends. Use the endpoints with libraries like `userfrosting/pink-cup-cake` for rich frontend interfaces.

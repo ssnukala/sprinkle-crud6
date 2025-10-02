@@ -45,9 +45,17 @@ class SchemaService
 
     /**
      * Get the file path for a model's schema
+     *
+     * @param string $model The model name
+     * @param string|null $connection Optional connection name for path-based lookup
      */
-    protected function getSchemaFilePath(string $model): string
+    protected function getSchemaFilePath(string $model, ?string $connection = null): string
     {
+        // If connection is specified, try connection-based path first
+        if ($connection !== null) {
+            return rtrim($this->schemaPath, '/') . "/{$connection}/{$model}.json";
+        }
+        
         return rtrim($this->schemaPath, '/') . "/{$model}.json";
     }
 
@@ -83,13 +91,32 @@ class SchemaService
     }
 
 
-    public function getSchema(string $model): array
+    /**
+     * Get schema configuration for a model
+     *
+     * @param string $model The model name
+     * @param string|null $connection Optional connection name for path-based lookup
+     * @return array The schema configuration
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     */
+    public function getSchema(string $model, ?string $connection = null): array
     {
-        $schemaPath = $this->getSchemaFilePath($model);
+        $schema = null;
+        $schemaPath = null;
 
-        // Load schema file
-        $loader = new YamlFileLoader($schemaPath);
-        $schema = $loader->load(false);
+        // If connection is specified, try connection-based path first
+        if ($connection !== null) {
+            $schemaPath = $this->getSchemaFilePath($model, $connection);
+            $loader = new YamlFileLoader($schemaPath);
+            $schema = $loader->load(false);
+        }
+
+        // If not found in connection-based path, try default path
+        if ($schema === null) {
+            $schemaPath = $this->getSchemaFilePath($model);
+            $loader = new YamlFileLoader($schemaPath);
+            $schema = $loader->load(false);
+        }
 
         if ($schema === null) {
             throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
@@ -97,6 +124,11 @@ class SchemaService
 
         // Validate schema structure
         $this->validateSchema($schema, $model);
+
+        // If schema was loaded from connection-based path and doesn't have explicit connection, set it
+        if ($connection !== null && !isset($schema['connection'])) {
+            $schema['connection'] = $connection;
+        }
 
         return $schema;
     }

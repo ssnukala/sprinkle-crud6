@@ -30,6 +30,10 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * - /api/crud6/users - Uses default or schema-configured connection
  * - /api/crud6/users@db1 - Uses db1 connection (overrides schema)
  * 
+ * Also supports path-based schema lookup:
+ * - /api/crud6/users@db1 will first look for schema at schema://crud6/db1/users.json
+ * - If not found, falls back to schema://crud6/users.json and applies db1 connection
+ * 
  * For routes that include an ID, it will inject the specific record.
  * For routes without an ID, it will inject a configured model instance ready for operations.
  */
@@ -58,12 +62,13 @@ class CRUD6Injector extends AbstractInjector
         // Get the model name from the route
         $modelName = $this->currentModelName;
 
-        // Load schema and configure model
-        $schema = $this->schemaService->getSchema($modelName);
+        // Load schema and configure model - pass connection for path-based lookup
+        $schema = $this->schemaService->getSchema($modelName, $this->currentConnectionName);
         $modelInstance = clone $this->crudModel;
         $modelInstance->configureFromSchema($schema);
 
         // Apply connection from URL if specified, overriding schema connection
+        // Note: schema may already have connection set from path-based lookup
         if ($this->currentConnectionName !== null) {
             $modelInstance->setConnection($this->currentConnectionName);
             $this->debugLogger->debug("CRUD6Injector: Set connection '{$this->currentConnectionName}' for model '{$modelName}'.");
@@ -125,8 +130,8 @@ class CRUD6Injector extends AbstractInjector
         // Get configured model instance
         $instance = $this->getInstance($id);
 
-        // Get schema
-        $schema = $this->schemaService->getSchema($this->currentModelName);
+        // Get schema - pass connection for path-based lookup
+        $schema = $this->schemaService->getSchema($this->currentModelName, $this->currentConnectionName);
         //$this->debugLogger->debug("CRUD6Injector: Loaded schema for model '{$this->currentModelName}'.", ['schema' => $schema]);
         // Inject both model and schema
         $request = $request

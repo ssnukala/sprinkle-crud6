@@ -256,6 +256,40 @@ GET /api/crud6/users@mysql_replica
 POST /api/crud6/products@db_secondary
 ```
 
+#### Folder-Based Connection Configuration
+
+Organize schemas by database connection using folder structure:
+
+```
+app/schema/crud6/
+├── users.json              # Default connection
+├── products.json           # Default connection
+├── db1/
+│   └── users.json         # Implicitly uses db1 connection
+├── db2/
+│   └── orders.json        # Implicitly uses db2 connection
+└── analytics/
+    └── page_views.json    # Implicitly uses analytics connection
+```
+
+With this structure:
+```bash
+# Uses app/schema/crud6/users.json (default connection)
+GET /api/crud6/users
+
+# Uses app/schema/crud6/db1/users.json (db1 connection)
+GET /api/crud6/users@db1
+
+# Uses app/schema/crud6/analytics/page_views.json (analytics connection)
+GET /api/crud6/page_views@analytics
+```
+
+**Benefits of folder-based approach:**
+- Clean separation of schemas per database
+- No need for explicit `connection` field in schema
+- Easy to see which models belong to which database
+- Automatic connection detection from folder name
+
 #### Use Cases
 
 - **Multi-tenancy**: Route requests to different database connections per tenant

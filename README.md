@@ -147,6 +147,30 @@ You can specify a database connection in your schema file to use a non-default d
 
 The `connection` field specifies which database connection to use. If omitted, the default database connection will be used. This connection can be overridden at runtime using the URL syntax (`/api/crud6/products@db2`).
 
+### Path-Based Connection Configuration
+
+You can also organize schemas by database connection using folder structure:
+
+```
+app/schema/crud6/
+├── users.json              # Default connection
+├── products.json           # Default connection
+├── db1/
+│   └── users.json         # Implicitly uses db1 connection
+└── analytics/
+    └── page_views.json    # Implicitly uses analytics connection
+```
+
+When accessing `/api/crud6/users@db1`:
+1. First looks for schema at `app/schema/crud6/db1/users.json`
+2. If found, automatically applies `db1` connection
+3. If not found, falls back to `app/schema/crud6/users.json` and applies `db1` connection from URL
+
+This approach provides flexibility to either:
+- Use explicit `"connection"` field in schema
+- Organize schemas in connection-specific folders
+- Override connection via URL parameter
+
 ## Usage
 
 ### API Endpoints

@@ -34,15 +34,41 @@ $model->setConnection('mysql_secondary'); // Override connection
 - `currentConnectionName` property to store parsed connection name
 - `parseModelAndConnection()` method to parse model and connection from URL parameter
 - Support for `model@connection` URL syntax
+- Path-based schema lookup with connection-specific folders
 
 **Modified:**
 - `process()` method now parses both model name and optional connection from URL
 - `getInstance()` method applies connection if specified in URL (overrides schema connection)
-- Updated middleware documentation to explain connection syntax
+- Updated middleware documentation to explain connection syntax and path-based lookup
 
 **URL Syntax:**
 - `/api/crud6/users` - Uses default or schema-configured connection
 - `/api/crud6/users@db1` - Uses `db1` connection (overrides schema)
+
+**Path-Based Lookup:**
+When accessing `/api/crud6/users@db1`:
+1. First looks for schema at `schema://crud6/db1/users.json`
+2. If found, automatically applies `db1` connection
+3. If not found, falls back to `schema://crud6/users.json` and applies connection from URL
+
+### 4. SchemaService (`app/src/ServicesProvider/SchemaService.php`)
+
+**Modified:**
+- `getSchema()` method now accepts optional `$connection` parameter
+- `getSchemaFilePath()` method now accepts optional `$connection` parameter
+- Implements fallback logic: connection-based path → default path
+- Automatically sets connection in schema when loaded from connection-specific folder
+
+**Examples:**
+```php
+// Load from default path
+$schema = $schemaService->getSchema('users');
+
+// Try connection-based path first, fallback to default
+$schema = $schemaService->getSchema('users', 'db1');
+// Looks for: schema://crud6/db1/users.json
+// Falls back to: schema://crud6/users.json
+```
 
 ### 4. Route Documentation (`app/src/Routes/CRUD6Routes.php`)
 
@@ -81,10 +107,11 @@ $model->setConnection('mysql_secondary'); // Override connection
 
 **Created:**
 - `examples/analytics.json` - Example schema demonstrating connection configuration
+- `app/schema/crud6/db1/users.json` - Example schema demonstrating folder-based connection
 
 ## Usage Examples
 
-### Schema-Based Configuration
+### 1. Schema-Based Configuration (Explicit Connection Field)
 
 ```json
 {
@@ -98,7 +125,28 @@ $model->setConnection('mysql_secondary'); // Override connection
 }
 ```
 
-### URL-Based Override
+### 2. Folder-Based Configuration (Implicit Connection)
+
+Organize schemas by database connection:
+
+```
+app/schema/crud6/
+├── users.json              # Default connection
+├── products.json           # Default connection
+├── db1/
+│   └── users.json         # Automatically uses db1 connection
+├── db2/
+│   └── orders.json        # Automatically uses db2 connection
+└── analytics/
+    └── page_views.json    # Automatically uses analytics connection
+```
+
+With this structure:
+- `/api/crud6/users` → uses `app/schema/crud6/users.json` (default connection)
+- `/api/crud6/users@db1` → uses `app/schema/crud6/db1/users.json` (db1 connection)
+- `/api/crud6/orders@db2` → uses `app/schema/crud6/db2/orders.json` (db2 connection)
+
+### 3. URL-Based Override
 
 ```bash
 # Uses default connection
@@ -130,11 +178,26 @@ $users = $model->where('is_active', true)->get();
 
 ## Technical Details
 
+### Connection Resolution Flow
+
+When processing `/api/crud6/users@db1`:
+
+1. **Parse URL**: Extract model name (`users`) and connection (`db1`)
+2. **Schema Lookup**:
+   - Try: `schema://crud6/db1/users.json`
+   - If not found, try: `schema://crud6/users.json`
+3. **Connection Application**:
+   - If schema found in connection folder: automatically set connection from folder name
+   - If explicit `connection` field in schema: use that connection
+   - URL connection always overrides schema connection
+4. **Model Configuration**: Apply all settings to CRUD6Model instance
+
 ### Connection Priority
 
 1. **URL-specified connection** (highest priority) - `@connection` in URL
-2. **Schema-specified connection** - `connection` field in JSON schema
-3. **Default connection** - UserFrosting's default database connection
+2. **Folder-based connection** - Schema location in connection-specific folder
+3. **Schema-specified connection** - `connection` field in JSON schema
+4. **Default connection** - UserFrosting's default database connection
 
 ### Model Name Validation
 

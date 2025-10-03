@@ -16,15 +16,16 @@ This method allows dynamic database connection configuration on model instances.
 ### 2. CRUD6Model (`app/src/Database/Models/CRUD6Model.php`)
 
 **Modified:**
-- `configureFromSchema()` method now checks for a `connection` field in the schema and applies it
+- `configureFromSchema()` method now always sets the connection (uses schema value or null for default)
+- Added explicit `setConnection(?string $connection): static` method override for interface compatibility
 - Updated class documentation to mention dynamic database connection selection
 
-The model now inherits `setConnection()` from Eloquent's base Model class, which is exposed through the interface.
+The model overrides the parent Eloquent Model's `setConnection()` method to ensure compatibility with the CRUD6ModelInterface signature requirements (explicit `static` return type). The implementation calls the parent method and returns `$this`.
 
 **Example:**
 ```php
 $model = new CRUD6Model();
-$model->configureFromSchema($schema); // May set connection from schema
+$model->configureFromSchema($schema); // Sets connection from schema or null for default
 $model->setConnection('mysql_secondary'); // Override connection
 ```
 

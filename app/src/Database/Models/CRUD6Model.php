@@ -79,10 +79,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
             $this->table = $schema['table'];
         }
 
-        // Configure database connection if specified in schema
-        if (isset($schema['connection'])) {
-            $this->setConnection($schema['connection']);
-        }
+        // Configure database connection
+        // Use connection from schema if specified, otherwise use null for default connection
+        $this->setConnection($schema['connection'] ?? null);
 
         // Configure timestamps
         $this->timestamps = $schema['timestamps'] ?? false;
@@ -144,7 +143,21 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         return $this;
     }
 
-
+    /**
+     * Set the database connection for this model instance
+     *
+     * This method overrides the parent Eloquent Model::setConnection to ensure
+     * compatibility with the CRUD6ModelInterface signature which requires
+     * a static return type.
+     *
+     * @param string|null $connection The connection name, or null for default
+     * @return static
+     */
+    public function setConnection($connection): static
+    {
+        parent::setConnection($connection);
+        return $this;
+    }
 
     /**
      * Configure fillable attributes and casts based on schema

@@ -16,36 +16,60 @@ use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**
- * Schema Service
+ * Schema Service.
  * 
- * Handles loading, caching, and validation of JSON schema files
- * for CRUD6 operations.
+ * Handles loading, caching, and validation of JSON schema files for CRUD6 operations.
+ * Uses ResourceLocatorInterface to locate schema files following the UserFrosting 6
+ * pattern for resource loading.
  * 
- * Uses ResourceLocatorInterface to locate schema files following
- * the UserFrosting 6 pattern for resource loading.
+ * Schema files are loaded from the 'schema://crud6/' location and can be organized
+ * by database connection in subdirectories for multi-database support.
+ * 
+ * @see \UserFrosting\Support\Repository\Loader\YamlFileLoader
  */
 class SchemaService
 {
+    /**
+     * @var string Base path for schema files
+     */
     protected string $schemaPath = 'schema://crud6/';
 
+    /**
+     * Constructor for SchemaService.
+     * 
+     * @param ResourceLocatorInterface $locator Resource locator for finding schema files
+     */
     public function __construct(
         protected ResourceLocatorInterface $locator
     ) {
     }
 
     /**
-     * Get schema configuration for a model
+     * Get schema configuration for a model.
+     * 
+     * Loads schema from JSON files and validates structure.
+     * Supports connection-based path lookup for multi-database scenarios.
      *
-     * @param string $model The model name
-     * @return array The schema configuration
-     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     * @param string      $model      The model name
+     * @param string|null $connection Optional connection name for path-based lookup
+     * 
+     * @return array<string, mixed> The schema configuration array
+     * 
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException If schema file not found
+     * @throws \RuntimeException If schema validation fails
      */
 
     /**
-     * Get the file path for a model's schema
+     * Get the file path for a model's schema.
+     * 
+     * Supports connection-based subdirectory lookup:
+     * - With connection: schema://crud6/{connection}/{model}.json
+     * - Without connection: schema://crud6/{model}.json
      *
-     * @param string $model The model name
+     * @param string      $model      The model name
      * @param string|null $connection Optional connection name for path-based lookup
+     * 
+     * @return string The schema file path
      */
     protected function getSchemaFilePath(string $model, ?string $connection = null): string
     {
@@ -59,7 +83,17 @@ class SchemaService
 
 
     /**
-     * Validate schema structure
+     * Validate schema structure.
+     * 
+     * Ensures schema has all required fields and valid structure.
+     * Required fields: model, table, fields
+     * 
+     * @param array  $schema The schema array to validate
+     * @param string $model  The model name for error messages
+     * 
+     * @return void
+     * 
+     * @throws \RuntimeException If schema validation fails
      */
     protected function validateSchema(array $schema, string $model): void
     {
@@ -132,11 +166,15 @@ class SchemaService
     }
 
     /**
-     * Get a configured CRUD6Model instance for a model
+     * Get a configured CRUD6Model instance for a model.
+     * 
+     * Loads schema and returns a fully configured model instance ready for use.
      *
      * @param string $model The model name
-     * @return \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
-     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+     * 
+     * @return \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model Configured model instance
+     * 
+     * @throws \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException If schema file not found
      */
     public function getModelInstance(string $model): \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model
     {

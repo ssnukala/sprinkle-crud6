@@ -18,8 +18,30 @@ use Illuminate\Database\Connection;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
+/**
+ * Create action for CRUD6 models.
+ * 
+ * Handles creation of new records for any CRUD6 model.
+ * Validates input data against schema and inserts into database.
+ * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * 
+ * Route: POST /api/crud6/{model}
+ * 
+ * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserCreateAction
+ */
 class CreateAction extends Base
 {
+    /**
+     * Constructor for CreateAction.
+     * 
+     * @param AuthorizationManager $authorizer    Authorization manager
+     * @param Authenticator        $authenticator Authenticator for access control
+     * @param DebugLoggerInterface $logger        Debug logger
+     * @param Connection           $db            Database connection
+     * @param AlertStream          $alert         Alert stream for user notifications
+     * @param Translator           $translator    Translator for i18n messages
+     * @param SchemaService        $schemaService Schema service
+     */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
@@ -32,6 +54,20 @@ class CreateAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
+    /**
+     * Invoke the create action.
+     * 
+     * Creates a new record in the database for the specified model.
+     * Validates input data and handles timestamps if configured.
+     * 
+     * @param CRUD6ModelInterface    $crudModel The configured model instance
+     * @param ServerRequestInterface $request   The HTTP request
+     * @param ResponseInterface      $response  The HTTP response
+     * 
+     * @return ResponseInterface JSON response with created record or error
+     * 
+     * @throws \UserFrosting\Framework\Exception\ValidationException On validation failure
+     */
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $modelName = $this->getModelNameFromRequest($request);
@@ -79,6 +115,16 @@ class CreateAction extends Base
         }
     }
 
+    /**
+     * Validate input data against schema rules.
+     * 
+     * @param string $modelName The model name
+     * @param array  $data      The input data to validate
+     * 
+     * @return void
+     * 
+     * @throws \UserFrosting\Framework\Exception\ValidationException On validation failure
+     */
     protected function validateInputData(string $modelName, array $data): void
     {
         $rules = $this->getValidationRules($modelName);
@@ -94,6 +140,17 @@ class CreateAction extends Base
         }
     }
 
+    /**
+     * Prepare data for database insertion.
+     * 
+     * Transforms field values according to their types and applies defaults.
+     * Handles timestamps if configured in schema.
+     * 
+     * @param array $schema The schema configuration
+     * @param array $data   The input data
+     * 
+     * @return array The prepared insert data
+     */
     protected function prepareInsertData(array $schema, array $data): array
     {
         $insertData = [];
@@ -116,6 +173,16 @@ class CreateAction extends Base
         return $insertData;
     }
 
+    /**
+     * Transform field value based on its type.
+     * 
+     * Converts values to appropriate PHP/database types based on field configuration.
+     * 
+     * @param array $fieldConfig Field configuration from schema
+     * @param mixed $value       The value to transform
+     * 
+     * @return mixed The transformed value
+     */
     protected function transformFieldValue(array $fieldConfig, $value)
     {
         $type = $fieldConfig['type'] ?? 'string';

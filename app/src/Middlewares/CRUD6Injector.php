@@ -24,7 +24,10 @@ use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
- * Route middleware to inject configured CRUD6 model when the model name is passed via placeholder in the URL.
+ * CRUD6 Injector Middleware.
+ * 
+ * Route middleware to inject configured CRUD6 model when the model name is passed
+ * via placeholder in the URL. Follows the UserFrosting 6 middleware pattern.
  * 
  * Supports database connection selection via @ syntax in the URL:
  * - /api/crud6/users - Uses default or schema-configured connection
@@ -36,14 +39,38 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * 
  * For routes that include an ID, it will inject the specific record.
  * For routes without an ID, it will inject a configured model instance ready for operations.
+ * 
+ * @see \UserFrosting\Sprinkle\Core\Middlewares\Injector\AbstractInjector
  */
 class CRUD6Injector extends AbstractInjector
 {
+    /**
+     * @var string Placeholder name for record ID in route
+     */
     protected string $placeholder = 'id';
+    
+    /**
+     * @var string Route parameter name for model
+     */
     protected string $crud_slug = 'model';
+    
+    /**
+     * @var string Request attribute name for injected model
+     */
     protected string $model_attribute = 'crudModel';
+    
+    /**
+     * @var string Request attribute name for injected schema
+     */
     protected string $schema_attribute = 'crudSchema';
 
+    /**
+     * Constructor for CRUD6Injector.
+     * 
+     * @param CRUD6ModelInterface  $crudModel     CRUD6 model interface for cloning
+     * @param DebugLoggerInterface $debugLogger   Debug logger for diagnostics
+     * @param SchemaService        $schemaService Schema service for loading definitions
+     */
     public function __construct(
         protected CRUD6ModelInterface $crudModel,
         protected DebugLoggerInterface $debugLogger,
@@ -52,10 +79,14 @@ class CRUD6Injector extends AbstractInjector
 
     /**
      * Returns the configured CRUD6 model instance for the specific record, or a configured empty model.
+     * 
+     * Loads schema, configures model, and optionally loads a specific record by ID.
      *
      * @param string|null $id The record ID, null for model-only injection
      *
-     * @return CRUD6ModelInterface
+     * @return CRUD6ModelInterface Configured model instance
+     * 
+     * @throws CRUD6NotFoundException If record with specified ID not found
      */
     protected function getInstance(?string $id): CRUD6ModelInterface
     {
@@ -96,16 +127,30 @@ class CRUD6Injector extends AbstractInjector
 
     /**
      * Store the current model name for use in getInstance.
+     * 
+     * @var string|null
      */
     private ?string $currentModelName = null;
 
     /**
      * Store the current database connection name for use in getInstance.
+     * 
+     * @var string|null
      */
     private ?string $currentConnectionName = null;
 
     /**
      * Override the process method to handle both ID-based and model-only injection.
+     * 
+     * Parses route parameters, validates model name, loads schema, and injects
+     * both the model instance and schema into the request.
+     * 
+     * @param ServerRequestInterface  $request The HTTP request
+     * @param RequestHandlerInterface $handler The request handler
+     * 
+     * @return ResponseInterface The HTTP response
+     * 
+     * @throws CRUD6Exception If model parameter missing or invalid
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -143,9 +188,13 @@ class CRUD6Injector extends AbstractInjector
 
     /**
      * Parse model name and optional database connection from the parameter.
-     * Format: "model" or "model@connection"
+     * 
+     * Supports format: "model" or "model@connection"
+     * Sets currentModelName and currentConnectionName for use in getInstance.
      *
      * @param string $modelParam The model parameter from the route
+     * 
+     * @return void
      */
     protected function parseModelAndConnection(string $modelParam): void
     {
@@ -162,6 +211,13 @@ class CRUD6Injector extends AbstractInjector
 
     /**
      * Validate model name format.
+     * 
+     * Only allows alphanumeric characters and underscores to prevent
+     * path traversal or injection attacks.
+     * 
+     * @param string $modelName The model name to validate
+     * 
+     * @return bool True if valid, false otherwise
      */
     protected function validateModelName(string $modelName): bool
     {

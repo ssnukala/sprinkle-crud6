@@ -16,12 +16,20 @@ use UserFrosting\ServicesProvider\ServicesProviderInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
- * Schema service provider.
- *
+ * Schema Service Provider.
+ * 
  * Registers the SchemaService for loading and managing JSON schema files.
+ * Follows the UserFrosting 6 service provider pattern from sprinkle-core.
+ * 
+ * @see \UserFrosting\Sprinkle\Core\ServicesProvider\CacheService
  */
 class SchemaServiceProvider implements ServicesProviderInterface
 {
+    /**
+     * Register SchemaService with the DI container.
+     * 
+     * @return array<string, mixed> Service definitions for the container
+     */
     public function register(): array
     {
         return [

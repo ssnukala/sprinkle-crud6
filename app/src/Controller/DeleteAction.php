@@ -15,8 +15,30 @@ use Illuminate\Database\Connection;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
+/**
+ * Delete action for CRUD6 models.
+ * 
+ * Handles deletion of records for any CRUD6 model.
+ * Supports both hard delete and soft delete based on schema configuration.
+ * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * 
+ * Route: DELETE /api/crud6/{model}/{id}
+ * 
+ * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserDeleteAction
+ */
 class DeleteAction extends Base
 {
+    /**
+     * Constructor for DeleteAction.
+     * 
+     * @param AuthorizationManager $authorizer    Authorization manager
+     * @param Authenticator        $authenticator Authenticator for access control
+     * @param DebugLoggerInterface $logger        Debug logger
+     * @param Connection           $db            Database connection
+     * @param AlertStream          $alert         Alert stream for user notifications
+     * @param Translator           $translator    Translator for i18n messages
+     * @param SchemaService        $schemaService Schema service
+     */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
@@ -29,6 +51,18 @@ class DeleteAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
+    /**
+     * Invoke the delete action.
+     * 
+     * Deletes the specified record from the database.
+     * Supports soft delete if configured in schema.
+     * 
+     * @param CRUD6ModelInterface    $crudModel The configured model instance with record loaded
+     * @param ServerRequestInterface $request   The HTTP request
+     * @param ResponseInterface      $response  The HTTP response
+     * 
+     * @return ResponseInterface JSON response with success or error
+     */
     public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $modelName = $this->getModelNameFromRequest($request);

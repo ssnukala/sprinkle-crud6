@@ -75,11 +75,11 @@ abstract class Base
      * @param ServerRequestInterface $request    The HTTP request
      * @param ResponseInterface      $response   The HTTP response
      * 
-     * @return void
+     * @return ResponseInterface The HTTP response
      * 
      * @throws ForbiddenException If user lacks required permissions
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): void
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         // Common logic here, e.g. logging, validation, etc.
         $modelName = $this->getModelNameFromRequest($request);
@@ -87,6 +87,7 @@ abstract class Base
         $this->validateAccess($modelName, 'read');
         $this->logger->debug("Line 52 : Base::__invoke called for model: {$modelName}");
         // You can set up other shared state here
+        return $response;
     }
 
     /**

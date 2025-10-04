@@ -25,28 +25,41 @@ use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**
- * Routes for CRUD6 operations.
+ * CRUD6 Routes.
  * 
- * Provides API routing for any model defined in JSON schema:
+ * Provides API routing for any model defined in JSON schema.
+ * Follows the UserFrosting 6 route definition pattern from sprinkle-core.
  * 
- * Traditional Query Builder API:
- * - GET /api/crud6/{model} - List data API
- * - POST /api/crud6/{model} - Create record
- * - GET /api/crud6/{model}/{id} - Read single record
- * - PUT /api/crud6/{model}/{id} - Update record
- * - DELETE /api/crud6/{model}/{id} - Delete record
+ * RESTful API endpoints:
+ * - GET    /api/crud6/{model}/schema       - Get schema metadata
+ * - GET    /api/crud6/{model}              - List records (Sprunje with filter/sort/paginate)
+ * - POST   /api/crud6/{model}              - Create new record
+ * - GET    /api/crud6/{model}/{id}         - Read single record
+ * - PUT    /api/crud6/{model}/{id}         - Update record
+ * - DELETE /api/crud6/{model}/{id}         - Delete record
+ * - GET    /api/crud6/{model}/{id}/{relation} - Get related data
  * 
  * Database Connection Selection:
- * - /api/crud6/users - Uses default connection (or schema connection)
- * - /api/crud6/users@db1 - Uses db1 connection (overrides schema connection)
+ * - /api/crud6/users        - Uses default connection (or schema connection)
+ * - /api/crud6/users@db1    - Uses db1 connection (overrides schema connection)
  * 
- * Generic Model API (using Eloquent ORM):
- * - GET /api/crud6-model/{model} - List data using generic model
- * - POST /api/crud6-model/{model} - Create record using generic model
- * - GET /api/crud6-model/{model}/{id} - Read single record using generic model
+ * All routes are protected with:
+ * - CRUD6Injector middleware (injects model and schema)
+ * - AuthGuard middleware (authentication)
+ * - NoCache middleware (prevent caching)
+ * 
+ * @see \UserFrosting\Routes\RouteDefinitionInterface
+ * @see \UserFrosting\Sprinkle\Admin\Routes\AdminRoutes
  */
 class CRUD6Routes implements RouteDefinitionInterface
 {
+    /**
+     * Register CRUD6 routes with the application.
+     * 
+     * @param App $app The Slim application instance
+     * 
+     * @return void
+     */
     public function register(App $app): void
     {
         // CRUD6 API routes (Action-based, matching sprinkle-admin pattern)

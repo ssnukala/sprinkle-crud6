@@ -3,21 +3,21 @@
 declare(strict_types=1);
 
 /*
- * UserFrosting Admin Sprinkle (http://www.userfrosting.com)
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/userfrosting/sprinkle-admin
- * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette
- * @license   https://github.com/userfrosting/sprinkle-admin/blob/master/LICENSE.md (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2024 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\Admin\Tests\Controller\User;
+namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller\User;
 
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
-use UserFrosting\Sprinkle\Admin\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 class UserApiTest extends AdminTestCase

@@ -68,7 +68,14 @@ export function useCRUD6Api(modelName?: string) {
 
         return axios
             .get<CRUD6Response>(`/api/crud6/${model}/${toValue(id)}`)
-            .then((response) => response.data)
+            .then((response) => {
+                // The API wraps the data in a response object with {message, model, id, data}
+                // We need to extract just the data property for the CRUD6Response
+                if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+                    return response.data.data as CRUD6Response
+                }
+                return response.data
+            })
             .catch((err) => {
                 apiError.value = err.response.data
                 throw apiError.value

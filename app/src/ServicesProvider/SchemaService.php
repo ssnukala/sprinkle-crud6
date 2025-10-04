@@ -12,27 +12,25 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
-use DI\Container;
-use UserFrosting\Fortress\RequestSchema;
-use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Support\Repository\Loader\YamlFileLoader;
-
-//use UserFrosting\Fortress\Transformer\RequestDataTransformer;
+use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**
  * Schema Service
  * 
  * Handles loading, caching, and validation of JSON schema files
  * for CRUD6 operations.
+ * 
+ * Uses ResourceLocatorInterface to locate schema files following
+ * the UserFrosting 6 pattern for resource loading.
  */
 class SchemaService
 {
     protected string $schemaPath = 'schema://crud6/';
 
     public function __construct(
-        protected Container $container
+        protected ResourceLocatorInterface $locator
     ) {
-        // Default schema path - can be overridden via configuration
     }
 
     /**

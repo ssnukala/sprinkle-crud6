@@ -13,27 +13,27 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\ServicesProvider;
 
 use PHPUnit\Framework\TestCase;
-use DI\Container;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**
  * Schema Service Test
  *
- * Tests the SchemaService class functionality, particularly the dependency
- * injection handling for optional configuration.
+ * Tests the SchemaService class functionality with ResourceLocatorInterface
+ * following UserFrosting 6 patterns.
  */
 class SchemaServiceTest extends TestCase
 {
     /**
-     * Test SchemaService construction with missing config.schema_path
+     * Test SchemaService construction with ResourceLocatorInterface
      */
-    public function testSchemaServiceConstructionWithMissingConfig(): void
+    public function testSchemaServiceConstruction(): void
     {
-        // Create a container without the config.schema_path entry
-        $container = new Container();
+        // Create a mock ResourceLocatorInterface
+        $locator = $this->createMock(ResourceLocatorInterface::class);
         
-        // This should not throw an exception and should use the default path
-        $schemaService = new SchemaService($container);
+        // This should not throw an exception
+        $schemaService = new SchemaService($locator);
         
         $this->assertInstanceOf(SchemaService::class, $schemaService);
         
@@ -42,58 +42,16 @@ class SchemaServiceTest extends TestCase
         $property = $reflection->getProperty('schemaPath');
         $property->setAccessible(true);
         
-        $this->assertEquals('app/schema/crud6', $property->getValue($schemaService));
+        $this->assertEquals('schema://crud6/', $property->getValue($schemaService));
     }
     
-    /**
-     * Test SchemaService construction with existing config.schema_path
-     */
-    public function testSchemaServiceConstructionWithExistingConfig(): void
-    {
-        // Create a container with the config.schema_path entry
-        $container = new Container();
-        $container->set('config.schema_path', 'custom/schema/path');
-        
-        $schemaService = new SchemaService($container);
-        
-        $this->assertInstanceOf(SchemaService::class, $schemaService);
-        
-        // Use reflection to check the custom schema path
-        $reflection = new \ReflectionClass($schemaService);
-        $property = $reflection->getProperty('schemaPath');
-        $property->setAccessible(true);
-        
-        $this->assertEquals('custom/schema/path', $property->getValue($schemaService));
-    }
-
-    /**
-     * Test SchemaService construction with null config.schema_path (should use default)
-     */
-    public function testSchemaServiceConstructionWithNullConfig(): void
-    {
-        // Create a container with null config.schema_path entry
-        $container = new Container();
-        $container->set('config.schema_path', null);
-        
-        $schemaService = new SchemaService($container);
-        
-        $this->assertInstanceOf(SchemaService::class, $schemaService);
-        
-        // Use reflection to check the default schema path
-        $reflection = new \ReflectionClass($schemaService);
-        $property = $reflection->getProperty('schemaPath');
-        $property->setAccessible(true);
-        
-        $this->assertEquals('app/schema/crud6', $property->getValue($schemaService));
-    }
-
     /**
      * Test getSchemaFilePath with connection returns connection-based path
      */
     public function testGetSchemaFilePathWithConnection(): void
     {
-        $container = new Container();
-        $schemaService = new SchemaService($container);
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
 
         $reflection = new \ReflectionClass($schemaService);
         $method = $reflection->getMethod('getSchemaFilePath');
@@ -117,8 +75,8 @@ class SchemaServiceTest extends TestCase
      */
     public function testGetSchemaFilePathWithoutConnection(): void
     {
-        $container = new Container();
-        $schemaService = new SchemaService($container);
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
 
         $reflection = new \ReflectionClass($schemaService);
         $method = $reflection->getMethod('getSchemaFilePath');

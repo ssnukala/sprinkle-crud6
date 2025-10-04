@@ -64,9 +64,18 @@ class ApiAction extends Base
 
         $this->logger->debug("Line 34 : CRUD6: API request for model: {$crudSchema['model']}");
 
+        // Get a display name for the model (title or capitalized model name)
+        // For button labels, we want singular form like "Group" not "groups" or "Group Management"
+        $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
+        // If title ends with "Management", extract the entity name
+        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
+            $modelDisplayName = $matches[1];
+        }
+
         $responseData = [
-            'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $crudSchema['title'] ?? $crudSchema['model']]),
+            'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $modelDisplayName]),
             'model' => $crudSchema['model'],
+            'modelDisplayName' => $modelDisplayName,
             'schema' => $crudSchema
         ];
 

@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 /*
- * UserFrosting CRID5 Sprinkle (http://www.userfrosting.com)
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/userfrosting/sprinkle-crud5
- * @copyright Copyright (c) 2022 Srinivas Nukala
- * @license   https://github.com/userfrosting/sprinkle-admin/blob/master/LICENSE.md (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2024 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
 namespace UserFrosting\Sprinkle\CRUD6\Sprunje;
@@ -20,19 +20,44 @@ use Slim\Routing\RouteContext;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 
 /**
- * Implements Sprunje for the CRUD6 API.
+ * CRUD6 Sprunje - Dynamic data listing for CRUD6 models.
+ * 
+ * Provides dynamic listing, filtering, sorting, and pagination for any CRUD6 model
+ * based on schema configuration. Follows the UserFrosting 6 Sprunje pattern from
+ * sprinkle-admin.
+ * 
+ * @see \UserFrosting\Sprinkle\Core\Sprunje\Sprunje
  */
 class CRUD6Sprunje extends Sprunje
 {
+    /**
+     * @var string The name of the model/table for this Sprunje
+     */
     protected string $name = 'TO_BE_SET';
 
+    /**
+     * @var string[] List of sortable fields
+     */
     // TODO : Need to set this dynamically using the yaml schema
     protected array $sortable = ["name"];
 
+    /**
+     * @var string[] List of filterable fields
+     */
     protected array $filterable = [];
 
+    /**
+     * @var string[] List of listable/visible fields
+     */
     protected array $listable = [];
 
+    /**
+     * Constructor for CRUD6Sprunje.
+     * 
+     * @param CRUD6ModelInterface   $model        The CRUD6 model instance
+     * @param Request              $request      The HTTP request
+     * @param DebugLoggerInterface $debugLogger  Debug logger for diagnostics
+     */
     public function __construct(
         protected CRUD6ModelInterface $model,
         protected Request $request,
@@ -42,6 +67,16 @@ class CRUD6Sprunje extends Sprunje
     }
 
 
+    /**
+     * Configure the Sprunje with dynamic settings from schema.
+     * 
+     * @param string   $name       The model/table name
+     * @param string[] $sortable   List of sortable field names
+     * @param string[] $filterable List of filterable field names
+     * @param string[] $listable   List of listable/visible field names
+     * 
+     * @return void
+     */
     public function setupSprunje($name, $sortable = [], $filterable = [], $listable = []): void
     {
         //$this->debugLogger->debug("Line 45: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
@@ -62,7 +97,11 @@ class CRUD6Sprunje extends Sprunje
     }
 
     /**
-     * {@inheritdoc}
+     * Get the base query for the Sprunje.
+     * 
+     * Returns the configured CRUD6 model instance that will be used for queries.
+     * 
+     * @return CRUD6ModelInterface The model instance for building queries
      */
     protected function baseQuery()
     {

@@ -16,10 +16,25 @@ use UserFrosting\Sprinkle\Core\Exceptions\UserFacingException;
 use UserFrosting\Support\Message\UserMessage;
 
 /**
- * Group related exceptions. The description is expected to be set by the controller.
+ * CRUD6 Exception.
+ * 
+ * Base exception for CRUD6-related errors. Used for general CRUD6 operations
+ * that fail due to invalid input, configuration issues, or operational errors.
+ * The description is expected to be set by the controller or service throwing the exception.
+ * 
+ * Follows UserFrosting 6 exception pattern from sprinkle-core.
+ * 
+ * @see \UserFrosting\Sprinkle\Core\Exceptions\UserFacingException
  */
 final class CRUD6Exception extends UserFacingException
 {
+    /**
+     * @var string Translation key for exception title
+     */
     protected string $title = 'CRUD6.EXCEPTION';
+    
+    /**
+     * @var string|UserMessage Translation key or message for exception description
+     */
     protected string|UserMessage $description = 'CRUD6.EXCEPTION';
 }

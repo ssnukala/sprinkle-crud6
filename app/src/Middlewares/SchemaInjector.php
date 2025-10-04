@@ -24,18 +24,47 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 
 /**
- * Schema Injector Middleware
+ * Schema Injector Middleware.
  * 
- * Loads and validates the JSON schema for the requested model,
- * then injects it into the request attributes for use by controllers.
+ * Loads and validates the JSON schema for the requested model, then injects it
+ * into the request attributes for use by controllers. Follows the UserFrosting 6
+ * middleware pattern.
+ * 
+ * Note: This middleware is less commonly used as CRUD6Injector handles both
+ * schema and model injection. Use this when you only need schema without model.
+ * 
+ * Injected request attributes:
+ * - crud6_model: The model name from the route
+ * - crud6_schema: The loaded schema configuration array
+ * 
+ * @see \UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector
  */
 class SchemaInjector implements MiddlewareInterface
 {
+    /**
+     * Constructor for SchemaInjector.
+     * 
+     * @param SchemaService $schemaService Schema service for loading definitions
+     * @param Translator    $translator    Translator for i18n messages
+     */
     public function __construct(
         protected SchemaService $schemaService,
         protected Translator $translator,
     ) {}
 
+    /**
+     * Process the middleware.
+     * 
+     * Extracts model name from route, loads schema, and injects into request.
+     * 
+     * @param ServerRequestInterface  $request The HTTP request
+     * @param RequestHandlerInterface $handler The request handler
+     * 
+     * @return ResponseInterface The HTTP response
+     * 
+     * @throws NotFoundException If route or model parameter not found
+     * @throws SchemaNotFoundException If schema cannot be loaded
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $routeContext = RouteContext::fromRequest($request);

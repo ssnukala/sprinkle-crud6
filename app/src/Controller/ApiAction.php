@@ -13,8 +13,27 @@ use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
+/**
+ * API meta/schema endpoint action for CRUD6.
+ * 
+ * Returns schema information and metadata for a CRUD6 model.
+ * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * 
+ * Route: GET /api/crud6/{model}/schema
+ * 
+ * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserPageAction
+ */
 class ApiAction extends Base
 {
+    /**
+     * Constructor for ApiAction.
+     * 
+     * @param AuthorizationManager $authorizer    Authorization manager
+     * @param Authenticator        $authenticator Authenticator for access control
+     * @param DebugLoggerInterface $logger        Debug logger
+     * @param Translator           $translator    Translator for i18n messages
+     * @param SchemaService        $schemaService Schema service
+     */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
@@ -25,6 +44,18 @@ class ApiAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
+    /**
+     * Invoke the API schema action.
+     * 
+     * Returns schema information and metadata for the requested model.
+     * 
+     * @param array                  $crudSchema The schema configuration
+     * @param CRUD6ModelInterface    $crudModel  The configured model instance
+     * @param ServerRequestInterface $request    The HTTP request
+     * @param ResponseInterface      $response   The HTTP response
+     * 
+     * @return ResponseInterface JSON response with schema data
+     */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         //$modelName = $this->getModelNameFromRequest($request);

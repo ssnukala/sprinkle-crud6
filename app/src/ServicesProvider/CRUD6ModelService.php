@@ -17,13 +17,23 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model;
 
 /**
- * Map models interface to the class.
- *
- * Note both class are map using class-string, since Models are not instantiated
- * by the container in the Eloquent world.
+ * CRUD6 Model Service Provider.
+ * 
+ * Maps the CRUD6ModelInterface to its concrete implementation.
+ * Follows the UserFrosting 6 service provider pattern from sprinkle-core.
+ * 
+ * Note: Both interface and class are mapped using class-string since Models
+ * are not instantiated by the container in the Eloquent world.
+ * 
+ * @see \UserFrosting\Sprinkle\Account\ServicesProvider\ModelsService
  */
 class CRUD6ModelService implements ServicesProviderInterface
 {
+    /**
+     * Register CRUD6 model mappings with the DI container.
+     * 
+     * @return array<string, mixed> Service definitions for the container
+     */
     public function register(): array
     {
         return [

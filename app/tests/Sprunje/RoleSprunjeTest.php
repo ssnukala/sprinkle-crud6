@@ -3,19 +3,19 @@
 declare(strict_types=1);
 
 /*
- * UserFrosting Admin Sprinkle (http://www.userfrosting.com)
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/userfrosting/sprinkle-admin
- * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette
- * @license   https://github.com/userfrosting/sprinkle-admin/blob/master/LICENSE.md (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2024 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\Admin\Tests\Sprunje;
+namespace UserFrosting\Sprinkle\CRUD6\Tests\Sprunje;
 
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Admin\Sprunje\RoleSprunje;
-use UserFrosting\Sprinkle\Admin\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**

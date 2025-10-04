@@ -15,8 +15,32 @@ use UserFrosting\Alert\AlertStream;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
+/**
+ * Edit/read action for CRUD6 models.
+ * 
+ * Handles retrieval of a single record for any CRUD6 model.
+ * Returns the record data for editing or viewing.
+ * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * 
+ * Routes: 
+ * - GET /api/crud6/{model}/{id}
+ * - PUT /api/crud6/{model}/{id} (for updates)
+ * 
+ * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserEditAction
+ */
 class EditAction extends Base
 {
+    /**
+     * Constructor for EditAction.
+     * 
+     * @param AuthorizationManager $authorizer    Authorization manager
+     * @param Authenticator        $authenticator Authenticator for access control
+     * @param DebugLoggerInterface $logger        Debug logger
+     * @param Translator           $translator    Translator for i18n messages
+     * @param Connection           $db            Database connection
+     * @param AlertStream          $alert         Alert stream for user notifications
+     * @param SchemaService        $schemaService Schema service
+     */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
@@ -29,6 +53,18 @@ class EditAction extends Base
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
+    /**
+     * Invoke the edit action.
+     * 
+     * Returns the record data for editing or viewing.
+     * 
+     * @param array                  $crudSchema The schema configuration
+     * @param CRUD6ModelInterface    $crudModel  The configured model instance with record loaded
+     * @param ServerRequestInterface $request    The HTTP request
+     * @param ResponseInterface      $response   The HTTP response
+     * 
+     * @return ResponseInterface JSON response with record data or error
+     */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         parent::__invoke($crudSchema, $crudModel, $request, $response);

@@ -4,6 +4,153 @@ UserFrosting 6 CRUD Sprinkle provides a generic API CRUD layer for any database 
 
 Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
 
+## UserFrosting 6 Framework Reference
+
+### Core Philosophy
+All code modifications and refactoring in this sprinkle **MUST** consider the UserFrosting 6 framework architecture, patterns, and standards. The goal is to **extend and reuse** existing patterns and core components already created in the framework rather than reinventing solutions.
+
+### Reference Repositories
+When developing or modifying code, always reference these official UserFrosting 6 repositories for patterns, standards, and component examples:
+
+1. **[userfrosting/sprinkle-core (6.0 branch)](https://github.com/userfrosting/sprinkle-core/tree/6.0)**
+   - Core sprinkle with fundamental services and patterns
+   - Reference for: Service providers, middleware, base controllers, cache service, i18n service, session handling
+   - Key patterns: `ServicesProviderInterface`, `RouteDefinitionInterface`, core middleware
+
+2. **[userfrosting/sprinkle-admin (6.0 branch)](https://github.com/userfrosting/sprinkle-admin/tree/6.0)**
+   - Admin interface sprinkle with CRUD operations
+   - Reference for: Sprunje patterns, admin controllers, CRUD operations, data tables, permissions
+   - Key patterns: Sprunje implementations, action controllers, admin routes
+
+3. **[userfrosting/framework (6.0 branch)](https://github.com/userfrosting/framework/tree/6.0)**
+   - Core framework components and interfaces
+   - Reference for: Base interfaces, traits, service containers, testing utilities
+   - Key patterns: Framework contracts, base classes, testing infrastructure
+
+4. **[userfrosting/theme-pink-cupcake (6.0 branch)](https://github.com/userfrosting/theme-pink-cupcake/tree/6.0)**
+   - Default theme implementation
+   - Reference for: Frontend patterns, Vue.js components, UI/UX standards
+   - Key patterns: Template structure, asset organization, frontend integration
+
+### Code Modification Standards
+
+#### 1. Follow UserFrosting 6 Patterns
+- **Service Providers**: All services MUST implement `ServicesProviderInterface` and follow the DI container patterns from sprinkle-core
+- **Controllers**: Use action-based controllers (one action per class) following sprinkle-admin patterns
+- **Routes**: Implement `RouteDefinitionInterface` for route definitions
+- **Models**: Extend Eloquent models and follow UserFrosting model patterns
+- **Sprunje**: Use Sprunje pattern for data listing, filtering, and pagination
+- **Middleware**: Follow middleware patterns from sprinkle-core
+
+#### 2. Extend and Reuse Core Components
+Before creating new components, check if UserFrosting 6 already provides:
+- **Authentication/Authorization**: Use existing `AuthGuard` and permission system from sprinkle-account
+- **Data Tables**: Extend Sprunje classes rather than creating custom solutions
+- **Validation**: Use UserFrosting's validation system
+- **Alerts/Notifications**: Use existing alert system from sprinkle-core
+- **Caching**: Use `CacheService` from sprinkle-core
+- **Internationalization**: Use `I18nService` for translations
+- **Session Management**: Use `SessionService` from sprinkle-core
+
+#### 3. Adhere to Framework Standards
+- **PSR-12**: All code must follow PSR-12 coding standards
+- **Type Declarations**: Use strict types (`declare(strict_types=1);`)
+- **Dependency Injection**: Use constructor injection with PHP-DI
+- **Naming Conventions**: Follow UserFrosting naming conventions
+  - Controllers: `{Action}Action.php` (e.g., `CreateAction.php`)
+  - Services: `{Name}Service.php` (e.g., `SchemaService.php`)
+  - Service Providers: `{Name}ServiceProvider.php`
+  - Sprunje: `{Model}Sprunje.php`
+  - Middleware: `{Name}Injector.php` or `{Name}Middleware.php`
+
+#### 4. Testing Standards
+- Follow testing patterns from sprinkle-admin and sprinkle-account
+- Use `RefreshDatabase` trait for database tests
+- Use `AdminTestCase` or `AccountTestCase` as base classes
+- Test service providers, controllers, and business logic separately
+- Mock external dependencies appropriately
+
+#### 5. Documentation Standards
+- Document all public methods with PHPDoc blocks
+- Include `@param`, `@return`, and `@throws` annotations
+- Reference UserFrosting documentation patterns
+- Keep inline comments minimal and meaningful
+
+### Integration Guidelines
+
+#### When Adding New Features
+1. **Research First**: Check reference repositories for existing solutions
+2. **Pattern Matching**: Match your implementation to UserFrosting patterns
+3. **Component Reuse**: Extend existing components rather than creating new ones
+4. **Consistency**: Maintain consistency with core sprinkles
+5. **Testing**: Add tests following UserFrosting testing patterns
+
+#### When Refactoring Code
+1. **Review References**: Check how similar code is implemented in core sprinkles
+2. **Service Container**: Ensure proper DI container usage
+3. **Backwards Compatibility**: Maintain compatibility when possible
+4. **Documentation**: Update documentation to reflect changes
+5. **Testing**: Ensure existing tests pass and add new tests if needed
+
+### Common Patterns to Follow
+
+#### Service Provider Pattern (from sprinkle-core)
+```php
+class MyServiceProvider implements ServicesProviderInterface
+{
+    public function register(): array
+    {
+        return [
+            MyService::class => \DI\autowire(MyService::class),
+        ];
+    }
+}
+```
+
+#### Action Controller Pattern (from sprinkle-admin)
+```php
+class MyAction
+{
+    public function __construct(
+        protected MyService $service,
+        protected AlertStream $alert
+    ) {
+    }
+
+    public function __invoke(Request $request, Response $response, array $args): Response
+    {
+        // Action logic here
+    }
+}
+```
+
+#### Route Definition Pattern (from sprinkle-core)
+```php
+class MyRoutes implements RouteDefinitionInterface
+{
+    public function register(App $app): void
+    {
+        $app->group('/api/myroute', function (RouteCollectorProxy $group) {
+            $group->get('', ListAction::class)->setName('api.myroute.list');
+            $group->post('', CreateAction::class)->setName('api.myroute.create');
+        })->add(AuthGuard::class)->add(NoCache::class);
+    }
+}
+```
+
+#### Sprunje Pattern (from sprinkle-admin)
+```php
+class MySprunje extends Sprunje
+{
+    protected string $name = 'my_model';
+    
+    protected function baseQuery()
+    {
+        return $this->classMapper->createInstance(MyModel::class);
+    }
+}
+```
+
 ## Working Effectively
 
 ### Bootstrap and Setup

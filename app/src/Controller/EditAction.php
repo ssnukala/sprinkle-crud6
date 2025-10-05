@@ -76,9 +76,18 @@ class EditAction extends Base
         $this->logger->debug("CRUD6: Edit request for record ID: {$recordId} model: {$crudSchema['model']}");
 
         try {
+            // Get a display name for the model (title or capitalized model name)
+            // For button labels, we want singular form like "Group" not "groups" or "Group Management"
+            $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
+            // If title ends with "Management", extract the entity name
+            if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
+                $modelDisplayName = $matches[1];
+            }
+            
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $crudSchema['model']]),
+                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $crudSchema['model'],
+                'modelDisplayName' => $modelDisplayName,
                 'id' => $recordId,
                 'data' => $crudModel->toArray()
             ];

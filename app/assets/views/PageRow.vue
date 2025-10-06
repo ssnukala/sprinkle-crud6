@@ -118,11 +118,11 @@ function fetch() {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then((fetchedRow) => {
-                CRUD6Row.value = fetchedRow.data
-                record.value = fetchedRow.data
-                originalRecord.value = { ...fetchedRow.data }
+                CRUD6Row.value = fetchedRow
+                record.value = fetchedRow
+                originalRecord.value = { ...fetchedRow }
                 // Update page title with record name if available
-                const recordName = fetchedRow.data[schema.value?.title_field || 'name'] || fetchedRow.data.name
+                const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
                 if (recordName) {
                     page.title = `${recordName} - ${schema.value?.title || model.value}`
                 }

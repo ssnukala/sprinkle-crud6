@@ -4,5 +4,5 @@ export { useCRUD6sApi } from './useCRUD6sApi'
 export { useCRUD6Schema } from './useCRUD6Schema'
 
 // Export schema types for external use
-export type { CRUD6Schema, SchemaField } from './useCRUD6Schema'
+export type { CRUD6Schema, SchemaField, DetailConfig } from './useCRUD6Schema'
 

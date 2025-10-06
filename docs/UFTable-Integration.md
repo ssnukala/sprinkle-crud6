@@ -74,10 +74,10 @@ Handles CRUD operations for a specific model:
 
 ```typescript
 const {
-    fetchCRUD6,
-    createCRUD6,
-    updateCRUD6,
-    deleteCRUD6
+    fetchRow,
+    createRow,
+    updateRow,
+    deleteRow
 } = useCRUD6Api('users')
 ```
 

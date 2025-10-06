@@ -31,10 +31,11 @@ import { useRoute } from 'vue-router'
  * - r$: validation state from Regle for formData
  *
  * Methods:
- * - fetchCRUD6(id: string): Promise<CRUD6Response>
- * - createCRUD6(data: CRUD6CreateRequest): Promise<void>
- * - updateCRUD6(id: string, data: CRUD6EditRequest): Promise<void>
- * - deleteCRUD6(id: string): Promise<void>
+ * - fetchRow(id: string): Promise<CRUD6Response>
+ * - fetchRows(id: string): Promise<CRUD6Response> (alias for fetchRow)
+ * - createRow(data: CRUD6CreateRequest): Promise<void>
+ * - updateRow(id: string, data: CRUD6EditRequest): Promise<void>
+ * - deleteRow(id: string): Promise<void>
  * - resetForm(): void
  */
 export function useCRUD6Api(modelName?: string) {
@@ -62,7 +63,7 @@ export function useCRUD6Api(modelName?: string) {
     // Load the schema and set up the validator
     const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(loadSchema()))
 
-    async function fetchCRUD6(id: string) {
+    async function fetchRow(id: string) {
         apiLoading.value = true
         apiError.value = null
 
@@ -85,7 +86,7 @@ export function useCRUD6Api(modelName?: string) {
             })
     }
 
-    async function createCRUD6(data: CRUD6CreateRequest) {
+    async function createRow(data: CRUD6CreateRequest) {
         apiLoading.value = true
         apiError.value = null
         return axios
@@ -106,7 +107,7 @@ export function useCRUD6Api(modelName?: string) {
             })
     }
 
-    async function updateCRUD6(id: string, data: CRUD6EditRequest) {
+    async function updateRow(id: string, data: CRUD6EditRequest) {
         apiLoading.value = true
         apiError.value = null
         return axios
@@ -127,7 +128,7 @@ export function useCRUD6Api(modelName?: string) {
             })
     }
 
-    async function deleteCRUD6(id: string) {
+    async function deleteRow(id: string) {
         apiLoading.value = true
         apiError.value = null
         return axios
@@ -162,18 +163,19 @@ export function useCRUD6Api(modelName?: string) {
     )
 
     /**
-     * Alias for fetchCRUD6 to maintain compatibility with theme components
+     * Alias for fetchRow to maintain compatibility with theme components
+     * This provides both fetchRow and fetchRows with the same functionality
      */
-    function fetchCRUD6Row(id: string) {
-        return fetchCRUD6(id)
+    function fetchRows(id: string) {
+        return fetchRow(id)
     }
 
     return {
-        fetchCRUD6,
-        fetchCRUD6Row,
-        createCRUD6,
-        updateCRUD6,
-        deleteCRUD6,
+        fetchRow,
+        fetchRows,
+        createRow,
+        updateRow,
+        deleteRow,
         apiLoading,
         apiError,
         formData,

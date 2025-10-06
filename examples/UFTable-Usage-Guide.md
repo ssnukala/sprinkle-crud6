@@ -188,7 +188,7 @@ import { useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle-crud6'
 
 // Load schema and data
 const { schema, loading, error, tableColumns } = useCRUD6Schema('products')
-const { fetchCRUD6, createCRUD6, updateCRUD6, deleteCRUD6 } = useCRUD6Api('products')
+const { fetchRow, createRow, updateRow, deleteRow } = useCRUD6Api('products')
 
 // Use the reactive data
 console.log('Table columns:', tableColumns.value)

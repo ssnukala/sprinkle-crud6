@@ -61,7 +61,6 @@ use UserFrosting\Sprinkle\Admin\Admin;
 use UserFrosting\Sprinkle\Core\Core;
 use UserFrosting\Sprinkle\CRUD6\CRUD6;  // Add this import
 use UserFrosting\Sprinkle\SprinkleRecipe;
-use UserFrosting\Theme\PinkCupcake\PinkCupcake;
 
 class MyApp implements SprinkleRecipe
 {
@@ -82,7 +81,6 @@ class MyApp implements SprinkleRecipe
             Account::class,
             Admin::class,
             CRUD6::class,        // Add this line
-            PinkCupcake::class,
         ];
     }
 
@@ -101,6 +99,8 @@ class MyApp implements SprinkleRecipe
     }
 }
 ```
+
+> **Note:** The PinkCupcake theme is optional and not required for CRUD6 functionality. If you have a custom theme or want to use PinkCupcake, you can add it to the sprinkles list and install it separately with `composer require userfrosting/theme-pink-cupcake`.
 
 ### 5. Install NPM Package
 

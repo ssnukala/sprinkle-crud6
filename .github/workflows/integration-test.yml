@@ -62,6 +62,12 @@ jobs:
           composer config minimum-stability beta
           composer config prefer-stable true
 
+      - name: Install PinkCupcake theme
+        run: |
+          cd userfrosting
+          # Install PinkCupcake theme (required for CRUD6 frontend components)
+          composer require userfrosting/theme-pink-cupcake:^6.0.0-beta --no-update
+
       - name: Install PHP dependencies
         run: |
           cd userfrosting
@@ -72,6 +78,8 @@ jobs:
           cd userfrosting
           npm install
           npm install ../sprinkle-crud6
+          # Install theme-pink-cupcake for frontend components
+          npm install @userfrosting/theme-pink-cupcake@^6.0.0-beta
 
       - name: Configure MyApp.php
         run: |

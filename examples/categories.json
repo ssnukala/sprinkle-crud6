@@ -1,26 +1,26 @@
 {
-  "model": "groups",
-  "title": "Group Management",
-  "singular_title": "Group",
-  "description": "Manage user groups and roles",
-  "table": "groups",
+  "model": "categories",
+  "title": "Category Management",
+  "singular_title": "Category",
+  "description": "Manage product categories",
+  "table": "categories",
   "primary_key": "id",
   "timestamps": true,
   "soft_delete": false,
   "permissions": {
-    "read": "uri_groups",
-    "create": "create_group",
-    "update": "update_group",
-    "delete": "delete_group"
+    "read": "view_categories",
+    "create": "create_category",
+    "update": "edit_category",
+    "delete": "delete_category"
   },
   "default_sort": {
     "name": "asc"
   },
   "detail": {
-    "model": "users",
-    "foreign_key": "group_id",
-    "list_fields": ["user_name", "email", "first_name", "last_name", "flag_enabled"],
-    "title": "GROUP.USERS"
+    "model": "products",
+    "foreign_key": "category_id",
+    "list_fields": ["name", "sku", "price", "is_active"],
+    "title": "Products in this Category"
   },
   "fields": {
     "id": {
@@ -35,7 +35,7 @@
     },
     "name": {
       "type": "string",
-      "label": "Group Name",
+      "label": "Category Name",
       "required": true,
       "sortable": true,
       "filterable": true,
@@ -69,7 +69,7 @@
       "sortable": false,
       "filterable": false,
       "searchable": true,
-      "listable": true
+      "listable": false
     },
     "icon": {
       "type": "string",
@@ -79,6 +79,15 @@
       "filterable": false,
       "searchable": false,
       "listable": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
     }
   }
 }

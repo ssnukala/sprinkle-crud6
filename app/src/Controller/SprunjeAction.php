@@ -55,7 +55,7 @@ class SprunjeAction extends Base
      * Invoke the Sprunje action.
      * 
      * Returns paginated, filtered, and sorted data for the model.
-     * Supports relation-specific queries (e.g., for users relation).
+     * Supports relation-specific queries based on schema detail configuration.
      * 
      * @param array                  $crudSchema The schema configuration
      * @param CRUD6ModelInterface    $crudModel  The configured model instance
@@ -67,44 +67,47 @@ class SprunjeAction extends Base
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         parent::__invoke($crudSchema, $crudModel, $request, $response);
-        // get the request parameter "relation" if exists 
-        // then look up if any class exists for that relation
-        // if exists, then use that class to fetch the data
-        // else use the default sprunje class
-        // Base already has a method to get the parameter use that
+        
+        // Get the relation parameter if it exists
         $relation = $this->getParameter($request, 'relation', 'NONE');
-        $this->logger->debug("Line 41 : SprunjeAction::__invoke called for relation: {$relation}");
-        if ($relation === 'users') {
-            // use the UserSprunje
-            $this->logger->debug("Line 44: CrudModel ID: {$crudModel->id}", $crudModel->toArray());
-            $groupid = $this->getParameter($request, 'group_id', '-1');
-            if ($groupid != '-1') {
+        $this->logger->debug("SprunjeAction::__invoke called for relation: {$relation}");
+        
+        // Check if this relation is configured in the schema's detail section
+        $detailConfig = $crudSchema['detail'] ?? null;
+        
+        if ($relation !== 'NONE' && $detailConfig && $detailConfig['model'] === $relation) {
+            // Handle dynamic relation based on schema detail configuration
+            $this->logger->debug("Handling detail relation: {$relation}", $detailConfig);
+            
+            // Use UserSprunje for users relation, otherwise use default
+            if ($relation === 'users') {
                 $params = $request->getQueryParams();
                 $this->userSprunje->setOptions($params);
-                $this->userSprunje->extendQuery(function ($query) use ($crudModel) {
-                    return $query->where('group_id', $crudModel->id);
+                
+                // Get the foreign key from detail config
+                $foreignKey = $detailConfig['foreign_key'] ?? 'group_id';
+                
+                $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
+                    return $query->where($foreignKey, $crudModel->id);
                 });
+                
+                return $this->userSprunje->toResponse($response);
             }
-
-            // Be careful how you consume this data - it has not been escaped and contains untrusted user-supplied content.
-            // For example, if you plan to insert it into an HTML DOM, you must escape it on the client side (or use client-side templating).
-            return $this->userSprunje->toResponse($response);
-        } else {
-            // use the default sprunje
-            // Sprunje-specific logic
-            $modelName = $this->getModelNameFromRequest($request);
-            $params = $request->getQueryParams();
-
-            $this->sprunje->setupSprunje(
-                $crudModel->getTable(),
-                $this->getSortableFields($modelName),
-                $this->getFilterableFields($modelName),
-                $this->getListableFields($modelName)
-            );
-
-            $this->sprunje->setOptions($params);
-
-            return $this->sprunje->toResponse($response);
         }
+        
+        // Default sprunje for main model listing
+        $modelName = $this->getModelNameFromRequest($request);
+        $params = $request->getQueryParams();
+
+        $this->sprunje->setupSprunje(
+            $crudModel->getTable(),
+            $this->getSortableFields($modelName),
+            $this->getFilterableFields($modelName),
+            $this->getListableFields($modelName)
+        );
+
+        $this->sprunje->setOptions($params);
+
+        return $this->sprunje->toResponse($response);
     }
 }

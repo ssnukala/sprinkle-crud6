@@ -1,0 +1,83 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'
+
+const props = defineProps<{
+    recordId: string
+    parentModel: string
+    detailConfig: DetailConfig
+}>()
+
+// Load schema for the detail model to get field information
+const { schema: detailSchema, loadSchema } = useCRUD6Schema()
+
+// Load the detail model schema when component mounts
+loadSchema(props.detailConfig.model)
+
+// Build the data URL based on the detail configuration
+const dataUrl = computed(() => {
+    return `/api/crud6/${props.parentModel}/${props.recordId}/${props.detailConfig.model}`
+})
+
+// Get the title for the detail section
+const detailTitle = computed(() => {
+    if (props.detailConfig.title) {
+        return props.detailConfig.title
+    }
+    // Capitalize and pluralize model name as fallback
+    const modelName = props.detailConfig.model
+    return modelName.charAt(0).toUpperCase() + modelName.slice(1)
+})
+
+// Get field labels from the detail model schema
+const getFieldLabel = (fieldKey: string): string => {
+    if (detailSchema.value?.fields?.[fieldKey]?.label) {
+        return detailSchema.value.fields[fieldKey].label
+    }
+    // Fallback to field key
+    return fieldKey.charAt(0).toUpperCase() + fieldKey.slice(1).replace(/_/g, ' ')
+}
+
+// Get field type from the detail model schema
+const getFieldType = (fieldKey: string): string => {
+    return detailSchema.value?.fields?.[fieldKey]?.type || 'string'
+}
+</script>
+
+<template>
+    <UFCardBox :title="detailTitle">
+        <UFSprunjeTable
+            :dataUrl="dataUrl"
+            searchColumn="name"
+            hideFilters>
+            <template #header>
+                <UFSprunjeHeader 
+                    v-for="fieldKey in detailConfig.list_fields" 
+                    :key="fieldKey"
+                    :sort="fieldKey">
+                    {{ getFieldLabel(fieldKey) }}
+                </UFSprunjeHeader>
+            </template>
+
+            <template #body="{ row }">
+                <UFSprunjeColumn v-for="fieldKey in detailConfig.list_fields" :key="fieldKey">
+                    <template v-if="getFieldType(fieldKey) === 'boolean'">
+                        <UFLabel :severity="row[fieldKey] ? 'success' : 'danger'">
+                            {{ row[fieldKey] ? $t('ENABLED') : $t('DISABLED') }}
+                        </UFLabel>
+                    </template>
+                    <template v-else-if="getFieldType(fieldKey) === 'date'">
+                        {{ row[fieldKey] ? new Date(row[fieldKey]).toLocaleDateString() : '' }}
+                    </template>
+                    <template v-else-if="getFieldType(fieldKey) === 'datetime'">
+                        {{ row[fieldKey] ? new Date(row[fieldKey]).toLocaleString() : '' }}
+                    </template>
+                    <template v-else>
+                        {{ row[fieldKey] }}
+                    </template>
+                </UFSprunjeColumn>
+            </template>
+        </UFSprunjeTable>
+    </UFCardBox>
+</template>

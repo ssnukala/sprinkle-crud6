@@ -7,7 +7,7 @@ import {
     CRUD6EditModal,
     CRUD6Form,
     CRUD6Info,
-    CRUD6Users
+    CRUD6Details
 } from '../../components/CRUD6'
 
 // Test that views can be imported
@@ -26,7 +26,7 @@ describe('Component Imports', () => {
     test('CRUD6 form and info components should be defined', () => {
         expect(CRUD6Form).toBeDefined()
         expect(CRUD6Info).toBeDefined()
-        expect(CRUD6Users).toBeDefined()
+        expect(CRUD6Details).toBeDefined()
     })
 
     test('CRUD6 view pages should be defined', () => {

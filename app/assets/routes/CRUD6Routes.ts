@@ -3,8 +3,8 @@ export default [
         path: 'crud6/:model',
         meta: {
             auth: {},
-            title: 'CRUD6.PAGE',
-            description: 'CRUD6.PAGE_DESCRIPTION'
+            title: '',
+            description: ''
         },
         children: [
             {
@@ -21,8 +21,8 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    title: 'CRUD6.PAGE',
-                    description: 'CRUD6.INFO_PAGE',
+                    title: '',
+                    description: '',
                     permission: {
                         slug: 'uri_crud6'
                     }

@@ -9,7 +9,7 @@ import {
     CRUD6EditModal,
     CRUD6Form,
     CRUD6Info,
-    CRUD6Users
+    CRUD6Details
 } from '../components/CRUD6'
 
 /**
@@ -27,7 +27,7 @@ export default {
             .component('UFCRUD6EditModal', CRUD6EditModal)
             .component('UFCRUD6Form', CRUD6Form)
             .component('UFCRUD6Info', CRUD6Info)
-            .component('UFCRUD6Users', CRUD6Users)
+            .component('UFCRUD6Details', CRUD6Details)
     }
 }
 
@@ -43,6 +43,6 @@ declare module 'vue' {
         UFCRUD6EditModal: typeof CRUD6EditModal
         UFCRUD6Form: typeof CRUD6Form
         UFCRUD6Info: typeof CRUD6Info
-        UFCRUD6Users: typeof CRUD6Users
+        UFCRUD6Details: typeof CRUD6Details
     }
 }

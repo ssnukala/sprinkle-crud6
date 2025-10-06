@@ -175,7 +175,7 @@ The detail component automatically handles various field types:
 This feature is fully backward compatible:
 
 - **No Detail Section**: Models without a `detail` configuration work as before
-- **Existing Components**: The `Users.vue` component remains available for backward compatibility
+- **Replaced Component**: The old hardcoded `Users.vue` component has been replaced by the generic `Details.vue` component
 - **Optional Feature**: Detail section only renders when configured in the schema
 - **No Breaking Changes**: Existing functionality is preserved
 

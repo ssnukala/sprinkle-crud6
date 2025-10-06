@@ -232,9 +232,9 @@ For existing models with hardcoded relationships:
    }
    ```
 
-2. **Remove hardcoded component** (optional)
-   - Old Users.vue component still works
-   - Can be removed when all models migrated
+2. **Component migration complete**
+   - The old hardcoded `Users.vue` component has been removed
+   - All relationships now use the generic `Details.vue` component
 
 3. **Test the relationship**
    - Navigate to detail page

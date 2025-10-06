@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The original issue requested a way to dynamically define related data (detail sections) in schemas, rather than hardcoding components like `Users.vue` for specific models.
+The original issue requested a way to dynamically define related data (detail sections) in schemas, rather than hardcoding a specific `Users.vue` component for the groups model.
 
 **Original Request:**
 > Not every model will have users relation to show the users table, use the schema to declare a "detail" section where we can specify the model to be used for details
@@ -18,7 +18,7 @@ The original issue requested a way to dynamically define related data (detail se
 
 ## Solution Overview
 
-Implemented a fully declarative detail section feature that allows schemas to define one-to-many relationships without any code changes.
+Implemented a fully declarative detail section feature that allows schemas to define one-to-many relationships without any code changes. The hardcoded `Users.vue` component has been replaced with a generic `Details.vue` component that works with any model relationship.
 
 ## Files Changed
 

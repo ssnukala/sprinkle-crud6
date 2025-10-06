@@ -5,7 +5,6 @@ import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6Info from '../components/CRUD6/Info.vue'
-import CRUD6Users from '../components/CRUD6/Users.vue'
 import CRUD6Details from '../components/CRUD6/Details.vue'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 

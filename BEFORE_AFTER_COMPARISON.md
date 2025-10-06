@@ -243,7 +243,7 @@ if ($relation !== 'NONE' && $detailConfig && $detailConfig['model'] === $relatio
 </template>
 \`\`\`
 
-**Note:** Old Users.vue component still works! Backward compatible.
+**Note:** The old `Users.vue` component has been removed and replaced with the generic `Details.vue` component.
 
 ---
 

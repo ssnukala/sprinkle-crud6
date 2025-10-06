@@ -6,6 +6,7 @@ import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6Info from '../components/CRUD6/Info.vue'
 import CRUD6Users from '../components/CRUD6/Users.vue'
+import CRUD6Details from '../components/CRUD6/Details.vue'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 
 /**
@@ -451,8 +452,12 @@ watch(recordId, (newId) => {
             <div>
                 <CRUD6Info :crud6="CRUD6Row" :schema="schema" @crud6Updated="fetch()" />
             </div>
-            <div class="uk-width-2-3" v-if="$checkAccess('view_crud6_field')">
-                <CRUD6Users :slug="$route.params.id" />
+            <div class="uk-width-2-3" v-if="schema?.detail && $checkAccess('view_crud6_field')">
+                <CRUD6Details 
+                    :recordId="recordId" 
+                    :parentModel="model" 
+                    :detailConfig="schema.detail" 
+                />
             </div>
         </div>
     </template>

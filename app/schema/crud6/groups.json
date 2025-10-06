@@ -16,6 +16,12 @@
   "default_sort": {
     "name": "asc"
   },
+  "detail": {
+    "model": "users",
+    "foreign_key": "group_id",
+    "list_fields": ["user_name", "email", "first_name", "last_name", "flag_enabled"],
+    "title": "GROUP.USERS"
+  },
   "fields": {
     "id": {
       "type": "integer",

@@ -15,6 +15,13 @@ export interface SchemaField {
     [key: string]: any
 }
 
+export interface DetailConfig {
+    model: string
+    foreign_key: string
+    list_fields: string[]
+    title?: string
+}
+
 export interface CRUD6Schema {
     model: string
     title: string
@@ -31,6 +38,7 @@ export interface CRUD6Schema {
     }
     default_sort?: Record<string, 'asc' | 'desc'>
     fields: Record<string, SchemaField>
+    detail?: DetailConfig
 }
 
 /**

@@ -235,8 +235,8 @@ This sprinkle includes a complete set of Vue.js components and views for buildin
 #### Included Components
 
 **Views:**
-- `List.vue` - List view with data table, filtering, and pagination
-- `Detail.vue` - Detail view with edit functionality
+- `PageList.vue` - List view with data table, filtering, and pagination
+- `PageRow.vue` - Detail view with edit functionality
 
 **Modals:**
 - `CreateModal.vue` - Create new records
@@ -255,8 +255,8 @@ Components are automatically registered globally when the sprinkle is installed.
 ```vue
 <template>
   <!-- Use the pre-built page components -->
-  <UFCRUD6List />
-  <UFCRUD6Detail />
+  <UFCRUD6ListPage />
+  <UFCRUD6RowPage />
   
   <!-- Or use individual components -->
   <UFCRUD6CreateModal :model="'users'" :schema="schema" @saved="refresh" />

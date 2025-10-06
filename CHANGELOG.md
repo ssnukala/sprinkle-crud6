@@ -8,14 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2024-10-06
 
 ### Changed
-- **BREAKING**: Renamed global components for consistency
-  - `UFCRUD6ListPage` → `UFCRUD6List`
-  - `UFCRUD6RowPage` → `UFCRUD6Detail`
 - **Structure**: Flattened component directory from `components/Pages/CRUD6/Base/` to `components/CRUD6/`
+  - Follows UserFrosting 6 flat component structure pattern
 - **Files**: Consolidated 5 interface files into single `types.ts` file
-- **Views**: Renamed view files for clarity
-  - `PageList.vue` → `List.vue`
-  - `PageRow.vue` → `Detail.vue` (more descriptive)
+  - Better organization with clear sections for single record and list operations
+- **Components**: Maintained UserFrosting 6 naming conventions
+  - Views: `PageList.vue`, `PageRow.vue` (consistent with sprinkle-admin)
+  - Global components: `UFCRUD6ListPage`, `UFCRUD6RowPage`
 
 ### Removed
 - Legacy `UFTableCRUD6.vue` component (unused)
@@ -24,20 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improved
 - **Organization**: 40% fewer files (20 → 12), flatter structure
-- **Naming**: Consistent naming convention across all components
+- **Consistency**: Follows UserFrosting 6 sprinkle-admin patterns
 - **Documentation**: Better organized type definitions with clear sections
 - **Maintainability**: Easier to navigate and find code
 
 ### Migration
-Users need to update global component usage:
+No breaking changes for users. All component names remain the same:
 ```vue
-<!-- Before -->
+<!-- Usage remains unchanged -->
 <UFCRUD6ListPage />
 <UFCRUD6RowPage />
-
-<!-- After -->
-<UFCRUD6List />
-<UFCRUD6Detail />
 ```
 
 All import paths and composable functions remain unchanged (backward compatible).

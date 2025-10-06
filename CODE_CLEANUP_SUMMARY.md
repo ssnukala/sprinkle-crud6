@@ -52,23 +52,20 @@ app/assets/components/
 - Improved documentation with section headers
 - Reduced file clutter
 
-### 3. Standardized View Naming ✅
+### 3. View Naming - Kept UserFrosting Convention ✅
 
-**Before:**
+**Decision: Maintain "Page" prefix**
+
+Following UserFrosting 6 sprinkle-admin patterns:
 - Files: `PageList.vue`, `PageRow.vue`
 - Exports: `CRUD6ListPage`, `CRUD6RowPage`
 - Global: `UFCRUD6ListPage`, `UFCRUD6RowPage`
 
-**After:**
-- Files: `List.vue`, `Detail.vue`
-- Exports: `CRUD6List`, `CRUD6Detail`
-- Global: `UFCRUD6List`, `UFCRUD6Detail`
-
-**Benefits:**
-- Simpler, more descriptive names
-- "Detail" is clearer than "Row" for a record detail view
-- Consistent naming pattern across the board
-- Removed redundant "Page" prefix from files
+**Rationale:**
+- Consistent with sprinkle-admin (PageUsers.vue, PageUser.vue, PageGroups.vue, etc.)
+- "Page" prefix is a UserFrosting convention for view components
+- Maintains backward compatibility
+- No breaking changes for users
 
 ### 4. Updated Import Paths
 
@@ -89,21 +86,22 @@ All imports have been updated to reflect the new structure:
 
 ## Naming Convention Standard
 
-After refactoring, we follow this consistent pattern:
+After refactoring, we follow UserFrosting 6 conventions:
 
 | Type | File Name | Export Name | Global Component |
 |------|-----------|-------------|------------------|
+| View | `PageList.vue` | `CRUD6ListPage` | `UFCRUD6ListPage` |
+| View | `PageRow.vue` | `CRUD6RowPage` | `UFCRUD6RowPage` |
 | Modal | `CreateModal.vue` | `CRUD6CreateModal` | `UFCRUD6CreateModal` |
 | Modal | `EditModal.vue` | `CRUD6EditModal` | `UFCRUD6EditModal` |
 | Modal | `DeleteModal.vue` | `CRUD6DeleteModal` | `UFCRUD6DeleteModal` |
 | Component | `Form.vue` | `CRUD6Form` | `UFCRUD6Form` |
 | Component | `Info.vue` | `CRUD6Info` | `UFCRUD6Info` |
 | Component | `Users.vue` | `CRUD6Users` | `UFCRUD6Users` |
-| View | `List.vue` | `CRUD6List` | `UFCRUD6List` |
-| View | `Detail.vue` | `CRUD6Detail` | `UFCRUD6Detail` |
 
 **Pattern:**
-- File names: Simple, descriptive PascalCase
+- View file names: "Page" prefix (UserFrosting convention)
+- Component file names: Simple, descriptive PascalCase
 - Exports: Prefixed with `CRUD6`
 - Global registration: Prefixed with `UFCRUD6` (UserFrosting convention)
 
@@ -119,33 +117,24 @@ Tests:       1 passed (1)
 
 ## Migration Impact
 
-### Breaking Changes for Users
+### No Breaking Changes ✅
 
-The global component names have changed:
-
-| Old Name | New Name |
-|----------|----------|
-| `UFCRUD6ListPage` | `UFCRUD6List` |
-| `UFCRUD6RowPage` | `UFCRUD6Detail` |
-
-**Migration:**
+All component names remain the same - fully backward compatible:
 ```vue
-<!-- Before -->
+<!-- Usage unchanged -->
 <UFCRUD6ListPage />
 <UFCRUD6RowPage />
-
-<!-- After -->
-<UFCRUD6List />
-<UFCRUD6Detail />
 ```
 
-### No Breaking Changes
+### Improved Structure
 
-These remain unchanged (backward compatible):
-- Import paths: `@ssnukala/sprinkle-crud6/composables`
-- Composable functions: `useCRUD6Api`, `useCRUD6Schema`
-- Component imports: All import paths remain the same when using the index exports
-- Interface types: All exported the same way through index
+The flattened component structure and consolidated interfaces provide:
+- Better organization (40% fewer files)
+- Easier navigation
+- Clearer type definitions
+- Consistent with UserFrosting 6 patterns
+
+All import paths and composables remain unchanged.
 
 ## Benefits Summary
 

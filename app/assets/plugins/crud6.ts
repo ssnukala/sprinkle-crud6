@@ -1,7 +1,7 @@
 import type { App } from 'vue'
 import {
-    CRUD6Detail,
-    CRUD6List,
+    CRUD6RowPage,
+    CRUD6ListPage,
 } from '../views'
 import {
     CRUD6CreateModal,
@@ -19,9 +19,9 @@ import {
 export default {
     install: (app: App) => {
         // Register views from '../views'
-        app.component('UFCRUD6Detail', CRUD6Detail)
-            .component('UFCRUD6List', CRUD6List)
-            // Register components from '../components/CRUD6'
+        app.component('UFCRUD6RowPage', CRUD6RowPage)
+            .component('UFCRUD6ListPage', CRUD6ListPage)
+            // Register components from '../components/Pages/CRUD6'
             .component('UFCRUD6CreateModal', CRUD6CreateModal)
             .component('UFCRUD6DeleteModal', CRUD6DeleteModal)
             .component('UFCRUD6EditModal', CRUD6EditModal)
@@ -34,10 +34,10 @@ export default {
 declare module 'vue' {
     export interface GlobalComponents {
         // Views from '../views'
-        UFCRUD6Detail: typeof CRUD6Detail
-        UFCRUD6List: typeof CRUD6List
+        UFCRUD6RowPage: typeof CRUD6RowPage
+        UFCRUD6ListPage: typeof CRUD6ListPage
 
-        // Components from '../components/CRUD6'
+        // Components from '../components/Pages/CRUD6'
         UFCRUD6CreateModal: typeof CRUD6CreateModal
         UFCRUD6DeleteModal: typeof CRUD6DeleteModal
         UFCRUD6EditModal: typeof CRUD6EditModal

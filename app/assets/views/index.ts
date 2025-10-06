@@ -1,7 +1,7 @@
-import CRUD6Detail from './Detail.vue'
-import CRUD6List from './List.vue'
+import CRUD6RowPage from './PageRow.vue'
+import CRUD6ListPage from './PageList.vue'
 
 export {
-    CRUD6Detail,
-    CRUD6List,
+    CRUD6RowPage,
+    CRUD6ListPage,
 }

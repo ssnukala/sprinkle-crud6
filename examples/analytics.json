@@ -1,6 +1,7 @@
 {
   "model": "analytics",
   "title": "Analytics Data",
+  "singular_title": "Analytics Entry",
   "description": "Analytics data from secondary database",
   "table": "page_views",
   "connection": "mysql_analytics",

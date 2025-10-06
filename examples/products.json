@@ -1,6 +1,7 @@
 {
   "model": "products",
   "title": "Product Management",
+  "singular_title": "Product",
   "description": "Manage your product catalog",
   "table": "products",
   "primary_key": "id",

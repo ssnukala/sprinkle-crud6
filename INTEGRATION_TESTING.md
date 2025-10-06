@@ -166,22 +166,21 @@ npm run vite:dev
 
 ### 8. Configure Database
 
-Copy `.env.example` to `.env` and configure your database connection:
+Copy `app/.env.example` to `app/.env` and configure your database connection:
 
 ```bash
-cp .env.example .env
+cp app/.env.example app/.env
 ```
 
-Edit `.env` and set your database credentials:
+Edit `app/.env` and set your database credentials:
 
 ```env
-DB_DRIVER=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=userfrosting
-DB_USERNAME=root
-DB_PASSWORD=your_password
-DB_PREFIX=uf_
+DB_CONNECTION="mysql"
+DB_HOST="localhost"
+DB_PORT="3306"
+DB_NAME="userfrosting"
+DB_USER="root"
+DB_PASSWORD="your_password"
 ```
 
 ### 9. Run Database Migrations

@@ -134,13 +134,13 @@ jobs:
       - name: Setup environment
         run: |
           cd userfrosting
-          cp .env.example .env
-          sed -i 's/DB_DRIVER=.*/DB_DRIVER=mysql/' .env
-          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=userfrosting_test/' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+          cp app/.env.example app/.env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
+          sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env
+          sed -i 's/DB_PORT=.*/DB_PORT="3306"/' app/.env
+          sed -i 's/DB_NAME=.*/DB_NAME="userfrosting_test"/' app/.env
+          sed -i 's/DB_USER=.*/DB_USER="root"/' app/.env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
 
       - name: Run migrations
         run: |

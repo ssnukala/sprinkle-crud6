@@ -28,8 +28,8 @@ npm install
 npm run vite:build
 
 # 6. Setup database
-cp .env.example .env
-# Edit .env with database credentials
+cp app/.env.example app/.env
+# Edit app/.env with database credentials
 php bakery migrate
 php bakery seed
 

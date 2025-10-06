@@ -93,6 +93,7 @@ jobs:
           use UserFrosting\Sprinkle\Core\Core;
           use UserFrosting\Sprinkle\CRUD6\CRUD6;
           use UserFrosting\Sprinkle\SprinkleRecipe;
+          use UserFrosting\Theme\PinkCupcake\PinkCupcake;
           class MyApp implements SprinkleRecipe
           {
               public function getName(): string { return 'My App'; }
@@ -104,6 +105,7 @@ jobs:
                       Account::class,
                       Admin::class,
                       CRUD6::class,
+                      PinkCupcake::class,
                   ];
               }
               public function getRoutes(): array { return [MyAppRoutes::class]; }

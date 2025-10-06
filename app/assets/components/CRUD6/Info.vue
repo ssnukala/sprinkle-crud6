@@ -65,6 +65,15 @@ const hasUpdatePermission = computed(() => hasPermission('update'))
 const hasDeletePermission = computed(() => hasPermission('delete'))
 const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 
+// Model label for buttons - prioritize singular_title over model name
+const modelLabel = computed(() => {
+    if (finalSchema.value?.singular_title) {
+        return finalSchema.value.singular_title
+    }
+    // Capitalize first letter of model name as fallback
+    return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
+})
+
 // Computed properties for dynamic display
 const displayFields = computed(() => {
     if (!finalSchema.value?.fields) return {}
@@ -166,7 +175,7 @@ function formatFieldValue(value: any, field: any): string {
                 v-if="hasUpdatePermission && !showEditModal"
                 @click="requestEditModal()"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small">
-                <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: finalSchema.title || model }) }}
+                <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
             </button>
             
             <!-- Edit Modal - only rendered after user requests it -->
@@ -183,7 +192,7 @@ function formatFieldValue(value: any, field: any): string {
                 v-if="hasDeletePermission && !showDeleteModal"
                 @click="requestDeleteModal()"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small">
-                <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: finalSchema.title || model }) }}
+                <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
             </button>
             
             <!-- Delete Modal - only rendered after user requests it -->

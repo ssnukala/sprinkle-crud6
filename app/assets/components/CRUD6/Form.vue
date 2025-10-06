@@ -126,8 +126,12 @@ const submitForm = async () => {
     const isValid = r$ ? await r$.$validate() : { valid: true }
     if (!isValid.valid) return
 
-    const apiCall = props.crud6
-        ? updateRow(props.crud6.slug, formData.value)
+    // Use primary_key from schema, fallback to 'id'
+    const primaryKey = schema.value?.primary_key || 'id'
+    const recordId = props.crud6 ? props.crud6[primaryKey] : null
+
+    const apiCall = recordId
+        ? updateRow(recordId, formData.value)
         : createRow(formData.value)
     apiCall
         .then(() => {

@@ -110,6 +110,15 @@ const error = computed(() => schemaError.value || apiError.value)
 const hasCreatePermission = computed(() => hasPermission('create'))
 const hasViewPermission = computed(() => hasPermission('view'))
 
+// Model label for page titles - prioritize singular_title over title
+const modelLabel = computed(() => {
+    if (schema.value?.singular_title) {
+        return schema.value.singular_title
+    }
+    // Capitalize first letter of model name as fallback
+    return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
+})
+
 /**
  * Methods - Fetch record
  */
@@ -124,7 +133,7 @@ function fetch() {
                 // Update page title with record name if available
                 const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
                 if (recordName) {
-                    page.title = `${recordName} - ${schema.value?.title || model.value}`
+                    page.title = `${recordName} - ${modelLabel.value}`
                 }
             }).catch((error) => {
                 console.error('Failed to fetch CRUD6 row:', error)
@@ -252,11 +261,11 @@ watch(model, async (newModel) => {
                 // Update page title and description
                 if (schema.value) {
                     if (isCreateMode.value) {
-                        page.title = `Create ${schema.value.title || newModel}`
-                        page.description = schema.value.description || `Create a new ${schema.value.title || newModel}`
+                        page.title = `Create ${modelLabel.value}`
+                        page.description = schema.value.description || `Create a new ${modelLabel.value}`
                     } else if (recordId.value) {
-                        page.title = `View ${schema.value.title || newModel}`
-                        page.description = schema.value.description || `View and edit ${schema.value.title || newModel} details.`
+                        page.title = `View ${modelLabel.value}`
+                        page.description = schema.value.description || `View and edit ${modelLabel.value} details.`
                     }
                 }
             }

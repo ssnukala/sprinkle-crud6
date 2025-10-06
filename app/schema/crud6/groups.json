@@ -1,6 +1,7 @@
 {
   "model": "groups",
   "title": "Group Management",
+  "singular_title": "Group",
   "description": "Manage user groups and roles",
   "table": "groups",
   "primary_key": "id",

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
@@ -17,7 +18,27 @@ const props = defineProps<{
     schema?: any
 }>()
 
-console.log('[DeleteModal] 🚀 Component setup - crud6.id:', props.crud6?.id, 'model:', props.model, 'hasSchema:', !!props.schema)
+/**
+ * Computed - Get the record ID using the schema's primary key
+ */
+const recordId = computed(() => {
+    const primaryKey = props.schema?.primary_key || 'id'
+    return props.crud6[primaryKey]
+})
+
+/**
+ * Computed - Get the model label for button text
+ * Priority: singular_title > model name (capitalized)
+ */
+const modelLabel = computed(() => {
+    if (props.schema?.singular_title) {
+        return props.schema.singular_title
+    }
+    // Capitalize first letter of model name as fallback
+    return props.model ? props.model.charAt(0).toUpperCase() + props.model.slice(1) : 'Record'
+})
+
+console.log('[DeleteModal] 🚀 Component setup - recordId:', recordId.value, 'model:', props.model, 'hasSchema:', !!props.schema)
 if (props.schema) {
     console.log('[DeleteModal] 📊 Schema provided for context - title:', props.schema?.title)
 }
@@ -32,34 +53,34 @@ const emits = defineEmits(['deleted'])
  * Methods - Submit the form to the API and handle the response.
  */
 const deleteConfirmed = () => {
-    console.log('[DeleteModal] 🗑️  Delete confirmed for crud6.slug:', props.crud6.slug)
-    deleteRow(props.crud6.slug)
+    console.log('[DeleteModal] 🗑️  Delete confirmed for record:', recordId.value)
+    deleteRow(recordId.value)
         .then(() => {
-            console.log('[DeleteModal] ✅ Delete successful for:', props.crud6.slug)
+            console.log('[DeleteModal] ✅ Delete successful for:', recordId.value)
             emits('deleted')
         })
         .catch((error) => {
-            console.error('[DeleteModal] ❌ Delete failed for:', props.crud6.slug, 'error:', error)
+            console.error('[DeleteModal] ❌ Delete failed for:', recordId.value, 'error:', error)
         })
 }
 </script>
 
 <template>
-    <a :href="'#confirm-crud6-delete-' + props.crud6.id" v-bind="$attrs" uk-toggle>
-        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: schema?.title || model }) }}</slot>
+    <a :href="'#confirm-crud6-delete-' + recordId" v-bind="$attrs" uk-toggle>
+        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModalConfirmation
-        :id="'confirm-crud6-delete-' + props.crud6.id"
-        :title="$t('CRUD6.DELETE', { model: schema?.title || model })"
+        :id="'confirm-crud6-delete-' + recordId"
+        :title="$t('CRUD6.DELETE', { model: modelLabel })"
         @confirmed="deleteConfirmed()"
-        :acceptLabel="$t('CRUD6.DELETE_YES', { model: schema?.title || model })"
+        :acceptLabel="$t('CRUD6.DELETE_YES', { model: modelLabel })"
         acceptIcon="trash"
         :rejectIcon="null"
         :acceptSeverity="Severity.Danger">
         <template #prompt>
-            <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: schema?.title || model })"></div>
+            <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
         </template>
     </UFModalConfirmation>
 </template> 

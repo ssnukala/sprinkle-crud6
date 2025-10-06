@@ -48,6 +48,15 @@ const hasCreatePermission = computed(() => hasPermission('create'))
 const hasEditPermission   = computed(() => hasPermission('update'))
 const hasDeletePermission = computed(() => hasPermission('delete'))
 
+// Model label for buttons - prioritize singular_title over model name
+const modelLabel = computed(() => {
+  if (schema.value?.singular_title) {
+    return schema.value.singular_title
+  }
+  // Capitalize first letter of model name as fallback
+  return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
+})
+
 // Schema fields
 const schemaFields = computed(() => Object.entries(schema.value?.fields || {}))
 
@@ -84,8 +93,9 @@ onMounted(() => {
         console.log('[PageList] Schema loaded successfully for:', model.value)
         // Update page title and description using schema
         if (schema.value) {
+          // Use title for list page header, but modelLabel for buttons
           page.title = schema.value.title || model.value
-          page.description = schema.value.description || `A listing of the ${schema.value.title || model.value} for your site. Provides management tools for editing and deleting ${schema.value.title || model.value}.`
+          page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
         }
       }).catch((error) => {
         console.error('[PageList] Failed to load schema:', error)
@@ -122,7 +132,7 @@ onMounted(() => {
           v-if="hasCreatePermission && schema && !showCreateModal"
           @click="requestCreateModal()"
           class="uk-button uk-button-primary">
-          <font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: schema.title || model }) }}
+          <font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: modelLabel }) }}
         </button>
         
         <!-- Create Modal - only rendered after user clicks create -->
@@ -194,15 +204,15 @@ onMounted(() => {
               </li>
               <li v-if="hasEditPermission && schema">
                 <!-- Edit button - shows modal loading on first click -->
-                <a v-if="!loadedEditModals.has(row.id || row.slug)" 
-                   @click="requestEditModal(row.id || row.slug)"
+                <a v-if="!loadedEditModals.has(row[schema.value?.primary_key || 'id'])" 
+                   @click="requestEditModal(row[schema.value?.primary_key || 'id'])"
                    class="uk-drop-close">
-                  <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: schema.title || model }) }}
+                  <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
                 </a>
                 
                 <!-- Edit Modal - only rendered after user requests it -->
                 <CRUD6EditModal 
-                  v-if="loadedEditModals.has(row.id || row.slug)"
+                  v-if="loadedEditModals.has(row[schema.value?.primary_key || 'id'])"
                   :crud6="row" 
                   :model="model" 
                   :schema="schema" 
@@ -211,15 +221,15 @@ onMounted(() => {
               </li>
               <li v-if="hasDeletePermission && schema">
                 <!-- Delete button - shows modal loading on first click -->
-                <a v-if="!loadedDeleteModals.has(row.id || row.slug)" 
-                   @click="requestDeleteModal(row.id || row.slug)"
+                <a v-if="!loadedDeleteModals.has(row[schema.value?.primary_key || 'id'])" 
+                   @click="requestDeleteModal(row[schema.value?.primary_key || 'id'])"
                    class="uk-drop-close">
-                  <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: schema.title || model }) }}
+                  <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
                 </a>
                 
                 <!-- Delete Modal - only rendered after user requests it -->
                 <CRUD6DeleteModal 
-                  v-if="loadedDeleteModals.has(row.id || row.slug)"
+                  v-if="loadedDeleteModals.has(row[schema.value?.primary_key || 'id'])"
                   :crud6="row" 
                   :model="model" 
                   :schema="schema" 

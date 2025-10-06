@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Import Path**: Corrected `UFFormValidationError` import from `@userfrosting/sprinkle-core` to `@userfrosting/theme-pink-cupcake`
+  - Aligns with UserFrosting 6 architecture where UI components belong to theme layer
+  - Added `@userfrosting/theme-pink-cupcake` as peer dependency in package.json
+  - Resolves build error: "Missing './components/UFFormValidationError.vue' specifier in '@userfrosting/sprinkle-core' package"
+
 ## [0.6.0] - 2024-10-06
 
 ### Changed

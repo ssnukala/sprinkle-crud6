@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2024-10-06
+
+### Changed
+- **BREAKING**: Renamed global components for consistency
+  - `UFCRUD6ListPage` → `UFCRUD6List`
+  - `UFCRUD6RowPage` → `UFCRUD6Detail`
+- **Structure**: Flattened component directory from `components/Pages/CRUD6/Base/` to `components/CRUD6/`
+- **Files**: Consolidated 5 interface files into single `types.ts` file
+- **Views**: Renamed view files for clarity
+  - `PageList.vue` → `List.vue`
+  - `PageRow.vue` → `Detail.vue` (more descriptive)
+
+### Removed
+- Legacy `UFTableCRUD6.vue` component (unused)
+- Redundant directory nesting in component structure
+- 5 separate interface files (consolidated into `types.ts`)
+
+### Improved
+- **Organization**: 40% fewer files (20 → 12), flatter structure
+- **Naming**: Consistent naming convention across all components
+- **Documentation**: Better organized type definitions with clear sections
+- **Maintainability**: Easier to navigate and find code
+
+### Migration
+Users need to update global component usage:
+```vue
+<!-- Before -->
+<UFCRUD6ListPage />
+<UFCRUD6RowPage />
+
+<!-- After -->
+<UFCRUD6List />
+<UFCRUD6Detail />
+```
+
+All import paths and composable functions remain unchanged (backward compatible).
+
+See [CODE_CLEANUP_SUMMARY.md](CODE_CLEANUP_SUMMARY.md) for detailed changes.
+
 ## [0.5.0] - 2024-10-06
 
 ### Added

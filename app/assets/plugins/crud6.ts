@@ -1,7 +1,7 @@
 import type { App } from 'vue'
 import {
-    CRUD6RowPage,
-    CRUD6ListPage,
+    CRUD6Detail,
+    CRUD6List,
 } from '../views'
 import {
     CRUD6CreateModal,
@@ -10,7 +10,7 @@ import {
     CRUD6Form,
     CRUD6Info,
     CRUD6Users
-} from '../components/Pages/CRUD6'
+} from '../components/CRUD6'
 
 /**
  * Register CRUD6 components & views globally
@@ -19,9 +19,9 @@ import {
 export default {
     install: (app: App) => {
         // Register views from '../views'
-        app.component('UFCRUD6RowPage', CRUD6RowPage)
-            .component('UFCRUD6ListPage', CRUD6ListPage)
-            // Register components from '../components/Pages/CRUD6'
+        app.component('UFCRUD6Detail', CRUD6Detail)
+            .component('UFCRUD6List', CRUD6List)
+            // Register components from '../components/CRUD6'
             .component('UFCRUD6CreateModal', CRUD6CreateModal)
             .component('UFCRUD6DeleteModal', CRUD6DeleteModal)
             .component('UFCRUD6EditModal', CRUD6EditModal)
@@ -34,10 +34,10 @@ export default {
 declare module 'vue' {
     export interface GlobalComponents {
         // Views from '../views'
-        UFCRUD6RowPage: typeof CRUD6RowPage
-        UFCRUD6ListPage: typeof CRUD6ListPage
+        UFCRUD6Detail: typeof CRUD6Detail
+        UFCRUD6List: typeof CRUD6List
 
-        // Components from '../components/Pages/CRUD6'
+        // Components from '../components/CRUD6'
         UFCRUD6CreateModal: typeof CRUD6CreateModal
         UFCRUD6DeleteModal: typeof CRUD6DeleteModal
         UFCRUD6EditModal: typeof CRUD6EditModal

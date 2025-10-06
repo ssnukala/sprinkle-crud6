@@ -1,1 +1,2 @@
-// No custom components - using UserFrosting framework components
+// Export CRUD6 components
+export * from './CRUD6'

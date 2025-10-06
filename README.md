@@ -10,7 +10,8 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **JSON Schema-Driven**: Define your models using simple JSON configuration files
 - **Generic Model System**: Dynamic Eloquent models for any database table without pre-defined model classes
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
-- **Frontend-Agnostic**: Pure API backend designed for Vue.js integration
+- **Complete Frontend Integration**: Full-featured Vue.js components and views included
+- **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
 - **Sorting & Filtering**: Automatic sortable and filterable columns
@@ -229,7 +230,61 @@ GET /api/crud6/users?size=50&page=2&sorts[user_name]=asc&filters[group_id]=1&sea
 
 ### Vue.js Integration
 
-This sprinkle is designed to work seamlessly with Vue.js frontends. The API endpoints provide all the necessary data and functionality for building rich frontend interfaces using libraries like `userfrosting/pink-cup-cake`.
+This sprinkle includes a complete set of Vue.js components and views for building CRUD interfaces. The components follow UserFrosting 6 patterns and integrate seamlessly with the framework.
+
+#### Included Components
+
+**Views:**
+- `PageList.vue` - List view with data table, filtering, and pagination
+- `PageRow.vue` - Detail view with edit functionality
+
+**Modals:**
+- `CreateModal.vue` - Create new records
+- `EditModal.vue` - Edit existing records
+- `DeleteModal.vue` - Delete confirmation
+
+**Form Components:**
+- `Form.vue` - Dynamic form generation based on schema
+- `Info.vue` - Display record information with edit/delete actions
+- `Users.vue` - Related users display (for group/role management)
+
+#### Component Registration
+
+Components are automatically registered globally when the sprinkle is installed. You can use them directly in your templates:
+
+```vue
+<template>
+  <!-- Use the pre-built page components -->
+  <UFCRUD6ListPage />
+  <UFCRUD6RowPage />
+  
+  <!-- Or use individual components -->
+  <UFCRUD6CreateModal :model="'users'" :schema="schema" @saved="refresh" />
+  <UFCRUD6EditModal :crud6="record" :model="'users'" :schema="schema" @saved="refresh" />
+</template>
+```
+
+#### Composables
+
+The sprinkle provides Vue composables for API interactions:
+
+```typescript
+import { useCRUD6Api, useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+
+// API operations
+const { fetchRow, createRow, updateRow, deleteRow, apiLoading, apiError } = useCRUD6Api()
+
+// Schema loading and permissions
+const { schema, loading, error, loadSchema, hasPermission } = useCRUD6Schema()
+```
+
+#### Routes
+
+Frontend routes are automatically registered:
+- `/crud6/{model}` - List view for any model
+- `/crud6/{model}/{id}` - Detail view for a specific record
+
+These routes follow UserFrosting 6 patterns and integrate with the authentication and authorization system.
 
 ### Soft Delete
 

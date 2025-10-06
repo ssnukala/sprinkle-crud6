@@ -1,6 +1,6 @@
 {
   "name": "@ssnukala/sprinkle-crud6",
-  "version": "0.4.3",
+  "version": "0.6.0",
   "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",
@@ -25,12 +25,18 @@
   "bugs": {
     "url": "https://github.com/userfrosting/UserFrosting/issues"
   },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "exports": {
     ".": "./app/assets/index.ts",
     "./composables": "./app/assets/composables/index.ts",
+    "./components": "./app/assets/components/index.ts",
     "./interfaces": "./app/assets/interfaces/index.ts",
     "./routes": "./app/assets/routes/index.ts",
-    "./views": "./app/assets/views/index.ts"
+    "./views": "./app/assets/views/index.ts",
+    "./plugins": "./app/assets/plugins/index.ts"
   },
   "files": [
     "app/assets",
@@ -43,12 +49,12 @@
     "limax": "^4.1.0",
     "pinia": "^2.1.6",
     "pinia-plugin-persistedstate": "^3.2.0",
+    "uikit": "^3.21.0",
     "vue": "^3.4.21",
     "vue-router": "^4.2.4"
   },
   "dependencies": {
     "@modyfi/vite-plugin-yaml": "^1.1.1",
-    "@ssnukala/theme-crud6": "github:ssnukala/theme-crud6#main",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^18.0.1",

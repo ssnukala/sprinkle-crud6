@@ -3,6 +3,7 @@ import { watch, computed, onMounted } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import UFFormValidationError from '@userfrosting/sprinkle-core/components/UFFormValidationError.vue'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -325,11 +326,7 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         v-model="formData[fieldKey]" />
                     
                     <!-- Validation errors -->
-                    <div v-if="r$ && r$[fieldKey]?.$errors && r$[fieldKey].$errors.length > 0" class="uk-text-danger uk-text-small">
-                        <div v-for="error in r$[fieldKey].$errors" :key="error.$message">
-                            {{ error.$message }}
-                        </div>
-                    </div>
+                    <UFFormValidationError :errors="(r$ && r$.$errors && r$.$errors[fieldKey]) || []" />
                 </div>
             </div>
 

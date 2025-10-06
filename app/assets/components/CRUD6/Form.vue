@@ -3,7 +3,7 @@ import { watch, computed, onMounted } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
-import UFFormValidationError from '@userfrosting/sprinkle-core/components/UFFormValidationError.vue'
+import UFFormValidationError from '@userfrosting/theme-pink-cupcake/components/UFFormValidationError.vue'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads

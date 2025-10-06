@@ -45,6 +45,7 @@
   "peerDependencies": {
     "@userfrosting/sprinkle-admin": "^6.0.0-beta",
     "@userfrosting/sprinkle-core": "^6.0.0-beta",
+    "@userfrosting/theme-pink-cupcake": "^6.0.0-beta",
     "axios": "^1.12.0",
     "limax": "^4.1.0",
     "pinia": "^2.1.6",

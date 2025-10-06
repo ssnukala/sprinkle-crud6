@@ -12,6 +12,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
 - **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
+- **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
 - **Sorting & Filtering**: Automatic sortable and filterable columns
@@ -123,6 +124,39 @@ Each field in the schema can have the following properties:
 - **default**: Default value for the field
 - **validation**: Validation rules for the field
 - **filter_type**: Type of filter (`equals`, `like`, `starts_with`, `ends_with`, `in`, `between`, `greater_than`, `less_than`, `not_equals`)
+
+### Detail Section Configuration
+
+Define one-to-many relationships declaratively in your schemas to display related data on detail pages:
+
+```json
+{
+  "model": "groups",
+  "title": "Group Management",
+  "table": "groups",
+  "primary_key": "id",
+  "detail": {
+    "model": "users",
+    "foreign_key": "group_id",
+    "list_fields": ["user_name", "email", "first_name", "last_name", "flag_enabled"],
+    "title": "GROUP.USERS"
+  },
+  "fields": {
+    "id": { "type": "integer", "label": "ID" },
+    "name": { "type": "string", "label": "Group Name" }
+  }
+}
+```
+
+**Detail Configuration Properties:**
+- **model**: The name of the related model to display
+- **foreign_key**: The foreign key field in the related table that references this model
+- **list_fields**: Array of field names to display in the detail list
+- **title** (optional): Title for the detail section (supports i18n keys)
+
+When viewing a group detail page, the users belonging to that group will be automatically displayed in a data table. The detail section is optional - if not configured, no related data section will be shown.
+
+See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) for more information.
 
 ### Database Connection Configuration
 

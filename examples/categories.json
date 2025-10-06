@@ -1,0 +1,93 @@
+{
+  "model": "categories",
+  "title": "Category Management",
+  "singular_title": "Category",
+  "description": "Manage product categories",
+  "table": "categories",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": false,
+  "permissions": {
+    "read": "view_categories",
+    "create": "create_category",
+    "update": "edit_category",
+    "delete": "delete_category"
+  },
+  "default_sort": {
+    "name": "asc"
+  },
+  "detail": {
+    "model": "products",
+    "foreign_key": "category_id",
+    "list_fields": ["name", "sku", "price", "is_active"],
+    "title": "Products in this Category"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": true
+    },
+    "name": {
+      "type": "string",
+      "label": "Category Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 100
+        }
+      }
+    },
+    "slug": {
+      "type": "string",
+      "label": "Slug",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "slug": true
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": true,
+      "listable": false
+    },
+    "icon": {
+      "type": "string",
+      "label": "Icon",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "listable": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
+    }
+  }
+}

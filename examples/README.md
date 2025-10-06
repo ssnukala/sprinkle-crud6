@@ -208,6 +208,72 @@ DELETE /api/crud6/products/123
 
 ## Advanced Configuration
 
+### Detail Section (One-to-Many Relationships)
+
+Define related data that should be displayed on a record's detail page. This allows you to show one-to-many relationships declaratively without writing custom code.
+
+#### Example: Categories with Products
+
+```json
+{
+  "model": "categories",
+  "title": "Category Management",
+  "table": "categories",
+  "primary_key": "id",
+  "detail": {
+    "model": "products",
+    "foreign_key": "category_id",
+    "list_fields": ["name", "sku", "price", "is_active"],
+    "title": "Products in this Category"
+  },
+  "fields": {
+    "id": { "type": "integer", "label": "ID" },
+    "name": { "type": "string", "label": "Category Name" },
+    "slug": { "type": "string", "label": "Slug" }
+  }
+}
+```
+
+#### Example: Groups with Users
+
+```json
+{
+  "model": "groups",
+  "title": "Group Management",
+  "table": "groups",
+  "primary_key": "id",
+  "detail": {
+    "model": "users",
+    "foreign_key": "group_id",
+    "list_fields": ["user_name", "email", "first_name", "last_name", "flag_enabled"],
+    "title": "GROUP.USERS"
+  },
+  "fields": {
+    "id": { "type": "integer", "label": "ID" },
+    "name": { "type": "string", "label": "Group Name" }
+  }
+}
+```
+
+**Detail Configuration Properties:**
+- `model`: The related model to display
+- `foreign_key`: Foreign key field in the related table
+- `list_fields`: Array of field names to show in the detail list
+- `title` (optional): Section title (supports i18n keys)
+
+**API Endpoint:** When viewing a category with ID 1, the products will be fetched from:
+```
+GET /api/crud6/categories/1/products
+```
+
+The detail section automatically:
+- Filters related records by the foreign key
+- Displays fields based on the related model's schema
+- Supports sorting, searching, and pagination
+- Formats fields according to their type (boolean, date, etc.)
+
+See the complete [Detail Section Feature Documentation](../docs/DETAIL_SECTION_FEATURE.md) for more details.
+
 ### Database Connection Selection
 
 You can configure models to use different database connections, allowing for multi-database architectures, read replicas, or analytics databases.

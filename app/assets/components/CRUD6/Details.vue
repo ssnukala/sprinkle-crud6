@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'
 
@@ -10,10 +10,16 @@ const props = defineProps<{
 }>()
 
 // Load schema for the detail model to get field information
-const { schema: detailSchema, loadSchema } = useCRUD6Schema()
+const { schema: detailSchema, loading: schemaLoading, loadSchema } = useCRUD6Schema()
+
+// Track whether schema has been loaded
+const schemaLoaded = ref(false)
 
 // Load the detail model schema when component mounts
-loadSchema(props.detailConfig.model)
+onMounted(async () => {
+    await loadSchema(props.detailConfig.model)
+    schemaLoaded.value = true
+})
 
 // Build the data URL based on the detail configuration
 const dataUrl = computed(() => {
@@ -22,8 +28,13 @@ const dataUrl = computed(() => {
 
 // Get the title for the detail section
 const detailTitle = computed(() => {
+    // Try to use the title from config first (may be a translation key)
     if (props.detailConfig.title) {
         return props.detailConfig.title
+    }
+    // Use schema title if available
+    if (detailSchema.value?.title) {
+        return detailSchema.value.title
     }
     // Capitalize and pluralize model name as fallback
     const modelName = props.detailConfig.model
@@ -46,8 +57,16 @@ const getFieldType = (fieldKey: string): string => {
 </script>
 
 <template>
-    <UFCardBox :title="detailTitle">
+    <UFCardBox :title="$t(detailTitle)">
+        <!-- Loading state -->
+        <div v-if="schemaLoading" class="uk-text-center uk-padding">
+            <div uk-spinner></div>
+            <p>{{ $t('LOADING') }}</p>
+        </div>
+        
+        <!-- Table with data -->
         <UFSprunjeTable
+            v-else
             :dataUrl="dataUrl"
             searchColumn="name"
             hideFilters>

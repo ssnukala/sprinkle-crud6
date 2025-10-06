@@ -1,6 +1,7 @@
 {
   "model": "users",
   "title": "User Management",
+  "singular_title": "User",
   "description": "Manage system users",
   "table": "users",
   "primary_key": "id",

@@ -1,6 +1,7 @@
 {
   "model": "users",
   "title": "User Management (DB1)",
+  "singular_title": "User",
   "description": "Users from secondary database db1",
   "table": "users",
   "primary_key": "id",

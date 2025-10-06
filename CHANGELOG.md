@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **Import Path**: Corrected `UFFormValidationError` import from `@userfrosting/sprinkle-core` to `@userfrosting/theme-pink-cupcake`
-  - Aligns with UserFrosting 6 architecture where UI components belong to theme layer
-  - Added `@userfrosting/theme-pink-cupcake` as peer dependency in package.json
-  - Resolves build error: "Missing './components/UFFormValidationError.vue' specifier in '@userfrosting/sprinkle-core' package"
+- **Import Removal**: Removed explicit import of `UFFormValidationError` component from `Form.vue`
+  - `UFFormValidationError` is globally registered by `@userfrosting/theme-pink-cupcake` plugin
+  - Aligns with UserFrosting 6 patterns where theme components are auto-registered (see `GroupForm.vue`)
+  - Resolves Vite build error: "Missing './components/UFFormValidationError.vue' specifier in '@userfrosting/theme-pink-cupcake' package"
+  - Component usage unchanged - still works via global registration
 
 ## [0.6.0] - 2024-10-06
 

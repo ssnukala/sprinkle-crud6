@@ -1,6 +1,6 @@
 {
   "name": "@ssnukala/sprinkle-crud6",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",

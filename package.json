@@ -25,6 +25,10 @@
   "bugs": {
     "url": "https://github.com/userfrosting/UserFrosting/issues"
   },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "exports": {
     ".": "./app/assets/index.ts",
     "./composables": "./app/assets/composables/index.ts",
@@ -43,12 +47,12 @@
     "limax": "^4.1.0",
     "pinia": "^2.1.6",
     "pinia-plugin-persistedstate": "^3.2.0",
+    "uikit": "^3.21.0",
     "vue": "^3.4.21",
     "vue-router": "^4.2.4"
   },
   "dependencies": {
     "@modyfi/vite-plugin-yaml": "^1.1.1",
-    "@ssnukala/theme-crud6": "github:ssnukala/theme-crud6#main",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^18.0.1",

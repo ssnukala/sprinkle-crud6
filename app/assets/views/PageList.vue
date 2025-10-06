@@ -3,9 +3,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
-import CRUD6CreateModal from '../../components/Pages/CRUD6/Base/CreateModal.vue'
-import CRUD6EditModal from '../../components/Pages/CRUD6/Base/EditModal.vue'
-import CRUD6DeleteModal from '../../components/Pages/CRUD6/Base/DeleteModal.vue'
+import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
+import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
+import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 
 const route = useRoute()

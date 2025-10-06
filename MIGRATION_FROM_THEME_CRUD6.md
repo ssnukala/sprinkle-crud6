@@ -100,15 +100,13 @@ All components are now located in the sprinkle:
 ```
 app/assets/
 ├── components/
-│   └── Pages/
-│       └── CRUD6/
-│           └── Base/
-│               ├── CreateModal.vue
-│               ├── EditModal.vue
-│               ├── DeleteModal.vue
-│               ├── Form.vue
-│               ├── Info.vue
-│               └── Users.vue
+│   └── CRUD6/
+│       ├── CreateModal.vue
+│       ├── EditModal.vue
+│       ├── DeleteModal.vue
+│       ├── Form.vue
+│       ├── Info.vue
+│       └── Users.vue
 ├── views/
 │   ├── PageList.vue
 │   └── PageRow.vue

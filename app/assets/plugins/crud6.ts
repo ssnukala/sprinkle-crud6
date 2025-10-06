@@ -21,7 +21,7 @@ export default {
         // Register views from '../views'
         app.component('UFCRUD6RowPage', CRUD6RowPage)
             .component('UFCRUD6ListPage', CRUD6ListPage)
-            // Register components from '../components/Pages/CRUD6'
+            // Register components from '../components/CRUD6'
             .component('UFCRUD6CreateModal', CRUD6CreateModal)
             .component('UFCRUD6DeleteModal', CRUD6DeleteModal)
             .component('UFCRUD6EditModal', CRUD6EditModal)
@@ -37,7 +37,7 @@ declare module 'vue' {
         UFCRUD6RowPage: typeof CRUD6RowPage
         UFCRUD6ListPage: typeof CRUD6ListPage
 
-        // Components from '../components/Pages/CRUD6'
+        // Components from '../components/CRUD6'
         UFCRUD6CreateModal: typeof CRUD6CreateModal
         UFCRUD6DeleteModal: typeof CRUD6DeleteModal
         UFCRUD6EditModal: typeof CRUD6EditModal

@@ -56,10 +56,11 @@ public function getSprinkles(): array
         Account::class,
         Admin::class,
         CRUD6::class,        // Add this
-        PinkCupcake::class,
     ];
 }
 ```
+
+> **Note:** PinkCupcake theme is optional. If you want to use it, install with `composer require userfrosting/theme-pink-cupcake` and add `PinkCupcake::class` to the sprinkles list.
 
 ## main.ts Changes
 

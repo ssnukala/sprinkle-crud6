@@ -118,10 +118,14 @@ function fetch() {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then((fetchedRow) => {
-                CRUD6Row.value = fetchedRow.data
-                record.value = fetchedRow.data
-                originalRecord.value = { ...fetchedRow.data }
-                page.title = CRUD6Row.value.name
+                CRUD6Row.value = fetchedRow
+                record.value = fetchedRow
+                originalRecord.value = { ...fetchedRow }
+                // Update page title with record name if available
+                const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
+                if (recordName) {
+                    page.title = `${recordName} - ${schema.value?.title || model.value}`
+                }
             }).catch((error) => {
                 console.error('Failed to fetch CRUD6 row:', error)
             })
@@ -244,6 +248,17 @@ watch(model, async (newModel) => {
                 await schemaPromise
                 console.log('[PageRow] ✅ Schema loaded successfully for model:', newModel, 'with fields:', Object.keys(schema.value?.fields || {}))
                 console.log('[PageRow] 📊 Schema details - title:', schema.value?.title, 'field count:', Object.keys(schema.value?.fields || {}).length)
+                
+                // Update page title and description
+                if (schema.value) {
+                    if (isCreateMode.value) {
+                        page.title = `Create ${schema.value.title || newModel}`
+                        page.description = schema.value.description || `Create a new ${schema.value.title || newModel}`
+                    } else if (recordId.value) {
+                        page.title = `View ${schema.value.title || newModel}`
+                        page.description = schema.value.description || `View and edit ${schema.value.title || newModel} details.`
+                    }
+                }
             }
         } catch (error) {
             console.error('[PageRow] ❌ Failed to load schema for model:', newModel, 'error:', error)
@@ -285,7 +300,7 @@ watch(recordId, (newId) => {
                     <div class="uk-flex uk-flex-between uk-flex-middle">
                         <div>
                             <h3 class="uk-card-title uk-margin-remove">
-                                {{ isCreateMode ? $t('CREATE') : $t('EDIT') }} {{ schema?.title || model }}
+                                {{ isCreateMode ? $t('CRUD6.CREATE', { model: schema?.title || model }) : $t('CRUD6.EDIT', { model: schema?.title || model }) }}
                             </h3>
                             <small v-if="recordId" class="uk-text-muted">ID: {{ recordId }}</small>
                         </div>

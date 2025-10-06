@@ -166,7 +166,7 @@ function formatFieldValue(value: any, field: any): string {
                 v-if="hasUpdatePermission && !showEditModal"
                 @click="requestEditModal()"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small">
-                <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT') }}
+                <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: finalSchema.title || model }) }}
             </button>
             
             <!-- Edit Modal - only rendered after user requests it -->
@@ -183,7 +183,7 @@ function formatFieldValue(value: any, field: any): string {
                 v-if="hasDeletePermission && !showDeleteModal"
                 @click="requestDeleteModal()"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small">
-                <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE') }}
+                <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: finalSchema.title || model }) }}
             </button>
             
             <!-- Delete Modal - only rendered after user requests it -->

@@ -35,12 +35,12 @@ const formSuccess = () => {
 
 <template>
     <a v-bind="$attrs" :uk-toggle="'target: #modal-crud6-create'">
-        <slot><font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE') }}</slot>
+        <slot><font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: schema?.title || model }) }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModal id="modal-crud6-create" closable>
-        <template #header>{{ $t('CRUD6.CREATE') }}</template>
+        <template #header>{{ $t('CRUD6.CREATE', { model: schema?.title || model }) }}</template>
         <template #default>
             <CRUD6Form :model="props.model" :schema="props.schema" @success="formSuccess()" />
         </template>

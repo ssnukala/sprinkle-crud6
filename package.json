@@ -1,6 +1,6 @@
 {
   "name": "@ssnukala/sprinkle-crud6",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",
@@ -32,9 +32,11 @@
   "exports": {
     ".": "./app/assets/index.ts",
     "./composables": "./app/assets/composables/index.ts",
+    "./components": "./app/assets/components/index.ts",
     "./interfaces": "./app/assets/interfaces/index.ts",
     "./routes": "./app/assets/routes/index.ts",
-    "./views": "./app/assets/views/index.ts"
+    "./views": "./app/assets/views/index.ts",
+    "./plugins": "./app/assets/plugins/index.ts"
   },
   "files": [
     "app/assets",

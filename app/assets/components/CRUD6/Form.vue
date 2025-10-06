@@ -325,7 +325,11 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         v-model="formData[fieldKey]" />
                     
                     <!-- Validation errors -->
-                    <UFFormValidationError :errors="(r$ && r$.$errors && r$.$errors[fieldKey]) || []" />
+                    <div v-if="r$ && r$[fieldKey]?.$errors && r$[fieldKey].$errors.length > 0" class="uk-text-danger uk-text-small">
+                        <div v-for="error in r$[fieldKey].$errors" :key="error.$message">
+                            {{ error.$message }}
+                        </div>
+                    </div>
                 </div>
             </div>
 

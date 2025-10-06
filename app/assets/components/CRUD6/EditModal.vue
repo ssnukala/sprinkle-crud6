@@ -34,12 +34,12 @@ console.log('[EditModal] 📊 Schema details passed to Form - title:', props.sch
 
 <template>
     <a :href="'#modal-crud6-edit-' + props.crud6.id" v-bind="$attrs" uk-toggle>
-        <slot> <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT') }} </slot>
+        <slot> <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: schema?.title || model }) }} </slot>
     </a>
 
     <!-- This is the modal -->
     <UFModal :id="'modal-crud6-edit-' + props.crud6.id" closable>
-        <template #header> {{ $t('CRUD6.EDIT') }} </template>
+        <template #header> {{ $t('CRUD6.EDIT', { model: schema?.title || model }) }} </template>
         <template #default>
             <CRUD6Form :crud6="props.crud6" :model="props.model" :schema="props.schema" @success="formSuccess()" />
         </template>

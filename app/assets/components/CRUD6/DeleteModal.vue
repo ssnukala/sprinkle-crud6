@@ -46,20 +46,20 @@ const deleteConfirmed = () => {
 
 <template>
     <a :href="'#confirm-crud6-delete-' + props.crud6.id" v-bind="$attrs" uk-toggle>
-        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE') }}</slot>
+        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: schema?.title || model }) }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModalConfirmation
         :id="'confirm-crud6-delete-' + props.crud6.id"
-        title="CRUD6.DELETE"
+        :title="$t('CRUD6.DELETE', { model: schema?.title || model })"
         @confirmed="deleteConfirmed()"
-        acceptLabel="CRUD6.DELETE_YES"
+        :acceptLabel="$t('CRUD6.DELETE_YES', { model: schema?.title || model })"
         acceptIcon="trash"
         :rejectIcon="null"
         :acceptSeverity="Severity.Danger">
         <template #prompt>
-            <div v-html="$t('CRUD6.DELETE_CONFIRM', props.crud6)"></div>
+            <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: schema?.title || model })"></div>
         </template>
     </UFModalConfirmation>
 </template> 

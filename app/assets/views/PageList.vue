@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
 import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
@@ -10,6 +11,7 @@ import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 
 const route = useRoute()
 const router = useRouter()
+const page = usePageMeta()
 
 // Current model name from route
 const model = computed(() => route.params.model as string)
@@ -80,6 +82,11 @@ onMounted(() => {
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(() => {
         console.log('[PageList] Schema loaded successfully for:', model.value)
+        // Update page title and description using schema
+        if (schema.value) {
+          page.title = schema.value.title || model.value
+          page.description = schema.value.description || `A listing of the ${schema.value.title || model.value} for your site. Provides management tools for editing and deleting ${schema.value.title || model.value}.`
+        }
       }).catch((error) => {
         console.error('[PageList] Failed to load schema:', error)
       })
@@ -115,7 +122,7 @@ onMounted(() => {
           v-if="hasCreatePermission && schema && !showCreateModal"
           @click="requestCreateModal()"
           class="uk-button uk-button-primary">
-          <font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE') }}
+          <font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: schema.title || model }) }}
         </button>
         
         <!-- Create Modal - only rendered after user clicks create -->
@@ -137,7 +144,7 @@ onMounted(() => {
           {{ field.label || fieldKey }}
         </UFSprunjeHeader>
         <UFSprunjeHeader v-if="hasEditPermission || hasDeletePermission">
-          {{ $t('CRUD6.ACTIONS') }}
+          {{ $t('ACTIONS') }}
         </UFSprunjeHeader>
       </template>
 
@@ -190,7 +197,7 @@ onMounted(() => {
                 <a v-if="!loadedEditModals.has(row.id || row.slug)" 
                    @click="requestEditModal(row.id || row.slug)"
                    class="uk-drop-close">
-                  <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT') }}
+                  <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: schema.title || model }) }}
                 </a>
                 
                 <!-- Edit Modal - only rendered after user requests it -->
@@ -207,7 +214,7 @@ onMounted(() => {
                 <a v-if="!loadedDeleteModals.has(row.id || row.slug)" 
                    @click="requestDeleteModal(row.id || row.slug)"
                    class="uk-drop-close">
-                  <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE') }}
+                  <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: schema.title || model }) }}
                 </a>
                 
                 <!-- Delete Modal - only rendered after user requests it -->

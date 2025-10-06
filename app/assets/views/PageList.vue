@@ -86,6 +86,9 @@ function viewRecord(record: CRUD6Interface) {
 // Load schema
 onMounted(() => {
   if (model.value && loadSchema) {
+    // Set initial page title immediately for breadcrumbs
+    page.title = model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    
     console.log('[PageList] Loading schema for model:', model.value)
     const schemaPromise = loadSchema(model.value)
     if (schemaPromise && typeof schemaPromise.then === 'function') {
@@ -205,8 +208,7 @@ onMounted(() => {
               <li v-if="hasEditPermission && schema">
                 <!-- Edit button - shows modal loading on first click -->
                 <a v-if="!loadedEditModals.has(row[schema.value?.primary_key || 'id'])" 
-                   @click="requestEditModal(row[schema.value?.primary_key || 'id'])"
-                   class="uk-drop-close">
+                   @click="requestEditModal(row[schema.value?.primary_key || 'id'])">
                   <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
                 </a>
                 
@@ -222,8 +224,7 @@ onMounted(() => {
               <li v-if="hasDeletePermission && schema">
                 <!-- Delete button - shows modal loading on first click -->
                 <a v-if="!loadedDeleteModals.has(row[schema.value?.primary_key || 'id'])" 
-                   @click="requestDeleteModal(row[schema.value?.primary_key || 'id'])"
-                   class="uk-drop-close">
+                   @click="requestDeleteModal(row[schema.value?.primary_key || 'id'])">
                   <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
                 </a>
                 

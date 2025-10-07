@@ -103,25 +103,36 @@ function viewRecord(record: CRUD6Interface) {
 
 // Load schema
 onMounted(() => {
+  console.log('[PageList] 🚀 Component mounted, model:', model.value)
   if (model.value && loadSchema) {
-    // Set initial page title immediately for breadcrumbs
-    page.title = model.value.charAt(0).toUpperCase() + model.value.slice(1)
-    
-    console.log('[PageList] Loading schema for model:', model.value)
-    const schemaPromise = loadSchema(model.value)
-    if (schemaPromise && typeof schemaPromise.then === 'function') {
-      schemaPromise.then(() => {
-        console.log('[PageList] Schema loaded successfully for:', model.value)
-        // Update page title and description using schema
-        if (schema.value) {
-          // Use title for list page header, but modelLabel for buttons
-          page.title = schema.value.title || model.value
-          page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
-        }
-      }).catch((error) => {
-        console.error('[PageList] Failed to load schema:', error)
-      })
+    try {
+      // Set initial page title immediately for breadcrumbs
+      const initialTitle = model.value.charAt(0).toUpperCase() + model.value.slice(1)
+      page.title = initialTitle
+      console.log('[PageList] 📝 Set initial page.title to:', page.title)
+      
+      console.log('[PageList] Loading schema for model:', model.value)
+      const schemaPromise = loadSchema(model.value)
+      if (schemaPromise && typeof schemaPromise.then === 'function') {
+        schemaPromise.then(() => {
+          console.log('[PageList] Schema loaded successfully for:', model.value)
+          // Update page title and description using schema
+          if (schema.value) {
+            // Use title for list page header, but modelLabel for buttons
+            const schemaTitle = schema.value.title || model.value
+            page.title = schemaTitle
+            page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
+            console.log('[PageList] 📝 Updated page.title to:', page.title)
+          }
+        }).catch((error) => {
+          console.error('[PageList] Failed to load schema:', error)
+        })
+      }
+    } catch (error) {
+      console.error('[PageList] Error in onMounted:', error)
     }
+  } else {
+    console.warn('[PageList] ⚠️ Cannot set page title - model:', model.value, 'loadSchema:', !!loadSchema)
   }
 })
 </script>

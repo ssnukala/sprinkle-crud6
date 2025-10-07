@@ -252,6 +252,7 @@ watch(model, async (newModel) => {
             // Set initial page title immediately for breadcrumbs
             const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
             page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
+            console.log('[PageRow] 📝 Set initial page.title to:', page.title, 'isCreateMode:', isCreateMode.value)
             
             console.log('[PageRow] 🔄 Starting schema API call for model:', newModel, 'at route:', route.path)
             console.log('[PageRow] 📍 Schema loading context - recordId:', recordId.value, 'isCreateMode:', isCreateMode.value)
@@ -267,10 +268,12 @@ watch(model, async (newModel) => {
                     if (isCreateMode.value) {
                         page.title = `Create ${modelLabel.value}`
                         page.description = schema.value.description || `Create a new ${modelLabel.value}`
+                        console.log('[PageRow] 📝 Updated page.title (create mode) to:', page.title)
                     } else if (recordId.value) {
                         // Set title to schema title for breadcrumbs, will be updated with record name after fetch
                         page.title = schema.value.title || modelLabel.value
                         page.description = schema.value.description || `View and edit ${modelLabel.value} details.`
+                        console.log('[PageRow] 📝 Updated page.title (view mode) to:', page.title)
                     }
                 }
             }

@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         php: ['8.1', '8.2', '8.3']
-        uf-version: ['6.0.0-beta.5']
+        uf-version: ['^6.0-beta']
     
     services:
       mysql:
@@ -48,12 +48,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Clone UserFrosting ${{ matrix.uf-version }}
+      - name: Create UserFrosting project using composer create-project
         run: |
-          git clone --branch ${{ matrix.uf-version }} --depth 1 https://github.com/userfrosting/UserFrosting.git userfrosting
-          cd userfrosting
+          composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
 
-      - name: Install sprinkle-crud6 as local package
+      - name: Configure Composer for beta packages and local sprinkle-crud6
         run: |
           cd userfrosting
           # Add local path to composer.json
@@ -70,10 +69,8 @@ jobs:
       - name: Install NPM dependencies
         run: |
           cd userfrosting
-          npm install
+          npm update
           npm install ../sprinkle-crud6
-          # Install theme-pink-cupcake for frontend components (NPM only - no Composer package exists)
-          npm install @userfrosting/theme-pink-cupcake@^6.0.0-beta
 
       - name: Configure MyApp.php
         run: |
@@ -105,6 +102,53 @@ jobs:
           }
           EOF
 
+      - name: Configure main.ts
+        run: |
+          cd userfrosting
+          # Add CRUD6 sprinkle import and plugin to main.ts
+          cat > app/assets/main.ts << 'EOF'
+          import { createApp } from 'vue'
+          import { createPinia } from 'pinia'
+          import router from './router'
+          import App from './App.vue'
+          
+          /** Setup crud6 Sprinkle */
+          import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
+          
+          const app = createApp(App)
+          const pinia = createPinia()
+          
+          app.use(pinia)
+          app.use(router)
+          app.use(CRUD6Sprinkle)
+          
+          app.mount('#app')
+          EOF
+
+      - name: Configure router
+        run: |
+          cd userfrosting
+          mkdir -p app/assets/router
+          # Create router configuration with CRUD6 routes
+          cat > app/assets/router/index.ts << 'EOF'
+          import { createRouter, createWebHistory } from 'vue-router'
+          import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+          
+          const router = createRouter({
+            history: createWebHistory(),
+            routes: [
+              {
+                path: '/',
+                children: [
+                  ...CRUD6Routes
+                ]
+              }
+            ]
+          })
+          
+          export default router
+          EOF
+
       - name: Create groups schema
         run: |
           cd userfrosting
@@ -134,7 +178,9 @@ jobs:
       - name: Setup environment
         run: |
           cd userfrosting
-          cp app/.env.example app/.env
+          # Use .env.docker as the base (as per user's setup approach)
+          cp app/.env.docker app/.env
+          # Update database configuration for CI environment
           sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
           sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env
           sed -i 's/DB_PORT=.*/DB_PORT="3306"/' app/.env
@@ -155,7 +201,8 @@ jobs:
       - name: Build frontend assets
         run: |
           cd userfrosting
-          npm run vite:build
+          # Build assets using bakery (following UserFrosting 6 standard approach)
+          php bakery assets:vite --build
 
       - name: Test schema loading
         run: |

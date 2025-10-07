@@ -17,26 +17,8 @@ const schemaLoaded = ref(false)
 
 // Load the detail model schema when component mounts
 onMounted(async () => {
-    console.log('[Details] 🚀 Component mounted - loading schema for:', props.detailConfig.model)
-    console.log('[Details] 📊 Detail config:', {
-        model: props.detailConfig.model,
-        parentModel: props.parentModel,
-        recordId: props.recordId,
-        list_fields: props.detailConfig.list_fields
-    })
-    try {
-        await loadSchema(props.detailConfig.model)
-        schemaLoaded.value = true
-        console.log('[Details] ✅ Schema loaded successfully')
-        console.log('[Details] 📝 dataUrl will be:', dataUrl.value)
-        if (detailSchema.value) {
-            console.log('[Details] 📋 Schema fields:', Object.keys(detailSchema.value.fields || {}))
-        } else {
-            console.warn('[Details] ⚠️  Schema loaded but detailSchema.value is null/undefined')
-        }
-    } catch (error) {
-        console.error('[Details] ❌ Failed to load schema:', error)
-    }
+    await loadSchema(props.detailConfig.model)
+    schemaLoaded.value = true
 })
 
 // Build the data URL based on the detail configuration

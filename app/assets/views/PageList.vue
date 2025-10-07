@@ -1,6 +1,6 @@
 <!-- PageList.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref, nextTick } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
@@ -12,45 +12,8 @@ import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
-
 // Current model name from route
 const model = computed(() => route.params.model as string)
-
-// Track which modals have been requested by user interaction
-const loadedEditModals = ref(new Set<string>())
-const loadedDeleteModals = ref(new Set<string>())
-const showCreateModal = ref(false)
-
-// Helper functions to lazily load modals
-async function requestEditModal(recordId: string) {
-  loadedEditModals.value.add(recordId)
-  // Wait for component to render, then trigger modal
-  await nextTick()
-  const modalLink = document.querySelector(`a[href="#modal-crud6-edit-${recordId}"]`)
-  if (modalLink) {
-    ;(modalLink as HTMLElement).click()
-  }
-}
-
-async function requestDeleteModal(recordId: string) {
-  loadedDeleteModals.value.add(recordId)
-  // Wait for component to render, then trigger modal
-  await nextTick()
-  const modalLink = document.querySelector(`a[href="#confirm-crud6-delete-${recordId}"]`)
-  if (modalLink) {
-    ;(modalLink as HTMLElement).click()
-  }
-}
-
-async function requestCreateModal() {
-  showCreateModal.value = true
-  // Wait for component to render, then trigger modal
-  await nextTick()
-  const modalLink = document.querySelector(`a[href="#modal-crud6-create"]`)
-  if (modalLink) {
-    ;(modalLink as HTMLElement).click()
-  }
-}
 
 // CRUD6 schema composable
 const {
@@ -103,36 +66,20 @@ function viewRecord(record: CRUD6Interface) {
 
 // Load schema
 onMounted(() => {
-  console.log('[PageList] 🚀 Component mounted, model:', model.value)
   if (model.value && loadSchema) {
-    try {
-      // Set initial page title immediately for breadcrumbs
-      const initialTitle = model.value.charAt(0).toUpperCase() + model.value.slice(1)
-      page.title = initialTitle
-      console.log('[PageList] 📝 Set initial page.title to:', page.title)
-      
-      console.log('[PageList] Loading schema for model:', model.value)
-      const schemaPromise = loadSchema(model.value)
-      if (schemaPromise && typeof schemaPromise.then === 'function') {
-        schemaPromise.then(() => {
-          console.log('[PageList] Schema loaded successfully for:', model.value)
-          // Update page title and description using schema
-          if (schema.value) {
-            // Use title for list page header, but modelLabel for buttons
-            const schemaTitle = schema.value.title || model.value
-            page.title = schemaTitle
-            page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
-            console.log('[PageList] 📝 Updated page.title to:', page.title)
-          }
-        }).catch((error) => {
-          console.error('[PageList] Failed to load schema:', error)
-        })
-      }
-    } catch (error) {
-      console.error('[PageList] Error in onMounted:', error)
+    // Set initial page title immediately for breadcrumbs
+    page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    
+    const schemaPromise = loadSchema(model.value)
+    if (schemaPromise && typeof schemaPromise.then === 'function') {
+      schemaPromise.then(() => {
+        // Update page title and description using schema
+        if (schema.value) {
+          page.title = schema.value.title || model.value
+          page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
+        }
+      })
     }
-  } else {
-    console.warn('[PageList] ⚠️ Cannot set page title - model:', model.value, 'loadSchema:', !!loadSchema)
   }
 })
 </script>
@@ -159,17 +106,8 @@ onMounted(() => {
 
       <!-- Actions -->
       <template #actions="{ sprunjer }">
-        <!-- Create button that triggers modal loading -->
-        <button 
-          v-if="hasCreatePermission && schema && !showCreateModal"
-          @click="requestCreateModal()"
-          class="uk-button uk-button-primary">
-          <font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: modelLabel }) }}
-        </button>
-        
-        <!-- Create Modal - only rendered after user clicks create -->
         <CRUD6CreateModal
-          v-if="showCreateModal && hasCreatePermission && schema"
+          v-if="hasCreatePermission && schema"
           :model="model"
           :schema="schema"
           @saved="sprunjer.fetch()"
@@ -235,15 +173,7 @@ onMounted(() => {
                 </RouterLink>
               </li>
               <li v-if="hasEditPermission && schema">
-                <!-- Edit button - shows modal loading on first click -->
-                <a v-if="!loadedEditModals.has(row[schema.value?.primary_key || 'id'])" 
-                   @click="requestEditModal(row[schema.value?.primary_key || 'id'])">
-                  <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
-                </a>
-                
-                <!-- Edit Modal - only rendered after user requests it -->
                 <CRUD6EditModal 
-                  v-if="loadedEditModals.has(row[schema.value?.primary_key || 'id'])"
                   :crud6="row" 
                   :model="model" 
                   :schema="schema" 
@@ -251,15 +181,7 @@ onMounted(() => {
                   class="uk-drop-close" />
               </li>
               <li v-if="hasDeletePermission && schema">
-                <!-- Delete button - shows modal loading on first click -->
-                <a v-if="!loadedDeleteModals.has(row[schema.value?.primary_key || 'id'])" 
-                   @click="requestDeleteModal(row[schema.value?.primary_key || 'id'])">
-                  <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
-                </a>
-                
-                <!-- Delete Modal - only rendered after user requests it -->
                 <CRUD6DeleteModal 
-                  v-if="loadedDeleteModals.has(row[schema.value?.primary_key || 'id'])"
                   :crud6="row" 
                   :model="model" 
                   :schema="schema" 

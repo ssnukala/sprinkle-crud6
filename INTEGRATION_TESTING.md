@@ -191,6 +191,10 @@ DB_PORT="3306"
 DB_NAME="userfrosting"
 DB_USER="root"
 DB_PASSWORD="your_password"
+
+# Bakery Configuration (optional, useful for CI/CD environments)
+# Set to false to disable interactive prompts for sensitive commands
+BAKERY_CONFIRM_SENSITIVE_COMMAND=false
 ```
 
 ### 9. Run Database Migrations
@@ -207,9 +211,14 @@ This will create all necessary tables including the default `groups` table.
 php bakery seed
 # For automated/CI environments, use --force to skip confirmation:
 # php bakery seed --force
+# 
+# Alternatively, set BAKERY_CONFIRM_SENSITIVE_COMMAND=false in .env to disable
+# interactive prompts for all sensitive bakery commands
 ```
 
 This creates default admin user and groups for testing.
+
+> **Note for CI/CD**: To prevent interactive prompts in automated environments, either use the `--force` flag or set `BAKERY_CONFIRM_SENSITIVE_COMMAND=false` in your `.env` file. The environment variable approach is recommended for CI/CD pipelines as it applies to all sensitive bakery commands.
 
 ### 11. Create CRUD6 Schema for Groups
 

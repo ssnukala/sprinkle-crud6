@@ -17,13 +17,13 @@ npm install @ssnukala/sprinkle-crud6
 #    use UserFrosting\Sprinkle\CRUD6\CRUD6;
 #    CRUD6::class,
 
-# 4. Edit app/assets/main.ts - Add:
+# 4. Edit app/assets/main.ts - Add after app.use(AdminSprinkle):
 #    import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
 #    app.use(CRUD6Sprinkle)
 #
-#    Edit app/assets/router/index.ts - Add:
+#    Edit app/assets/router/index.ts - Add to children array:
 #    import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
-#    router.addRoute({ path: '/crud6', children: CRUD6Routes })
+#    ...CRUD6Routes,  // as last entry in children array
 
 # 5. Install and build
 composer install
@@ -68,9 +68,10 @@ public function getSprinkles(): array
 ## main.ts Changes
 
 ```typescript
+/** Setup crud6 Sprinkle */
 import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
 
-// After creating app and router:
+// After app.use(AdminSprinkle):
 app.use(CRUD6Sprinkle)
 ```
 
@@ -79,11 +80,11 @@ app.use(CRUD6Sprinkle)
 ```typescript
 import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
 
-// After creating router, before export:
-router.addRoute({
-    path: '/crud6',
-    children: CRUD6Routes
-})
+// In the children array of your routes:
+children: [
+    // ... existing routes ...
+    ...CRUD6Routes,  // Add as last entry
+]
 ```
 
 ## Minimal groups.json Schema

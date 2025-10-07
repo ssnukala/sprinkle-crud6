@@ -114,6 +114,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import router from './router'
 import App from './App.vue'
+import AdminSprinkle from '@userfrosting/sprinkle-admin'
 
 /** Setup CRUD6 Sprinkle */
 import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
@@ -125,11 +126,14 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 
+// Register AdminSprinkle
+app.use(AdminSprinkle)
+
+// Register CRUD6 plugin (after AdminSprinkle)
+app.use(CRUD6Sprinkle)
+
 // Register router
 app.use(router)
-
-// Register CRUD6 plugin
-app.use(CRUD6Sprinkle)
 
 app.mount('#app')
 ```
@@ -140,10 +144,18 @@ Then edit `app/assets/router/index.ts` to add CRUD6 routes. Add these lines to y
 // Add this import at the top
 import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
 
-// Add this after router creation, before export
-router.addRoute({
-    path: '/crud6',
-    children: CRUD6Routes
+// Then in your routes configuration, add ...CRUD6Routes to the children array
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    {
+      path: '/',
+      children: [
+        // ... existing routes ...
+        ...CRUD6Routes,  // Add as last entry in children array
+      ]
+    }
+  ]
 })
 ```
 

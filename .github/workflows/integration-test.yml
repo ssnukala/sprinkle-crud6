@@ -76,81 +76,41 @@ jobs:
         run: |
           cd userfrosting
           # Configure MyApp.php to include CRUD6 sprinkle
-          # 1. Import CRUD6 sprinkle: use UserFrosting\Sprinkle\CRUD6\CRUD6;
-          # 2. Add CRUD6::class to getSprinkles() method
-          cat > app/src/MyApp.php << 'EOF'
-          <?php
-          declare(strict_types=1);
-          namespace UserFrosting\App;
-          use UserFrosting\Sprinkle\Account\Account;
-          use UserFrosting\Sprinkle\Admin\Admin;
-          use UserFrosting\Sprinkle\Core\Core;
-          use UserFrosting\Sprinkle\CRUD6\CRUD6;
-          use UserFrosting\Sprinkle\SprinkleRecipe;
-          class MyApp implements SprinkleRecipe
-          {
-              public function getName(): string { return 'My App'; }
-              public function getPath(): string { return __DIR__ . '/../'; }
-              public function getSprinkles(): array
-              {
-                  return [
-                      Core::class,
-                      Account::class,
-                      Admin::class,
-                      CRUD6::class,
-                  ];
-              }
-              public function getRoutes(): array { return [MyAppRoutes::class]; }
-              public function getServices(): array { return [MyAppServicesProvider::class]; }
-          }
-          EOF
+          # Add CRUD6 import after existing imports
+          sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;' app/src/MyApp.php
+          # Add CRUD6::class to getSprinkles() array before the closing bracket
+          sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
 
       - name: Configure main.ts
         run: |
           cd userfrosting
           # Add CRUD6 sprinkle import and plugin to main.ts
-          cat > app/assets/main.ts << 'EOF'
-          import { createApp } from 'vue'
-          import { createPinia } from 'pinia'
-          import router from './router'
-          import App from './App.vue'
+          # Add import after existing imports (before the app creation)
+          sed -i '/import App from/a \
+          \
+          /** Setup crud6 Sprinkle */\
+          import CRUD6Sprinkle from '\''@ssnukala/sprinkle-crud6'\''' app/assets/main.ts
           
-          /** Setup crud6 Sprinkle */
-          import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
-          
-          const app = createApp(App)
-          const pinia = createPinia()
-          
-          app.use(pinia)
-          app.use(router)
-          app.use(CRUD6Sprinkle)
-          
-          app.mount('#app')
-          EOF
+          # Add app.use(CRUD6Sprinkle) after app.use(router)
+          sed -i '/app.use(router)/a app.use(CRUD6Sprinkle)' app/assets/main.ts
 
       - name: Configure router
         run: |
           cd userfrosting
-          mkdir -p app/assets/router
-          # Create router configuration with CRUD6 routes
-          cat > app/assets/router/index.ts << 'EOF'
-          import { createRouter, createWebHistory } from 'vue-router'
-          import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+          # Add CRUD6 routes to existing router configuration
+          # Add import at the top of the router file
+          sed -i '1i import CRUD6Routes from '\''@ssnukala/sprinkle-crud6/routes'\''' app/assets/router/index.ts
           
-          const router = createRouter({
-            history: createWebHistory(),
-            routes: [
-              {
-                path: '/',
-                children: [
-                  ...CRUD6Routes
-                ]
-              }
-            ]
-          })
-          
-          export default router
-          EOF
+          # Add route registration after router creation
+          # This adds the route dynamically after the router is created
+          sed -i '/export default router/i \
+          \
+          // Add CRUD6 routes\
+          router.addRoute({\
+              path: '\''/crud6'\'',\
+              children: CRUD6Routes\
+          })\
+          ' app/assets/router/index.ts
 
       - name: Create groups schema
         run: |

@@ -153,7 +153,14 @@ jobs:
       - name: Seed database
         run: |
           cd userfrosting
-          php bakery seed --force
+          # Seed Account sprinkle data first (required base data)
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+          # Then seed CRUD6 sprinkle data
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
 
       - name: Build frontend assets
         run: |

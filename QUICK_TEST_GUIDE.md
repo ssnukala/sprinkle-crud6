@@ -35,6 +35,7 @@ cp app/.env.example app/.env
 # Edit app/.env with database credentials
 php bakery migrate
 php bakery seed
+# For automated/CI environments: php bakery seed --force
 
 # 7. Create schema file: app/schema/crud6/groups.json
 # (See INTEGRATION_TESTING.md for complete schema)

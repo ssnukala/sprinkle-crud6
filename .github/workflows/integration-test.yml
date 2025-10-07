@@ -154,7 +154,7 @@ jobs:
       - name: Seed database
         run: |
           cd userfrosting
-          php bakery seed
+          php bakery seed --force
 
       - name: Build frontend assets
         run: |

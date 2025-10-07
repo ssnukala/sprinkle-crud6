@@ -14,13 +14,16 @@ composer require ssnukala/sprinkle-crud6
 npm install @ssnukala/sprinkle-crud6
 
 # 3. Edit app/src/MyApp.php - Add to getSprinkles():
+#    use UserFrosting\Sprinkle\CRUD6\CRUD6;
 #    CRUD6::class,
 
 # 4. Edit app/assets/main.ts - Add:
-#    import crud6Plugin from '@ssnukala/sprinkle-crud6/plugins'
-#    import crud6Routes from '@ssnukala/sprinkle-crud6/routes'
-#    app.use(crud6Plugin)
-#    router.addRoute({ path: '/crud6', children: crud6Routes })
+#    import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
+#    app.use(CRUD6Sprinkle)
+#
+#    Edit app/assets/router/index.ts - Add:
+#    import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+#    router.addRoute({ path: '/crud6', children: CRUD6Routes })
 
 # 5. Install and build
 composer install
@@ -65,16 +68,21 @@ public function getSprinkles(): array
 ## main.ts Changes
 
 ```typescript
-import crud6Plugin from '@ssnukala/sprinkle-crud6/plugins'
-import crud6Routes from '@ssnukala/sprinkle-crud6/routes'
+import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
 
-// After creating app and pinia:
-app.use(crud6Plugin)
+// After creating app and router:
+app.use(CRUD6Sprinkle)
+```
 
-// After creating router:
+## router/index.ts Changes
+
+```typescript
+import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+
+// After creating router, before export:
 router.addRoute({
     path: '/crud6',
-    children: crud6Routes
+    children: CRUD6Routes
 })
 ```
 

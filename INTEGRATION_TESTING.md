@@ -205,18 +205,37 @@ php bakery migrate
 
 This will create all necessary tables including the default `groups` table.
 
-### 10. Seed Initial Data (Optional)
+### 10. Seed Initial Data
 
+For development and testing, you need to seed data in the correct order:
+
+**Option 1: Automatic seeding (recommended for most users)**
 ```bash
-php bakery seed
-# For automated/CI environments, use --force to skip confirmation:
-# php bakery seed --force
-# 
-# Alternatively, set BAKERY_CONFIRM_SENSITIVE_COMMAND=false in .env to disable
-# interactive prompts for all sensitive bakery commands
+php bakery seed --force
 ```
 
-This creates default admin user and groups for testing.
+**Option 2: Explicit seed ordering (recommended for CI/CD and debugging)**
+```bash
+# Seed Account sprinkle data first (required base data)
+php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
+php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
+php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
+php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+
+# Then seed CRUD6 sprinkle data
+php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+```
+
+This creates:
+- Default groups (terran, etc.)
+- Default roles (site-admin, crud6-admin, etc.)
+- Default permissions for both Account and CRUD6 sprinkles
+- Default admin user for testing
+
+> **Note for CI/CD**: Set `BAKERY_CONFIRM_SENSITIVE_COMMAND=false` in your `.env` file to disable interactive prompts for all sensitive bakery commands. This is already included in the example configuration above.
+
+> **Note on seed order**: CRUD6 seeds depend on Account sprinkle seeds being run first. The explicit ordering (Option 2) makes this dependency clear and is recommended for automated environments.
 
 > **Note for CI/CD**: To prevent interactive prompts in automated environments, either use the `--force` flag or set `BAKERY_CONFIRM_SENSITIVE_COMMAND=false` in your `.env` file. The environment variable approach is recommended for CI/CD pipelines as it applies to all sensitive bakery commands.
 

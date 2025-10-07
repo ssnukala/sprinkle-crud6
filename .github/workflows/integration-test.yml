@@ -181,8 +181,8 @@ jobs:
       - name: Setup environment
         run: |
           cd userfrosting
-          # Use .env.docker as the base (as per user's setup approach)
-          cp app/.env.docker app/.env
+          # Use .env.example as the base (CI environment is not using Docker)
+          cp app/.env.example app/.env
           # Update database configuration for CI environment
           sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
           sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env

@@ -205,6 +205,8 @@ This will create all necessary tables including the default `groups` table.
 
 ```bash
 php bakery seed
+# For automated/CI environments, use --force to skip confirmation:
+# php bakery seed --force
 ```
 
 This creates default admin user and groups for testing.

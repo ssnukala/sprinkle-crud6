@@ -75,6 +75,9 @@ jobs:
       - name: Configure MyApp.php
         run: |
           cd userfrosting
+          # Configure MyApp.php to include CRUD6 sprinkle
+          # 1. Import CRUD6 sprinkle: use UserFrosting\Sprinkle\CRUD6\CRUD6;
+          # 2. Add CRUD6::class to getSprinkles() method
           cat > app/src/MyApp.php << 'EOF'
           <?php
           declare(strict_types=1);

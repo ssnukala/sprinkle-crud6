@@ -1,6 +1,6 @@
 <!-- PageList.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
@@ -22,16 +22,34 @@ const loadedDeleteModals = ref(new Set<string>())
 const showCreateModal = ref(false)
 
 // Helper functions to lazily load modals
-function requestEditModal(recordId: string) {
+async function requestEditModal(recordId: string) {
   loadedEditModals.value.add(recordId)
+  // Wait for component to render, then trigger modal
+  await nextTick()
+  const modalLink = document.querySelector(`a[href="#modal-crud6-edit-${recordId}"]`)
+  if (modalLink) {
+    ;(modalLink as HTMLElement).click()
+  }
 }
 
-function requestDeleteModal(recordId: string) {
+async function requestDeleteModal(recordId: string) {
   loadedDeleteModals.value.add(recordId)
+  // Wait for component to render, then trigger modal
+  await nextTick()
+  const modalLink = document.querySelector(`a[href="#confirm-crud6-delete-${recordId}"]`)
+  if (modalLink) {
+    ;(modalLink as HTMLElement).click()
+  }
 }
 
-function requestCreateModal() {
+async function requestCreateModal() {
   showCreateModal.value = true
+  // Wait for component to render, then trigger modal
+  await nextTick()
+  const modalLink = document.querySelector(`a[href="#modal-crud6-create"]`)
+  if (modalLink) {
+    ;(modalLink as HTMLElement).click()
+  }
 }
 
 // CRUD6 schema composable

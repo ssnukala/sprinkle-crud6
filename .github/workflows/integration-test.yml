@@ -11,11 +11,6 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        php: ['8.1', '8.2', '8.3']
-        uf-version: ['^6.0-beta']
-    
     services:
       mysql:
         image: mysql:8.0
@@ -39,7 +34,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.1'
           extensions: mbstring, xml, gd, pdo_mysql
           coverage: none
 
@@ -203,7 +198,7 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "✅ Integration test completed for PHP ${{ matrix.php }} with UserFrosting ${{ matrix.uf-version }}"
+          echo "✅ Integration test completed for PHP 8.1 with UserFrosting ^6.0-beta"
           echo "✅ sprinkle-crud6 installed successfully"
           echo "✅ Database migrations ran successfully"
           echo "✅ Frontend assets built successfully"

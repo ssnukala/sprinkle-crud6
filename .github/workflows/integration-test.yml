@@ -145,6 +145,10 @@ jobs:
           sed -i 's/DB_NAME=.*/DB_NAME="userfrosting_test"/' app/.env
           sed -i 's/DB_USER=.*/DB_USER="root"/' app/.env
           sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
+          # Disable interactive prompts for bakery commands in CI environment
+          echo "" >> app/.env
+          echo "# Bakery Configuration" >> app/.env
+          echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
 
       - name: Run migrations
         run: |

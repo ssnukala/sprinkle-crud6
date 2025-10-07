@@ -83,24 +83,10 @@ class MyApp implements SprinkleRecipe
             CRUD6::class,        // Add this line
         ];
     }
-
-    public function getRoutes(): array
-    {
-        return [
-            MyAppRoutes::class,
-        ];
-    }
-
-    public function getServices(): array
-    {
-        return [
-            MyAppServicesProvider::class,
-        ];
-    }
 }
 ```
 
-> **Note:** The PinkCupcake theme is optional and not required for CRUD6 functionality. If you have a custom theme or want to use PinkCupcake, you can add it to the sprinkles list and install it separately with `composer require userfrosting/theme-pink-cupcake`.
+> **Note:** The default UserFrosting 6 `MyApp.php` only requires `getName()`, `getPath()`, and `getSprinkles()` methods. Routes and services are provided by the sprinkles themselves (like CRUD6). The PinkCupcake theme is optional and not required for CRUD6 functionality. If you have a custom theme or want to use PinkCupcake, you can add it to the sprinkles list and install it separately with `composer require userfrosting/theme-pink-cupcake`.
 
 ### 5. Install NPM Package
 
@@ -110,43 +96,67 @@ npm install @ssnukala/sprinkle-crud6
 
 ### 6. Configure Frontend Assets in main.ts
 
-Edit `app/assets/main.ts` to import the CRUD6 plugin:
+Edit `app/assets/main.ts` to import and use the CRUD6 plugin. Add these lines to your existing main.ts file:
+
+```typescript
+// Add this import after your existing imports
+import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
+
+// Add this after creating your app and router
+app.use(CRUD6Sprinkle)
+```
+
+For reference, your complete main.ts should look something like:
 
 ```typescript
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import router from './router'
+import App from './App.vue'
+import AdminSprinkle from '@userfrosting/sprinkle-admin'
 
-// Import CRUD6 plugin and routes
-import crud6Plugin from '@ssnukala/sprinkle-crud6/plugins'
-import crud6Routes from '@ssnukala/sprinkle-crud6/routes'
+/** Setup CRUD6 Sprinkle */
+import CRUD6Sprinkle from '@ssnukala/sprinkle-crud6'
 
-// ... other imports ...
-
-const app = createApp({
-    // ... your app configuration ...
-})
+const app = createApp(App)
 
 // Setup Pinia
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 
-// Register CRUD6 plugin
-app.use(crud6Plugin)
+// Register AdminSprinkle
+app.use(AdminSprinkle)
 
-// Add CRUD6 routes to router
-router.addRoute({
-    path: '/crud6',
-    children: crud6Routes
-})
+// Register CRUD6 plugin (after AdminSprinkle)
+app.use(CRUD6Sprinkle)
 
+// Register router
 app.use(router)
 
-// ... rest of your setup ...
-
 app.mount('#app')
+```
+
+Then edit `app/assets/router/index.ts` to add CRUD6 routes. Add these lines to your existing router file:
+
+```typescript
+// Add this import at the top
+import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+
+// Then in your routes configuration, add ...CRUD6Routes to the children array
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    {
+      path: '/',
+      children: [
+        // ... existing routes ...
+        ...CRUD6Routes,  // Add as last entry in children array
+      ]
+    }
+  ]
+})
 ```
 
 ### 7. Install Dependencies and Build

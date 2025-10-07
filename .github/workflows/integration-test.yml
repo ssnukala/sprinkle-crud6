@@ -62,12 +62,6 @@ jobs:
           composer config minimum-stability beta
           composer config prefer-stable true
 
-      - name: Install PinkCupcake theme
-        run: |
-          cd userfrosting
-          # Install PinkCupcake theme (required for CRUD6 frontend components)
-          composer require userfrosting/theme-pink-cupcake:^6.0.0-beta --no-update
-
       - name: Install PHP dependencies
         run: |
           cd userfrosting
@@ -78,7 +72,7 @@ jobs:
           cd userfrosting
           npm install
           npm install ../sprinkle-crud6
-          # Install theme-pink-cupcake for frontend components
+          # Install theme-pink-cupcake for frontend components (NPM only - no Composer package exists)
           npm install @userfrosting/theme-pink-cupcake@^6.0.0-beta
 
       - name: Configure MyApp.php
@@ -93,7 +87,6 @@ jobs:
           use UserFrosting\Sprinkle\Core\Core;
           use UserFrosting\Sprinkle\CRUD6\CRUD6;
           use UserFrosting\Sprinkle\SprinkleRecipe;
-          use UserFrosting\Theme\PinkCupcake\PinkCupcake;
           class MyApp implements SprinkleRecipe
           {
               public function getName(): string { return 'My App'; }
@@ -105,7 +98,6 @@ jobs:
                       Account::class,
                       Admin::class,
                       CRUD6::class,
-                      PinkCupcake::class,
                   ];
               }
               public function getRoutes(): array { return [MyAppRoutes::class]; }

@@ -166,7 +166,7 @@ jobs:
         run: |
           cd userfrosting
           # Build assets using bakery (following UserFrosting 6 standard approach)
-          php bakery assets:vite --build
+          php bakery assets:vite --production
 
       - name: Test schema loading
         run: |

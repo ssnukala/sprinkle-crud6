@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6;
 use UserFrosting\Sprinkle\Account\Account;
 use UserFrosting\Sprinkle\Admin\Admin;
 use UserFrosting\Sprinkle\Core\Core;
+use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
@@ -33,7 +34,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
  * - Sortable and filterable data queries
  * - Frontend-agnostic design for Vue.js integration
  */
-class CRUD6 implements SprinkleRecipe
+class CRUD6 implements SprinkleRecipe, SeedRecipe
 {
     /**
      * {@inheritdoc}

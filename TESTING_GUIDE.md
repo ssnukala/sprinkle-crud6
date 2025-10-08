@@ -1,4 +1,55 @@
-# Quick Testing Guide for Issue Fixes
+# CRUD6 Sprinkle Testing Guide
+
+## Overview
+
+This guide covers both automated and manual testing for the CRUD6 sprinkle. The sprinkle follows UserFrosting 6 testing patterns from sprinkle-admin and sprinkle-account.
+
+## Automated Testing
+
+### PHP Unit Tests
+
+All PHP unit tests are located in `app/tests/` and extend `AdminTestCase` for proper sprinkle context.
+
+```bash
+# Run all PHP tests
+vendor/bin/phpunit
+
+# Run specific test file
+vendor/bin/phpunit app/tests/Sprunje/UserSprunjeTest.php
+
+# Run with coverage
+vendor/bin/phpunit --coverage-html coverage/
+```
+
+See `app/tests/README.md` for detailed testing documentation.
+
+### Frontend Tests
+
+Frontend tests use Vitest and are located in `app/assets/tests/`.
+
+```bash
+# Run frontend tests
+npm test
+
+# Run in watch mode
+npm run test:watch
+```
+
+### Integration Tests
+
+GitHub Actions automatically runs integration tests that:
+- Install the sprinkle in a fresh UserFrosting 6 environment
+- Run database migrations
+- Verify PHP functionality
+- Test NPM package installation
+
+Note: Frontend asset building is left to consuming applications. The integration test does not build assets to avoid TypeScript compilation issues.
+
+---
+
+## Manual UI Testing Guide
+
+The following tests should be performed in a running UserFrosting 6 application with CRUD6 installed.
 
 ## Prerequisites
 - UserFrosting 6 application running

@@ -39,11 +39,40 @@ npm run test:watch
 
 GitHub Actions automatically runs integration tests that:
 - Install the sprinkle in a fresh UserFrosting 6 environment
-- Run database migrations
+- Run database migrations and seed test data
 - Verify PHP functionality
 - Test NPM package installation
+- Test API endpoints for authentication and data retrieval
+- Test frontend routes are accessible
+- Capture screenshots of frontend pages
 
-Note: Frontend asset building is left to consuming applications. The integration test does not build assets to avoid TypeScript compilation issues.
+**New CRUD6 Integration Tests** (added in latest version):
+- `GET /api/crud6/groups` - List all groups
+- `GET /api/crud6/groups/1` - Get single group
+- `/crud6/groups` - Frontend list page
+- `/crud6/groups/1` - Frontend detail page
+
+See `app/tests/Controller/CRUD6GroupsIntegrationTest.php` for the test implementation.
+
+**Running Integration Tests**:
+
+```bash
+# Run CRUD6 integration tests
+vendor/bin/phpunit app/tests/Controller/CRUD6GroupsIntegrationTest.php
+
+# Run all controller tests
+vendor/bin/phpunit app/tests/Controller/
+```
+
+**Viewing CI Test Results with Screenshots**:
+
+1. Go to GitHub repository → Actions tab
+2. Select "Integration Test with UserFrosting 6" workflow
+3. Download screenshot artifacts to see visual results of:
+   - Groups list page (`/crud6/groups`)
+   - Group detail page (`/crud6/groups/1`)
+
+Note: Screenshots are captured using Playwright and stored as GitHub Actions artifacts for 30 days.
 
 ---
 

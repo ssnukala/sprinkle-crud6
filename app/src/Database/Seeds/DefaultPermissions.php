@@ -40,10 +40,6 @@ class DefaultPermissions implements SeedInterface
      */
     protected function getPermissions(): array
     {
-        $defaultRoleIds = [
-            'crud6-admin' => Role::where('slug', 'crud6-admin')->first()->id, // @phpstan-ignore-line Eloquent doesn't push model to first()
-        ];
-
         return [
             'create_crud6' => new Permission([
                 'slug'        => 'create_crud6',

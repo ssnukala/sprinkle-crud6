@@ -21,7 +21,6 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\RolePermSeed;
 
 /**
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6

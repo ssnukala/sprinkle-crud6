@@ -162,7 +162,7 @@ jobs:
       - name: Test database connection
         run: |
           cd userfrosting
-          mysql -h 127.0.0.1 -uroot -proot userfrosting_test -e "SELECT * FROM groups LIMIT 5;"
+          mysql -h 127.0.0.1 -uroot -proot userfrosting_test -e "SELECT * FROM \`groups\` LIMIT 5;"
 
       - name: Test API endpoint (mock)
         run: |

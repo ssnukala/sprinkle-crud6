@@ -4,7 +4,7 @@
         "shims-vue.d.ts",
         "app/assets/**/*.ts",
         "app/assets/**/*.d.ts",
-        "app/assets/**/*.vue",
+        "app/assets/**/*.vue"
     ],
     "exclude": ["vite.config.ts"],
     "compilerOptions": {

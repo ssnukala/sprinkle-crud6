@@ -1,9 +1,10 @@
 /// <reference types="vite/client" />
+/// <reference types="vue/macros-global" />
 /// <reference types="@userfrosting/sprinkle-core" />
 /// <reference types="@userfrosting/sprinkle-admin" />
 
-import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
+declare module 'vue' {
+    interface ComponentCustomProperties {
+        $t: (key: string, params?: Record<string, any>) => string
+    }
+}

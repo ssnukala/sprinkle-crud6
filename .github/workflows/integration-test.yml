@@ -86,8 +86,8 @@ jobs:
           /** Setup crud6 Sprinkle */\
           import CRUD6Sprinkle from '\''@ssnukala/sprinkle-crud6'\''' app/assets/main.ts
           
-          # Add app.use(CRUD6Sprinkle) after app.use(AdminSprinkle)
-          sed -i '/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)' app/assets/main.ts
+          # Add app.use(CRUD6Sprinkle) after app.use(router)
+          sed -i '/app.use(router)/a app.use(CRUD6Sprinkle)' app/assets/main.ts
 
       - name: Configure router
         run: |
@@ -96,11 +96,16 @@ jobs:
           # Add import at the top of the router file
           sed -i '1i import CRUD6Routes from '\''@ssnukala/sprinkle-crud6/routes'\''' app/assets/router/index.ts
           
-          # Add ...CRUD6Routes as last entry in children array
-          # Find the closing bracket of children array and add before it
-          sed -i '/children: \[/,/\]/ {
-            /\]/i\                ...CRUD6Routes,
-          }' app/assets/router/index.ts
+          # Add route registration after router creation using dynamic route registration
+          # This adds the route dynamically after the router is created
+          sed -i '/export default router/i \
+          \
+          // Add CRUD6 routes\
+          router.addRoute({\
+              path: '\''/crud6'\'',\
+              children: CRUD6Routes\
+          })\
+          ' app/assets/router/index.ts
 
       - name: Create groups schema
         run: |

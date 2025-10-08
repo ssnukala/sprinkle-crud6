@@ -104,7 +104,7 @@ npm run vite:build
 
 **After:**
 ```yaml
-php bakery assets:vite --build
+php bakery assets:vite --production
 ```
 
 **Reason:** Using bakery commands follows the UserFrosting 6 standard approach as documented in the official guide.

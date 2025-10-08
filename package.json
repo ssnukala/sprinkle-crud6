@@ -2,7 +2,6 @@
   "name": "@ssnukala/sprinkle-crud6",
   "version": "0.5.6",
   "type": "module",
-  "types": "./shims-vue.d.ts",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",
   "license": "MIT",
@@ -41,9 +40,7 @@
   },
   "files": [
     "app/assets",
-    "app/schema/",
-    "env.d.ts",
-    "shims-vue.d.ts"
+    "app/schema/"
   ],
   "peerDependencies": {
     "@userfrosting/sprinkle-account": "^6.0.0-beta",

@@ -358,3 +358,38 @@ vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php
 - **PHP version**: Requires PHP 8.1 or later
 - **Beta dependencies**: Project uses UserFrosting 6 beta packages
 - **Vendor tools missing**: If `vendor/bin/` doesn't exist, use basic validation only (syntax check, JSON validation)
+
+## Documentation Guidelines
+
+### Archive Folder (.archive/)
+All historical documentation, fix summaries, visual comparisons, and issue-specific guides should be created in the `.archive/` directory. This keeps the repository root clean and organized while preserving documentation for future reference.
+
+**Important**: Files in `.archive/` ARE tracked by git and will be committed to the repository. The archive is not ignored - it's a permanent part of the repository structure.
+
+#### Documentation Location Rules
+- **Active Documentation** (keep in root):
+  - `README.md` - Main project documentation
+  - `CHANGELOG.md` - Version history
+  - `INTEGRATION_TESTING.md` - Integration testing guide
+  - `QUICK_TEST_GUIDE.md` - Quick reference for testing
+  - `MIGRATION_FROM_THEME_CRUD6.md` - Migration guide
+
+- **Historical Documentation** (place in `.archive/`):
+  - All fix summaries (e.g., `*_FIX_SUMMARY.md`, `*_FIX.md`)
+  - Visual comparison documents (e.g., `VISUAL_*.md`, `*_COMPARISON*.md`)
+  - Issue-specific documentation (e.g., `ISSUE_*.md`, `PR*.md`)
+  - Testing approach documents (e.g., `TESTING_APPROACH.md`, `TESTING_GUIDE.md`)
+  - Implementation summaries (e.g., `*_IMPLEMENTATION_SUMMARY.md`)
+  - Checklist documents (e.g., `*_CHECKLIST.md`)
+  - Before/after comparison documents
+  - Any other temporary or issue-specific documentation
+
+#### Creating New Documentation
+When creating documentation for fixes, features, or issues:
+1. **Always create in `.archive/`**: All new documentation should go directly into `.archive/` unless it's a core documentation file
+2. **Use descriptive names**: Name files clearly to indicate their purpose (e.g., `ISSUE_123_FIX_SUMMARY.md`, `FEATURE_XYZ_IMPLEMENTATION.md`)
+3. **Include context**: Add issue/PR numbers and dates to help with future reference
+4. **Keep root clean**: Never create fix summaries or temporary documentation in the repository root
+
+#### Note
+The `.archive/` directory is tracked by git and all files in it are committed to the repository. This approach keeps the repository root clean while maintaining a complete history of fixes and changes in an organized subdirectory.

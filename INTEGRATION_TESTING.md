@@ -428,6 +428,58 @@ rm -rf uf6-crud6-test
 
 ## Additional Testing
 
+### Automated Integration Tests
+
+The sprinkle-crud6 package includes automated integration tests in the GitHub Actions workflow. These tests verify:
+
+1. **API Endpoint Tests**:
+   - `GET /api/crud6/groups` - List all groups (requires authentication)
+   - `GET /api/crud6/groups/1` - Get single group (requires authentication)
+   - Verifies 401 responses for unauthenticated requests
+   - Verifies 403 responses for unauthorized users
+   - Validates response structure and data
+
+2. **Frontend Route Tests**:
+   - `/crud6/groups` - Groups list page
+   - `/crud6/groups/1` - Single group detail page
+   - Verifies pages load correctly
+   - May redirect to login if not authenticated
+
+3. **Screenshot Capture**:
+   - Automated screenshots using Playwright
+   - Captures both list and detail pages
+   - Screenshots uploaded as GitHub Actions artifacts
+   - Available for 30 days after test run
+
+4. **Unit Tests**:
+   - PHP unit tests in `app/tests/Controller/CRUD6GroupsIntegrationTest.php`
+   - Tests authentication requirements
+   - Tests permission requirements
+   - Tests data retrieval and validation
+   - Tests error handling (404 for non-existent records)
+
+**Running Automated Tests Locally**:
+
+```bash
+# Install dependencies (if not already done)
+composer install
+npm install
+
+# Run PHP unit tests
+vendor/bin/phpunit app/tests/Controller/CRUD6GroupsIntegrationTest.php
+
+# Run all tests
+vendor/bin/phpunit
+```
+
+**Viewing CI Test Results**:
+
+1. Go to the repository on GitHub
+2. Navigate to Actions tab
+3. Select the latest "Integration Test with UserFrosting 6" workflow run
+4. View test results in the workflow logs
+5. Download screenshot artifacts to see visual results
+
 ### Test with Custom Models
 
 Create additional schema files for other tables in your database and test the same workflows.

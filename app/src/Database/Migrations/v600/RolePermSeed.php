@@ -22,7 +22,7 @@ use UserFrosting\Sprinkle\Account\Database\Migrations\v400\PermissionRolesTable;
  * Also, they now map many-to-many to roles.
  * Version 4.0.0.
  */
-class PermissionsTable extends Migration
+class RolePermSeed extends Migration
 {
     /**
      * {@inheritdoc}

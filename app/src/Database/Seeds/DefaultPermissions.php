@@ -27,9 +27,6 @@ class DefaultPermissions implements SeedInterface
      */
     public function run(): void
     {
-        // We require the default roles seed
-        (new DefaultRoles())->run();
-
         // Get and save permissions
         $permissions = $this->getPermissions();
         $this->savePermissions($permissions);

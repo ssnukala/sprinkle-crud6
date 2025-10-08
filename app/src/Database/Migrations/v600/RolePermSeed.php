@@ -12,13 +12,9 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600;
 
-use Illuminate\Database\Schema\Blueprint;
-use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
-use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\Core\Database\Migration;
 use UserFrosting\Sprinkle\Account\Database\Migrations\v400\RolesTable;
 use UserFrosting\Sprinkle\Account\Database\Migrations\v400\PermissionRolesTable;
-use UserFrosting\Sprinkle\Account\Database\Models\Permission;
 
 /**
  * Permissions table migration
@@ -41,12 +37,11 @@ class PermissionsTable extends Migration
      */
     public function up(): void
     {
-        // Skip this if table is not empty
-        if (Permission::count() > 0) {
-            // Add default permission via seed
-            (new DefaultRoles())->run();
-            (new DefaultPermissions())->run();
-        }
+        // Note: Seeds should be run via `php bakery seed` command after migrations
+        // This migration does not seed data to avoid dependency issues
+        // Run seeds in this order:
+        // 1. Account sprinkle seeds (DefaultGroups, DefaultPermissions, DefaultRoles, UpdatePermissions)
+        // 2. CRUD6 sprinkle seeds (DefaultRoles, DefaultPermissions)
     }
 
     /**

@@ -18,6 +18,7 @@ use UserFrosting\Sprinkle\Core\Seeder\SeedInterface;
 /**
  * Seeder for the default roles.
  */
+
 class DefaultRoles implements SeedInterface
 {
     /**

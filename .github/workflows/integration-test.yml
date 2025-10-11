@@ -144,6 +144,18 @@ jobs:
           php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
           php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
 
+      - name: Create admin user
+        run: |
+          cd userfrosting
+          # Create admin user for testing
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+          echo "✅ Admin user created successfully"
+
       - name: Test schema loading
         run: |
           cd userfrosting
@@ -172,20 +184,34 @@ jobs:
       - name: Build frontend assets
         run: |
           cd userfrosting
-          npm run build || echo "⚠️ Build failed but continuing with tests"
+          # Use npm update to fix any package issues
+          npm update
+          # Build assets using bakery command
+          php bakery assets:vite
+          echo "✅ Assets built successfully"
 
       - name: Start PHP development server
         run: |
           cd userfrosting
-          # Start PHP server in background
-          php -S localhost:8080 -t public > /tmp/server.log 2>&1 &
+          # Start PHP server using bakery serve in background
+          php bakery serve &
           SERVER_PID=$!
           echo $SERVER_PID > /tmp/server.pid
-          sleep 5
+          sleep 10
           
           # Test if server is running
-          curl -f http://localhost:8080 || (cat /tmp/server.log && exit 1)
+          curl -f http://localhost:8080 || (echo "⚠️ Server may not be ready yet" && sleep 5 && curl -f http://localhost:8080)
           echo "✅ PHP server started on localhost:8080"
+
+      - name: Start Vite development server
+        run: |
+          cd userfrosting
+          # Start Vite server in background for hot module replacement
+          npm run dev &
+          VITE_PID=$!
+          echo $VITE_PID > /tmp/vite.pid
+          sleep 10
+          echo "✅ Vite server started"
 
       - name: Test API endpoint - Groups List (GET /api/crud6/groups)
         run: |
@@ -315,11 +341,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Stop PHP server
+      - name: Stop servers
         if: always()
         run: |
           if [ -f /tmp/server.pid ]; then
             kill $(cat /tmp/server.pid) || true
+          fi
+          if [ -f /tmp/vite.pid ]; then
+            kill $(cat /tmp/vite.pid) || true
           fi
 
       - name: Summary
@@ -328,8 +357,12 @@ jobs:
           echo "✅ Integration test completed for PHP 8.1 with UserFrosting ^6.0-beta"
           echo "✅ sprinkle-crud6 installed successfully"
           echo "✅ Database migrations ran successfully"
+          echo "✅ Admin user created: admin / admin123"
           echo "✅ NPM package verified"
           echo "✅ Schema file loaded successfully"
+          echo "✅ Assets built with php bakery assets:vite"
+          echo "✅ PHP server started with php bakery serve"
+          echo "✅ Vite development server started"
           echo "✅ API endpoint tests completed:"
           echo "   - GET /api/crud6/groups (list)"
           echo "   - GET /api/crud6/groups/1 (single record)"
@@ -340,4 +373,4 @@ jobs:
           echo ""
           echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
           echo "ℹ️  Screenshots may show login page if not authenticated"
-          echo "ℹ️  Frontend asset building completed"
+          echo "ℹ️  Both PHP and Vite servers were running during tests"

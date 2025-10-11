@@ -159,7 +159,7 @@ const router = createRouter({
 })
 ```
 
-### 7. Install Dependencies and Build
+### 7. Install Dependencies and Build Assets
 
 ```bash
 # Install PHP dependencies
@@ -168,11 +168,36 @@ composer install
 # Install Node dependencies  
 npm install
 
-# Build frontend assets
+# Update npm packages to fix any known issues
+npm update
+
+# Build frontend assets using bakery command (recommended)
+php bakery assets:vite
+
+# OR build manually with npm
 npm run vite:build
+
 # OR for development with hot reload:
 npm run vite:dev
 ```
+
+> **Note**: Using `php bakery assets:vite` is the recommended approach as it follows UserFrosting 6 standards and handles asset compilation properly. For production use `php bakery assets:vite --production`.
+
+**Alternative: Using php bakery bake**
+
+The `php bakery bake` command is a convenience command that combines multiple operations:
+
+```bash
+# Build assets and clear cache in one command
+php bakery bake
+```
+
+This command:
+- Builds frontend assets using Vite
+- Clears the application cache
+- Optimizes the application for production/testing
+
+This is useful when you want to rebuild everything after making changes to assets or configuration.
 
 ### 8. Configure Database
 
@@ -205,7 +230,7 @@ php bakery migrate
 
 This will create all necessary tables including the default `groups` table.
 
-### 10. Seed Initial Data
+### 10. Seed Initial Data and Create Admin User
 
 For development and testing, you need to seed data in the correct order:
 
@@ -227,11 +252,24 @@ php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --f
 php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
 ```
 
+**Create Admin User**
+
+After seeding, create an admin user for testing:
+
+```bash
+php bakery create:admin-user \
+  --username=admin \
+  --password=admin123 \
+  --email=admin@example.com \
+  --firstName=Admin \
+  --lastName=User
+```
+
 This creates:
 - Default groups (terran, etc.)
 - Default roles (site-admin, crud6-admin, etc.)
 - Default permissions for both Account and CRUD6 sprinkles
-- Default admin user for testing
+- Admin user for testing with credentials: **admin / admin123**
 
 > **Note for CI/CD**: Set `BAKERY_CONFIRM_SENSITIVE_COMMAND=false` in your `.env` file to disable interactive prompts for all sensitive bakery commands. This is already included in the example configuration above.
 
@@ -336,17 +374,37 @@ Create the schema file `app/schema/crud6/groups.json`:
 
 ### 12. Start the Development Server
 
-```bash
-# In one terminal, run the PHP server:
-php -S localhost:8080 -t public
+UserFrosting 6 provides bakery commands for running development servers:
 
-# In another terminal (if using Vite for development):
+**Option 1: Using Bakery Commands (Recommended)**
+
+```bash
+# Terminal 1: Start PHP server using bakery
+php bakery serve
+
+# Terminal 2: Start Vite development server
 npm run vite:dev
 ```
 
+The `php bakery serve` command starts the built-in PHP development server with proper configuration.
+
+**Option 2: Manual Server Start**
+
+```bash
+# Terminal 1: Run the PHP server manually
+php -S localhost:8080 -t public
+
+# Terminal 2: Start Vite for hot module replacement
+npm run vite:dev
+```
+
+> **Note**: Running both servers simultaneously is recommended for development:
+> - **PHP server** (port 8080): Handles backend API requests and serves the application
+> - **Vite server** (typically port 5173): Provides hot module replacement for frontend development
+
 ### 13. Test the Application
 
-1. **Login**: Navigate to `http://localhost:8080` and login with the admin user created during seeding (typically `admin` / `password`)
+1. **Login**: Navigate to `http://localhost:8080` and login with the admin user created with bakery command: **admin / admin123**
 
 2. **Test Groups List Page**: Navigate to `http://localhost:8080/crud6/groups`
    - You should see a list of all groups

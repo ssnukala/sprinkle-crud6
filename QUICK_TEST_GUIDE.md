@@ -28,22 +28,35 @@ npm install @ssnukala/sprinkle-crud6
 # 5. Install and build
 composer install
 npm install
-npm run vite:build
+npm update
+php bakery assets:vite
 
 # 6. Setup database
 cp app/.env.example app/.env
 # Edit app/.env with database credentials
+# Add BAKERY_CONFIRM_SENSITIVE_COMMAND=false for CI/CD
 php bakery migrate
-php bakery seed
-# For automated/CI environments: php bakery seed --force
+php bakery seed --force
 
-# 7. Create schema file: app/schema/crud6/groups.json
+# 7. Create admin user
+php bakery create:admin-user \
+  --username=admin \
+  --password=admin123 \
+  --email=admin@example.com \
+  --firstName=Admin \
+  --lastName=User
+
+# 8. Create schema file: app/schema/crud6/groups.json
 # (See INTEGRATION_TESTING.md for complete schema)
 
-# 8. Start server
-php -S localhost:8080 -t public
+# 9. Start servers (in two separate terminals)
+# Terminal 1: PHP server
+php bakery serve
 
-# 9. Test in browser:
+# Terminal 2: Vite dev server
+npm run vite:dev
+
+# 10. Test in browser (login with admin / admin123):
 # - http://localhost:8080/crud6/groups
 # - http://localhost:8080/crud6/groups/1
 ```

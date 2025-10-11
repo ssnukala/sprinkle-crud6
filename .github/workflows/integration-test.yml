@@ -181,15 +181,6 @@ jobs:
           cd userfrosting
           npx playwright install chromium --with-deps
 
-      - name: Build frontend assets
-        run: |
-          cd userfrosting
-          # Use npm update to fix any package issues
-          npm update
-          # Build assets for production (this command completes and returns)
-          npm run build
-          echo "✅ Assets built successfully"
-
       - name: Start PHP development server
         run: |
           cd userfrosting
@@ -206,8 +197,10 @@ jobs:
       - name: Start Vite development server
         run: |
           cd userfrosting
-          # Start Vite server in background for hot module replacement
-          npm run dev &
+          # Use npm update to fix any package issues
+          npm update
+          # Start Vite server in background using bakery command (follows UF6 standards)
+          php bakery assets:vite &
           VITE_PID=$!
           echo $VITE_PID > /tmp/vite.pid
           sleep 10

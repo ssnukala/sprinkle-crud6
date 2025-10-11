@@ -31,60 +31,45 @@ echo "✅ Assets built successfully"
 
 ## Solution
 
-### Change Made
+### Final Approach (Following UF6 Standards)
+Run `php bakery assets:vite` in **background mode** using the `&` operator, similar to how `php bakery serve` is run. This follows UserFrosting 6 standards while preventing the workflow from blocking.
+
 **File: `.github/workflows/integration-test.yml`**
 
-**BEFORE:**
-```yaml
-- name: Build frontend assets
-  run: |
-    cd userfrosting
-    # Use npm update to fix any package issues
-    npm update
-    # Build assets using bakery command
-    php bakery assets:vite
-    echo "✅ Assets built successfully"
-```
+**Changes:**
+1. Removed the separate "Build frontend assets" step
+2. Moved `npm update` into the "Start Vite development server" step
+3. Changed command from `npm run dev &` to `php bakery assets:vite &`
 
-**AFTER:**
 ```yaml
-- name: Build frontend assets
+- name: Start Vite development server
   run: |
     cd userfrosting
     # Use npm update to fix any package issues
     npm update
-    # Build assets for production (this command completes and returns)
-    npm run build
-    echo "✅ Assets built successfully"
+    # Start Vite server in background using bakery command (follows UF6 standards)
+    php bakery assets:vite &
+    VITE_PID=$!
+    echo $VITE_PID > /tmp/vite.pid
+    sleep 10
+    echo "✅ Vite server started"
 ```
 
 ### Why This Works
 
-1. **`npm run build`** (or `vite build`) performs a **one-time production build**
-   - Compiles all assets
-   - Completes and returns control to the workflow
-   - Generates static assets in the `public/` directory
-
-2. **Separate background Vite server** is already configured in a later step:
-   ```yaml
-   - name: Start Vite development server
-     run: |
-       cd userfrosting
-       npm run dev &
-       VITE_PID=$!
-       echo $VITE_PID > /tmp/vite.pid
-   ```
-   - This step properly runs Vite in **background mode** using `&`
-   - Provides hot module replacement (HMR) for development
-   - Doesn't block the workflow
+1. **Follows UF6 standards**: Uses the official `php bakery assets:vite` command
+2. **Non-blocking**: The `&` operator runs the command in background
+3. **Consistent pattern**: Matches how `php bakery serve &` is run
+4. **Process management**: Captures PID for proper cleanup
+5. **Same functionality**: Provides Vite dev server with HMR
 
 ### Benefits
 
-✅ **Asset building completes and returns** - workflow can proceed  
-✅ **Production-optimized build** - generates minified, optimized assets  
-✅ **Vite dev server still available** - runs in background for HMR  
-✅ **No workflow blocking** - tests can run immediately after build  
-✅ **Proper CI/CD pattern** - build once, serve separately  
+✅ **Follows UserFrosting 6 standards** - uses official bakery command  
+✅ **Non-blocking workflow** - runs in background with `&` operator  
+✅ **Consistent pattern** - matches how `php bakery serve &` is run  
+✅ **Vite dev server available** - provides HMR for development  
+✅ **Proper process management** - PID captured for cleanup  
 
 ## Comparison
 
@@ -93,73 +78,66 @@ echo "✅ Assets built successfully"
 | Command | Mode | Returns Control | Use Case |
 |---------|------|----------------|----------|
 | `php bakery assets:vite` | Dev server (foreground) | ❌ No | Local development only |
-| `npm run vite:dev` | Dev server (foreground) | ❌ No | Local development only |
-| `npm run dev &` | Dev server (background) | ✅ Yes | CI with background process |
-| `npm run build` | Production build | ✅ Yes | **CI/CD builds** ✨ |
-| `vite build` | Production build | ✅ Yes | **CI/CD builds** ✨ |
+| `php bakery assets:vite &` | Dev server (background) | ✅ Yes | **CI/CD workflows** ✨ |
+| `npm run vite:dev` | Dev server (foreground) | ❌ No | Alternative local dev |
+| `npm run dev &` | Dev server (background) | ✅ Yes | Alternative CI/CD |
+| `npm run build` | Production build | ✅ Yes | Production builds |
 
 ### Workflow Pattern
 
-The correct CI/CD pattern is:
-1. **Build assets once** → `npm run build` (completes)
-2. **Start PHP server in background** → `php bakery serve &`
-3. **Start Vite dev server in background** → `npm run dev &` (optional for HMR)
-4. **Run tests** → Tests execute against both servers
-5. **Cleanup** → Stop both servers
+The correct CI/CD pattern following UF6 standards:
+1. **Start PHP server in background** → `php bakery serve &`
+2. **Start Vite server in background** → `php bakery assets:vite &` (follows UF6 standards)
+3. **Run tests** → Tests execute against both servers
+4. **Cleanup** → Stop both servers
 
 ## Testing
 
 ### Validation Steps
 - ✅ YAML syntax validated with Python yaml parser
-- ✅ Change targets the exact blocking command
+- ✅ Change follows UserFrosting 6 standards using bakery command
 - ✅ Maintains existing workflow structure
-- ✅ Background Vite server step remains unchanged
+- ✅ Background execution prevents blocking
 - ⏳ Next workflow run will verify the fix
 
 ### Expected Behavior
-1. `npm run build` completes in ~30 seconds
-2. Workflow proceeds to start PHP server
-3. Workflow proceeds to start Vite dev server in background
+1. `npm update` runs and completes
+2. `php bakery assets:vite &` starts Vite dev server in background
+3. Workflow proceeds to run tests immediately
 4. All tests execute successfully
 5. Screenshots are captured
 6. Workflow completes without hanging
 
 ## Related Files
 - `.github/workflows/integration-test.yml` - Integration test workflow (FIXED)
-- `INTEGRATION_TESTING.md` - User-facing integration testing guide
+- `INTEGRATION_TESTING.md` - User-facing integration testing guide (UPDATED)
+- `QUICK_TEST_GUIDE.md` - Quick test reference (UPDATED)
 - `.archive/BAKERY_COMMANDS_INTEGRATION_SUMMARY.md` - Previous bakery commands integration
 
 ## Reference
 - **Issue**: Integration test hanging at `php bakery assets:vite` step
 - **Log**: https://github.com/ssnukala/sprinkle-crud6/actions/runs/18435095758/job/52527490452
-- **Vite Documentation**: https://vitejs.dev/guide/build.html
-- **UserFrosting 6**: Uses Vite for asset management
+- **Solution**: Run bakery command in background with `&` operator
+- **UserFrosting 6**: Bakery commands are the standard way to manage assets
 
 ## Notes
 
-### Why Not Use `php bakery assets:vite`?
-The `assets:vite` bakery command is designed for **local development** where you want to:
-- Start the Vite dev server interactively
-- Keep it running in the foreground
-- Watch for file changes
-- Provide HMR to the browser
+### Why Use `php bakery assets:vite &`?
+This approach:
+- ✅ **Follows UserFrosting 6 standards** - uses official bakery command
+- ✅ **Non-blocking** - runs in background with `&` operator
+- ✅ **Consistent** - matches pattern of `php bakery serve &`
+- ✅ **Simple** - no need for separate build step
+- ✅ **HMR enabled** - provides hot module replacement for dev
 
-In **CI/CD environments**, we need:
-- Commands that complete and return
-- Production-optimized builds
-- Background processes when needed
-- Clear separation between build and serve phases
-
-### Alternative Solutions Considered
-1. **Run `php bakery assets:vite &` in background** - Not recommended, as the command is meant for interactive use
-2. **Use `timeout` to kill the command** - Hacky and doesn't follow best practices
-3. **Use `npm run build`** - ✅ **CHOSEN** - Proper CI/CD pattern
+### Previous Approach (Not Following UF6 Standards)
+Initially considered using `npm run build` for a production build, but this doesn't follow UserFrosting 6 patterns. The bakery commands are the recommended approach for asset management in UF6.
 
 ## Conclusion
 
-This fix follows the standard CI/CD pattern of:
-- Building assets as a discrete step that completes
-- Running servers in background when needed
-- Keeping the workflow non-blocking
+This fix follows UserFrosting 6 standards by:
+- Using the official `php bakery assets:vite` command
+- Running it in background mode with `&` to prevent blocking
+- Maintaining consistency with how `php bakery serve` is run
 
-The change is minimal (one line) and maintains all existing functionality while resolving the indefinite hang issue.
+The change is minimal and maintains all existing functionality while resolving the indefinite hang issue and following UF6 best practices.

@@ -530,13 +530,22 @@ vendor/bin/phpunit app/tests/Controller/CRUD6GroupsIntegrationTest.php
 vendor/bin/phpunit
 ```
 
-**Viewing CI Test Results**:
+**Viewing CI Test Results and Screenshots**:
 
-1. Go to the repository on GitHub
-2. Navigate to Actions tab
-3. Select the latest "Integration Test with UserFrosting 6" workflow run
+1. Go to the repository on GitHub: https://github.com/ssnukala/sprinkle-crud6
+2. Navigate to the **Actions** tab
+3. Select the latest **"Integration Test with UserFrosting 6"** workflow run
 4. View test results in the workflow logs
-5. Download screenshot artifacts to see visual results
+5. **Download screenshots**: 
+   - Scroll to the bottom of the workflow run page
+   - Look for the **"Artifacts"** section
+   - Download **"integration-test-screenshots"** artifact (ZIP file)
+   - Extract the ZIP to view screenshots:
+     - `screenshot_groups_list.png` - Groups list page at `/crud6/groups`
+     - `screenshot_group_detail.png` - Group detail page at `/crud6/groups/1`
+   - Screenshots are retained for 30 days
+
+> **Note**: Screenshots captured in CI show the actual rendered pages, which may display the login page if authentication is not configured in the test. This is expected behavior for unauthenticated requests.
 
 ### Test with Custom Models
 

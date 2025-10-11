@@ -171,17 +171,17 @@ npm install
 # Update npm packages to fix any known issues
 npm update
 
-# Build frontend assets using bakery command (recommended)
+# Build frontend assets using bakery command (recommended for local development)
 php bakery assets:vite
 
-# OR build manually with npm
-npm run vite:build
+# OR build manually with npm (recommended for CI/CD)
+npm run build
 
 # OR for development with hot reload:
 npm run vite:dev
 ```
 
-> **Note**: Using `php bakery assets:vite` is the recommended approach as it follows UserFrosting 6 standards and handles asset compilation properly. For production use `php bakery assets:vite --production`.
+> **Note**: Using `php bakery assets:vite` is the recommended approach for **local development** as it follows UserFrosting 6 standards and starts the Vite dev server. However, for **CI/CD pipelines**, use `npm run build` instead, as `php bakery assets:vite` runs the dev server in foreground mode and will block automated scripts.
 
 **Alternative: Using php bakery bake**
 

@@ -29,7 +29,10 @@ npm install @ssnukala/sprinkle-crud6
 composer install
 npm install
 npm update
-php bakery assets:vite
+npm run build  # Build assets for production
+
+# For CI/CD: Use npm run build (completes and returns)
+# For local dev: Use php bakery assets:vite (runs dev server in foreground)
 
 # 6. Setup database
 cp app/.env.example app/.env

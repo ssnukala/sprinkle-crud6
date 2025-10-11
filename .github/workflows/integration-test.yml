@@ -186,8 +186,8 @@ jobs:
           cd userfrosting
           # Use npm update to fix any package issues
           npm update
-          # Build assets using bakery command
-          php bakery assets:vite
+          # Build assets for production (this command completes and returns)
+          npm run build
           echo "✅ Assets built successfully"
 
       - name: Start PHP development server

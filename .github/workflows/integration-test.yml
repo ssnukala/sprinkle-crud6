@@ -367,3 +367,47 @@ jobs:
           echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
           echo "ℹ️  Screenshots may show login page if not authenticated"
           echo "ℹ️  Both PHP and Vite servers were running during tests"
+          echo ""
+          echo "📸 **View Screenshots:**"
+          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "   Look for 'Artifacts' section at the bottom of the page"
+          echo "   Download 'integration-test-screenshots' ZIP file"
+          
+          # Add to GitHub Actions Summary with direct link
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Integration Test Results ✅
+          
+          ### Test Coverage
+          - ✅ Database migrations
+          - ✅ Admin user creation
+          - ✅ Schema loading
+          - ✅ API endpoints (GET /api/crud6/groups, GET /api/crud6/groups/1)
+          - ✅ Frontend routes (/crud6/groups, /crud6/groups/1)
+          - ✅ Screenshot capture
+          
+          ### 📸 View Screenshots
+          Screenshots have been captured and uploaded as artifacts.
+          
+          **Direct link to this workflow run:**
+          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          **To view screenshots:**
+          1. Scroll to the bottom of the workflow run page (link above)
+          2. Look for the **Artifacts** section
+          3. Click on **integration-test-screenshots** to download
+          4. Extract the ZIP file to view:
+             - \`screenshot_groups_list.png\` - Groups list page
+             - \`screenshot_group_detail.png\` - Group detail page
+          
+          > **Note:** Screenshots are retained for 30 days
+          
+          ---
+          
+          ### Server Information
+          - PHP Server: Started with \`php bakery serve\`
+          - Vite Server: Started with \`php bakery assets:vite\`
+          - Both servers were running during tests
+          
+          ### Authentication Note
+          Screenshots may show login page as tests verify 401 responses for unauthenticated requests.
+          EOF

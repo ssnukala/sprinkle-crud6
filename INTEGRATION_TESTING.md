@@ -532,18 +532,27 @@ vendor/bin/phpunit
 
 **Viewing CI Test Results and Screenshots**:
 
-1. Go to the repository on GitHub: https://github.com/ssnukala/sprinkle-crud6
-2. Navigate to the **Actions** tab
-3. Select the latest **"Integration Test with UserFrosting 6"** workflow run
-4. View test results in the workflow logs
-5. **Download screenshots**: 
-   - Scroll to the bottom of the workflow run page
+1. **Quick Access to Latest Run**:
+   - Go to: https://github.com/ssnukala/sprinkle-crud6/actions/workflows/integration-test.yml
+   - Click on the latest successful workflow run (green checkmark)
+   - The workflow summary will show a direct link to screenshots
+
+2. **Alternative - Manual Navigation**:
+   - Go to the repository on GitHub: https://github.com/ssnukala/sprinkle-crud6
+   - Navigate to the **Actions** tab
+   - Select the latest **"Integration Test with UserFrosting 6"** workflow run
+   - View test results in the workflow logs
+
+3. **Download screenshots**: 
+   - On the workflow run page, scroll to the bottom
    - Look for the **"Artifacts"** section
-   - Download **"integration-test-screenshots"** artifact (ZIP file)
+   - Click **"integration-test-screenshots"** to download the ZIP file
    - Extract the ZIP to view screenshots:
      - `screenshot_groups_list.png` - Groups list page at `/crud6/groups`
      - `screenshot_group_detail.png` - Group detail page at `/crud6/groups/1`
    - Screenshots are retained for 30 days
+
+> **💡 Tip**: Each workflow run page displays a summary at the top with a direct link to view the screenshots. Look for the "Integration Test Results ✅" section in the workflow summary.
 
 > **Note**: Screenshots captured in CI show the actual rendered pages, which may display the login page if authentication is not configured in the test. This is expected behavior for unauthenticated requests.
 

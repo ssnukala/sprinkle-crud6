@@ -192,11 +192,22 @@ After each CI run, screenshots are uploaded as artifacts:
 2. `screenshot_group_detail.png` - Full page screenshot of /crud6/groups/1
 
 **To View Screenshots:**
-1. Go to GitHub repository → Actions tab
-2. Click on the latest "Integration Test with UserFrosting 6" workflow run
-3. Scroll to "Artifacts" section at bottom of page
-4. Download "integration-test-screenshots.zip"
-5. Extract and view PNG files
+
+1. **Quick Access**: 
+   - Go to: https://github.com/ssnukala/sprinkle-crud6/actions/workflows/integration-test.yml
+   - Click on the latest workflow run
+   - Check the workflow summary at the top for a direct link to the artifacts
+
+2. **Alternative Method**:
+   - Go to GitHub repository → Actions tab
+   - Click on the latest "Integration Test with UserFrosting 6" workflow run
+   - Scroll to "Artifacts" section at bottom of page
+   - Download "integration-test-screenshots.zip"
+   - Extract and view PNG files
+
+> **💡 Tip**: The workflow summary includes a direct link with format: `https://github.com/ssnukala/sprinkle-crud6/actions/runs/{RUN_ID}`
+
+> **Note**: Screenshots are retained for 30 days after the workflow run.
 
 ## Troubleshooting
 

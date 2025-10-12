@@ -13,8 +13,8 @@ This occurred when the screenshot capture script tried to execute `const { chrom
 ## Root Cause
 
 The workflow was attempting to use Playwright in two ways:
-1. `npx playwright install chromium --with-deps` (line 182) - Installs browser binaries
-2. `const { chromium } = require('playwright');` (line 279) - Requires the npm package
+1. `npx playwright install chromium --with-deps` - Installs browser binaries (in "Install Playwright browsers" step)
+2. `const { chromium } = require('playwright');` - Requires the npm package (in "Take screenshots" step)
 
 The problem was that `npx playwright install` only installs the browser binaries, not the playwright npm package itself. The `require('playwright')` statement needs the playwright package to be installed in `node_modules`.
 
@@ -77,6 +77,6 @@ When the integration test workflow runs:
 
 This fix was inspired by a similar solution in the `ssnukala/sprinkle-learntegrate` repository, where the same Playwright installation approach was used successfully.
 
-## Date
+---
 
-2025-10-12
+*Documentation created: October 2024*

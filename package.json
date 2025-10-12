@@ -61,5 +61,8 @@
     "@vue/tsconfig": "^0.8.1",
     "happy-dom": "^18.0.1",
     "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
   }
 }

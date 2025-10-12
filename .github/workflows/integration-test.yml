@@ -276,7 +276,8 @@ jobs:
           cd userfrosting
           
           # Create a simple Node.js script to take screenshots with Playwright
-          cat > /tmp/take_screenshots.js << 'EOF'
+          # Script is created in the userfrosting directory where playwright is installed
+          cat > take_screenshots.js << 'EOF'
           const { chromium } = require('playwright');
 
           (async () => {
@@ -320,8 +321,8 @@ jobs:
           })();
           EOF
           
-          # Run the screenshot script
-          node /tmp/take_screenshots.js || echo "⚠️ Screenshots could not be captured"
+          # Run the screenshot script from the directory where playwright is installed
+          node take_screenshots.js || echo "⚠️ Screenshots could not be captured"
           
           # List screenshots if they exist
           ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"

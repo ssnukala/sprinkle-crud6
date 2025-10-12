@@ -120,6 +120,15 @@ When the integration test workflow runs:
 
 This fix addresses the module resolution problem referenced in the issue where screenshots were failing with "Cannot find module 'playwright'". The solution follows best practices for Node.js script execution in environments where dependencies are locally installed.
 
+### Relationship to Previous Fix
+
+A previous fix (documented in `PLAYWRIGHT_MODULE_FIX.md`) added `npm install playwright` to the workflow, which correctly installed the playwright package. However, that fix was incomplete because it didn't address the **module resolution** issue:
+
+- **Previous fix**: Ensured playwright package was installed → ✅ playwright in node_modules
+- **This fix**: Ensured Node.js could find the installed package → ✅ module resolution works
+
+Both fixes were necessary for screenshots to work correctly.
+
 ---
 
 *Documentation created: October 12, 2025*

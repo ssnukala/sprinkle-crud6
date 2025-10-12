@@ -275,55 +275,32 @@ jobs:
         run: |
           cd userfrosting
           
-          # Create a simple Node.js script to take screenshots with Playwright
-          # Script is created in the userfrosting directory where playwright is installed
-          cat > take_screenshots.js << 'EOF'
-          const { chromium } = require('playwright');
-
-          (async () => {
-            const browser = await chromium.launch();
-            const context = await browser.newContext({
-              viewport: { width: 1280, height: 720 }
-            });
-            const page = await context.newPage();
-
-            try {
-              // Screenshot of groups list page
-              console.log('📸 Taking screenshot of /crud6/groups');
-              await page.goto('http://localhost:8080/crud6/groups', { 
-                waitUntil: 'networkidle',
-                timeout: 10000 
-              });
-              await page.screenshot({ 
-                path: '/tmp/screenshot_groups_list.png',
-                fullPage: true 
-              });
-              console.log('✅ Screenshot saved: /tmp/screenshot_groups_list.png');
-
-              // Screenshot of single group page
-              console.log('📸 Taking screenshot of /crud6/groups/1');
-              await page.goto('http://localhost:8080/crud6/groups/1', { 
-                waitUntil: 'networkidle',
-                timeout: 10000 
-              });
-              await page.screenshot({ 
-                path: '/tmp/screenshot_group_detail.png',
-                fullPage: true 
-              });
-              console.log('✅ Screenshot saved: /tmp/screenshot_group_detail.png');
-
-            } catch (error) {
-              console.error('⚠️ Screenshot error:', error.message);
-              process.exit(0); // Don't fail the workflow for screenshot issues
-            } finally {
-              await browser.close();
-            }
-          })();
-          EOF
+          echo "========================================="
+          echo "Taking screenshots of pages"
+          echo "========================================="
           
-          # Run the screenshot script from the directory where playwright is installed
-          node take_screenshots.js || echo "⚠️ Screenshots could not be captured"
+          # Screenshot of groups list page
+          echo "📸 Taking screenshot: /crud6/groups"
+          npx playwright screenshot --browser chromium \
+            --viewport-size=1280,720 \
+            --full-page \
+            --timeout 10000 \
+            http://localhost:8080/crud6/groups /tmp/screenshot_groups_list.png \
+            2>&1 || echo "⚠️ Failed to screenshot groups list page"
           
+          # Screenshot of single group page
+          echo "📸 Taking screenshot: /crud6/groups/1"
+          npx playwright screenshot --browser chromium \
+            --viewport-size=1280,720 \
+            --full-page \
+            --timeout 10000 \
+            http://localhost:8080/crud6/groups/1 /tmp/screenshot_group_detail.png \
+            2>&1 || echo "⚠️ Failed to screenshot group detail page"
+          
+          echo ""
+          echo "========================================="
+          echo "Screenshot summary"
+          echo "========================================="
           # List screenshots if they exist
           ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"
 

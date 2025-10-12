@@ -523,6 +523,10 @@ The sprinkle-crud6 package includes automated integration tests in the GitHub Ac
 composer install
 npm install
 
+# Install Playwright for screenshot capture (optional)
+npm install playwright
+npx playwright install chromium --with-deps
+
 # Run PHP unit tests
 vendor/bin/phpunit app/tests/Controller/CRUD6GroupsIntegrationTest.php
 

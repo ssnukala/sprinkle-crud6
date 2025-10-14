@@ -1,0 +1,75 @@
+# Development configuration files
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+env.d.ts
+phpunit.xml
+
+# GitHub Actions
+.github/
+
+# Documentation (main docs included by default)
+.archive/
+INTEGRATION_TESTING.md
+QUICK_TEST_GUIDE.md
+MIGRATION_FROM_THEME_CRUD6.md
+
+# Development dependencies
+vendor/
+node_modules/
+composer.lock
+package-lock.json
+
+# Build artifacts
+public/
+mix-manifest.json
+dist/
+build/
+
+# Examples (kept for reference in npm package)
+# examples/ is intentionally NOT excluded
+
+# Tests (except app/assets/tests which are part of the package)
+app/tests/
+phpunit.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# DevContainer
+.devcontainer/
+
+# Documentation source files (Markdown files at root kept by default)
+docs/
+
+# Composer files (composer.json is needed for PHP autoloading)
+composer.json

@@ -61,11 +61,17 @@ jobs:
           cd userfrosting
           composer install --no-interaction --prefer-dist
 
+      - name: Package sprinkle-crud6 for NPM
+        run: |
+          cd sprinkle-crud6
+          npm pack
+          mv ssnukala-sprinkle-crud6-*.tgz ../userfrosting/
+
       - name: Install NPM dependencies
         run: |
           cd userfrosting
           npm update
-          npm install ../sprinkle-crud6
+          npm install ./ssnukala-sprinkle-crud6-*.tgz
 
       - name: Configure MyApp.php
         run: |

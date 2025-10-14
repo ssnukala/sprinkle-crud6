@@ -1,6 +1,6 @@
 export default [
     {
-        path: 'crud6/:model',
+        path: '/crud6/:model',
         meta: {
             auth: {}
         },

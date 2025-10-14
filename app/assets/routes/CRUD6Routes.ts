@@ -3,8 +3,8 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            title: '',
-            description: ''
+            title: 'CRUD6.PAGE',
+            description: 'CRUD6.PAGE_DESCRIPTION'
         },
         children: [
             {
@@ -14,8 +14,8 @@ export default [
                     permission: {
                         slug: 'uri_crud6'
                     },
-                    title: '',
-                    description: ''
+                    title: 'CRUD6.PAGE',
+                    description: 'CRUD6.PAGE_DESCRIPTION'
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -26,8 +26,8 @@ export default [
                     permission: {
                         slug: 'uri_crud6'
                     },
-                    title: '',
-                    description: ''
+                    title: 'CRUD6.PAGE',
+                    description: 'CRUD6.PAGE_DESCRIPTION'
                 },
                 component: () => import('../views/PageRow.vue')
             }

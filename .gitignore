@@ -6,6 +6,7 @@ composer.lock
 # Build artifacts
 public/
 mix-manifest.json
+*.tgz
 
 # IDE
 .vscode/

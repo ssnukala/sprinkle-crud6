@@ -76,6 +76,24 @@ jobs:
           # Add CRUD6::class to getSprinkles() array before the closing bracket
           sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
 
+      - name: Configure router/index.ts
+        run: |
+          cd userfrosting
+          # Configure app/assets/router/index.ts to include CRUD6 and LearnIntegrate routes
+          # Add CRUD6Routes and LearnIntegrateRoutes imports after AdminRoutes import
+          sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import CRUD6Routes from '@ssnukala\/sprinkle-crud6\/routes'" app/assets/router/index.ts
+          # Add ...CRUD6Routes, ...LearnIntegrateRoutes after ...AccountRoutes
+          sed -i '/\.\.\.AccountRoutes,/a \            ...CRUD6Routes,' app/assets/router/index.ts
+
+      - name: Configure /main.ts
+        run: |
+          cd userfrosting
+          # Configure app/assets/main.ts to include CRUD6 and LearnIntegrate sprinkles
+          # Add CRUD6Sprinkle and LearnIntegrate imports after AdminSprinkle import
+          sed -i "/import AdminSprinkle from '@userfrosting\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\/sprinkle-crud6'" app/assets/main.ts
+          # Add app.use(CRUD6Sprinkle) and app.use(LearnIntegrate) after app.use(AdminSprinkle)
+          sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
+
       - name: Verify NPM package installation
         run: |
           cd userfrosting

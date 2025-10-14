@@ -2,7 +2,9 @@ export default [
     {
         path: '/crud6/:model',
         meta: {
-            auth: {}
+            auth: {},
+            title: '',
+            description: ''
         },
         children: [
             {
@@ -11,7 +13,9 @@ export default [
                 meta: {
                     permission: {
                         slug: 'uri_crud6'
-                    }
+                    },
+                    title: '',
+                    description: ''
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -21,7 +25,9 @@ export default [
                 meta: {
                     permission: {
                         slug: 'uri_crud6'
-                    }
+                    },
+                    title: '',
+                    description: ''
                 },
                 component: () => import('../views/PageRow.vue')
             }

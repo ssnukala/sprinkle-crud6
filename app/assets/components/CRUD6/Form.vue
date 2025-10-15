@@ -23,7 +23,7 @@ if (props.schema) {
 /**
  * API - Use the CRUD6 edit API
  */
-const { createRow, updateRow, r$, formData, apiLoading, resetForm, slugLocked } = useCRUD6Api()
+const { createRow, updateRow, r$, formData, apiLoading, resetForm, slugLocked } = useCRUD6Api(props.model)
 
 /**
  * Schema - Use the CRUD6 schema composable for dynamic form generation or use provided schema

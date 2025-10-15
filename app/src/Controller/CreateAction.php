@@ -86,15 +86,24 @@ class CreateAction extends Base
 
             $this->logger->debug("CRUD6: Created record with ID: {$insertId} for model: {$schema['model']}");
 
+            // Get a display name for the model
+            $modelDisplayName = $schema['title'] ?? ucfirst($schema['model']);
+            if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
+                $modelDisplayName = $matches[1];
+            }
+
+            // Return response with title and description fields expected by frontend
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $schema['title'] ?? $schema['model']]),
+                'title' => $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE'),
+                'description' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]),
+                'message' => $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $schema['model'],
                 'id' => $insertId,
                 'data' => $insertData
             ];
 
             $this->alert->addMessageTranslated('success', 'CRUD6.CREATE.SUCCESS', [
-                'model' => $schema['title'] ?? $schema['model']
+                'model' => $modelDisplayName
             ]);
 
             $response->getBody()->write(json_encode($responseData));
@@ -106,6 +115,8 @@ class CreateAction extends Base
             ]);
 
             $errorData = [
+                'title' => $this->translator->translate('CRUD6.CREATE.ERROR_TITLE'),
+                'description' => $this->translator->translate('CRUD6.CREATE.ERROR', ['model' => $schema['model']]),
                 'error' => $this->translator->translate('CRUD6.CREATE.ERROR', ['model' => $schema['model']]),
                 'message' => $e->getMessage()
             ];

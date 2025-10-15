@@ -19,6 +19,12 @@ return [
         2 => 'CRUD6 All Rows',
 
         'CREATE'              => 'Create {{model}}',
+        'CREATE' => [
+            'SUCCESS'       => 'Successfully created {{model}}',
+            'SUCCESS_TITLE' => 'Created!',
+            'ERROR'         => 'Failed to create {{model}}',
+            'ERROR_TITLE'   => 'Error Creating',
+        ],
         'CREATION_SUCCESSFUL' => 'Successfully created {{model}} <strong>{{name}}</strong>',
         'DELETE'              => 'Delete {{model}}',
         'DELETE_CONFIRM'      => 'Are you sure you want to delete the {{model}} <strong>{{name}}</strong>?',
@@ -26,6 +32,10 @@ return [
         'DELETE_YES'          => 'Yes, delete {{model}}',
         'DELETION_SUCCESSFUL' => 'Successfully deleted {{model}} <strong>{{name}}</strong>',
         'EDIT'                => 'Edit {{model}}',
+        'EDIT' => [
+            'SUCCESS' => 'Retrieved {{model}} for editing',
+            'ERROR'   => 'Failed to retrieve {{model}}',
+        ],
         'EXCEPTION'           => '{{model}} error',
         'ICON'                => '{{model}} icon',
         'ICON_EXPLAIN'        => 'Icon for {{model}} members',
@@ -39,6 +49,12 @@ return [
         'PAGE'                => '{{model}}',
         'PAGE_DESCRIPTION'    => 'A listing of the {{model}} for your site.  Provides management tools for editing and deleting {{model}}.',
         'UPDATE'              => 'Details updated for {{model}} <strong>{{name}}</strong>',
+        'UPDATE' => [
+            'SUCCESS'       => 'Successfully updated {{model}}',
+            'SUCCESS_TITLE' => 'Updated!',
+            'ERROR'         => 'Failed to update {{model}}',
+            'ERROR_TITLE'   => 'Error Updating',
+        ],
         'USERS'               => 'Users in this {{model}}',
     ],
     'CRUD6_PANEL'               => 'CRUD6 Management',

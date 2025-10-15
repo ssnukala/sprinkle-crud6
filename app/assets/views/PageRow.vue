@@ -250,10 +250,8 @@ watch(model, async (newModel) => {
                     page.title = `Create ${modelLabel.value}`
                     page.description = schema.value.description || `Create a new ${modelLabel.value}`
                 } else if (recordId.value) {
-                    // Set title to capitalized model name for breadcrumbs (will be updated with record name after fetch)
-                    // Using capitalized model name instead of schema.title to maintain breadcrumb hierarchy
-                    const capitalizedModel = model.value.charAt(0).toUpperCase() + model.value.slice(1)
-                    page.title = capitalizedModel
+                    // Set title to schema title for breadcrumbs, will be updated with record name after fetch
+                    page.title = schema.value.title || modelLabel.value
                     page.description = schema.value.description || `View and edit ${modelLabel.value} details.`
                 }
             }

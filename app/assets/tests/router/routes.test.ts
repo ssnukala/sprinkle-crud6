@@ -10,21 +10,21 @@ describe('routes.test.ts', () => {
         expect(CRUD6Routes[1].children.length).toBe(2) // list and detail routes
     })
 
-    test('CRUD6Routes should have correct meta for breadcrumbs', () => {
+    test('CRUD6Routes should have title and description in meta for breadcrumbs', () => {
         const mainRoute = CRUD6Routes[1]
         
-        // Parent route should NOT have title and description (dynamically set by child Vue components)
-        expect(mainRoute.meta).not.toHaveProperty('title')
-        expect(mainRoute.meta).not.toHaveProperty('description')
+        // Parent route should have title and description
+        expect(mainRoute.meta).toHaveProperty('title')
+        expect(mainRoute.meta).toHaveProperty('description')
         
         // List route should NOT have title and description (dynamically set by Vue component)
         const listRoute = mainRoute.children[0]
         expect(listRoute.meta).not.toHaveProperty('title')
         expect(listRoute.meta).not.toHaveProperty('description')
         
-        // View route should also NOT have title and description (dynamically set by Vue component)
+        // View route should have title and description
         const viewRoute = mainRoute.children[1]
-        expect(viewRoute.meta).not.toHaveProperty('title')
-        expect(viewRoute.meta).not.toHaveProperty('description')
+        expect(viewRoute.meta).toHaveProperty('title')
+        expect(viewRoute.meta).toHaveProperty('description')
     })
 })

@@ -35,12 +35,13 @@ meta: {
 1. **Without route meta title/description:**
    - PageList.vue can freely set `page.title` dynamically
    - Breadcrumb component reads from `page.title` properly
-   - No conflict between static and dynamic values
+   - No conflict between static route meta and dynamic page store values
 
 2. **With route meta title/description (broken):**
    - Static `title: 'CRUD6.PAGE'` resolves to `{{model}}` at build time
-   - Conflicts with Vue component trying to set dynamic values
-   - Breadcrumbs don't initialize or update correctly
+   - Route meta values take precedence over page store updates
+   - Breadcrumb component reads route meta instead of dynamic page.title
+   - Result: Breadcrumbs don't initialize or update correctly
 
 ## Expected Results
 
@@ -53,9 +54,9 @@ After:    UserFrosting / Group Management (from schema.title)
 
 ### View Page (/crud6/groups/1)
 ```
-UserFrosting / {{model}} / [Record Name]
+UserFrosting / Group Management / Administrators
 ```
-(View page keeps translation placeholder from route meta)
+(View page uses translation key in route meta, then Vue component updates dynamically)
 
 ## Verification
 

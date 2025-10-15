@@ -17,11 +17,12 @@ describe('routes.test.ts', () => {
         expect(mainRoute.meta).toHaveProperty('title')
         expect(mainRoute.meta).toHaveProperty('description')
         
-        // Child routes should have title and description
+        // List route should NOT have title and description (dynamically set by Vue component)
         const listRoute = mainRoute.children[0]
-        expect(listRoute.meta).toHaveProperty('title')
-        expect(listRoute.meta).toHaveProperty('description')
+        expect(listRoute.meta).not.toHaveProperty('title')
+        expect(listRoute.meta).not.toHaveProperty('description')
         
+        // View route should have title and description
         const viewRoute = mainRoute.children[1]
         expect(viewRoute.meta).toHaveProperty('title')
         expect(viewRoute.meta).toHaveProperty('description')

@@ -13,9 +13,7 @@ export default [
                 meta: {
                     permission: {
                         slug: 'uri_crud6'
-                    },
-                    title: 'CRUD6.PAGE',
-                    description: 'CRUD6.PAGE_DESCRIPTION'
+                    }
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -23,11 +21,11 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
+                    title: 'CRUD6.PAGE',
+                    description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'
-                    },
-                    title: 'CRUD6.PAGE',
-                    description: 'CRUD6.PAGE_DESCRIPTION'
+                    }
                 },
                 component: () => import('../views/PageRow.vue')
             }

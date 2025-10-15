@@ -68,14 +68,16 @@ function viewRecord(record: CRUD6Interface) {
 onMounted(() => {
   if (model.value && loadSchema) {
     // Set initial page title immediately for breadcrumbs
-    page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    const capitalizedModel = model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    page.title = capitalizedModel
     
     const schemaPromise = loadSchema(model.value)
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(() => {
         // Update page title and description using schema
         if (schema.value) {
-          page.title = schema.value.title || model.value
+          // Use capitalized model name for consistency with breadcrumb hierarchy
+          page.title = capitalizedModel
           page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
         }
       })

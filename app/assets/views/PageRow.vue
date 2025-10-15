@@ -21,6 +21,13 @@ const recordId = computed(() => route.params.id as string)
 const isCreateMode = computed(() => route.name === 'crud6-create')
 const isEditMode = ref(isCreateMode.value)
 
+// Set initial page title IMMEDIATELY to override route metadata
+// This prevents "CRUD6.PAGE" from being displayed in breadcrumb
+if (model.value) {
+    const capitalizedModel = model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    page.title = capitalizedModel
+}
+
 // Use composables for schema and API
 const {
     schema,

@@ -22,7 +22,6 @@ use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
-use UserFrosting\Sprinkle\CRUD6\Controller\UpdateAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**
@@ -35,8 +34,8 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
  * - GET    /api/crud6/{model}/schema       - Get schema metadata
  * - GET    /api/crud6/{model}              - List records (Sprunje with filter/sort/paginate)
  * - POST   /api/crud6/{model}              - Create new record
- * - GET    /api/crud6/{model}/{id}         - Read single record
- * - PUT    /api/crud6/{model}/{id}         - Update record
+ * - GET    /api/crud6/{model}/{id}         - Read single record (EditAction)
+ * - PUT    /api/crud6/{model}/{id}         - Update record (EditAction)
  * - DELETE /api/crud6/{model}/{id}         - Delete record
  * - GET    /api/crud6/{model}/{id}/{relation} - Get related data
  * 
@@ -74,13 +73,13 @@ class CRUD6Routes implements RouteDefinitionInterface
             // Create new record
             $group->post('', CreateAction::class)
                 ->setName('api.crud6.create');
-            // Read single record
+            // Read single record with relation
             $group->get('/{id}/{relation}', SprunjeAction::class);
 
+            // Read single record (GET) and Update record (PUT) - both handled by EditAction
             $group->get('/{id}', EditAction::class)
                 ->setName('api.crud6.read');
-            // Update record
-            $group->put('/{id}', UpdateAction::class)
+            $group->put('/{id}', EditAction::class)
                 ->setName('api.crud6.update');
             // Delete record
             $group->delete('/{id}', DeleteAction::class)

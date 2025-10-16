@@ -4,123 +4,147 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Controller;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
-use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
-use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Alert\AlertStream;
-use UserFrosting\I18n\Translator;
 use Illuminate\Database\Connection;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\I18n\Translator;
+use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
+use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+use UserFrosting\Support\Message\UserMessage;
 
 /**
- * Delete action for CRUD6 models.
+ * Processes the request to delete an existing CRUD6 model record.
+ *
+ * Deletes the specified record.
+ * Before doing so, checks that:
+ * 1. The user has permission to delete this record;
+ * 2. The submitted data is valid.
+ * This route requires authentication.
+ *
+ * Request type: DELETE
  * 
- * Handles deletion of records for any CRUD6 model.
- * Supports both hard delete and soft delete based on schema configuration.
- * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
- * 
- * Route: DELETE /api/crud6/{model}/{id}
- * 
- * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserDeleteAction
+ * @see \UserFrosting\Sprinkle\Admin\Controller\Group\GroupDeleteAction
  */
-class DeleteAction extends Base
+class DeleteAction
 {
     /**
-     * Constructor for DeleteAction.
-     * 
-     * @param AuthorizationManager $authorizer    Authorization manager
-     * @param Authenticator        $authenticator Authenticator for access control
-     * @param DebugLoggerInterface $logger        Debug logger
-     * @param Connection           $db            Database connection
-     * @param AlertStream          $alert         Alert stream for user notifications
-     * @param Translator           $translator    Translator for i18n messages
-     * @param SchemaService        $schemaService Schema service
+     * Inject dependencies.
      */
     public function __construct(
-        protected AuthorizationManager $authorizer,
+        protected Translator $translator,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected Connection $db,
-        protected AlertStream $alert,
-        protected Translator $translator,
-        protected SchemaService $schemaService
+        protected SchemaService $schemaService,
+        protected UserActivityLogger $userActivityLogger,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
-     * Invoke the delete action.
-     * 
-     * Deletes the specified record from the database.
-     * Supports soft delete if configured in schema.
-     * 
-     * @param CRUD6ModelInterface    $crudModel The configured model instance with record loaded
-     * @param ServerRequestInterface $request   The HTTP request
-     * @param ResponseInterface      $response  The HTTP response
-     * 
-     * @return ResponseInterface JSON response with success or error
+     * Receive the request, dispatch to the handler, and return the payload to
+     * the response.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Response            $response
      */
-    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Response $response): Response
     {
-        $modelName = $this->getModelNameFromRequest($request);
-        $schema = $this->schemaService->getSchema($modelName);
-        $this->validateAccess($modelName, 'delete');
-        
-        // For DeleteAction, the crudModel should contain the specific record since ID is in the route
-        $primaryKey = $schema['primary_key'] ?? 'id';
+        $userMessage = $this->handle($crudSchema, $crudModel);
+
+        // Message
+        $message = $this->translator->translate($userMessage->message, $userMessage->parameters);
+
+        // Write response
+        $payload = new ApiResponse($message);
+        $response->getBody()->write((string) $payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * Handle the request.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     */
+    protected function handle(array $crudSchema, CRUD6ModelInterface $crudModel): UserMessage
+    {
+        // Access-controlled page based on the record.
+        $this->validateAccess($crudSchema);
+
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
-        
-        $this->logger->debug("CRUD6: Deleting record ID: {$recordId} for model: {$schema['model']}");
-        
-        try {
-            // Use the model instance for deletion instead of raw query builder
-            if ($schema['soft_delete'] ?? false) {
-                $success = $crudModel->softDelete();
-                $this->logger->debug("CRUD6: Soft deleted record ID: {$recordId} for model: {$schema['model']}");
+
+        // Get current user. Won't be null, since it's AuthGuarded.
+        /** @var UserInterface $currentUser */
+        $currentUser = $this->authenticator->user();
+
+        $this->logger->debug("CRUD6: Deleting record ID: {$recordId} for model: {$crudSchema['model']}", [
+            'user' => $currentUser->user_name,
+        ]);
+
+        // Begin transaction - DB will be rolled back if an exception occurs
+        $this->db->transaction(function () use ($crudSchema, $crudModel, $currentUser, $recordId) {
+            // Delete the record (supports soft delete if configured)
+            if ($crudSchema['soft_delete'] ?? false) {
+                $crudModel->softDelete();
+                $this->logger->debug("CRUD6: Soft deleted record ID: {$recordId} for model: {$crudSchema['model']}");
             } else {
-                $success = $crudModel->delete();
-                $this->logger->debug("CRUD6: Hard deleted record ID: {$recordId} for model: {$schema['model']}");
+                $crudModel->delete();
+                $this->logger->debug("CRUD6: Hard deleted record ID: {$recordId} for model: {$crudSchema['model']}");
             }
-            
-            if (!$success) {
-                $errorData = [
-                    'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $schema['model']]),
-                    'model' => $schema['model'],
-                    'id' => $recordId
-                ];
-                $response->getBody()->write(json_encode($errorData));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-            }
-            
-            $responseData = [
-                'message' => $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $schema['model']]),
-                'model' => $schema['model'],
-                'id' => $recordId,
-                'soft_delete' => $schema['soft_delete'] ?? false
-            ];
-            
-            $this->alert->addMessageTranslated('success', 'CRUD6.DELETE.SUCCESS', [
-                'model' => $schema['title'] ?? $schema['model']
+
+            // Create activity record
+            $modelDisplayName = $this->getModelDisplayName($crudSchema);
+            $this->userActivityLogger->info("User {$currentUser->user_name} deleted {$modelDisplayName} record.", [
+                'type'    => "crud6_{$crudSchema['model']}_delete",
+                'user_id' => $currentUser->id,
             ]);
-            
-            $response->getBody()->write(json_encode($responseData));
-            return $response->withHeader('Content-Type', 'application/json');
-        } catch (\Exception $e) {
-            $this->logger->error("CRUD6: Failed to delete record for model: {$schema['model']}", [
-                'error' => $e->getMessage(),
-                'id' => $recordId
-            ]);
-            
-            $errorData = [
-                'error' => $this->translator->translate('CRUD6.DELETE.ERROR', ['model' => $schema['model']]),
-                'message' => $e->getMessage()
-            ];
-            
-            $response->getBody()->write(json_encode($errorData));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        });
+
+        $modelDisplayName = $this->getModelDisplayName($crudSchema);
+        return new UserMessage('CRUD6.DELETE.SUCCESS', [
+            'model' => $modelDisplayName,
+        ]);
+    }
+
+    /**
+     * Validate access to the page.
+     *
+     * @param array $crudSchema The schema configuration
+     *
+     * @throws ForbiddenException
+     */
+    protected function validateAccess(array $crudSchema): void
+    {
+        $permission = $crudSchema['permissions']['delete'] ?? "crud6.{$crudSchema['model']}.delete";
+        
+        if (!$this->authenticator->checkAccess($permission)) {
+            throw new ForbiddenException();
         }
+    }
+
+    /**
+     * Get a display name for the model.
+     * 
+     * @param array $crudSchema The schema configuration
+     * 
+     * @return string The display name
+     */
+    protected function getModelDisplayName(array $crudSchema): string
+    {
+        $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
+        // If title ends with "Management", extract the entity name
+        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
+            $modelDisplayName = $matches[1];
+        }
+        return $modelDisplayName;
     }
 }

@@ -72,9 +72,11 @@ export function useCRUD6Schema(modelName?: string) {
     async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
         // Skip loading if schema is already loaded for the same model (unless forced)
         if (!force && currentModel.value === model && schema.value) {
+            console.log('[useCRUD6Schema] Using cached schema - model:', model)
             return schema.value
         }
 
+        console.log('[useCRUD6Schema] Loading schema from API - model:', model, 'force:', force)
         loading.value = true
         error.value = null
 
@@ -91,6 +93,7 @@ export function useCRUD6Schema(modelName?: string) {
             }
             
             currentModel.value = model
+            console.log('[useCRUD6Schema] Schema loaded successfully - model:', model)
             return response.data
         } catch (err: any) {
             error.value = err.response?.data || { 
@@ -172,6 +175,7 @@ export function useCRUD6Schema(modelName?: string) {
 
     // Auto-load schema if model name is provided
     if (modelName) {
+        console.log('[useCRUD6Schema] Auto-loading schema on init - modelName:', modelName)
         loadSchema(modelName)
     }
 

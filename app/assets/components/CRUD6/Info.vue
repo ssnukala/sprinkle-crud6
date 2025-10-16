@@ -14,6 +14,8 @@ const { crud6, schema: providedSchema } = defineProps<{
     schema?: any
 }>()
 
+console.log('[Info] Component initialized - hasProvidedSchema:', !!providedSchema, 'crud6.id:', crud6?.id)
+
 const emits = defineEmits(['crud6Updated'])
 
 // Get model from route parameter for schema loading
@@ -34,6 +36,7 @@ function requestDeleteModal() {
 
 // Conditional composable usage - only when no schema prop provided
 // This prevents the automatic schema loading that happens in useCRUD6Schema initialization
+console.log('[Info] Creating schemaComposable - providedSchema exists:', !!providedSchema, 'model:', model.value)
 const schemaComposable = providedSchema ? null : useCRUD6Schema()
 
 // Extract functions with fallbacks
@@ -42,10 +45,13 @@ const hasPermission = schemaComposable?.hasPermission || (() => true)
 // Final schema resolution - prioritize provided schema
 const finalSchema = computed(() => {
     if (providedSchema) {
+        console.log('[Info] Using PROVIDED schema from parent')
         return providedSchema
     } else if (schemaComposable?.schema.value) {
+        console.log('[Info] Using COMPOSABLE schema (fallback - this may indicate duplicate load)')
         return schemaComposable.schema.value
     } else {
+        console.log('[Info] NO schema available')
         return null
     }
 })

@@ -73,9 +73,10 @@ class CreateAction extends Base
         // Get a display name for the model
         $modelDisplayName = $this->getModelDisplayName($schema);
 
-        // Write response
-        $message = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
-        $payload = new ApiResponse($message);
+        // Write response with title and description
+        $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
+        $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
+        $payload = new ApiResponse($title, $description);
         $response->getBody()->write((string) $payload);
 
         return $response->withHeader('Content-Type', 'application/json')->withStatus(201);

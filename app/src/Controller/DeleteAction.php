@@ -10,13 +10,11 @@ use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
-use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
-use UserFrosting\Support\Message\UserMessage;
 
 /**
  * Processes the request to delete an existing CRUD6 model record.
@@ -58,13 +56,13 @@ class DeleteAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Response $response): Response
     {
-        $userMessage = $this->handle($crudSchema, $crudModel);
+        $modelDisplayName = $this->getModelDisplayName($crudSchema);
+        $this->handle($crudSchema, $crudModel);
 
-        // Message
-        $message = $this->translator->translate($userMessage->message, $userMessage->parameters);
-
-        // Write response
-        $payload = new ApiResponse($message);
+        // Write response with title and description
+        $title = $this->translator->translate('CRUD6.DELETE.SUCCESS_TITLE');
+        $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
+        $payload = new ApiResponse($title, $description);
         $response->getBody()->write((string) $payload);
 
         return $response->withHeader('Content-Type', 'application/json');
@@ -76,7 +74,7 @@ class DeleteAction extends Base
      * @param array               $crudSchema The schema configuration
      * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
      */
-    protected function handle(array $crudSchema, CRUD6ModelInterface $crudModel): UserMessage
+    protected function handle(array $crudSchema, CRUD6ModelInterface $crudModel): void
     {
         // Access-controlled page based on the record.
         $this->validateAccess($crudSchema, 'delete');
@@ -111,9 +109,6 @@ class DeleteAction extends Base
             ]);
         });
 
-        $modelDisplayName = $this->getModelDisplayName($crudSchema);
-        return new UserMessage('CRUD6.DELETE.SUCCESS', [
-            'model' => $modelDisplayName,
-        ]);
+        $this->logger->debug("CRUD6: Successfully deleted record ID: {$recordId} for model: {$crudSchema['model']}");
     }
 }

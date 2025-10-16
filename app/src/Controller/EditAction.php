@@ -150,11 +150,10 @@ class EditAction extends Base
         // Get a display name for the model
         $modelDisplayName = $this->getModelDisplayName($crudSchema);
 
-        // Message
-        $message = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $modelDisplayName]);
-
-        // Write response
-        $payload = new ApiResponse($message);
+        // Write response with title and description
+        $title = $this->translator->translate('CRUD6.UPDATE.SUCCESS_TITLE');
+        $description = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $modelDisplayName]);
+        $payload = new ApiResponse($title, $description);
         $response->getBody()->write((string) $payload);
 
         return $response->withHeader('Content-Type', 'application/json');

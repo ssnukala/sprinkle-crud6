@@ -14,8 +14,6 @@ const { crud6, schema: providedSchema } = defineProps<{
     schema?: any
 }>()
 
-console.log('[Info] 🚀 Component setup - hasProvidedSchema:', !!providedSchema, 'crud6.id:', crud6?.id, 'route:', route.path)
-
 const emits = defineEmits(['crud6Updated'])
 
 // Get model from route parameter for schema loading
@@ -27,14 +25,10 @@ const showDeleteModal = ref(false)
 
 // Helper functions to lazily load modals
 function requestEditModal() {
-    console.log('[Info] 🔧 Edit modal requested - lazy loading EditModal component')
-    console.log('[Info] 📊 Schema will be passed to EditModal - title:', finalSchema.value?.title, 'hasFields:', !!finalSchema.value?.fields)
     showEditModal.value = true
 }
 
 function requestDeleteModal() {
-    console.log('[Info] 🗑️  Delete modal requested - lazy loading DeleteModal component') 
-    console.log('[Info] 📊 Schema will be passed to DeleteModal - title:', finalSchema.value?.title, 'hasFields:', !!finalSchema.value?.fields)
     showDeleteModal.value = true
 }
 
@@ -48,14 +42,10 @@ const hasPermission = schemaComposable?.hasPermission || (() => true)
 // Final schema resolution - prioritize provided schema
 const finalSchema = computed(() => {
     if (providedSchema) {
-        console.log('[Info] ✅ Using provided schema prop from PageRow - NO API call needed')
-        console.log('[Info] 📋 Provided schema details - title:', providedSchema?.title, 'fields:', Object.keys(providedSchema?.fields || {}))
         return providedSchema
     } else if (schemaComposable?.schema.value) {
-        console.log('[Info] 🔄 Using composable schema (fallback) - this indicates missing schema prop')
         return schemaComposable.schema.value
     } else {
-        console.log('[Info] ⚠️  No schema available from either source')
         return null
     }
 })

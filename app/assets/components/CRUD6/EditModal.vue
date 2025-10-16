@@ -43,14 +43,11 @@ const modelLabel = computed(() => {
  * Methods - Submit the form to the API and handle the response.
  */
 const formSuccess = () => {
-    console.log('[EditModal] ✅ Form submitted successfully for record:', recordId.value)
     emits('saved')
     UIkit.modal('#modal-crud6-edit-' + recordId.value).hide()
 }
 
 // Debug logging for prop analysis  
-console.log('[EditModal] 🚀 Component setup - recordId:', recordId.value, 'model:', props.model, 'hasSchema:', !!props.schema)
-console.log('[EditModal] 📊 Schema details passed to Form - title:', props.schema?.title, 'fields:', Object.keys(props.schema?.fields || {}))
 </script>
 
 <template>

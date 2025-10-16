@@ -22,9 +22,7 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * Returns the record data for editing or viewing.
  * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
  * 
- * Routes: 
- * - GET /api/crud6/{model}/{id}
- * - PUT /api/crud6/{model}/{id} (for updates)
+ * Route: GET /api/crud6/{model}/{id}
  * 
  * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserEditAction
  */

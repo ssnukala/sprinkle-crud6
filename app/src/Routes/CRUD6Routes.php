@@ -22,6 +22,7 @@ use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\UpdateAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**
@@ -78,8 +79,8 @@ class CRUD6Routes implements RouteDefinitionInterface
 
             $group->get('/{id}', EditAction::class)
                 ->setName('api.crud6.read');
-            // Update record (reuse EditAction for update)
-            $group->put('/{id}', EditAction::class)
+            // Update record
+            $group->put('/{id}', UpdateAction::class)
                 ->setName('api.crud6.update');
             // Delete record
             $group->delete('/{id}', DeleteAction::class)

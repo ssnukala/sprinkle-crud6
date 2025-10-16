@@ -6,9 +6,9 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -31,19 +31,21 @@ use UserFrosting\Support\Message\UserMessage;
  * 
  * @see \UserFrosting\Sprinkle\Admin\Controller\Group\GroupDeleteAction
  */
-class DeleteAction
+class DeleteAction extends Base
 {
     /**
      * Inject dependencies.
      */
     public function __construct(
-        protected Translator $translator,
+        protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
-        protected Connection $db,
         protected SchemaService $schemaService,
+        protected Translator $translator,
+        protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
     ) {
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
@@ -77,7 +79,7 @@ class DeleteAction
     protected function handle(array $crudSchema, CRUD6ModelInterface $crudModel): UserMessage
     {
         // Access-controlled page based on the record.
-        $this->validateAccess($crudSchema);
+        $this->validateAccess($crudSchema, 'delete');
 
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
@@ -113,38 +115,5 @@ class DeleteAction
         return new UserMessage('CRUD6.DELETE.SUCCESS', [
             'model' => $modelDisplayName,
         ]);
-    }
-
-    /**
-     * Validate access to the page.
-     *
-     * @param array $crudSchema The schema configuration
-     *
-     * @throws ForbiddenException
-     */
-    protected function validateAccess(array $crudSchema): void
-    {
-        $permission = $crudSchema['permissions']['delete'] ?? "crud6.{$crudSchema['model']}.delete";
-        
-        if (!$this->authenticator->checkAccess($permission)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    /**
-     * Get a display name for the model.
-     * 
-     * @param array $crudSchema The schema configuration
-     * 
-     * @return string The display name
-     */
-    protected function getModelDisplayName(array $crudSchema): string
-    {
-        $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
-        // If title ends with "Management", extract the entity name
-        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
-            $modelDisplayName = $matches[1];
-        }
-        return $modelDisplayName;
     }
 }

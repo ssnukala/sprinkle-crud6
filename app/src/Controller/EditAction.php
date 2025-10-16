@@ -7,11 +7,13 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -36,21 +38,23 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * 
  * @see \UserFrosting\Sprinkle\Admin\Controller\Group\GroupEditAction
  */
-class EditAction
+class EditAction extends Base
 {
     /**
      * Inject dependencies.
      */
     public function __construct(
-        protected Translator $translator,
+        protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
-        protected Connection $db,
         protected SchemaService $schemaService,
+        protected Translator $translator,
+        protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
     ) {
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
@@ -140,7 +144,7 @@ class EditAction
      */
     protected function handleUpdate(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        $this->validateAccess($crudSchema);
+        $this->validateAccess($crudSchema, 'edit');
         $updatedModel = $this->handle($crudSchema, $crudModel, $request);
 
         // Get a display name for the model
@@ -215,22 +219,6 @@ class EditAction
     }
 
     /**
-     * Validate access to the page.
-     *
-     * @param array $crudSchema The schema configuration
-     *
-     * @throws ForbiddenException
-     */
-    protected function validateAccess(array $crudSchema): void
-    {
-        $permission = $crudSchema['permissions']['edit'] ?? "crud6.{$crudSchema['model']}.edit";
-        
-        if (!$this->authenticator->checkAccess($permission)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    /**
      * Load the request schema from the CRUD6 schema.
      *
      * @param array $crudSchema The schema configuration
@@ -240,7 +228,7 @@ class EditAction
     protected function getRequestSchema(array $crudSchema): RequestSchemaInterface
     {
         $validationRules = $this->getValidationRules($crudSchema);
-        $requestSchema = new \UserFrosting\Fortress\RequestSchema($validationRules);
+        $requestSchema = new RequestSchema($validationRules);
 
         return $requestSchema;
     }
@@ -260,112 +248,5 @@ class EditAction
 
             throw $e;
         }
-    }
-
-    /**
-     * Get validation rules from the schema.
-     * 
-     * @param array $crudSchema The schema configuration
-     * 
-     * @return array<string, array> Validation rules for each field
-     */
-    protected function getValidationRules(array $crudSchema): array
-    {
-        $rules = [];
-        foreach ($crudSchema['fields'] as $name => $field) {
-            if (isset($field['validation'])) {
-                $rules[$name] = $field['validation'];
-            }
-        }
-        return $rules;
-    }
-
-    /**
-     * Prepare data for database update.
-     * 
-     * Transforms field values according to their types and filters out non-editable fields.
-     * Handles timestamps if configured in schema.
-     * 
-     * @param array $crudSchema The schema configuration
-     * @param array $data       The input data
-     * 
-     * @return array The prepared update data
-     */
-    protected function prepareUpdateData(array $crudSchema, array $data): array
-    {
-        $updateData = [];
-        $fields = $crudSchema['fields'] ?? [];
-        
-        foreach ($fields as $fieldName => $fieldConfig) {
-            // Skip auto-increment, computed, and non-editable fields
-            if ($fieldConfig['auto_increment'] ?? false) {
-                continue;
-            }
-            if ($fieldConfig['computed'] ?? false) {
-                continue;
-            }
-            if (($fieldConfig['editable'] ?? true) === false) {
-                continue;
-            }
-            
-            if (isset($data[$fieldName])) {
-                $updateData[$fieldName] = $this->transformFieldValue($fieldConfig, $data[$fieldName]);
-            }
-        }
-        
-        // Update timestamp if configured
-        if ($crudSchema['timestamps'] ?? false) {
-            $updateData['updated_at'] = date('Y-m-d H:i:s');
-        }
-        
-        return $updateData;
-    }
-
-    /**
-     * Transform field value based on its type.
-     * 
-     * Converts values to appropriate PHP/database types based on field configuration.
-     * 
-     * @param array $fieldConfig Field configuration from schema
-     * @param mixed $value       The value to transform
-     * 
-     * @return mixed The transformed value
-     */
-    protected function transformFieldValue(array $fieldConfig, $value): mixed
-    {
-        $type = $fieldConfig['type'] ?? 'string';
-        switch ($type) {
-            case 'integer':
-                return (int) $value;
-            case 'float':
-            case 'decimal':
-                return (float) $value;
-            case 'boolean':
-                return (bool) $value;
-            case 'json':
-                return is_string($value) ? $value : json_encode($value);
-            case 'date':
-            case 'datetime':
-                return $value;
-            default:
-                return (string) $value;
-        }
-    }
-
-    /**
-     * Get a display name for the model.
-     * 
-     * @param array $crudSchema The schema configuration
-     * 
-     * @return string The display name
-     */
-    protected function getModelDisplayName(array $crudSchema): string
-    {
-        $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
-        // If title ends with "Management", extract the entity name
-        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
-            $modelDisplayName = $matches[1];
-        }
-        return $modelDisplayName;
     }
 }

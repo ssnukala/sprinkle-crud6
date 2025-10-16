@@ -97,16 +97,19 @@ abstract class Base
      * on the model. Permission names follow the pattern: crud6.{model}.{action}
      * or can be customized in the schema's permissions configuration.
      *
-     * @param string $modelName The model name
-     * @param string $action    The action to validate (read, create, edit, delete)
+     * @param string|array $modelNameOrSchema The model name or schema array
+     * @param string       $action             The action to validate (read, create, edit, delete)
      * 
      * @return void
      * 
      * @throws ForbiddenException If user lacks the required permission
      */
-    protected function validateAccess(string $modelName, string $action = 'read'): void
+    protected function validateAccess(string|array $modelNameOrSchema, string $action = 'read'): void
     {
-        $schema = $this->getSchema($modelName);
+        $schema = is_string($modelNameOrSchema)
+            ? $this->getSchema($modelNameOrSchema)
+            : $modelNameOrSchema;
+            
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
 
         if (!$this->authenticator->checkAccess($permission)) {
@@ -209,20 +212,147 @@ abstract class Base
     /**
      * Get validation rules from the model schema.
      * 
-     * @param string $modelName The model name
+     * @param string|array $modelNameOrSchema The model name or schema array
      * 
      * @return array<string, array> Validation rules for each field
      */
-    protected function getValidationRules(string $modelName): array
+    protected function getValidationRules(string|array $modelNameOrSchema): array
     {
-        $schema = $this->schemaService->getSchema($modelName);
+        $schema = is_string($modelNameOrSchema) 
+            ? $this->schemaService->getSchema($modelNameOrSchema)
+            : $modelNameOrSchema;
+            
         $rules = [];
-        foreach ($schema['fields'] as $name => $field) {
+        foreach ($schema['fields'] ?? [] as $name => $field) {
             if (isset($field['validation'])) {
                 $rules[$name] = $field['validation'];
             }
         }
         return $rules;
+    }
+
+    /**
+     * Get a display name for the model.
+     * 
+     * Extracts a clean display name from the schema, removing "Management" suffix if present.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return string The display name
+     */
+    protected function getModelDisplayName(array $schema): string
+    {
+        $modelDisplayName = $schema['title'] ?? ucfirst($schema['model']);
+        // If title ends with "Management", extract the entity name
+        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
+            $modelDisplayName = $matches[1];
+        }
+        return $modelDisplayName;
+    }
+
+    /**
+     * Transform field value based on its type.
+     * 
+     * Converts values to appropriate PHP/database types based on field configuration.
+     * 
+     * @param array $fieldConfig Field configuration from schema
+     * @param mixed $value       The value to transform
+     * 
+     * @return mixed The transformed value
+     */
+    protected function transformFieldValue(array $fieldConfig, mixed $value): mixed
+    {
+        $type = $fieldConfig['type'] ?? 'string';
+        switch ($type) {
+            case 'integer':
+                return (int) $value;
+            case 'float':
+            case 'decimal':
+                return (float) $value;
+            case 'boolean':
+                return (bool) $value;
+            case 'json':
+                return is_string($value) ? $value : json_encode($value);
+            case 'date':
+            case 'datetime':
+                return $value;
+            default:
+                return (string) $value;
+        }
+    }
+
+    /**
+     * Prepare data for database insertion.
+     * 
+     * Transforms field values according to their types and applies defaults.
+     * Handles timestamps if configured in schema.
+     * 
+     * @param array $schema The schema configuration
+     * @param array $data   The input data
+     * 
+     * @return array The prepared insert data
+     */
+    protected function prepareInsertData(array $schema, array $data): array
+    {
+        $insertData = [];
+        $fields = $schema['fields'] ?? [];
+        foreach ($fields as $fieldName => $fieldConfig) {
+            if ($fieldConfig['auto_increment'] ?? false || $fieldConfig['computed'] ?? false) {
+                continue;
+            }
+            if (isset($data[$fieldName])) {
+                $insertData[$fieldName] = $this->transformFieldValue($fieldConfig, $data[$fieldName]);
+            } elseif (isset($fieldConfig['default'])) {
+                $insertData[$fieldName] = $fieldConfig['default'];
+            }
+        }
+        if ($schema['timestamps'] ?? false) {
+            $now = date('Y-m-d H:i:s');
+            $insertData['created_at'] = $now;
+            $insertData['updated_at'] = $now;
+        }
+        return $insertData;
+    }
+
+    /**
+     * Prepare data for database update.
+     * 
+     * Transforms field values according to their types and filters out non-editable fields.
+     * Handles timestamps if configured in schema.
+     * 
+     * @param array $schema The schema configuration
+     * @param array $data   The input data
+     * 
+     * @return array The prepared update data
+     */
+    protected function prepareUpdateData(array $schema, array $data): array
+    {
+        $updateData = [];
+        $fields = $schema['fields'] ?? [];
+        
+        foreach ($fields as $fieldName => $fieldConfig) {
+            // Skip auto-increment, computed, and non-editable fields
+            if ($fieldConfig['auto_increment'] ?? false) {
+                continue;
+            }
+            if ($fieldConfig['computed'] ?? false) {
+                continue;
+            }
+            if (($fieldConfig['editable'] ?? true) === false) {
+                continue;
+            }
+            
+            if (isset($data[$fieldName])) {
+                $updateData[$fieldName] = $this->transformFieldValue($fieldConfig, $data[$fieldName]);
+            }
+        }
+        
+        // Update timestamp if configured
+        if ($schema['timestamps'] ?? false) {
+            $updateData['updated_at'] = date('Y-m-d H:i:s');
+        }
+        
+        return $updateData;
     }
 
     /**

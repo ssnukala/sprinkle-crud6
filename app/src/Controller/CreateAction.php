@@ -7,11 +7,13 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -33,21 +35,23 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * 
  * @see \UserFrosting\Sprinkle\Admin\Controller\Group\GroupCreateAction
  */
-class CreateAction
+class CreateAction extends Base
 {
     /**
      * Inject dependencies.
      */
     public function __construct(
-        protected Translator $translator,
+        protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
-        protected Connection $db,
         protected SchemaService $schemaService,
+        protected Translator $translator,
+        protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
     ) {
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
@@ -63,7 +67,7 @@ class CreateAction
         $modelName = $this->getModelNameFromRequest($request);
         $schema = $this->schemaService->getSchema($modelName);
         
-        $this->validateAccess($modelName, $schema);
+        $this->validateAccess($schema, 'create');
         $record = $this->handle($crudModel, $schema, $request);
 
         // Get a display name for the model
@@ -136,23 +140,6 @@ class CreateAction
     }
 
     /**
-     * Validate access to the page.
-     *
-     * @param string $modelName The model name
-     * @param array  $schema    The schema configuration
-     *
-     * @throws ForbiddenException
-     */
-    protected function validateAccess(string $modelName, array $schema): void
-    {
-        $permission = $schema['permissions']['create'] ?? "crud6.{$modelName}.create";
-        
-        if (!$this->authenticator->checkAccess($permission)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    /**
      * Load the request schema from the CRUD6 schema.
      *
      * @param array $schema The schema configuration
@@ -162,7 +149,7 @@ class CreateAction
     protected function getRequestSchema(array $schema): RequestSchemaInterface
     {
         $validationRules = $this->getValidationRules($schema);
-        $requestSchema = new \UserFrosting\Fortress\RequestSchema($validationRules);
+        $requestSchema = new RequestSchema($validationRules);
 
         return $requestSchema;
     }
@@ -182,119 +169,5 @@ class CreateAction
 
             throw $e;
         }
-    }
-
-    /**
-     * Get validation rules from the schema.
-     * 
-     * @param array $schema The schema configuration
-     * 
-     * @return array<string, array> Validation rules for each field
-     */
-    protected function getValidationRules(array $schema): array
-    {
-        $rules = [];
-        foreach ($schema['fields'] as $name => $field) {
-            if (isset($field['validation'])) {
-                $rules[$name] = $field['validation'];
-            }
-        }
-        return $rules;
-    }
-
-    /**
-     * Prepare data for database insertion.
-     * 
-     * Transforms field values according to their types and applies defaults.
-     * Handles timestamps if configured in schema.
-     * 
-     * @param array $schema The schema configuration
-     * @param array $data   The input data
-     * 
-     * @return array The prepared insert data
-     */
-    protected function prepareInsertData(array $schema, array $data): array
-    {
-        $insertData = [];
-        $fields = $schema['fields'] ?? [];
-        foreach ($fields as $fieldName => $fieldConfig) {
-            if ($fieldConfig['auto_increment'] ?? false || $fieldConfig['computed'] ?? false) {
-                continue;
-            }
-            if (isset($data[$fieldName])) {
-                $insertData[$fieldName] = $this->transformFieldValue($fieldConfig, $data[$fieldName]);
-            } elseif (isset($fieldConfig['default'])) {
-                $insertData[$fieldName] = $fieldConfig['default'];
-            }
-        }
-        if ($schema['timestamps'] ?? false) {
-            $now = date('Y-m-d H:i:s');
-            $insertData['created_at'] = $now;
-            $insertData['updated_at'] = $now;
-        }
-        return $insertData;
-    }
-
-    /**
-     * Transform field value based on its type.
-     * 
-     * Converts values to appropriate PHP/database types based on field configuration.
-     * 
-     * @param array $fieldConfig Field configuration from schema
-     * @param mixed $value       The value to transform
-     * 
-     * @return mixed The transformed value
-     */
-    protected function transformFieldValue(array $fieldConfig, $value): mixed
-    {
-        $type = $fieldConfig['type'] ?? 'string';
-        switch ($type) {
-            case 'integer':
-                return (int) $value;
-            case 'float':
-            case 'decimal':
-                return (float) $value;
-            case 'boolean':
-                return (bool) $value;
-            case 'json':
-                return is_string($value) ? $value : json_encode($value);
-            case 'date':
-            case 'datetime':
-                return $value;
-            default:
-                return (string) $value;
-        }
-    }
-
-    /**
-     * Get model name from the request route.
-     * 
-     * @param Request $request The HTTP request
-     * 
-     * @return string The model name from route parameters
-     */
-    protected function getModelNameFromRequest(Request $request): string
-    {
-        $routeContext = \Slim\Routing\RouteContext::fromRequest($request);
-        $route = $routeContext->getRoute();
-        $routeParams = $route?->getArguments() ?? [];
-        return $routeParams['model'] ?? '';
-    }
-
-    /**
-     * Get a display name for the model.
-     * 
-     * @param array $schema The schema configuration
-     * 
-     * @return string The display name
-     */
-    protected function getModelDisplayName(array $schema): string
-    {
-        $modelDisplayName = $schema['title'] ?? ucfirst($schema['model']);
-        // If title ends with "Management", extract the entity name
-        if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
-            $modelDisplayName = $matches[1];
-        }
-        return $modelDisplayName;
     }
 }

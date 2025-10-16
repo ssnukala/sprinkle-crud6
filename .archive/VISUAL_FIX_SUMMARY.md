@@ -99,37 +99,56 @@ public function __invoke(...): ResponseInterface
 }
 ```
 
-#### After
+#### After - Following UserFrosting 6 Pattern
 ```php
+// EditAction - Only handles GET (read) requests
 public function __invoke(...): ResponseInterface
 {
     parent::__invoke($crudSchema, $crudModel, $request, $response);
     
-    $method = $request->getMethod();
-    
-    // Check if PUT request
-    if ($method === 'PUT') {
-        return $this->handleUpdate(...);  // ✅ New handler
-    }
-    
-    // Handle GET (read) requests as before
+    // Handle GET (read) requests only
     return $response->withHeader('Content-Type', 'application/json');
 }
 
-// ✅ New method
-protected function handleUpdate(...): ResponseInterface
+// NEW: UpdateAction.php - Separate action for PUT requests (one action per class)
+class UpdateAction extends Base
 {
-    $this->validateAccess($crudSchema['model'], 'edit');
-    $this->validateInputData($crudSchema['model'], $data);
-    
-    $updateData = $this->prepareUpdateData($crudSchema, $data);
-    $this->db->table($table)->where($primaryKey, $recordId)->update($updateData);
-    
-    return $response with title and description;
+    public function __invoke(...): ResponseInterface
+    {
+        parent::__invoke($crudSchema, $crudModel, $request, $response);
+        
+        $this->validateAccess($crudSchema['model'], 'edit');
+        $this->validateInputData($crudSchema['model'], $data);
+        
+        $updateData = $this->prepareUpdateData($crudSchema, $data);
+        $this->db->table($table)->where($primaryKey, $recordId)->update($updateData);
+        
+        return $response with title and description;
+    }
 }
 ```
 
-### 2. Response Format Changes
+### 2. Routes - Separate Actions Pattern
+
+#### Before
+```php
+$group->get('/{id}', EditAction::class)
+    ->setName('api.crud6.read');
+// Update record (reuse EditAction for update)
+$group->put('/{id}', EditAction::class)
+    ->setName('api.crud6.update');
+```
+
+#### After - Following UserFrosting 6 Pattern
+```php
+$group->get('/{id}', EditAction::class)
+    ->setName('api.crud6.read');
+// Update record - separate action per UserFrosting 6 pattern
+$group->put('/{id}', UpdateAction::class)
+    ->setName('api.crud6.update');
+```
+
+### 3. Response Format Changes
 
 #### CreateAction - Before
 ```php
@@ -276,12 +295,15 @@ protected function transformFieldValue(array $fieldConfig, $value)
 
 | File | Lines Changed | Purpose |
 |------|---------------|---------|
-| `app/src/Controller/EditAction.php` | +181 | Add PUT handler and validation |
+| `app/src/Controller/UpdateAction.php` | +236 (new) | Separate action for PUT requests following UF6 pattern |
+| `app/src/Controller/EditAction.php` | (unchanged) | Kept focused on GET requests only |
+| `app/src/Routes/CRUD6Routes.php` | +2 | Use UpdateAction for PUT requests |
 | `app/src/Controller/CreateAction.php` | +12 | Update response format |
 | `app/locale/en_US/messages.php` | +16 | Add translation keys |
-| `.archive/FIX_UPDATE_ROW_API.md` | +259 | Documentation |
+| `.archive/FIX_UPDATE_ROW_API.md` | (updated) | Documentation |
+| `.archive/VISUAL_FIX_SUMMARY.md` | (updated) | Visual summary |
 
-**Total**: 468 lines added, 3 lines removed
+**Total**: ~266 lines added following UserFrosting 6 action-based controller pattern
 
 ---
 

@@ -56,19 +56,13 @@ useAlertsStore().push({
 
 ## Solution
 
-### 1. EditAction - Add PUT Request Handling
+### 1. Created Separate UpdateAction (Following UserFrosting 6 Patterns)
 
-Modified `app/src/Controller/EditAction.php` to:
+Following the UserFrosting 6 action-based controller pattern where each action is a separate class, created a new `UpdateAction.php` to handle PUT requests:
 
-1. **Check request method** in `__invoke()`:
-   ```php
-   $method = $request->getMethod();
-   if ($method === 'PUT') {
-       return $this->handleUpdate($crudSchema, $crudModel, $request, $response, $recordId);
-   }
-   ```
+1. **One Action Per Class**: Separated update logic into its own `UpdateAction` class (consistent with UserFrosting 6 patterns from sprinkle-admin)
 
-2. **Added `handleUpdate()` method** to process PUT requests:
+2. **Update Implementation** in `__invoke()` method:
    - Validates user has 'edit' permission
    - Validates input data against schema rules
    - Prepares data for database update
@@ -91,7 +85,21 @@ Modified `app/src/Controller/EditAction.php` to:
    ];
    ```
 
-### 2. CreateAction - Update Response Format
+### 2. EditAction - Keep Focused on Read Operations
+
+Kept `EditAction` focused on GET requests only (reading records), following the single-responsibility principle and UserFrosting 6 action-based controller pattern.
+
+### 3. Routes - Use Separate Actions
+
+Updated `CRUD6Routes.php` to use `UpdateAction` for PUT requests:
+```php
+$group->get('/{id}', EditAction::class)
+    ->setName('api.crud6.read');
+$group->put('/{id}', UpdateAction::class)  // Separate action per UserFrosting 6 pattern
+    ->setName('api.crud6.update');
+```
+
+### 4. CreateAction - Update Response Format
 
 Updated `app/src/Controller/CreateAction.php` to return consistent response format:
 
@@ -108,7 +116,7 @@ $responseData = [
 
 Error responses also updated with `title` and `description` fields.
 
-### 3. Translations - Add Missing Keys
+### 5. Translations - Add Missing Keys
 
 Added to `app/locale/en_US/messages.php`:
 

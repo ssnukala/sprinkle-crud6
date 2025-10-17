@@ -4,83 +4,107 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Controller;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use Illuminate\Database\Connection;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\Fortress\RequestSchema;
+use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
+use UserFrosting\Fortress\Transformer\RequestDataTransformer;
+use UserFrosting\Fortress\Validator\ServerSideValidator;
+use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
-use UserFrosting\I18n\Translator;
-use Illuminate\Database\Connection;
-use UserFrosting\Alert\AlertStream;
+use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
+use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
+use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
- * Edit/read action for CRUD6 models.
+ * Processes the request to read or update an existing CRUD6 model record.
+ *
+ * For GET requests: Returns the record data for viewing or editing.
+ * For PUT requests: Updates the record with new data.
  * 
- * Handles retrieval of a single record for any CRUD6 model.
- * Returns the record data for editing or viewing.
- * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * Processes the request from the record update form, checking that:
+ * 1. The user has the necessary permissions to update the posted field(s);
+ * 2. The submitted data is valid.
+ * This route requires authentication.
+ *
+ * Request type: GET (read) or PUT (update)
  * 
- * Route: GET /api/crud6/{model}/{id}
- * 
- * @see \UserFrosting\Sprinkle\Admin\Controller\User\UserEditAction
+ * @see \UserFrosting\Sprinkle\Admin\Controller\Group\GroupEditAction
  */
 class EditAction extends Base
 {
     /**
-     * Constructor for EditAction.
-     * 
-     * @param AuthorizationManager $authorizer    Authorization manager
-     * @param Authenticator        $authenticator Authenticator for access control
-     * @param DebugLoggerInterface $logger        Debug logger
-     * @param Translator           $translator    Translator for i18n messages
-     * @param Connection           $db            Database connection
-     * @param AlertStream          $alert         Alert stream for user notifications
-     * @param SchemaService        $schemaService Schema service
+     * Inject dependencies.
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
+        protected SchemaService $schemaService,
         protected Translator $translator,
         protected Connection $db,
-        protected AlertStream $alert,
-        protected SchemaService $schemaService
+        protected UserActivityLogger $userActivityLogger,
+        protected RequestDataTransformer $transformer,
+        protected ServerSideValidator $validator,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
-     * Invoke the edit action.
-     * 
-     * Returns the record data for editing or viewing.
-     * 
-     * @param array                  $crudSchema The schema configuration
-     * @param CRUD6ModelInterface    $crudModel  The configured model instance with record loaded
-     * @param ServerRequestInterface $request    The HTTP request
-     * @param ResponseInterface      $response   The HTTP response
-     * 
-     * @return ResponseInterface JSON response with record data or error
+     * Receive the request, dispatch to the handler, and return the payload to
+     * the response.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     * @param Response            $response
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        parent::__invoke($crudSchema, $crudModel, $request, $response);
+        $method = $request->getMethod();
+        
+        // Handle GET request (read operation)
+        if ($method === 'GET') {
+            return $this->handleRead($crudSchema, $crudModel, $request, $response);
+        }
+        
+        // Handle PUT request (update operation)
+        if ($method === 'PUT') {
+            return $this->handleUpdate($crudSchema, $crudModel, $request, $response);
+        }
+        
+        // Method not allowed
+        $response->getBody()->write(json_encode(['error' => 'Method not allowed']));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(405);
+    }
 
-        // For EditAction, the crudModel should contain the specific record since ID is in the route
+    /**
+     * Handle GET request to read a record.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     * @param Response            $response
+     *
+     * @return Response
+     */
+    protected function handleRead(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    {
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6: Edit request for record ID: {$recordId} model: {$crudSchema['model']}");
+        $this->logger->debug("CRUD6: Read request for record ID: {$recordId} model: {$crudSchema['model']}");
 
         try {
-            // Get a display name for the model (title or capitalized model name)
-            // For button labels, we want singular form like "Group" not "groups" or "Group Management"
-            $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
-            // If title ends with "Management", extract the entity name
-            if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
-                $modelDisplayName = $matches[1];
-            }
+            // Get a display name for the model
+            $modelDisplayName = $this->getModelDisplayName($crudSchema);
             
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
@@ -93,7 +117,7 @@ class EditAction extends Base
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6: Failed to edit record for model: {$crudSchema['model']}", [
+            $this->logger->error("CRUD6: Failed to read record for model: {$crudSchema['model']}", [
                 'error' => $e->getMessage(),
                 'id' => $recordId
             ]);
@@ -105,6 +129,123 @@ class EditAction extends Base
 
             $response->getBody()->write(json_encode($errorData));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+    }
+
+    /**
+     * Handle PUT request to update a record.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     * @param Response            $response
+     *
+     * @return Response
+     */
+    protected function handleUpdate(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    {
+        $this->validateAccess($crudSchema, 'edit');
+        $updatedModel = $this->handle($crudSchema, $crudModel, $request);
+
+        // Get a display name for the model
+        $modelDisplayName = $this->getModelDisplayName($crudSchema);
+
+        // Write response with title and description
+        $title = $this->translator->translate('CRUD6.UPDATE.SUCCESS_TITLE');
+        $description = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $modelDisplayName]);
+        $payload = new ApiResponse($title, $description);
+        $response->getBody()->write((string) $payload);
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * Handle the update request.
+     *
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     *
+     * @return CRUD6ModelInterface
+     */
+    protected function handle(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request): CRUD6ModelInterface
+    {
+        // Get PUT parameters
+        $params = (array) $request->getParsedBody();
+
+        // Load the request schema
+        $requestSchema = $this->getRequestSchema($crudSchema);
+
+        // Whitelist and set parameter defaults
+        $data = $this->transformer->transform($requestSchema, $params);
+
+        // Validate request data
+        $this->validateData($requestSchema, $data);
+
+        // Get current user. Won't be null, as AuthGuard prevent it
+        /** @var UserInterface */
+        $currentUser = $this->authenticator->user();
+
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
+        $recordId = $crudModel->getAttribute($primaryKey);
+
+        $this->logger->debug("CRUD6: Update request for record ID: {$recordId} model: {$crudSchema['model']}", [
+            'user' => $currentUser->user_name,
+        ]);
+
+        // Begin transaction - DB will be rolled back if an exception occurs
+        $this->db->transaction(function () use ($crudSchema, $crudModel, $data, $currentUser, $recordId) {
+            // Prepare update data
+            $updateData = $this->prepareUpdateData($crudSchema, $data);
+            
+            // Update the record using query builder
+            $table = $crudModel->getTable();
+            $primaryKey = $crudSchema['primary_key'] ?? 'id';
+            $this->db->table($table)->where($primaryKey, $recordId)->update($updateData);
+
+            // Reload the model to get updated data
+            $crudModel->refresh();
+
+            // Create activity record
+            $modelDisplayName = $this->getModelDisplayName($crudSchema);
+            $this->userActivityLogger->info("User {$currentUser->user_name} updated {$modelDisplayName} record.", [
+                'type'    => "crud6_{$crudSchema['model']}_update",
+                'user_id' => $currentUser->id,
+            ]);
+        });
+
+        return $crudModel;
+    }
+
+    /**
+     * Load the request schema from the CRUD6 schema.
+     *
+     * @param array $crudSchema The schema configuration
+     *
+     * @return RequestSchemaInterface
+     */
+    protected function getRequestSchema(array $crudSchema): RequestSchemaInterface
+    {
+        $validationRules = $this->getValidationRules($crudSchema);
+        $requestSchema = new RequestSchema($validationRules);
+
+        return $requestSchema;
+    }
+
+    /**
+     * Validate request PUT data.
+     *
+     * @param RequestSchemaInterface $schema
+     * @param mixed[]                $data
+     */
+    protected function validateData(RequestSchemaInterface $schema, array $data): void
+    {
+        $errors = $this->validator->validate($schema, $data);
+        if (count($errors) !== 0) {
+            $e = new ValidationException();
+            $e->addErrors($errors);
+
+            throw $e;
         }
     }
 }

@@ -38,9 +38,7 @@ const modelLabel = computed(() => {
     return props.model ? props.model.charAt(0).toUpperCase() + props.model.slice(1) : 'Record'
 })
 
-console.log('[DeleteModal] 🚀 Component setup - recordId:', recordId.value, 'model:', props.model, 'hasSchema:', !!props.schema)
 if (props.schema) {
-    console.log('[DeleteModal] 📊 Schema provided for context - title:', props.schema?.title)
 }
 
 /**
@@ -53,10 +51,8 @@ const emits = defineEmits(['deleted'])
  * Methods - Submit the form to the API and handle the response.
  */
 const deleteConfirmed = () => {
-    console.log('[DeleteModal] 🗑️  Delete confirmed for record:', recordId.value)
     deleteRow(recordId.value)
         .then(() => {
-            console.log('[DeleteModal] ✅ Delete successful for:', recordId.value)
             emits('deleted')
         })
         .catch((error) => {

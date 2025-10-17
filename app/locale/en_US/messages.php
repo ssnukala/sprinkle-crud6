@@ -27,6 +27,12 @@ return [
         ],
         'CREATION_SUCCESSFUL' => 'Successfully created {{model}} <strong>{{name}}</strong>',
         'DELETE'              => 'Delete {{model}}',
+        'DELETE' => [
+            'SUCCESS'       => 'Successfully deleted {{model}}',
+            'SUCCESS_TITLE' => 'Deleted!',
+            'ERROR'         => 'Failed to delete {{model}}',
+            'ERROR_TITLE'   => 'Error Deleting',
+        ],
         'DELETE_CONFIRM'      => 'Are you sure you want to delete the {{model}} <strong>{{name}}</strong>?',
         'DELETE_DEFAULT'      => "You can't delete the {{model}} <strong>{{name}}</strong> because it is the default {{model}} for newly registered users.",
         'DELETE_YES'          => 'Yes, delete {{model}}',

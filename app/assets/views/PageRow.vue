@@ -235,6 +235,8 @@ watch(
 let currentModel = ''
 watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
+        console.log('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
+        
         // Set initial page title immediately for breadcrumbs
         const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
@@ -243,6 +245,7 @@ watch(model, async (newModel) => {
         const schemaPromise = loadSchema(newModel)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
+            console.log('[PageRow] Schema loaded successfully for model:', newModel)
             
             // Update page title and description
             if (schema.value) {

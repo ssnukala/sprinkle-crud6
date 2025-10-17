@@ -11,11 +11,8 @@ const props = defineProps<{
     schema?: any
 }>()
 
-console.log('[CreateModal] 🚀 Component setup - model:', props.model, 'hasSchema:', !!props.schema)
 if (props.schema) {
-    console.log('[CreateModal] 📊 Schema provided by parent - title:', props.schema?.title, 'fieldCount:', Object.keys(props.schema?.fields || {}).length)
 } else {
-    console.log('[CreateModal] ⚠️  No schema provided - Form will load via composable if model available')
 }
 
 /**
@@ -40,7 +37,6 @@ const emits = defineEmits(['saved'])
  * Methods - Submit the form to the API and handle the response.
  */
 const formSuccess = () => {
-    console.log('[CreateModal] ✅ Create form submitted successfully for model:', props.model)
     emits('saved')
     UIkit.modal('#modal-crud6-create').hide()
 }

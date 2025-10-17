@@ -55,7 +55,6 @@ export function useCRUD6Api(modelName?: string) {
             const response = await axios.get(`/api/crud6/${model}/schema`)
             return response.data
         } catch (error) {
-            console.error('Failed to load schema:', error)
             return {}
         }
     }

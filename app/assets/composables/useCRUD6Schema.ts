@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 
 export interface SchemaField {
@@ -45,9 +45,13 @@ export interface CRUD6Schema {
  * Vue composable for loading and managing CRUD6 schemas.
  * 
  * Provides reactive access to schema data and methods to load schemas
- * from the API endpoints.
+ * from the API endpoints. Uses global Pinia store for caching to prevent
+ * duplicate API calls across different component instances.
  */
 export function useCRUD6Schema(modelName?: string) {
+    // Use global schema store for centralized caching
+    const schemaStore = useCRUD6SchemaStore()
+    
     const loading = ref(false)
     const error = ref<ApiErrorResponse | null>(null)
     const schema = ref<CRUD6Schema | null>(null)
@@ -61,40 +65,43 @@ export function useCRUD6Schema(modelName?: string) {
         schema.value = schemaData
         if (model) {
             currentModel.value = model
+            // Also update the global store
+            schemaStore.setSchema(model, schemaData)
         }
         error.value = null
     }
 
     /**
      * Load schema for a specific model
-     * Skips API call if schema is already loaded for the same model
+     * Uses global store for caching to prevent duplicate API calls
      */
     async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
-        // Skip loading if schema is already loaded for the same model (unless forced)
+        // Check if already loaded in this instance and not forcing
         if (!force && currentModel.value === model && schema.value) {
-            console.log('[useCRUD6Schema] Using cached schema - model:', model)
+            console.log('[useCRUD6Schema] Using local cached schema - model:', model)
             return schema.value
         }
 
-        console.log('[useCRUD6Schema] Loading schema from API - model:', model, 'force:', force)
+        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force)
         loading.value = true
         error.value = null
 
         try {
-            const response = await axios.get<CRUD6Schema>(`/api/crud6/${model}/schema`)
-
-            // Handle different response structures
-            if (response.data.schema) {
-                schema.value = response.data.schema
-            } else if (response.data.fields) {
-                schema.value = response.data
-            } else {
-                throw new Error('Invalid schema response')
-            }
+            // Delegate to global store
+            const schemaData = await schemaStore.loadSchema(model, force)
             
-            currentModel.value = model
-            console.log('[useCRUD6Schema] Schema loaded successfully - model:', model)
-            return response.data
+            if (schemaData) {
+                schema.value = schemaData
+                currentModel.value = model
+                return schemaData
+            } else {
+                // Get error from store
+                const storeError = schemaStore.getError(model)
+                if (storeError) {
+                    error.value = storeError
+                }
+                return null
+            }
         } catch (err: any) {
             error.value = err.response?.data || { 
                 title: 'Schema Load Error',

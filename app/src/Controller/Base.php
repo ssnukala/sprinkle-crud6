@@ -210,11 +210,60 @@ abstract class Base
     }
 
     /**
-     * Get validation rules from the model schema.
+     * Get editable fields from the model schema.
+     * 
+     * Fields are considered editable if:
+     * - They have `editable: true` explicitly set, OR
+     * - They don't have `readonly: true`, `auto_increment: true`, or `computed: true`
      * 
      * @param string|array $modelNameOrSchema The model name or schema array
      * 
-     * @return array<string, array> Validation rules for each field
+     * @return string[] Array of editable field names
+     */
+    protected function getEditableFields(string|array $modelNameOrSchema): array
+    {
+        $schema = is_string($modelNameOrSchema) 
+            ? $this->schemaService->getSchema($modelNameOrSchema)
+            : $modelNameOrSchema;
+            
+        $editable = [];
+        foreach ($schema['fields'] ?? [] as $name => $field) {
+            // Check if field is explicitly marked as editable
+            if (isset($field['editable'])) {
+                if ($field['editable'] === true) {
+                    $editable[] = $name;
+                }
+                continue;
+            }
+            
+            // If no explicit editable attribute, check for non-editable flags
+            if ($field['readonly'] ?? false) {
+                continue;
+            }
+            if ($field['auto_increment'] ?? false) {
+                continue;
+            }
+            if ($field['computed'] ?? false) {
+                continue;
+            }
+            
+            // Field is editable by default
+            $editable[] = $name;
+        }
+        
+        return $editable;
+    }
+
+    /**
+     * Get validation rules from the model schema.
+     * 
+     * This method returns validation rules only for editable fields.
+     * Fields that are editable but have no validation rules will be included
+     * in the request schema but with empty validation rules.
+     * 
+     * @param string|array $modelNameOrSchema The model name or schema array
+     * 
+     * @return array<string, array> Validation rules for each editable field
      */
     protected function getValidationRules(string|array $modelNameOrSchema): array
     {
@@ -222,10 +271,14 @@ abstract class Base
             ? $this->schemaService->getSchema($modelNameOrSchema)
             : $modelNameOrSchema;
             
+        $editableFields = $this->getEditableFields($schema);
+        
         $rules = [];
         foreach ($schema['fields'] ?? [] as $name => $field) {
-            if (isset($field['validation'])) {
-                $rules[$name] = $field['validation'];
+            // Only include validation rules for editable fields
+            if (in_array($name, $editableFields)) {
+                // Include the field even if it has no validation rules
+                $rules[$name] = $field['validation'] ?? [];
             }
         }
         return $rules;
@@ -318,6 +371,7 @@ abstract class Base
      * Prepare data for database update.
      * 
      * Transforms field values according to their types and filters out non-editable fields.
+     * Uses getEditableFields() to determine which fields can be updated.
      * Handles timestamps if configured in schema.
      * 
      * @param array $schema The schema configuration
@@ -328,22 +382,12 @@ abstract class Base
     protected function prepareUpdateData(array $schema, array $data): array
     {
         $updateData = [];
+        $editableFields = $this->getEditableFields($schema);
         $fields = $schema['fields'] ?? [];
         
-        foreach ($fields as $fieldName => $fieldConfig) {
-            // Skip auto-increment, computed, and non-editable fields
-            if ($fieldConfig['auto_increment'] ?? false) {
-                continue;
-            }
-            if ($fieldConfig['computed'] ?? false) {
-                continue;
-            }
-            if (($fieldConfig['editable'] ?? true) === false) {
-                continue;
-            }
-            
-            if (isset($data[$fieldName])) {
-                $updateData[$fieldName] = $this->transformFieldValue($fieldConfig, $data[$fieldName]);
+        foreach ($editableFields as $fieldName) {
+            if (isset($data[$fieldName]) && isset($fields[$fieldName])) {
+                $updateData[$fieldName] = $this->transformFieldValue($fields[$fieldName], $data[$fieldName]);
             }
         }
         

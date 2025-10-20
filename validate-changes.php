@@ -18,6 +18,7 @@ $schemaFiles = [
     'examples/categories.json',
     'examples/analytics.json',
     'examples/field-template-example.json',
+    'examples/products-template-file.json',
     'app/schema/crud6/users.json',
     'app/schema/crud6/groups.json',
     'app/schema/crud6/db1/users.json',
@@ -117,6 +118,46 @@ if (empty($templatesFound)) {
 
 echo "\n";
 
+// Test 3b: Check Template Files
+echo "Test 3b: Checking Template Files\n";
+echo "---------------------------------\n";
+
+$templateFiles = [
+    'app/assets/templates/crud6/product-card.html',
+    'app/assets/templates/crud6/category-info.html',
+];
+
+$allTemplatesExist = true;
+foreach ($templateFiles as $file) {
+    $fullPath = __DIR__ . '/' . $file;
+    if (!file_exists($fullPath)) {
+        echo "✗ MISSING: $file\n";
+        $allTemplatesExist = false;
+        continue;
+    }
+    
+    $content = file_get_contents($fullPath);
+    if (empty($content)) {
+        echo "✗ EMPTY: $file\n";
+        $allTemplatesExist = false;
+    } else {
+        echo "✓ EXISTS: $file\n";
+        
+        // Validate template has placeholders
+        if (preg_match('/\{\{(\w+)\}\}/', $content)) {
+            echo "  ✓ Contains valid {{placeholder}} syntax\n";
+        } else {
+            echo "  ⚠ No placeholders found\n";
+        }
+    }
+}
+
+if ($allTemplatesExist) {
+    echo "\n✓ All template files exist\n";
+}
+
+echo "\n";
+
 // Test 4: Verify SchemaService changes
 echo "Test 4: Verifying SchemaService.php Changes\n";
 echo "--------------------------------------------\n";
@@ -162,6 +203,9 @@ if (!file_exists($pageListPath)) {
         'renderFieldTemplate function' => strpos($content, 'function renderFieldTemplate') !== false,
         'v-html rendering' => strpos($content, 'v-html="renderFieldTemplate') !== false,
         'placeholder regex' => strpos($content, '/\\{\\{(\\w+)\\}\\}/g') !== false,
+        'template file glob import' => strpos($content, "import.meta.glob") !== false,
+        'file extension check' => strpos($content, "endsWith('.html')") !== false,
+        'template file loading' => strpos($content, "templateFiles[templatePath]") !== false,
     ];
     
     foreach ($checks as $check => $passed) {
@@ -185,11 +229,15 @@ $docs = [
         'field_template',
         'Schema Defaults',
         'primary_key',
+        'External Template File Example',
+        'template file',
     ],
     'docs/FIELD_TEMPLATE_FEATURE.md' => [
         'field_template',
         '{{field_name}}',
         'placeholder',
+        'External Template File',
+        'products-template-file.json',
     ],
 ];
 

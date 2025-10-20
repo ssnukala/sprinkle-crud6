@@ -31,6 +31,7 @@ class SchemaJsonTest extends TestCase
             'categories.json',
             'analytics.json',
             'field-template-example.json',
+            'products-template-file.json',
         ];
 
         foreach ($exampleFiles as $file) {
@@ -138,6 +139,66 @@ class SchemaJsonTest extends TestCase
         
         if (!isset($schema['soft_delete'])) {
             $this->assertTrue(true, "soft_delete can be omitted - will default to false");
+        }
+    }
+
+    /**
+     * Test that field_template can reference external template files
+     */
+    public function testFieldTemplateFileReferences(): void
+    {
+        $path = __DIR__ . '/../../../examples/products-template-file.json';
+        $content = file_get_contents($path);
+        $schema = json_decode($content, true);
+
+        $this->assertArrayHasKey('fields', $schema);
+
+        // Find fields with file-based field_template
+        $fileTemplateFound = false;
+        foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+            if (isset($fieldConfig['field_template'])) {
+                $template = $fieldConfig['field_template'];
+                
+                // Check if it's a file reference (ends with .html or .htm)
+                if (preg_match('/\.html?$/i', $template)) {
+                    $fileTemplateFound = true;
+                    
+                    // Verify the referenced template file exists
+                    $templatePath = __DIR__ . '/../../../app/assets/templates/crud6/' . $template;
+                    $this->assertFileExists($templatePath, "Template file {$template} should exist at {$templatePath}");
+                    
+                    // Verify template file contains valid HTML with placeholders
+                    $templateContent = file_get_contents($templatePath);
+                    $this->assertNotEmpty($templateContent, "Template file {$template} should not be empty");
+                }
+            }
+        }
+
+        $this->assertTrue($fileTemplateFound, "products-template-file.json should have at least one field with a file-based template");
+    }
+
+    /**
+     * Test that template files exist and are valid
+     */
+    public function testTemplateFilesExist(): void
+    {
+        $templateFiles = [
+            'product-card.html',
+            'category-info.html',
+        ];
+
+        foreach ($templateFiles as $file) {
+            $path = __DIR__ . '/../../../app/assets/templates/crud6/' . $file;
+            $this->assertFileExists($path, "Template file {$file} does not exist");
+
+            $content = file_get_contents($path);
+            $this->assertNotFalse($content, "Could not read template file {$file}");
+            $this->assertNotEmpty($content, "Template file {$file} should not be empty");
+            
+            // Check for placeholder syntax
+            if (strpos($content, '{{') !== false) {
+                $this->assertStringContainsString('}}', $content, "Template file {$file} has opening {{ but no closing }}");
+            }
         }
     }
 }

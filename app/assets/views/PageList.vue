@@ -64,12 +64,31 @@ function viewRecord(record: CRUD6Interface) {
   }
 }
 
+// Import all template files eagerly
+const templateFiles = import.meta.glob('../templates/crud6/*.html', { as: 'raw', eager: true })
+
 // Render field template with row data
 function renderFieldTemplate(template: string, row: any): string {
   if (!template) return ''
   
+  let templateContent = template
+  
+  // Check if template is a file reference (ends with .html or .htm)
+  if (template.endsWith('.html') || template.endsWith('.htm')) {
+    // Construct the full path for the glob import
+    const templatePath = `../templates/crud6/${template}`
+    
+    // Get template content from imported files
+    if (templateFiles[templatePath]) {
+      templateContent = templateFiles[templatePath] as string
+    } else {
+      console.error(`Template file not found: ${template}`)
+      return '' // Return empty string if template file not found
+    }
+  }
+  
   // Replace placeholders like {{field_name}} with actual values from row
-  let rendered = template
+  let rendered = templateContent
   
   // Find all placeholders in the format {{field_name}}
   const placeholderRegex = /\{\{(\w+)\}\}/g

@@ -140,7 +140,7 @@ This allows for cleaner, more concise schema definitions by only specifying thes
 
 Field templates provide powerful customization for how fields are displayed in list views. Use the `field_template` attribute to define custom HTML templates with access to all row data.
 
-**Example:**
+**Inline Template Example:**
 ```json
 {
   "description": {
@@ -152,9 +152,24 @@ Field templates provide powerful customization for how fields are displayed in l
 }
 ```
 
+**External Template File Example:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Info",
+    "listable": true,
+    "field_template": "product-card.html"
+  }
+}
+```
+
+For external templates, create your template file in `app/assets/templates/crud6/` with the referenced filename.
+
 **Features:**
 - Use `{{field_name}}` placeholders to inject field values from the current row
 - All row data is available for use in the template
+- Supports both inline templates and external template files
 - Supports standard HTML and CSS classes (UIkit classes recommended)
 - Ideal for creating consolidated column displays with multiple field values
 
@@ -163,8 +178,9 @@ Field templates provide powerful customization for how fields are displayed in l
 - Add badges, labels, or icons to field displays
 - Create rich card-style layouts within table cells
 - Format complex data presentations
+- Keep complex templates in separate files for better maintainability
 
-See `examples/categories.json` and `examples/products.json` for working examples.
+See `examples/categories.json`, `examples/products.json`, and `examples/products-template-file.json` for working examples.
 
 ### Detail Section Configuration
 

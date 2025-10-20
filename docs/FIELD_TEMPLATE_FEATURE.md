@@ -16,8 +16,9 @@ The field_template feature addresses the need for:
 
 ### Basic Syntax
 
-Add a `field_template` attribute to any field in your schema:
+Add a `field_template` attribute to any field in your schema. You can use either an inline template or reference an external template file:
 
+**Inline Template:**
 ```json
 {
   "description": {
@@ -28,6 +29,24 @@ Add a `field_template` attribute to any field in your schema:
   }
 }
 ```
+
+**External Template File:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Info",
+    "listable": true,
+    "field_template": "product-card.html"
+  }
+}
+```
+
+When using an external template file:
+- Place your template files in `app/assets/templates/crud6/`
+- Reference the filename (e.g., `"product-card.html"`)
+- The file must have a `.html` or `.htm` extension
+- Templates are loaded at build time for optimal performance
 
 ### Template Placeholders
 
@@ -80,7 +99,40 @@ All fields from the row data are available for use in the template, not just the
 }
 ```
 
-### Example 4: Full-Featured Template
+### Example 4: Using External Template Files
+
+For complex templates, it's often cleaner to use external template files:
+
+**Schema Definition:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Details",
+    "listable": true,
+    "field_template": "product-card.html"
+  }
+}
+```
+
+**Template File** (`app/assets/templates/crud6/product-card.html`):
+```html
+<div class='uk-card uk-card-small uk-card-default uk-card-body'>
+  <div class='uk-grid-small' uk-grid>
+    <div class='uk-width-auto'>
+      <span class='uk-badge'>ID: {{id}}</span>
+    </div>
+    <div class='uk-width-auto'>
+      <span class='uk-badge'>SKU: {{sku}}</span>
+    </div>
+  </div>
+  <p class='uk-text-small'>{{description}}</p>
+</div>
+```
+
+See `examples/products-template-file.json` for a complete working example.
+
+### Example 5: Full-Featured Template
 
 See `examples/field-template-example.json` for a comprehensive example showing:
 - Multiple field values in a single template
@@ -116,15 +168,33 @@ The CRUD6 sprinkle uses UIkit for styling. Leverage UIkit classes for consistent
 
 ### 2. Keep Templates Readable
 
-For complex templates, consider formatting them across multiple lines in your schema JSON:
+For complex templates, consider using external template files for better maintainability:
 
+**Instead of inline:**
 ```json
 {
   "field_template": "<div class='container'><span>{{field1}}</span><span>{{field2}}</span></div>"
 }
 ```
 
-### 3. Set listable to true
+**Use external file:**
+```json
+{
+  "field_template": "my-template.html"
+}
+```
+
+Then create `app/assets/templates/crud6/my-template.html` with your template content.
+
+### 3. Template File Organization
+
+When using external template files:
+- Place all template files in `app/assets/templates/crud6/`
+- Use descriptive names (e.g., `product-card.html`, `user-info.html`)
+- Group related templates with prefixes (e.g., `product-card.html`, `product-list.html`)
+- Templates are imported at build time, so changes require a rebuild
+
+### 4. Set listable to true
 
 When using `field_template`, ensure the field has `"listable": true` so it appears in list views:
 
@@ -139,13 +209,14 @@ When using `field_template`, ensure the field has `"listable": true` so it appea
 }
 ```
 
-### 4. Consider Performance
+### 5. Consider Performance
 
 - Keep templates simple and lightweight
 - Avoid deeply nested HTML structures
 - Minimize the number of fields with templates in a single view
+- External template files are loaded at build time, not runtime, for optimal performance
 
-### 5. Handle Missing Values
+### 6. Handle Missing Values
 
 Templates will replace missing or null values with empty strings. Design your templates to handle this gracefully:
 
@@ -163,10 +234,20 @@ Templates will replace missing or null values with empty strings. Design your te
 
 The field template rendering is handled in the Vue.js frontend:
 
-1. **Schema Definition**: Templates are defined in JSON schema files
-2. **Schema Loading**: SchemaService loads schemas with default values applied
-3. **Frontend Rendering**: Vue components render templates using `v-html`
-4. **Placeholder Replacement**: Simple regex replacement of `{{field_name}}` with row values
+1. **Schema Definition**: Templates are defined in JSON schema files (inline or as file references)
+2. **Template Loading**: External template files are imported at build time using Vite's glob import
+3. **Schema Loading**: SchemaService loads schemas with default values applied
+4. **Frontend Rendering**: Vue components render templates using `v-html`
+5. **Placeholder Replacement**: Simple regex replacement of `{{field_name}}` with row values
+
+#### Template File Loading
+
+When a `field_template` value ends with `.html` or `.htm`:
+- The system treats it as a file reference
+- Files are loaded from `app/assets/templates/crud6/` directory
+- Vite's `import.meta.glob()` loads all templates at build time
+- Templates are cached in memory for fast access
+- No runtime HTTP requests are made
 
 ### Security Considerations
 
@@ -181,6 +262,7 @@ The field template rendering is handled in the Vue.js frontend:
 2. **No Vue Directives**: Cannot use `v-if`, `v-for`, etc. in templates
 3. **Simple Replacement**: Only basic `{{field_name}}` placeholder substitution
 4. **List View Only**: Currently only supported in list/table views (PageList.vue)
+5. **Build-Time Loading**: External template files require a rebuild when modified
 
 ## Migration from Previous Versions
 
@@ -188,6 +270,12 @@ If you have existing schemas without field templates, no changes are required. T
 - **Opt-in**: Only fields with `field_template` defined will use custom rendering
 - **Backward Compatible**: Existing schemas continue to work as before
 - **Progressive Enhancement**: Add templates only where needed
+
+To migrate inline templates to external files:
+1. Create a new `.html` file in `app/assets/templates/crud6/`
+2. Copy your inline template HTML to the file
+3. Update your schema to reference the filename
+4. Rebuild your application
 
 ## Related Features
 
@@ -204,9 +292,12 @@ See the main README for more details on schema defaults.
 
 Check these files for working examples:
 
-1. **examples/categories.json** - Simple multi-field display
-2. **examples/products.json** - Card-style layout with badges
-3. **examples/field-template-example.json** - Comprehensive task management example
+1. **examples/categories.json** - Simple multi-field display (inline template)
+2. **examples/products.json** - Card-style layout with badges (inline template)
+3. **examples/products-template-file.json** - Using external template file
+4. **examples/field-template-example.json** - Comprehensive task management example (inline template)
+5. **app/assets/templates/crud6/product-card.html** - Example external template file
+6. **app/assets/templates/crud6/category-info.html** - Example external template file
 
 ## Future Enhancements
 

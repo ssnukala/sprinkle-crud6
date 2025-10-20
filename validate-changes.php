@@ -19,6 +19,7 @@ $schemaFiles = [
     'examples/analytics.json',
     'examples/field-template-example.json',
     'examples/products-template-file.json',
+    'examples/products-vue-template.json',
     'app/schema/crud6/users.json',
     'app/schema/crud6/groups.json',
     'app/schema/crud6/db1/users.json',
@@ -125,6 +126,8 @@ echo "---------------------------------\n";
 $templateFiles = [
     'app/assets/templates/crud6/product-card.html',
     'app/assets/templates/crud6/category-info.html',
+    'app/assets/templates/crud6/ProductCard.vue',
+    'app/assets/templates/crud6/CategoryInfo.vue',
 ];
 
 $allTemplatesExist = true;
@@ -143,17 +146,33 @@ foreach ($templateFiles as $file) {
     } else {
         echo "✓ EXISTS: $file\n";
         
-        // Validate template has placeholders
-        if (preg_match('/\{\{(\w+)\}\}/', $content)) {
-            echo "  ✓ Contains valid {{placeholder}} syntax\n";
-        } else {
-            echo "  ⚠ No placeholders found\n";
+        // Validate template content based on file type
+        if (strpos($file, '.html') !== false) {
+            // HTML template - check for placeholders
+            if (preg_match('/\{\{(\w+)\}\}/', $content)) {
+                echo "  ✓ Contains valid {{placeholder}} syntax\n";
+            } else {
+                echo "  ⚠ No placeholders found\n";
+            }
+        } elseif (strpos($file, '.vue') !== false) {
+            // Vue component - check for required structure
+            if (strpos($content, '<template>') !== false) {
+                echo "  ✓ Contains <template> section\n";
+            } else {
+                echo "  ✗ Missing <template> section\n";
+                $allTemplatesExist = false;
+            }
+            if (strpos($content, 'rowData') !== false) {
+                echo "  ✓ Uses rowData prop\n";
+            } else {
+                echo "  ⚠ No rowData prop found\n";
+            }
         }
     }
 }
 
 if ($allTemplatesExist) {
-    echo "\n✓ All template files exist\n";
+    echo "\n✓ All template files exist and are valid\n";
 }
 
 echo "\n";
@@ -204,7 +223,10 @@ if (!file_exists($pageListPath)) {
         'v-html rendering' => strpos($content, 'v-html="renderFieldTemplate') !== false,
         'placeholder regex' => strpos($content, '/\\{\\{(\\w+)\\}\\}/g') !== false,
         'template file glob import' => strpos($content, "import.meta.glob") !== false,
+        'Vue component glob import' => strpos($content, "vueTemplateFiles") !== false,
         'file extension check' => strpos($content, "endsWith('.html')") !== false,
+        'Vue component check' => strpos($content, "isVueTemplate") !== false,
+        'dynamic component rendering' => strpos($content, "<component") !== false,
         'template file loading' => strpos($content, "templateFiles[templatePath]") !== false,
     ];
     
@@ -229,15 +251,19 @@ $docs = [
         'field_template',
         'Schema Defaults',
         'primary_key',
-        'External Template File Example',
+        'External HTML Template',
+        'Vue Component Template Example',
         'template file',
     ],
     'docs/FIELD_TEMPLATE_FEATURE.md' => [
         'field_template',
         '{{field_name}}',
         'placeholder',
-        'External Template File',
+        'External HTML Template',
         'products-template-file.json',
+        'Vue Component Templates',
+        'ProductCard.vue',
+        'rowData',
     ],
 ];
 

@@ -32,6 +32,7 @@ class SchemaJsonTest extends TestCase
             'analytics.json',
             'field-template-example.json',
             'products-template-file.json',
+            'products-vue-template.json',
         ];
 
         foreach ($exampleFiles as $file) {
@@ -185,6 +186,8 @@ class SchemaJsonTest extends TestCase
         $templateFiles = [
             'product-card.html',
             'category-info.html',
+            'ProductCard.vue',
+            'CategoryInfo.vue',
         ];
 
         foreach ($templateFiles as $file) {
@@ -195,9 +198,14 @@ class SchemaJsonTest extends TestCase
             $this->assertNotFalse($content, "Could not read template file {$file}");
             $this->assertNotEmpty($content, "Template file {$file} should not be empty");
             
-            // Check for placeholder syntax
-            if (strpos($content, '{{') !== false) {
-                $this->assertStringContainsString('}}', $content, "Template file {$file} has opening {{ but no closing }}");
+            // Check for placeholder syntax in HTML files or Vue template syntax in .vue files
+            if (strpos($file, '.html') !== false) {
+                if (strpos($content, '{{') !== false) {
+                    $this->assertStringContainsString('}}', $content, "Template file {$file} has opening {{ but no closing }}");
+                }
+            } elseif (strpos($file, '.vue') !== false) {
+                $this->assertStringContainsString('<template>', $content, "Vue template file {$file} should have <template> section");
+                $this->assertStringContainsString('rowData', $content, "Vue template file {$file} should use rowData prop");
             }
         }
     }

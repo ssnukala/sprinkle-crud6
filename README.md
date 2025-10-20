@@ -138,7 +138,7 @@ This allows for cleaner, more concise schema definitions by only specifying thes
 
 ### Field Templates
 
-Field templates provide powerful customization for how fields are displayed in list views. Use the `field_template` attribute to define custom HTML templates with access to all row data.
+Field templates provide powerful customization for how fields are displayed in list views. Use the `field_template` attribute to define custom templates with access to all row data. Supports inline HTML, external HTML files, and Vue components.
 
 **Inline Template Example:**
 ```json
@@ -152,7 +152,7 @@ Field templates provide powerful customization for how fields are displayed in l
 }
 ```
 
-**External Template File Example:**
+**External HTML Template File Example:**
 ```json
 {
   "description": {
@@ -164,12 +164,25 @@ Field templates provide powerful customization for how fields are displayed in l
 }
 ```
 
+**Vue Component Template Example:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Info",
+    "listable": true,
+    "field_template": "ProductCard.vue"
+  }
+}
+```
+
 For external templates, create your template file in `app/assets/templates/crud6/` with the referenced filename.
 
 **Features:**
-- Use `{{field_name}}` placeholders to inject field values from the current row
-- All row data is available for use in the template
-- Supports both inline templates and external template files
+- **Inline HTML**: Use `{{field_name}}` placeholders for simple templating
+- **External HTML files**: Better organization for complex templates
+- **Vue components**: Full Vue 3 features (directives, computed properties, TypeScript)
+- All row data is available to templates
 - Supports standard HTML and CSS classes (UIkit classes recommended)
 - Ideal for creating consolidated column displays with multiple field values
 
@@ -177,10 +190,11 @@ For external templates, create your template file in `app/assets/templates/crud6
 - Combine multiple fields into a single consolidated column
 - Add badges, labels, or icons to field displays
 - Create rich card-style layouts within table cells
-- Format complex data presentations
+- Format complex data presentations with conditional logic
+- Use reactive computed properties for dynamic displays
 - Keep complex templates in separate files for better maintainability
 
-See `examples/categories.json`, `examples/products.json`, and `examples/products-template-file.json` for working examples.
+See `examples/categories.json`, `examples/products.json`, `examples/products-template-file.json`, and `examples/products-vue-template.json` for working examples.
 
 ### Detail Section Configuration
 

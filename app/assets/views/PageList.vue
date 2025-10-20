@@ -64,10 +64,24 @@ function viewRecord(record: CRUD6Interface) {
   }
 }
 
-// Import all template files eagerly
+// Import all template files eagerly (HTML templates)
 const templateFiles = import.meta.glob('../templates/crud6/*.html', { as: 'raw', eager: true })
 
-// Render field template with row data
+// Import all Vue component templates
+const vueTemplateFiles = import.meta.glob('../templates/crud6/*.vue', { eager: true })
+
+// Check if a template is a Vue component
+function isVueTemplate(template: string): boolean {
+  return template.endsWith('.vue')
+}
+
+// Get Vue component for template
+function getVueComponent(template: string): any {
+  const templatePath = `../templates/crud6/${template}`
+  return vueTemplateFiles[templatePath]?.default || null
+}
+
+// Render field template with row data (for HTML templates only)
 function renderFieldTemplate(template: string, row: any): string {
   if (!template) return ''
   
@@ -173,8 +187,14 @@ onMounted(() => {
           
           <!-- Field rendering with template support -->
           <template v-if="field.field_template">
-            <!-- Render using field_template with access to all row data -->
-            <div v-html="renderFieldTemplate(field.field_template, row)"></div>
+            <!-- Vue component template -->
+            <component 
+              v-if="isVueTemplate(field.field_template)"
+              :is="getVueComponent(field.field_template)"
+              :rowData="row"
+            />
+            <!-- HTML template with v-html -->
+            <div v-else v-html="renderFieldTemplate(field.field_template, row)"></div>
           </template>
           <template v-else-if="field.type === 'link' || fieldKey === schema.value?.primary_key">
             <strong>

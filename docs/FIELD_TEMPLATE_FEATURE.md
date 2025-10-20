@@ -16,7 +16,7 @@ The field_template feature addresses the need for:
 
 ### Basic Syntax
 
-Add a `field_template` attribute to any field in your schema. You can use either an inline template or reference an external template file:
+Add a `field_template` attribute to any field in your schema. You can use inline templates, external HTML files, or Vue component files:
 
 **Inline Template:**
 ```json
@@ -30,7 +30,7 @@ Add a `field_template` attribute to any field in your schema. You can use either
 }
 ```
 
-**External Template File:**
+**External HTML Template File:**
 ```json
 {
   "description": {
@@ -42,21 +42,97 @@ Add a `field_template` attribute to any field in your schema. You can use either
 }
 ```
 
-When using an external template file:
-- Place your template files in `app/assets/templates/crud6/`
-- Reference the filename (e.g., `"product-card.html"`)
-- The file must have a `.html` or `.htm` extension
-- Templates are loaded at build time for optimal performance
+**Vue Component Template File:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Info",
+    "listable": true,
+    "field_template": "ProductCard.vue"
+  }
+}
+```
 
-### Template Placeholders
+When using external files:
+- **HTML templates**: Place in `app/assets/templates/crud6/` with `.html` or `.htm` extension
+- **Vue components**: Place in `app/assets/templates/crud6/` with `.vue` extension
+- Reference the filename (e.g., `"ProductCard.vue"`)
+- Files are loaded at build time for optimal performance
 
-Templates use double curly braces `{{field_name}}` to reference field values:
+### Vue Component Templates
+
+Vue component templates provide the most powerful option, allowing you to use full Vue features:
+
+**Benefits:**
+- Full Vue 3 Composition API support
+- Reactive data with `ref()` and `computed()`
+- Vue directives (`v-if`, `v-for`, `v-show`, etc.)
+- TypeScript support with type-safe props
+- Component methods and event handling
+- Better IDE support and syntax highlighting
+
+**Creating a Vue Template Component:**
+
+Create a file at `app/assets/templates/crud6/ProductCard.vue`:
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue'
+
+interface Props {
+  rowData: any  // Receives the complete row data
+}
+
+const props = defineProps<Props>()
+
+// Use computed properties
+const isActive = computed(() => props.rowData.is_active)
+const statusClass = computed(() => 
+  isActive.value ? 'uk-label-success' : 'uk-label-warning'
+)
+</script>
+
+<template>
+  <div class="uk-card uk-card-small uk-card-default uk-card-body">
+    <div class="uk-grid-small" uk-grid>
+      <div class="uk-width-auto">
+        <span class="uk-badge">ID: {{ rowData.id }}</span>
+      </div>
+      <!-- Use Vue directives -->
+      <div v-if="rowData.sku" class="uk-width-auto">
+        <span class="uk-badge">SKU: {{ rowData.sku }}</span>
+      </div>
+      <div class="uk-width-auto">
+        <span class="uk-label" :class="statusClass">
+          <template v-if="isActive">Active</template>
+          <template v-else>Inactive</template>
+        </span>
+      </div>
+    </div>
+    <p class="uk-text-small uk-margin-small-top">{{ rowData.description }}</p>
+  </div>
+</template>
+```
+
+**Key Points:**
+- Vue components receive row data via the `rowData` prop
+- Must define props interface to receive data
+- All row fields are accessible via `props.rowData.fieldName`
+- Can use all Vue features: computed properties, methods, directives, etc.
+- TypeScript support for better type safety
+
+### Template Placeholders (HTML Templates Only)
+
+HTML templates (inline or `.html` files) use double curly braces `{{field_name}}` to reference field values:
 
 - `{{id}}` - Replaced with the value of the `id` field
 - `{{name}}` - Replaced with the value of the `name` field
 - `{{any_field}}` - Access any field from the current row
 
 All fields from the row data are available for use in the template, not just the field the template is defined on.
+
+**Note:** Vue component templates (`.vue` files) access data through the `rowData` prop instead of placeholders.
 
 ## Examples
 
@@ -99,9 +175,9 @@ All fields from the row data are available for use in the template, not just the
 }
 ```
 
-### Example 4: Using External Template Files
+### Example 4: Using External HTML Template Files
 
-For complex templates, it's often cleaner to use external template files:
+For complex HTML templates, it's often cleaner to use external template files:
 
 **Schema Definition:**
 ```json
@@ -132,7 +208,62 @@ For complex templates, it's often cleaner to use external template files:
 
 See `examples/products-template-file.json` for a complete working example.
 
-### Example 5: Full-Featured Template
+### Example 5: Using Vue Component Templates
+
+For maximum flexibility and power, use Vue component templates:
+
+**Schema Definition:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Details",
+    "listable": true,
+    "field_template": "ProductCard.vue"
+  }
+}
+```
+
+**Vue Component** (`app/assets/templates/crud6/ProductCard.vue`):
+```vue
+<script setup lang="ts">
+import { computed } from 'vue'
+
+interface Props {
+  rowData: any
+}
+
+const props = defineProps<Props>()
+
+const isActive = computed(() => props.rowData.is_active)
+const statusClass = computed(() => 
+  isActive.value ? 'uk-label-success' : 'uk-label-warning'
+)
+</script>
+
+<template>
+  <div class="uk-card uk-card-small uk-card-default uk-card-body">
+    <div class="uk-grid-small" uk-grid>
+      <div class="uk-width-auto">
+        <span class="uk-badge">ID: {{ rowData.id }}</span>
+      </div>
+      <div v-if="rowData.sku" class="uk-width-auto">
+        <span class="uk-badge">SKU: {{ rowData.sku }}</span>
+      </div>
+      <div class="uk-width-auto">
+        <span class="uk-label" :class="statusClass">
+          {{ isActive ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+    </div>
+    <p class="uk-text-small uk-margin-small-top">{{ rowData.description }}</p>
+  </div>
+</template>
+```
+
+See `examples/products-vue-template.json` for a complete working example.
+
+### Example 6: Full-Featured Inline Template
 
 See `examples/field-template-example.json` for a comprehensive example showing:
 - Multiple field values in a single template
@@ -141,9 +272,38 @@ See `examples/field-template-example.json` for a comprehensive example showing:
 - Date formatting
 - Text styling and metadata display
 
+## Template Type Comparison
+
+Choose the right template type for your needs:
+
+| Feature | Inline HTML | External HTML File | Vue Component |
+|---------|-------------|-------------------|---------------|
+| **Simple syntax** | ✅ Best | ✅ Good | ⚠️ More complex |
+| **Vue directives** | ❌ No | ❌ No | ✅ Yes (`v-if`, `v-for`, etc.) |
+| **Computed properties** | ❌ No | ❌ No | ✅ Yes |
+| **TypeScript support** | ❌ No | ❌ No | ✅ Yes |
+| **Reactivity** | ❌ No | ❌ No | ✅ Yes |
+| **Code reusability** | ⚠️ Limited | ✅ Good | ✅ Excellent |
+| **Syntax highlighting** | ⚠️ Limited | ✅ Good | ✅ Excellent |
+| **Maintainability** | ⚠️ Low | ✅ Good | ✅ Best |
+| **Performance** | ✅ Fast | ✅ Fast | ✅ Fast (compiled) |
+| **Best for** | Simple displays | Medium complexity | Complex logic |
+
+**Recommendations:**
+- **Use Inline HTML** for very simple field formatting (e.g., adding badges, basic styling)
+- **Use External HTML Files** for medium-complexity templates that need better organization
+- **Use Vue Components** for complex templates requiring conditional logic, computed values, or reactive features
+
 ## Best Practices
 
-### 1. Use UIkit Classes
+### 1. Choose the Right Template Type
+
+Match template type to complexity:
+- Simple badge or label → Inline HTML
+- Multi-field card layout → External HTML file  
+- Conditional rendering or computed values → Vue component
+
+### 2. Use UIkit Classes
 
 The CRUD6 sprinkle uses UIkit for styling. Leverage UIkit classes for consistent appearance:
 

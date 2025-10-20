@@ -4,9 +4,6 @@
   "singular_title": "Group",
   "description": "Manage user groups and roles",
   "table": "groups",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": false,
   "permissions": {
     "read": "uri_groups",
     "create": "create_group",

@@ -64,6 +64,56 @@ function viewRecord(record: CRUD6Interface) {
   }
 }
 
+// Import all template files eagerly (HTML templates)
+const templateFiles = import.meta.glob('../templates/crud6/*.html', { as: 'raw', eager: true })
+
+// Import all Vue component templates
+const vueTemplateFiles = import.meta.glob('../templates/crud6/*.vue', { eager: true })
+
+// Check if a template is a Vue component
+function isVueTemplate(template: string): boolean {
+  return template.endsWith('.vue')
+}
+
+// Get Vue component for template
+function getVueComponent(template: string): any {
+  const templatePath = `../templates/crud6/${template}`
+  return vueTemplateFiles[templatePath]?.default || null
+}
+
+// Render field template with row data (for HTML templates only)
+function renderFieldTemplate(template: string, row: any): string {
+  if (!template) return ''
+  
+  let templateContent = template
+  
+  // Check if template is a file reference (ends with .html or .htm)
+  if (template.endsWith('.html') || template.endsWith('.htm')) {
+    // Construct the full path for the glob import
+    const templatePath = `../templates/crud6/${template}`
+    
+    // Get template content from imported files
+    if (templateFiles[templatePath]) {
+      templateContent = templateFiles[templatePath] as string
+    } else {
+      console.error(`Template file not found: ${template}`)
+      return '' // Return empty string if template file not found
+    }
+  }
+  
+  // Replace placeholders like {{field_name}} with actual values from row
+  let rendered = templateContent
+  
+  // Find all placeholders in the format {{field_name}}
+  const placeholderRegex = /\{\{(\w+)\}\}/g
+  rendered = rendered.replace(placeholderRegex, (match, fieldName) => {
+    const value = row[fieldName]
+    return value !== null && value !== undefined ? String(value) : ''
+  })
+  
+  return rendered
+}
+
 // Load schema
 onMounted(() => {
   if (model.value && loadSchema) {
@@ -135,8 +185,18 @@ onMounted(() => {
           :key="fieldKey"
           :class="field.width ? `uk-width-${field.width}` : ''">
           
-          <!-- Field rendering -->
-          <template v-if="field.type === 'link' || fieldKey === schema.value?.primary_key">
+          <!-- Field rendering with template support -->
+          <template v-if="field.field_template">
+            <!-- Vue component template -->
+            <component 
+              v-if="isVueTemplate(field.field_template)"
+              :is="getVueComponent(field.field_template)"
+              :rowData="row"
+            />
+            <!-- HTML template with v-html -->
+            <div v-else v-html="renderFieldTemplate(field.field_template, row)"></div>
+          </template>
+          <template v-else-if="field.type === 'link' || fieldKey === schema.value?.primary_key">
             <strong>
               <RouterLink
                 :to="{ name: 'crud6.view', params: { model: model, id: row[schema.value?.primary_key || 'id'] } }"

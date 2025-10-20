@@ -4,9 +4,6 @@
   "singular_title": "Product",
   "description": "Manage your product catalog",
   "table": "products",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": false,
   "permissions": {
     "read": "view_products",
     "create": "create_product",
@@ -79,7 +76,8 @@
       "sortable": false,
       "filterable": false,
       "searchable": true,
-      "listable": false
+      "listable": true,
+      "field_template": "<div class='uk-card uk-card-small uk-card-body uk-card-default'><div class='uk-grid-small' uk-grid><div class='uk-width-auto'><span class='uk-badge'>ID: {{id}}</span></div><div class='uk-width-auto'><span class='uk-badge'>SKU: {{sku}}</span></div><div class='uk-width-auto'><span class='uk-label uk-label-{{is_active}}'>Active: {{is_active}}</span></div></div><p class='uk-text-small uk-margin-small-top'>{{description}}</p></div>"
     },
     "category_id": {
       "type": "integer",

@@ -1,18 +1,17 @@
 {
-  "model": "analytics",
-  "title": "Analytics Data",
-  "singular_title": "Analytics Entry",
-  "description": "Analytics data from secondary database",
-  "table": "page_views",
-  "connection": "mysql_analytics",
+  "model": "products_vue_template",
+  "title": "Product Management (Vue Component Template)",
+  "singular_title": "Product",
+  "description": "Manage your product catalog using Vue component templates",
+  "table": "products",
   "permissions": {
-    "read": "view_analytics",
-    "create": "create_analytics",
-    "update": "edit_analytics",
-    "delete": "delete_analytics"
+    "read": "view_products",
+    "create": "create_product",
+    "update": "edit_product",
+    "delete": "delete_product"
   },
   "default_sort": {
-    "viewed_at": "desc"
+    "name": "asc"
   },
   "fields": {
     "id": {
@@ -25,9 +24,9 @@
       "searchable": false,
       "listable": true
     },
-    "page_url": {
+    "name": {
       "type": "string",
-      "label": "Page URL",
+      "label": "Product Name",
       "required": true,
       "sortable": true,
       "filterable": true,
@@ -36,56 +35,66 @@
       "validation": {
         "required": true,
         "length": {
-          "max": 500
+          "min": 2,
+          "max": 255
         }
       }
     },
-    "user_id": {
-      "type": "integer",
-      "label": "User ID",
-      "required": false,
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
-      "listable": true,
-      "filter_type": "equals"
-    },
-    "ip_address": {
-      "type": "string",
-      "label": "IP Address",
-      "required": false,
-      "sortable": false,
-      "filterable": true,
-      "searchable": false,
-      "listable": true,
-      "filter_type": "equals"
-    },
-    "user_agent": {
-      "type": "text",
-      "label": "User Agent",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
       "searchable": true,
-      "listable": false
+      "listable": false,
+      "filter_type": "starts_with",
+      "validation": {
+        "required": true,
+        "unique": true
+      }
     },
-    "viewed_at": {
-      "type": "datetime",
-      "label": "Viewed At",
+    "price": {
+      "type": "decimal",
+      "label": "Price",
       "required": true,
       "sortable": true,
       "filterable": true,
       "searchable": false,
       "listable": true,
       "filter_type": "between",
-      "date_format": "Y-m-d H:i:s"
+      "validation": {
+        "required": true,
+        "numeric": true,
+        "min": 0
+      }
     },
-    "session_data": {
-      "type": "json",
-      "label": "Session Data",
+    "description": {
+      "type": "text",
+      "label": "Description",
       "required": false,
       "sortable": false,
       "filterable": false,
+      "searchable": true,
+      "listable": true,
+      "field_template": "ProductCard.vue"
+    },
+    "category_id": {
+      "type": "integer",
+      "label": "Category",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true,
+      "filter_type": "equals"
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
       "searchable": false,
       "listable": false
     },

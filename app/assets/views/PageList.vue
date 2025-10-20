@@ -64,6 +64,23 @@ function viewRecord(record: CRUD6Interface) {
   }
 }
 
+// Render field template with row data
+function renderFieldTemplate(template: string, row: any): string {
+  if (!template) return ''
+  
+  // Replace placeholders like {{field_name}} with actual values from row
+  let rendered = template
+  
+  // Find all placeholders in the format {{field_name}}
+  const placeholderRegex = /\{\{(\w+)\}\}/g
+  rendered = rendered.replace(placeholderRegex, (match, fieldName) => {
+    const value = row[fieldName]
+    return value !== null && value !== undefined ? String(value) : ''
+  })
+  
+  return rendered
+}
+
 // Load schema
 onMounted(() => {
   if (model.value && loadSchema) {
@@ -135,8 +152,12 @@ onMounted(() => {
           :key="fieldKey"
           :class="field.width ? `uk-width-${field.width}` : ''">
           
-          <!-- Field rendering -->
-          <template v-if="field.type === 'link' || fieldKey === schema.value?.primary_key">
+          <!-- Field rendering with template support -->
+          <template v-if="field.field_template">
+            <!-- Render using field_template with access to all row data -->
+            <div v-html="renderFieldTemplate(field.field_template, row)"></div>
+          </template>
+          <template v-else-if="field.type === 'link' || fieldKey === schema.value?.primary_key">
             <strong>
               <RouterLink
                 :to="{ name: 'crud6.view', params: { model: model, id: row[schema.value?.primary_key || 'id'] } }"

@@ -66,7 +66,8 @@
       "sortable": false,
       "filterable": false,
       "searchable": true,
-      "listable": false
+      "listable": true,
+      "field_template": "<div class='uk-text-meta'><strong>ID:</strong> {{id}} | <strong>Slug:</strong> {{slug}}<br/><strong>Status:</strong> {{is_active}}<br/>{{description}}</div>"
     },
     "icon": {
       "type": "string",

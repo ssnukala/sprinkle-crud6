@@ -68,9 +68,6 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
   "title": "User Management",
   "description": "Manage system users", 
   "table": "users",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": false,
   "permissions": {
     "read": "uri_users",
     "create": "create_user", 
@@ -109,6 +106,8 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
 }
 ```
 
+> **Note**: The `primary_key`, `timestamps`, and `soft_delete` properties are optional and default to `"id"`, `true`, and `false` respectively.
+
 ### Schema Fields
 
 Each field in the schema can have the following properties:
@@ -124,6 +123,48 @@ Each field in the schema can have the following properties:
 - **default**: Default value for the field
 - **validation**: Validation rules for the field
 - **filter_type**: Type of filter (`equals`, `like`, `starts_with`, `ends_with`, `in`, `between`, `greater_than`, `less_than`, `not_equals`)
+- **field_template**: Custom Vue.js HTML template for rendering the field in list views (supports placeholders like `{{field_name}}`)
+- **listable**: Whether the field should be displayed in list views (defaults based on field configuration)
+
+### Schema Defaults
+
+The following schema properties have default values and can be omitted from your schema files:
+
+- **primary_key**: Defaults to `"id"` if not specified
+- **timestamps**: Defaults to `true` if not specified
+- **soft_delete**: Defaults to `false` if not specified
+
+This allows for cleaner, more concise schema definitions by only specifying these values when they differ from the defaults.
+
+### Field Templates
+
+Field templates provide powerful customization for how fields are displayed in list views. Use the `field_template` attribute to define custom HTML templates with access to all row data.
+
+**Example:**
+```json
+{
+  "description": {
+    "type": "text",
+    "label": "Product Info",
+    "listable": true,
+    "field_template": "<div class='uk-card uk-card-small'><span class='uk-badge'>ID: {{id}}</span> | <span class='uk-badge'>SKU: {{sku}}</span><br/><p>{{description}}</p></div>"
+  }
+}
+```
+
+**Features:**
+- Use `{{field_name}}` placeholders to inject field values from the current row
+- All row data is available for use in the template
+- Supports standard HTML and CSS classes (UIkit classes recommended)
+- Ideal for creating consolidated column displays with multiple field values
+
+**Use Cases:**
+- Combine multiple fields into a single consolidated column
+- Add badges, labels, or icons to field displays
+- Create rich card-style layouts within table cells
+- Format complex data presentations
+
+See `examples/categories.json` and `examples/products.json` for working examples.
 
 ### Detail Section Configuration
 
@@ -134,7 +175,6 @@ Define one-to-many relationships declaratively in your schemas to display relate
   "model": "groups",
   "title": "Group Management",
   "table": "groups",
-  "primary_key": "id",
   "detail": {
     "model": "users",
     "foreign_key": "group_id",

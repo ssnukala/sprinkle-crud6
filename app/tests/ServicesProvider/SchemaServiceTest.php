@@ -85,4 +85,86 @@ class SchemaServiceTest extends TestCase
         $path = $method->invoke($schemaService, 'users');
         $this->assertEquals('schema://crud6/users.json', $path);
     }
+
+    /**
+     * Test applyDefaults sets default values for missing schema attributes
+     */
+    public function testApplyDefaultsSetsDefaultValues(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('applyDefaults');
+        $method->setAccessible(true);
+
+        // Test schema without any defaults
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'fields' => []
+        ];
+
+        $result = $method->invoke($schemaService, $schema);
+
+        $this->assertEquals('id', $result['primary_key']);
+        $this->assertTrue($result['timestamps']);
+        $this->assertFalse($result['soft_delete']);
+    }
+
+    /**
+     * Test applyDefaults preserves existing values
+     */
+    public function testApplyDefaultsPreservesExistingValues(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('applyDefaults');
+        $method->setAccessible(true);
+
+        // Test schema with explicit values
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'primary_key' => 'uuid',
+            'timestamps' => false,
+            'soft_delete' => true,
+            'fields' => []
+        ];
+
+        $result = $method->invoke($schemaService, $schema);
+
+        $this->assertEquals('uuid', $result['primary_key']);
+        $this->assertFalse($result['timestamps']);
+        $this->assertTrue($result['soft_delete']);
+    }
+
+    /**
+     * Test applyDefaults with partial overrides
+     */
+    public function testApplyDefaultsWithPartialOverrides(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('applyDefaults');
+        $method->setAccessible(true);
+
+        // Test schema with only some values set
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'primary_key' => 'custom_id',
+            'fields' => []
+        ];
+
+        $result = $method->invoke($schemaService, $schema);
+
+        $this->assertEquals('custom_id', $result['primary_key']);
+        $this->assertTrue($result['timestamps']); // Default
+        $this->assertFalse($result['soft_delete']); // Default
+    }
 }

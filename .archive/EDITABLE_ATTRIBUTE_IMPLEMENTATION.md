@@ -20,19 +20,20 @@ Added to `app/src/Controller/Base.php`
 protected function getEditableFields(string|array $modelNameOrSchema): array
 ```
 
-**Logic:**
-- If a field has explicit `editable: true` → include it
-- If a field has explicit `editable: false` → exclude it
-- If no explicit editable attribute:
-  - Exclude if `readonly: true`
-  - Exclude if `auto_increment: true`
-  - Exclude if `computed: true`
-  - Otherwise, include it (editable by default)
+**Logic (works by exception - simpler approach):**
+- **By default, all fields are editable**
+- Exclude if `readonly: true`
+- Exclude if `auto_increment: true`
+- Exclude if `computed: true`
+- Optional: If a field has explicit `editable: false` → exclude it
+- Optional: If a field has explicit `editable: true` → include it (overrides other checks)
 
-**This approach supports:**
-- Using existing `readonly` attribute from schemas
-- Adding new explicit `editable` attribute
-- Backward compatibility with existing schemas
+**This approach:**
+- Works by exception - only need to mark fields as `readonly: true` to exclude them
+- No need to add `editable: true` to all editable fields
+- Uses existing `readonly` attribute from schemas
+- Backward compatible with existing schemas
+- Keeps schemas simple and clean
 
 ### 2. Refactored `getValidationRules()`
 Updated in `app/src/Controller/Base.php`
@@ -60,20 +61,23 @@ Refactored in `app/src/Controller/Base.php`
 - Single source of truth for determining editable fields
 
 ### 4. Schema File Updates
-Added explicit `editable: true` to all editable fields in:
-- `app/schema/crud6/users.json`
-- `app/schema/crud6/groups.json`
-- `app/schema/crud6/db1/users.json`
-- `examples/products.json`
-- `examples/categories.json`
-- `examples/analytics.json`
+**No changes needed to schema files!**
 
-**Pattern:**
+The implementation works by exception, so:
+- Fields with `readonly: true` or `auto_increment: true` are automatically excluded
+- All other fields are editable by default
+- No need to add `editable: true` to every field
+
+**Example schema pattern (unchanged):**
 ```json
 {
-  "field_name": {
+  "id": {
+    "type": "integer",
+    "auto_increment": true,
+    "readonly": true
+  },
+  "name": {
     "type": "string",
-    "editable": true,
     "validation": {
       "required": true
     }
@@ -81,7 +85,7 @@ Added explicit `editable: true` to all editable fields in:
 }
 ```
 
-Fields with `readonly: true` or `auto_increment: true` do NOT get `editable: true`.
+In this example, `id` is not editable (due to `readonly: true`), and `name` is editable by default.
 
 ### 5. Comprehensive Unit Tests
 Created `app/tests/Controller/BaseControllerTest.php`
@@ -154,21 +158,16 @@ Created `app/tests/Controller/BaseControllerTest.php`
    - Refactored `getValidationRules()` method
    - Refactored `prepareUpdateData()` method
 
-2. **Schema Files** (added `editable: true` to appropriate fields)
-   - app/schema/crud6/users.json
-   - app/schema/crud6/groups.json
-   - app/schema/crud6/db1/users.json
-   - examples/products.json
-   - examples/categories.json
-   - examples/analytics.json
-
-3. **Tests**
+2. **Tests**
    - app/tests/Controller/BaseControllerTest.php (new file)
+
+**No schema files were modified** - the implementation works with existing schemas by using the `readonly` attribute as the exclusion flag.
 
 ## Commits
 
 1. `36c29c0` - Add editable attribute and refactor validation logic
 2. `de87a4c` - Add unit tests for editable fields and validation logic
+3. Updated - Remove unnecessary editable attributes from schema files (work by exception)
 
 ## UserFrosting 6 Standards Compliance
 

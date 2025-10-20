@@ -122,6 +122,28 @@ class SchemaService
         }
     }
 
+    /**
+     * Apply default values to schema.
+     * 
+     * Sets default values for optional schema attributes if not provided:
+     * - primary_key: defaults to "id"
+     * - timestamps: defaults to true
+     * - soft_delete: defaults to false
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with defaults applied
+     */
+    protected function applyDefaults(array $schema): array
+    {
+        // Apply default values if not set
+        $schema['primary_key'] = $schema['primary_key'] ?? 'id';
+        $schema['timestamps'] = $schema['timestamps'] ?? true;
+        $schema['soft_delete'] = $schema['soft_delete'] ?? false;
+
+        return $schema;
+    }
+
 
     /**
      * Get schema configuration for a model
@@ -156,6 +178,9 @@ class SchemaService
 
         // Validate schema structure
         $this->validateSchema($schema, $model);
+
+        // Apply default values
+        $schema = $this->applyDefaults($schema);
 
         // If schema was loaded from connection-based path and doesn't have explicit connection, set it
         if ($connection !== null && !isset($schema['connection'])) {

@@ -4,9 +4,6 @@
   "singular_title": "User",
   "description": "Manage system users",
   "table": "users",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": false,
   "permissions": {
     "read": "uri_users",
     "create": "create_user",

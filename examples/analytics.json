@@ -5,9 +5,6 @@
   "description": "Analytics data from secondary database",
   "table": "page_views",
   "connection": "mysql_analytics",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": false,
   "permissions": {
     "read": "view_analytics",
     "create": "create_analytics",

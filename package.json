@@ -25,10 +25,6 @@
   "bugs": {
     "url": "https://github.com/userfrosting/UserFrosting/issues"
   },
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
   "exports": {
     ".": "./app/assets/index.ts",
     "./composables": "./app/assets/composables/index.ts",
@@ -55,16 +51,5 @@
     "uikit": "^3.21.0",
     "vue": "^3.4.21",
     "vue-router": "^4.2.4"
-  },
-  "dependencies": {
-    "@modyfi/vite-plugin-yaml": "^1.1.1",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vue/tsconfig": "^0.8.1",
-    "happy-dom": "^18.0.1",
-    "vitest": "^3.2.4"
-  },
-  "devDependencies": {
-    "@tsconfig/node20": "^20.1.6",
-    "playwright": "^1.49.0"
   }
 }

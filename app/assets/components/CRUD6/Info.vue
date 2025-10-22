@@ -234,7 +234,7 @@ function formatFieldValue(value: any, field: any): string {
                 v-if="$checkAccess('delete_crud6_row')"
                 :crud6="crud6"
                 :schema="finalSchema"
-                @deleted="router.push({ name: 'crud6.list' })"
+                @deleted="router.push({ name: 'crud6.list', params: { model: model } })"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small" />
             <slot data-test="slot"></slot>
         </template>

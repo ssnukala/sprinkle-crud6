@@ -19,10 +19,11 @@ import { useRoute } from 'vue-router'
  * Vue composable for CRUD6 CRUD operations.
  *
  * Endpoints:
- * - GET    /api/crud6/{model}/{id}  -> CRUD6Response
- * - POST   /api/crud6/{model}       -> CRUD6CreateResponse
- * - PUT    /api/crud6/{model}/{id}  -> CRUD6EditResponse
- * - DELETE /api/crud6/{model}/{id}  -> CRUD6DeleteResponse
+ * - GET    /api/crud6/{model}/{id}        -> CRUD6Response
+ * - POST   /api/crud6/{model}             -> CRUD6CreateResponse
+ * - PUT    /api/crud6/{model}/{id}        -> CRUD6EditResponse
+ * - PUT    /api/crud6/{model}/{id}/{field} -> CRUD6EditResponse
+ * - DELETE /api/crud6/{model}/{id}        -> CRUD6DeleteResponse
  *
  * Reactive state:
  * - apiLoading: boolean
@@ -35,6 +36,7 @@ import { useRoute } from 'vue-router'
  * - fetchRows(id: string): Promise<CRUD6Response> (alias for fetchRow)
  * - createRow(data: CRUD6CreateRequest): Promise<void>
  * - updateRow(id: string, data: CRUD6EditRequest): Promise<void>
+ * - updateField(id: string, field: string, value: any): Promise<void>
  * - deleteRow(id: string): Promise<void>
  * - resetForm(): void
  */
@@ -127,6 +129,28 @@ export function useCRUD6Api(modelName?: string) {
             })
     }
 
+    async function updateField(id: string, field: string, value: any) {
+        apiLoading.value = true
+        apiError.value = null
+        const data = { [field]: value }
+        return axios
+            .put<CRUD6EditResponse>(`/api/crud6/${model}/${id}/${field}`, data)
+            .then((response) => {
+                useAlertsStore().push({
+                    title: response.data.title,
+                    description: response.data.description,
+                    style: Severity.Success
+                })
+            })
+            .catch((err) => {
+                apiError.value = err.response.data
+                throw apiError.value
+            })
+            .finally(() => {
+                apiLoading.value = false
+            })
+    }
+
     async function deleteRow(id: string) {
         apiLoading.value = true
         apiError.value = null
@@ -174,6 +198,7 @@ export function useCRUD6Api(modelName?: string) {
         fetchRows,
         createRow,
         updateRow,
+        updateField,
         deleteRow,
         apiLoading,
         apiError,

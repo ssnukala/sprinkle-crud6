@@ -18,10 +18,11 @@ use UserFrosting\Routes\RouteDefinitionInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\AuthGuard;
 use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
 use UserFrosting\Sprinkle\CRUD6\Controller\ApiAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\SprunjeAction;
-use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\UpdateFieldAction;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 
 /**
@@ -36,6 +37,7 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
  * - POST   /api/crud6/{model}              - Create new record
  * - GET    /api/crud6/{model}/{id}         - Read single record (EditAction)
  * - PUT    /api/crud6/{model}/{id}         - Update record (EditAction)
+ * - PUT    /api/crud6/{model}/{id}/{field} - Update single field (UpdateFieldAction)
  * - DELETE /api/crud6/{model}/{id}         - Delete record
  * - GET    /api/crud6/{model}/{id}/{relation} - Get related data
  * 
@@ -81,6 +83,9 @@ class CRUD6Routes implements RouteDefinitionInterface
                 ->setName('api.crud6.read');
             $group->put('/{id}', EditAction::class)
                 ->setName('api.crud6.update');
+            // Update single field (PUT)
+            $group->put('/{id}/{field}', UpdateFieldAction::class)
+                ->setName('api.crud6.update_field');
             // Delete record
             $group->delete('/{id}', DeleteAction::class)
                 ->setName('api.crud6.delete');

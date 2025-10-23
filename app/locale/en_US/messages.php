@@ -61,6 +61,7 @@ return [
             'ERROR'         => 'Failed to update {{model}}',
             'ERROR_TITLE'   => 'Error Updating',
         ],
+        'UPDATE_FIELD_SUCCESSFUL' => 'Successfully updated {{field}} for {{model}}',
         'USERS'               => 'Users in this {{model}}',
     ],
     'CRUD6_PANEL'               => 'CRUD6 Management',

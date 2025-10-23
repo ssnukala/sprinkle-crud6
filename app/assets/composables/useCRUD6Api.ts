@@ -14,15 +14,17 @@ import type {
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
 import { useRuleSchemaAdapter } from '@userfrosting/sprinkle-core/composables'
 import { useRoute } from 'vue-router'
+import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 
 /**
  * Vue composable for CRUD6 CRUD operations.
  *
  * Endpoints:
- * - GET    /api/crud6/{model}/{id}  -> CRUD6Response
- * - POST   /api/crud6/{model}       -> CRUD6CreateResponse
- * - PUT    /api/crud6/{model}/{id}  -> CRUD6EditResponse
- * - DELETE /api/crud6/{model}/{id}  -> CRUD6DeleteResponse
+ * - GET    /api/crud6/{model}/{id}        -> CRUD6Response
+ * - POST   /api/crud6/{model}             -> CRUD6CreateResponse
+ * - PUT    /api/crud6/{model}/{id}        -> CRUD6EditResponse
+ * - PUT    /api/crud6/{model}/{id}/{field} -> CRUD6EditResponse
+ * - DELETE /api/crud6/{model}/{id}        -> CRUD6DeleteResponse
  *
  * Reactive state:
  * - apiLoading: boolean
@@ -35,6 +37,7 @@ import { useRoute } from 'vue-router'
  * - fetchRows(id: string): Promise<CRUD6Response> (alias for fetchRow)
  * - createRow(data: CRUD6CreateRequest): Promise<void>
  * - updateRow(id: string, data: CRUD6EditRequest): Promise<void>
+ * - updateField(id: string, field: string, value: any): Promise<void>
  * - deleteRow(id: string): Promise<void>
  * - resetForm(): void
  */
@@ -48,13 +51,19 @@ export function useCRUD6Api(modelName?: string) {
 
     const route = useRoute()
     const model = modelName || (route.params.model as string)
+    
+    // Use the global schema store to avoid duplicate API calls
+    const schemaStore = useCRUD6SchemaStore()
 
     // Dynamically load the schema file for the current model
+    // Uses the global store cache to prevent duplicate API calls
     async function loadSchema() {
         try {
-            const response = await axios.get(`/api/crud6/${model}/schema`)
-            return response.data
+            // Use the store's loadSchema which has caching
+            const schema = await schemaStore.loadSchema(model)
+            return schema || {}
         } catch (error) {
+            console.error('[useCRUD6Api] Schema load error:', error)
             return {}
         }
     }
@@ -127,6 +136,28 @@ export function useCRUD6Api(modelName?: string) {
             })
     }
 
+    async function updateField(id: string, field: string, value: any) {
+        apiLoading.value = true
+        apiError.value = null
+        const data = { [field]: value }
+        return axios
+            .put<CRUD6EditResponse>(`/api/crud6/${model}/${id}/${field}`, data)
+            .then((response) => {
+                useAlertsStore().push({
+                    title: response.data.title,
+                    description: response.data.description,
+                    style: Severity.Success
+                })
+            })
+            .catch((err) => {
+                apiError.value = err.response.data
+                throw apiError.value
+            })
+            .finally(() => {
+                apiLoading.value = false
+            })
+    }
+
     async function deleteRow(id: string) {
         apiLoading.value = true
         apiError.value = null
@@ -174,6 +205,7 @@ export function useCRUD6Api(modelName?: string) {
         fetchRows,
         createRow,
         updateRow,
+        updateField,
         deleteRow,
         apiLoading,
         apiError,

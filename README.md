@@ -228,6 +228,48 @@ When viewing a group detail page, the users belonging to that group will be auto
 
 See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) for more information.
 
+### Many-to-Many Relationship Configuration
+
+Define many-to-many relationships for managing associations through pivot tables:
+
+```json
+{
+  "model": "users",
+  "relationships": [
+    {
+      "name": "roles",
+      "type": "many_to_many",
+      "pivot_table": "user_roles",
+      "foreign_key": "user_id",
+      "related_key": "role_id",
+      "title": "USER.ROLES"
+    }
+  ]
+}
+```
+
+**Relationship Configuration Properties:**
+- **name**: The relationship name (used in API endpoints)
+- **type**: Must be "many_to_many"
+- **pivot_table**: The junction/pivot table name
+- **foreign_key**: Column in pivot table referencing this model (defaults to `{model}_id`)
+- **related_key**: Column in pivot table referencing related model (defaults to `{relation}_id`)
+- **title** (optional): Display title for the relationship (supports i18n keys)
+
+Once configured, you can manage relationships via API:
+
+```bash
+# Attach roles to a user
+POST /api/crud6/users/5/roles
+{ "ids": [1, 2, 3] }
+
+# Detach a role from a user
+DELETE /api/crud6/users/5/roles
+{ "ids": [2] }
+```
+
+This enables managing user roles, role permissions, and any other many-to-many relationships through a consistent API.
+
 ### Database Connection Configuration
 
 You can specify a database connection in your schema file to use a non-default database:
@@ -282,12 +324,19 @@ This approach provides flexibility to either:
 
 Once you have a schema file, the following API routes are automatically available:
 
+**Basic CRUD:**
 - `GET /api/crud6/{model}/schema` - Get schema definition for the model
 - `GET /api/crud6/{model}` - List records with pagination, sorting, and filtering
 - `POST /api/crud6/{model}` - Create new record
 - `GET /api/crud6/{model}/{id}` - Read single record
-- `PUT /api/crud6/{model}/{id}` - Update record
+- `PUT /api/crud6/{model}/{id}` - Update record (full)
+- `PUT /api/crud6/{model}/{id}/{field}` - Update single field (partial)
 - `DELETE /api/crud6/{model}/{id}` - Delete record
+
+**Relationships:**
+- `GET /api/crud6/{model}/{id}/{relation}` - Get related records (one-to-many)
+- `POST /api/crud6/{model}/{id}/{relation}` - Attach relationships (many-to-many)
+- `DELETE /api/crud6/{model}/{id}/{relation}` - Detach relationships (many-to-many)
 
 ### Database Connection Selection
 
@@ -308,12 +357,20 @@ The connection name specified in the URL (e.g., `@db1`) will override any connec
 ### Examples
 
 With a `users.json` schema file, you can access:
+
+**Basic CRUD:**
 - API schema: `GET http://yoursite.com/api/crud6/users/schema`
 - API list: `GET http://yoursite.com/api/crud6/users`
 - API create: `POST http://yoursite.com/api/crud6/users`
 - API read: `GET http://yoursite.com/api/crud6/users/123`
-- API update: `PUT http://yoursite.com/api/crud6/users/123`
+- API update (full): `PUT http://yoursite.com/api/crud6/users/123`
+- API update (field): `PUT http://yoursite.com/api/crud6/users/123/flag_enabled`
 - API delete: `DELETE http://yoursite.com/api/crud6/users/123`
+
+**Relationships:**
+- Get user's roles: `GET http://yoursite.com/api/crud6/users/123/roles`
+- Attach roles to user: `POST http://yoursite.com/api/crud6/users/123/roles`
+- Detach roles from user: `DELETE http://yoursite.com/api/crud6/users/123/roles`
 
 ### API Parameters
 
@@ -373,13 +430,40 @@ Components are automatically registered globally when the sprinkle is installed.
 The sprinkle provides Vue composables for API interactions:
 
 ```typescript
-import { useCRUD6Api, useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { 
+  useCRUD6Api, 
+  useCRUD6Schema, 
+  useCRUD6Relationships 
+} from '@ssnukala/sprinkle-crud6/composables'
 
-// API operations
-const { fetchRow, createRow, updateRow, deleteRow, apiLoading, apiError } = useCRUD6Api()
+// CRUD operations
+const { 
+  fetchRow, 
+  createRow, 
+  updateRow, 
+  updateField,  // Update single field
+  deleteRow, 
+  apiLoading, 
+  apiError 
+} = useCRUD6Api()
+
+// Update a single field
+await updateField('5', 'flag_enabled', true)
 
 // Schema loading and permissions
 const { schema, loading, error, loadSchema, hasPermission } = useCRUD6Schema()
+
+// Many-to-many relationship management
+const { 
+  attachRelationships, 
+  detachRelationships, 
+  apiLoading, 
+  apiError 
+} = useCRUD6Relationships()
+
+// Manage user roles
+await attachRelationships('users', '5', 'roles', [1, 2, 3])
+await detachRelationships('users', '5', 'roles', [2])
 ```
 
 #### Routes

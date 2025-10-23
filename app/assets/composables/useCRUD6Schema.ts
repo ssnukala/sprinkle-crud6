@@ -180,11 +180,11 @@ export function useCRUD6Schema(modelName?: string) {
         return true
     }
 
-    // Auto-load schema if model name is provided
-    if (modelName) {
-        console.log('[useCRUD6Schema] Auto-loading schema on init - modelName:', modelName)
-        loadSchema(modelName)
-    }
+    // NOTE: Auto-load removed to prevent duplicate schema API calls.
+    // Components must explicitly call loadSchema() when needed.
+    // The global store caching will prevent actual duplicate API calls,
+    // but we shouldn't trigger loads unless explicitly requested.
+    // See: .archive/DEBUG_DUPLICATE_SCHEMA_CALLS.md for details.
 
     return {
         schema,

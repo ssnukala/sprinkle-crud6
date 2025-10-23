@@ -53,54 +53,40 @@ class UpdateFieldAction extends Base
         protected UserActivityLogger $userActivityLogger,
         protected Connection $db,
     ) {
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
      * Invoke the controller.
      *
-     * @param Request  $request
-     * @param Response $response
-     * @param array    $args
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     * @param Response            $response
      */
-    public function __invoke(Request $request, Response $response, array $args): Response
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        // Get the model name and field name from the route
-        $modelName = $args['model'] ?? '';
-        $id = $args['id'] ?? '';
-        $fieldName = $args['field'] ?? '';
-
-        // Load the schema for this model
-        $schema = $this->schemaService->getSchema($modelName);
+        parent::__invoke($crudSchema, $crudModel, $request, $response);
+        
+        // Get the field name from the route
+        $fieldName = $this->getParameter($request, 'field');
 
         // Check if this field exists and is editable in the schema
-        if (!isset($schema['fields'][$fieldName])) {
-            throw new \RuntimeException("Field '{$fieldName}' does not exist in schema for model '{$modelName}'");
+        if (!isset($crudSchema['fields'][$fieldName])) {
+            throw new \RuntimeException("Field '{$fieldName}' does not exist in schema for model '{$crudSchema['model']}'");
         }
 
-        $fieldConfig = $schema['fields'][$fieldName];
+        $fieldConfig = $crudSchema['fields'][$fieldName];
 
         // Check if the field is readonly
         if (isset($fieldConfig['readonly']) && $fieldConfig['readonly'] === true) {
             throw new \RuntimeException("Field '{$fieldName}' is readonly and cannot be updated");
         }
 
-        // Get the current user
-        /** @var UserInterface */
-        $currentUser = $this->authenticator->user();
-
         // Access control check
-        $updatePermission = $schema['permissions']['update'] ?? null;
-        if ($updatePermission && !$this->authorizer->checkAccess($currentUser, $updatePermission)) {
-            throw new ForbiddenException();
-        }
+        $this->validateAccess($crudSchema, 'update');
 
-        // Get the record model instance from request attribute (set by middleware)
-        /** @var CRUD6ModelInterface */
-        $record = $request->getAttribute('crud6');
-
-        if ($record === null) {
-            throw new \RuntimeException('CRUD6 record not found in request. Make sure CRUD6Injector middleware is active.');
-        }
+        // The record is already loaded by the middleware into $crudModel
 
         // Get PUT parameters
         $params = (array) $request->getParsedBody();
@@ -129,18 +115,22 @@ class UpdateFieldAction extends Base
         try {
             // Only update the specific field
             if (array_key_exists($fieldName, $data)) {
-                $record->{$fieldName} = $data[$fieldName];
+                $crudModel->{$fieldName} = $data[$fieldName];
             }
 
-            $record->save();
+            $crudModel->save();
+
+            // Get the current user for logging
+            /** @var UserInterface */
+            $currentUser = $this->authenticator->user();
 
             // Log activity
             $this->userActivityLogger->info(
-                "User {$currentUser->user_name} updated field '{$fieldName}' for {$modelName} {$id}.",
+                "User {$currentUser->user_name} updated field '{$fieldName}' for {$crudSchema['model']} {$crudModel->id}.",
                 [
                     'type'    => 'update_field',
-                    'model'   => $modelName,
-                    'id'      => $id,
+                    'model'   => $crudSchema['model'],
+                    'id'      => $crudModel->id,
                     'field'   => $fieldName,
                 ]
             );
@@ -153,11 +143,11 @@ class UpdateFieldAction extends Base
         }
 
         // Get updated record data
-        $recordData = $record->toArray();
+        $recordData = $crudModel->toArray();
 
         // Success message
         $message = $this->translator->translate('CRUD6.UPDATE_FIELD_SUCCESSFUL', [
-            'model' => $schema['title'] ?? $modelName,
+            'model' => $crudSchema['title'] ?? $crudSchema['model'],
             'field' => $fieldConfig['label'] ?? $fieldName,
         ]);
 

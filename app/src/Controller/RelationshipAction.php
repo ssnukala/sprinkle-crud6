@@ -47,49 +47,35 @@ class RelationshipAction extends Base
         protected UserActivityLogger $userActivityLogger,
         protected Connection $db,
     ) {
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
     }
 
     /**
      * Invoke the controller.
      *
-     * @param Request  $request
-     * @param Response $response
-     * @param array    $args
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param Request             $request
+     * @param Response            $response
      */
-    public function __invoke(Request $request, Response $response, array $args): Response
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        // Get the model name and relationship name from the route
-        $modelName = $args['model'] ?? '';
-        $id = $args['id'] ?? '';
-        $relationName = $args['relation'] ?? '';
+        parent::__invoke($crudSchema, $crudModel, $request, $response);
+        
+        // Get the relationship name from the route
+        $relationName = $this->getParameter($request, 'relation');
         
         // Determine if this is attach (POST) or detach (DELETE)
         $method = $request->getMethod();
         $isAttach = ($method === 'POST');
 
-        // Load the schema for this model
-        $schema = $this->schemaService->getSchema($modelName);
-
-        // Get the current user
-        /** @var UserInterface */
-        $currentUser = $this->authenticator->user();
-
         // Access control check
-        $updatePermission = $schema['permissions']['update'] ?? null;
-        if ($updatePermission && !$this->authorizer->checkAccess($currentUser, $updatePermission)) {
-            throw new ForbiddenException();
-        }
+        $this->validateAccess($crudSchema, 'update');
 
-        // Get the record model instance from request attribute (set by middleware)
-        /** @var CRUD6ModelInterface */
-        $record = $request->getAttribute('crud6');
-
-        if ($record === null) {
-            throw new \RuntimeException('CRUD6 record not found in request. Make sure CRUD6Injector middleware is active.');
-        }
+        // The record is already loaded by the middleware into $crudModel
 
         // Check if relationship is defined in schema
-        $relationships = $schema['relationships'] ?? [];
+        $relationships = $crudSchema['relationships'] ?? [];
         $relationshipConfig = null;
         
         foreach ($relationships as $config) {
@@ -100,7 +86,7 @@ class RelationshipAction extends Base
         }
 
         if ($relationshipConfig === null) {
-            throw new \RuntimeException("Many-to-many relationship '{$relationName}' not found in schema for model '{$modelName}'");
+            throw new \RuntimeException("Many-to-many relationship '{$relationName}' not found in schema for model '{$crudSchema['model']}'");
         }
 
         // Get POST/DELETE parameters - should contain array of IDs to attach/detach
@@ -117,7 +103,7 @@ class RelationshipAction extends Base
         try {
             // Get pivot table name and key names from relationship config
             $pivotTable = $relationshipConfig['pivot_table'] ?? null;
-            $foreignKey = $relationshipConfig['foreign_key'] ?? $modelName . '_id';
+            $foreignKey = $relationshipConfig['foreign_key'] ?? $crudSchema['model'] . '_id';
             $relatedKey = $relationshipConfig['related_key'] ?? $relationName . '_id';
 
             if ($pivotTable === null) {
@@ -128,7 +114,7 @@ class RelationshipAction extends Base
                 // Attach: Insert records into pivot table
                 foreach ($relatedIds as $relatedId) {
                     $this->db->table($pivotTable)->insertOrIgnore([
-                        $foreignKey => $id,
+                        $foreignKey => $crudModel->id,
                         $relatedKey => $relatedId,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -140,7 +126,7 @@ class RelationshipAction extends Base
             } else {
                 // Detach: Delete records from pivot table
                 $this->db->table($pivotTable)
-                    ->where($foreignKey, $id)
+                    ->where($foreignKey, $crudModel->id)
                     ->whereIn($relatedKey, $relatedIds)
                     ->delete();
 
@@ -148,13 +134,17 @@ class RelationshipAction extends Base
                 $messageKey = 'CRUD6.RELATIONSHIP.DETACH_SUCCESS';
             }
 
+            // Get the current user for logging
+            /** @var UserInterface */
+            $currentUser = $this->authenticator->user();
+
             // Log activity
             $this->userActivityLogger->info(
-                "User {$currentUser->user_name} {$action} {$relationName} for {$modelName} {$id}.",
+                "User {$currentUser->user_name} {$action} {$relationName} for {$crudSchema['model']} {$crudModel->id}.",
                 [
                     'type'     => 'relationship_' . $action,
-                    'model'    => $modelName,
-                    'id'       => $id,
+                    'model'    => $crudSchema['model'],
+                    'id'       => $crudModel->id,
                     'relation' => $relationName,
                     'count'    => count($relatedIds),
                 ]
@@ -169,7 +159,7 @@ class RelationshipAction extends Base
 
         // Success message
         $message = $this->translator->translate($messageKey, [
-            'model'    => $schema['title'] ?? $modelName,
+            'model'    => $crudSchema['title'] ?? $crudSchema['model'],
             'relation' => $relationshipConfig['title'] ?? $relationName,
             'count'    => count($relatedIds),
         ]);

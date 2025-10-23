@@ -79,20 +79,43 @@ class SprunjeAction extends Base
             // Handle dynamic relation based on schema detail configuration
             $this->logger->debug("Handling detail relation: {$relation}", $detailConfig);
             
-            // Use UserSprunje for users relation, otherwise use default
+            // Load the related model's schema to get its configuration
+            $relatedSchema = $this->schemaService->getSchema($relation, $request);
+            
+            // Get the foreign key from detail config
+            $foreignKey = $detailConfig['foreign_key'] ?? 'id';
+            
+            // Get query parameters
+            $params = $request->getQueryParams();
+            
+            // For 'users' relation, use UserSprunje for compatibility
             if ($relation === 'users') {
-                $params = $request->getQueryParams();
                 $this->userSprunje->setOptions($params);
-                
-                // Get the foreign key from detail config
-                $foreignKey = $detailConfig['foreign_key'] ?? 'group_id';
-                
                 $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
                     return $query->where($foreignKey, $crudModel->id);
                 });
-                
                 return $this->userSprunje->toResponse($response);
             }
+            
+            // For other relations, use CRUD6Sprunje with dynamic configuration
+            $relatedModel = $this->schemaService->getModelInstance($relation, $request);
+            
+            // Setup sprunje with related model configuration
+            $this->sprunje->setupSprunje(
+                $relatedModel->getTable(),
+                $this->getSortableFieldsFromSchema($relatedSchema),
+                $this->getFilterableFieldsFromSchema($relatedSchema),
+                $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema)
+            );
+            
+            $this->sprunje->setOptions($params);
+            
+            // Filter by parent record's ID using the foreign key
+            $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
+                return $query->where($foreignKey, $crudModel->id);
+            });
+            
+            return $this->sprunje->toResponse($response);
         }
         
         // Default sprunje for main model listing
@@ -109,5 +132,76 @@ class SprunjeAction extends Base
         $this->sprunje->setOptions($params);
 
         return $this->sprunje->toResponse($response);
+    }
+    
+    /**
+     * Get sortable fields from a schema array.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return array List of sortable field names
+     */
+    protected function getSortableFieldsFromSchema(array $schema): array
+    {
+        $sortable = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['sortable']) && $fieldConfig['sortable'] === true) {
+                    $sortable[] = $fieldName;
+                }
+            }
+        }
+        
+        return $sortable;
+    }
+    
+    /**
+     * Get filterable fields from a schema array.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return array List of filterable field names
+     */
+    protected function getFilterableFieldsFromSchema(array $schema): array
+    {
+        $filterable = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['filterable']) && $fieldConfig['filterable'] === true) {
+                    $filterable[] = $fieldName;
+                }
+            }
+        }
+        
+        return $filterable;
+    }
+    
+    /**
+     * Get listable fields from a schema array.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return array List of listable field names
+     */
+    protected function getListableFieldsFromSchema(array $schema): array
+    {
+        $listable = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                // Check if explicitly set to listable, or default to true if not readonly
+                $isListable = isset($fieldConfig['listable']) 
+                    ? $fieldConfig['listable'] 
+                    : !($fieldConfig['readonly'] ?? false);
+                    
+                if ($isListable) {
+                    $listable[] = $fieldName;
+                }
+            }
+        }
+        
+        return $listable;
     }
 }

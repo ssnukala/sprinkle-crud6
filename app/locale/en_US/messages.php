@@ -62,6 +62,10 @@ return [
             'ERROR_TITLE'   => 'Error Updating',
         ],
         'UPDATE_FIELD_SUCCESSFUL' => 'Successfully updated {{field}} for {{model}}',
+        'RELATIONSHIP' => [
+            'ATTACH_SUCCESS' => 'Successfully attached {{count}} {{relation}} to {{model}}',
+            'DETACH_SUCCESS' => 'Successfully detached {{count}} {{relation}} from {{model}}',
+        ],
         'USERS'               => 'Users in this {{model}}',
     ],
     'CRUD6_PANEL'               => 'CRUD6 Management',

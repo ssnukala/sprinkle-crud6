@@ -232,4 +232,98 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
             "Frontend route should exist and return 200, 302, or 401, got {$statusCode}"
         );
     }
+
+    /**
+     * Test GET /api/crud6/groups/{id}/users returns 401 for guest users
+     */
+    public function testGroupUsersApiRequiresAuthentication(): void
+    {
+        /** @var Group */
+        $group = Group::factory()->create();
+
+        // Create request with method and url and fetch response
+        $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users');
+        $response = $this->handleRequest($request);
+
+        // Assert response status & body
+        $this->assertJsonResponse('Login Required', $response, 'title');
+        $this->assertResponseStatus(401, $response);
+    }
+
+    /**
+     * Test GET /api/crud6/groups/{id}/users returns 403 for users without permission
+     */
+    public function testGroupUsersApiRequiresPermission(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user);
+
+        /** @var Group */
+        $group = Group::factory()->create();
+
+        // Create request with method and url and fetch response
+        $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users');
+        $response = $this->handleRequest($request);
+
+        // Assert response status & body
+        $this->assertJsonResponse('Access Denied', $response, 'title');
+        $this->assertResponseStatus(403, $response);
+    }
+
+    /**
+     * Test GET /api/crud6/groups/{id}/users returns list of users for authorized users
+     */
+    public function testGroupUsersApiReturnsUsers(): void
+    {
+        /** @var Group */
+        $group = Group::factory()->create();
+
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['uri_crud6']);
+
+        // Create some users in the group
+        User::factory()->count(3)->create([
+            'group_id' => $group->id,
+        ]);
+
+        // Create request with method and url and fetch response
+        $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users?size=10&page=0');
+        $response = $this->handleRequest($request);
+
+        // Assert response status & body
+        $this->assertResponseStatus(200, $response);
+        $this->assertJsonStructure([
+            'count',
+            'count_filtered',
+            'rows',
+            'listable',
+            'sortable',
+            'filterable',
+        ], $response);
+
+        // Verify the response contains users from the group
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($body, 'Response should be an array');
+        $this->assertArrayHasKey('rows', $body, 'Response should contain rows');
+        $this->assertCount(3, $body['rows'], 'Should return 3 users from the group');
+    }
+
+    /**
+     * Test GET /api/crud6/groups/999/users returns 404 for non-existent group
+     */
+    public function testGroupUsersApiReturns404ForNonExistent(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['uri_crud6']);
+
+        // Create request with method and url and fetch response
+        $request = $this->createJsonRequest('GET', '/api/crud6/groups/999999/users');
+        $response = $this->handleRequest($request);
+
+        // Assert response status
+        $this->assertResponseStatus(404, $response);
+    }
 }

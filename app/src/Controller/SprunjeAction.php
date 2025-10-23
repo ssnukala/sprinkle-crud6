@@ -80,7 +80,7 @@ class SprunjeAction extends Base
             $this->logger->debug("Handling detail relation: {$relation}", $detailConfig);
             
             // Load the related model's schema to get its configuration
-            $relatedSchema = $this->schemaService->getSchema($relation, $request);
+            $relatedSchema = $this->schemaService->getSchema($relation);
             
             // Get the foreign key from detail config
             $foreignKey = $detailConfig['foreign_key'] ?? 'id';
@@ -98,7 +98,7 @@ class SprunjeAction extends Base
             }
             
             // For other relations, use CRUD6Sprunje with dynamic configuration
-            $relatedModel = $this->schemaService->getModelInstance($relation, $request);
+            $relatedModel = $this->schemaService->getModelInstance($relation);
             
             // Setup sprunje with related model configuration
             $this->sprunje->setupSprunje(

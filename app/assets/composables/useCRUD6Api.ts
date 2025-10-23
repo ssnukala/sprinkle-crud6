@@ -14,6 +14,7 @@ import type {
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
 import { useRuleSchemaAdapter } from '@userfrosting/sprinkle-core/composables'
 import { useRoute } from 'vue-router'
+import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 
 /**
  * Vue composable for CRUD6 CRUD operations.
@@ -50,13 +51,19 @@ export function useCRUD6Api(modelName?: string) {
 
     const route = useRoute()
     const model = modelName || (route.params.model as string)
+    
+    // Use the global schema store to avoid duplicate API calls
+    const schemaStore = useCRUD6SchemaStore()
 
     // Dynamically load the schema file for the current model
+    // Uses the global store cache to prevent duplicate API calls
     async function loadSchema() {
         try {
-            const response = await axios.get(`/api/crud6/${model}/schema`)
-            return response.data
+            // Use the store's loadSchema which has caching
+            const schema = await schemaStore.loadSchema(model)
+            return schema || {}
         } catch (error) {
+            console.error('[useCRUD6Api] Schema load error:', error)
             return {}
         }
     }

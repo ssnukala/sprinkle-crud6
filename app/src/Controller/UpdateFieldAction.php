@@ -70,7 +70,7 @@ class UpdateFieldAction extends Base
         $fieldName = $args['field'] ?? '';
 
         // Load the schema for this model
-        $schema = $this->schemaService->getSchema($modelName, $request);
+        $schema = $this->schemaService->getSchema($modelName);
 
         // Check if this field exists and is editable in the schema
         if (!isset($schema['fields'][$fieldName])) {

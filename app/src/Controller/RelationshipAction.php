@@ -68,7 +68,7 @@ class RelationshipAction extends Base
         $isAttach = ($method === 'POST');
 
         // Load the schema for this model
-        $schema = $this->schemaService->getSchema($modelName, $request);
+        $schema = $this->schemaService->getSchema($modelName);
 
         // Get the current user
         /** @var UserInterface */

@@ -167,4 +167,103 @@ class SchemaServiceTest extends TestCase
         $this->assertTrue($result['timestamps']); // Default
         $this->assertFalse($result['soft_delete']); // Default
     }
+
+    /**
+     * Test enrichSchemaWithRelationships adds new relationships
+     */
+    public function testEnrichSchemaWithRelationshipsAddsNewRelationships(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'fields' => [],
+        ];
+
+        $detectedRelationships = [
+            'user_id' => [
+                'type' => 'belongsTo',
+                'related' => 'users',
+                'foreign_key' => 'user_id',
+                'owner_key' => 'id',
+                'confidence' => 0.95,
+            ],
+        ];
+
+        $result = $schemaService->enrichSchemaWithRelationships($schema, $detectedRelationships);
+
+        $this->assertArrayHasKey('relationships', $result);
+        $this->assertArrayHasKey('user_id', $result['relationships']);
+        $this->assertEquals('belongsTo', $result['relationships']['user_id']['type']);
+    }
+
+    /**
+     * Test enrichSchemaWithRelationships preserves existing relationships by default
+     */
+    public function testEnrichSchemaWithRelationshipsPreservesExisting(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'fields' => [],
+            'relationships' => [
+                'user_id' => [
+                    'type' => 'belongsTo',
+                    'related' => 'custom_users',
+                ],
+            ],
+        ];
+
+        $detectedRelationships = [
+            'user_id' => [
+                'type' => 'belongsTo',
+                'related' => 'users',
+                'foreign_key' => 'user_id',
+            ],
+        ];
+
+        $result = $schemaService->enrichSchemaWithRelationships($schema, $detectedRelationships, false);
+
+        // Should preserve existing relationship
+        $this->assertEquals('custom_users', $result['relationships']['user_id']['related']);
+    }
+
+    /**
+     * Test enrichSchemaWithRelationships overwrites when specified
+     */
+    public function testEnrichSchemaWithRelationshipsOverwrites(): void
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $schemaService = new SchemaService($locator);
+
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'fields' => [],
+            'relationships' => [
+                'user_id' => [
+                    'type' => 'belongsTo',
+                    'related' => 'custom_users',
+                ],
+            ],
+        ];
+
+        $detectedRelationships = [
+            'user_id' => [
+                'type' => 'belongsTo',
+                'related' => 'users',
+                'foreign_key' => 'user_id',
+            ],
+        ];
+
+        $result = $schemaService->enrichSchemaWithRelationships($schema, $detectedRelationships, true);
+
+        // Should overwrite existing relationship
+        $this->assertEquals('users', $result['relationships']['user_id']['related']);
+    }
 }

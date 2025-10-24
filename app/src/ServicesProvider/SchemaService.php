@@ -210,4 +210,37 @@ class SchemaService
 
         return $modelInstance;
     }
+
+    /**
+     * Enrich schema with detected relationships from database scanner.
+     * 
+     * This method takes a schema array and adds relationship information
+     * detected by the DatabaseScanner, merging it with any existing relationships.
+     * 
+     * @param array<string, mixed> $schema              The schema to enrich
+     * @param array<string, mixed> $detectedRelationships Relationships detected by scanner
+     * @param bool                 $overwrite           Whether to overwrite existing relationships
+     * 
+     * @return array<string, mixed> Enriched schema
+     */
+    public function enrichSchemaWithRelationships(
+        array $schema,
+        array $detectedRelationships,
+        bool $overwrite = false
+    ): array {
+        if (!isset($schema['relationships'])) {
+            $schema['relationships'] = [];
+        }
+
+        foreach ($detectedRelationships as $field => $relationshipInfo) {
+            // Skip if relationship already exists and we're not overwriting
+            if (isset($schema['relationships'][$field]) && !$overwrite) {
+                continue;
+            }
+
+            $schema['relationships'][$field] = $relationshipInfo;
+        }
+
+        return $schema;
+    }
 }

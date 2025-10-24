@@ -13,6 +13,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
 - **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
+- **Database Scanner**: Intelligent analysis of database structures to detect foreign key relationships based on naming conventions and data sampling
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
 - **Sorting & Filtering**: Automatic sortable and filterable columns
@@ -544,6 +545,72 @@ $model->configureFromSchema($schema);
 - **Soft Deletes**: Built-in soft delete support when enabled in schema
 - **Mass Assignment Protection**: Fillable attributes automatically set from schema
 - **Timestamp Management**: Automatic handling of created_at/updated_at fields
+
+### Database Scanner
+
+CRUD6 includes an intelligent database scanner that can analyze your database structure and detect foreign key relationships even when they're not explicitly defined as database constraints.
+
+#### Features
+
+- **Naming Convention Detection**: Automatically detects foreign keys based on common naming patterns (`*_id`, `*_uuid`, `fk_*`)
+- **Data Sampling**: Validates relationships by sampling actual data to ensure integrity
+- **Configurable Thresholds**: Control how strict the validation should be
+- **Multi-Database Support**: Works with MySQL, PostgreSQL, and SQLite
+- **Schema Integration**: Automatically enrich your schemas with detected relationships
+
+#### Basic Usage
+
+```php
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\DatabaseScanner;
+
+// Get the scanner service
+$scanner = $container->get(DatabaseScanner::class);
+
+// Scan a single table
+$relationships = $scanner->scanTable('orders');
+
+// Scan entire database
+$allRelationships = $scanner->scanDatabase(null, ['migrations', 'cache']);
+
+// Generate schema-compatible relationships
+$schemaRelationships = $scanner->generateSchemaRelationships($relationships);
+```
+
+#### Configure Scanner Behavior
+
+```php
+// Set custom naming patterns
+$scanner->setForeignKeyPatterns([
+    '/_id$/',           // Standard: user_id, product_id
+    '/_uuid$/',         // UUID references
+    '/^ref_/',          // Custom prefix
+]);
+
+// Adjust sample size (default: 100)
+$scanner->setSampleSize(200);
+
+// Set validation threshold (default: 0.8 = 80%)
+$scanner->setValidationThreshold(0.9);
+```
+
+#### Integration with Schemas
+
+```php
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+
+// Enrich existing schema with detected relationships
+$schema = $schemaService->getSchema('orders');
+$relationships = $scanner->scanTable('orders');
+$schemaRelationships = $scanner->generateSchemaRelationships($relationships);
+
+$enrichedSchema = $schemaService->enrichSchemaWithRelationships(
+    $schema,
+    $schemaRelationships,
+    false  // Don't overwrite existing relationships
+);
+```
+
+For detailed documentation, see [docs/DATABASE_SCANNER.md](docs/DATABASE_SCANNER.md).
 
 ## Contributing
 

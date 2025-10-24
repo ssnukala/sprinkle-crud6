@@ -28,6 +28,7 @@ class DatabaseScannerServiceProvider implements ServicesProviderInterface
     {
         return [
             DatabaseScanner::class => \DI\autowire(DatabaseScanner::class),
+            SchemaGenerator::class => \DI\autowire(SchemaGenerator::class),
         ];
     }
 }

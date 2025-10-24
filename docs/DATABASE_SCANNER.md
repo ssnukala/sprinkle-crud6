@@ -1,14 +1,24 @@
 # Database Scanner Module
 
-The Database Scanner module provides intelligent analysis of database structures to detect foreign key relationships based on naming conventions and data sampling. This is particularly useful for databases that implement relationships at the application layer without explicit foreign key constraints.
+The Database Scanner module provides intelligent analysis of database structures to detect foreign key relationships based on naming conventions and data sampling. Combined with the SchemaGenerator service, you can automatically create complete CRUD6 schema definitions from existing database tables.
 
 ## Overview
 
+The module consists of two main services:
+
+### DatabaseScanner
 The `DatabaseScanner` service analyzes database tables to:
 - Detect potential foreign keys by field naming patterns (e.g., `user_id`, `category_id`)
 - Validate relationships through data sampling
 - Generate relationship metadata compatible with CRUD6 schema definitions
 - Support multiple database connections and drivers
+
+### SchemaGenerator
+The `SchemaGenerator` service works with DatabaseScanner to:
+- Generate complete schema definitions from database tables
+- Automatically detect field types, labels, and validation rules
+- Create permission templates and default configurations
+- Save schemas as JSON files ready for CRUD6 use
 
 ## Features
 
@@ -342,7 +352,83 @@ If scanner finds nothing:
 
 ## Examples
 
-See `/examples/database-scanner-usage.php` for comprehensive usage examples.
+See `/examples/database-scanner-usage.php` for DatabaseScanner usage examples.
+See `/examples/schema-generator-usage.php` for SchemaGenerator usage examples.
+
+## SchemaGenerator Service
+
+The `SchemaGenerator` service provides automated schema file generation from database tables.
+
+### Basic Usage
+
+```php
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaGenerator;
+
+/** @var SchemaGenerator $generator */
+$generator = $ci->get(SchemaGenerator::class);
+
+// Generate complete schema from a table
+$schema = $generator->generateSchema('users');
+
+// Save to file
+$generator->saveSchemaToFile($schema, 'app/schema/crud6/users.json');
+```
+
+### Generate All Schemas
+
+```php
+// Generate schemas for all tables
+$allSchemas = $generator->generateAllSchemas(null, ['migrations', 'cache']);
+
+foreach ($allSchemas as $tableName => $schema) {
+    $filePath = "app/schema/crud6/{$tableName}.json";
+    $generator->saveSchemaToFile($schema, $filePath);
+    echo "Created schema for {$tableName}\n";
+}
+```
+
+### Configuration Options
+
+```php
+$options = [
+    'detect_relationships' => true,     // Use DatabaseScanner to detect relationships
+    'include_permissions' => true,      // Include permissions template
+    'include_default_sort' => true,     // Include default sort configuration
+    'description' => 'Custom description',
+];
+
+$schema = $generator->generateSchema('products', null, $options);
+```
+
+### Generated Schema Features
+
+The SchemaGenerator automatically:
+- **Field Detection**: Analyzes all table columns and generates field definitions
+- **Type Mapping**: Maps database types to CRUD6 schema types (string, integer, boolean, etc.)
+- **Label Generation**: Creates human-readable labels from column names
+- **Validation Rules**: Adds length constraints and email validation
+- **Primary Key Detection**: Identifies and configures primary keys
+- **Timestamp Detection**: Detects `created_at` and `updated_at` columns
+- **Soft Delete Detection**: Identifies `deleted_at` columns
+- **Relationship Detection**: Uses DatabaseScanner to find relationships
+- **Permission Template**: Generates CRUD permission structure
+- **Default Sort**: Creates sensible default sorting configuration
+
+### Type Mapping
+
+The generator maps database types to schema types:
+
+| Database Type | Schema Type |
+|--------------|-------------|
+| int, bigint, smallint | integer |
+| varchar, char | string |
+| text, mediumtext, longtext | text |
+| decimal, numeric | decimal |
+| float, double | float |
+| boolean, bit | boolean |
+| date | date |
+| datetime, timestamp | datetime |
+| json, jsonb | json |
 
 ## API Reference
 
@@ -370,6 +456,23 @@ Converts scan results to schema-compatible format.
 
 #### `enrichSchemaWithRelationships(array $schema, array $detectedRelationships, bool $overwrite = false): array`
 Enriches a schema with detected relationships.
+
+### SchemaGenerator Methods
+
+#### `generateSchema(string $tableName, ?string $connection = null, array $options = []): array`
+Generates a complete schema definition for a table.
+
+**Options:**
+- `detect_relationships` (bool): Enable relationship detection (default: true)
+- `include_permissions` (bool): Include permissions template (default: true)
+- `include_default_sort` (bool): Include default sort (default: true)
+- `description` (string): Custom description for the schema
+
+#### `generateAllSchemas(?string $connection = null, array $excludeTables = [], array $options = []): array`
+Generates schemas for all tables in a database.
+
+#### `saveSchemaToFile(array $schema, string $filePath, bool $pretty = true): bool`
+Saves a schema definition to a JSON file.
 
 ## Contributing
 

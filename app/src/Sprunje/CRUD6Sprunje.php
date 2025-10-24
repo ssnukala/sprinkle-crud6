@@ -52,6 +52,11 @@ class CRUD6Sprunje extends Sprunje
     protected array $listable = [];
 
     /**
+     * @var string[] List of searchable fields (for global search)
+     */
+    protected array $searchable = [];
+
+    /**
      * Constructor for CRUD6Sprunje.
      * 
      * @param CRUD6ModelInterface   $model        The CRUD6 model instance
@@ -74,10 +79,11 @@ class CRUD6Sprunje extends Sprunje
      * @param string[] $sortable   List of sortable field names
      * @param string[] $filterable List of filterable field names
      * @param string[] $listable   List of listable/visible field names
+     * @param string[] $searchable List of searchable field names (for global search)
      * 
      * @return void
      */
-    public function setupSprunje($name, $sortable = [], $filterable = [], $listable = []): void
+    public function setupSprunje($name, $sortable = [], $filterable = [], $listable = [], $searchable = []): void
     {
         //$this->debugLogger->debug("Line 45: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->model->setTable($name);
@@ -86,6 +92,7 @@ class CRUD6Sprunje extends Sprunje
         $this->sortable = $sortable;
         $this->filterable = $filterable;
         $this->listable = $listable;
+        $this->searchable = $searchable;
 
         $query = $this->baseQuery();
 
@@ -108,5 +115,38 @@ class CRUD6Sprunje extends Sprunje
         // @phpstan-ignore-next-line Model implement Model.
         //$this->debugLogger->debug("Line 53: CRUD6 Sprunje:  Model table is " . $this->model->getTable());
         return $this->model;
+    }
+
+    /**
+     * Apply filtering logic to the query.
+     * 
+     * This method intercepts the "search" parameter and applies OR filtering
+     * across all searchable fields. This is in addition to any specific field
+     * filters that are applied by the parent class.
+     * 
+     * @param mixed $query The query builder instance
+     * 
+     * @return static
+     */
+    protected function applyTransformations($query): static
+    {
+        // First apply parent transformations (filters, sorts, etc.)
+        parent::applyTransformations($query);
+
+        // Handle global search if search parameter is present
+        if (isset($this->options['search']) && !empty($this->options['search'])) {
+            $searchTerm = $this->options['search'];
+            
+            // Apply search to all searchable fields using OR logic
+            if (!empty($this->searchable)) {
+                $query->where(function ($subQuery) use ($searchTerm) {
+                    foreach ($this->searchable as $field) {
+                        $subQuery->orWhere($field, 'LIKE', "%{$searchTerm}%");
+                    }
+                });
+            }
+        }
+
+        return $this;
     }
 }

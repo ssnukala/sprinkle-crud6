@@ -105,7 +105,8 @@ class SprunjeAction extends Base
                 $relatedModel->getTable(),
                 $this->getSortableFieldsFromSchema($relatedSchema),
                 $this->getFilterableFieldsFromSchema($relatedSchema),
-                $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema)
+                $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema),
+                $this->getSearchableFieldsFromSchema($relatedSchema)
             );
             
             $this->sprunje->setOptions($params);
@@ -126,7 +127,8 @@ class SprunjeAction extends Base
             $crudModel->getTable(),
             $this->getSortableFields($modelName),
             $this->getFilterableFields($modelName),
-            $this->getListableFields($modelName)
+            $this->getListableFields($modelName),
+            $this->getSearchableFields($modelName)
         );
 
         $this->sprunje->setOptions($params);
@@ -203,5 +205,27 @@ class SprunjeAction extends Base
         }
         
         return $listable;
+    }
+
+    /**
+     * Get searchable fields from a schema array.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return array List of searchable field names
+     */
+    protected function getSearchableFieldsFromSchema(array $schema): array
+    {
+        $searchable = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['searchable']) && $fieldConfig['searchable'] === true) {
+                    $searchable[] = $fieldName;
+                }
+            }
+        }
+        
+        return $searchable;
     }
 }

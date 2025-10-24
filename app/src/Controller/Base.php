@@ -210,6 +210,26 @@ abstract class Base
     }
 
     /**
+     * Get searchable fields from the model schema.
+     * 
+     * @param string $modelName The model name
+     * 
+     * @return string[] Array of searchable field names
+     */
+    protected function getSearchableFields(string $modelName): array
+    {
+        $searchable = [];
+        $fields = $this->getFields($modelName);
+
+        foreach ($fields as $name => $field) {
+            if ($field['searchable'] ?? false) {
+                $searchable[] = $name;
+            }
+        }
+        return $searchable;
+    }
+
+    /**
      * Get editable fields from the model schema.
      * 
      * Fields are considered editable if:

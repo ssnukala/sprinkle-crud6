@@ -140,8 +140,14 @@ class CRUD6Sprunje extends Sprunje
             // Apply search to all searchable fields using OR logic
             if (!empty($this->searchable)) {
                 $query->where(function ($subQuery) use ($searchTerm) {
+                    $isFirst = true;
                     foreach ($this->searchable as $field) {
-                        $subQuery->orWhere($field, 'LIKE', "%{$searchTerm}%");
+                        if ($isFirst) {
+                            $subQuery->where($field, 'LIKE', "%{$searchTerm}%");
+                            $isFirst = false;
+                        } else {
+                            $subQuery->orWhere($field, 'LIKE', "%{$searchTerm}%");
+                        }
                     }
                 });
             }

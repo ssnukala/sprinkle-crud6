@@ -51,14 +51,13 @@ class DeleteAction extends Base
      * Receive the request, dispatch to the handler, and return the payload to
      * the response.
      *
-     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded (auto-injected)
-     * @param ServerRequestInterface $request The HTTP request
-     * @param Response            $response
+     * @param array                  $crudSchema The schema configuration array (auto-injected)
+     * @param CRUD6ModelInterface    $crudModel  The configured model instance with record loaded (auto-injected)
+     * @param ServerRequestInterface $request    The HTTP request
+     * @param Response               $response
      */
-    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, Response $response): Response
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, Response $response): Response
     {
-        // Get schema from request attribute (set by CRUD6Injector middleware)
-        $crudSchema = $request->getAttribute('crudSchema');
         
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);

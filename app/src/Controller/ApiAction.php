@@ -49,16 +49,15 @@ class ApiAction extends Base
      * 
      * Returns schema information and metadata for the requested model.
      * 
+     * @param array                  $crudSchema The schema configuration array (auto-injected)
      * @param CRUD6ModelInterface    $crudModel  The configured model instance (auto-injected)
      * @param ServerRequestInterface $request    The HTTP request
      * @param ResponseInterface      $response   The HTTP response
      * 
      * @return ResponseInterface JSON response with schema data
      */
-    public function __invoke(CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        // Get schema from request attribute (set by CRUD6Injector middleware)
-        $crudSchema = $request->getAttribute('crudSchema');
         
         //$modelName = $this->getModelNameFromRequest($request);
         ///$schema = $this->getSchema($modelName);

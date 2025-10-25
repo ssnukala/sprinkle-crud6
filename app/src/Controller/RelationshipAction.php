@@ -53,14 +53,13 @@ class RelationshipAction extends Base
     /**
      * Invoke the controller.
      *
+     * @param array               $crudSchema The schema configuration array (auto-injected)
      * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded (auto-injected)
      * @param Request             $request
      * @param Response            $response
      */
-    public function __invoke(CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        // Get schema from request attribute (set by CRUD6Injector middleware)
-        $crudSchema = $request->getAttribute('crudSchema');
         
         parent::__invoke($crudSchema, $crudModel, $request, $response);
         

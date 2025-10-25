@@ -63,14 +63,68 @@ Before creating new components, check if UserFrosting 6 already provides:
   - Sprunje: `{Model}Sprunje.php`
   - Middleware: `{Name}Injector.php` or `{Name}Middleware.php`
 
-#### 4. Testing Standards
+#### 4. Middleware Injection Pattern
+**CRITICAL**: UserFrosting 6 supports automatic injection of middleware-set request attributes as controller parameters. This is a core framework feature used throughout UserFrosting.
+
+**Pattern from sprinkle-admin** (GroupApi + GroupInjector):
+```php
+// Middleware (GroupInjector)
+class GroupInjector extends AbstractInjector
+{
+    protected string $attribute = 'group';  // Request attribute name
+    
+    protected function getInstance(?string $slug): GroupInterface
+    {
+        // Load and return the model instance
+        return $group;
+    }
+}
+
+// Controller (GroupApi)
+class GroupApi
+{
+    public function __invoke(GroupInterface $group, Response $response): Response
+    {
+        // $group is automatically injected from request attribute 'group'
+        // NO need to call $request->getAttribute('group')
+    }
+}
+```
+
+**CRUD6 Implementation** (CRUD6Injector + Controllers):
+```php
+// Middleware sets attributes
+$request = $request
+    ->withAttribute('crudModel', $instance)
+    ->withAttribute('crudSchema', $schema);
+
+// Controllers receive as parameters - DO NOT CHANGE THIS PATTERN
+public function __invoke(
+    array $crudSchema,                      // Injected from 'crudSchema' attribute
+    CRUD6ModelInterface $crudModel,         // Injected from 'crudModel' attribute  
+    ServerRequestInterface $request,
+    ResponseInterface $response
+): ResponseInterface
+```
+
+**DO NOT:**
+- ❌ Change controllers to retrieve from `$request->getAttribute()`
+- ❌ Assume Slim 4 doesn't support this (UserFrosting extends Slim with this capability)
+- ❌ Refactor working code that follows this pattern
+
+**Reference:**
+- [GroupApi.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Controller/Group/GroupApi.php)
+- [GroupInjector.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Middlewares/GroupInjector.php)
+- [PR #119](https://github.com/ssnukala/sprinkle-crud6/pull/119) - Fixed this pattern after it was broken
+
+#### 5. Testing Standards
 - Follow testing patterns from sprinkle-admin and sprinkle-account
 - Use `RefreshDatabase` trait for database tests
 - Use `AdminTestCase` or `AccountTestCase` as base classes
 - Test service providers, controllers, and business logic separately
 - Mock external dependencies appropriately
 
-#### 5. Documentation Standards
+#### 6. Documentation Standards
 - Document all public methods with PHPDoc blocks
 - Include `@param`, `@return`, and `@throws` annotations
 - Reference UserFrosting documentation patterns

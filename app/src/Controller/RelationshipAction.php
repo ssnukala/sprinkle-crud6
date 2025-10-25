@@ -53,13 +53,15 @@ class RelationshipAction extends Base
     /**
      * Invoke the controller.
      *
-     * @param array               $crudSchema The schema configuration
-     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
      * @param Request             $request
      * @param Response            $response
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    public function __invoke(Request $request, Response $response): Response
     {
+        // Retrieve injected model and schema from request attributes
+        $crudSchema = $request->getAttribute('crudSchema');
+        $crudModel = $request->getAttribute('crudModel');
+        
         parent::__invoke($crudSchema, $crudModel, $request, $response);
         
         // Get the relationship name from the route

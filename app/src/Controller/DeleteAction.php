@@ -6,6 +6,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
@@ -50,12 +51,15 @@ class DeleteAction extends Base
      * Receive the request, dispatch to the handler, and return the payload to
      * the response.
      *
-     * @param array               $crudSchema The schema configuration
-     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
-     * @param Response            $response
+     * @param ServerRequestInterface  $request  The HTTP request
+     * @param Response                $response
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Response $response): Response
+    public function __invoke(ServerRequestInterface $request, Response $response): Response
     {
+        // Retrieve injected model and schema from request attributes
+        $crudSchema = $request->getAttribute('crudSchema');
+        $crudModel = $request->getAttribute('crudModel');
+        
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 

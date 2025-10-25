@@ -61,13 +61,15 @@ class EditAction extends Base
      * Receive the request, dispatch to the handler, and return the payload to
      * the response.
      *
-     * @param array               $crudSchema The schema configuration
-     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
      * @param Request             $request
      * @param Response            $response
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    public function __invoke(Request $request, Response $response): Response
     {
+        // Retrieve injected model and schema from request attributes
+        $crudSchema = $request->getAttribute('crudSchema');
+        $crudModel = $request->getAttribute('crudModel');
+        
         $method = $request->getMethod();
         
         $this->logger->debug("CRUD6 [EditAction] ===== REQUEST START =====", [

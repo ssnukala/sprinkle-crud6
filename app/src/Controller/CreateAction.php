@@ -58,13 +58,15 @@ class CreateAction extends Base
      * Receive the request, dispatch to the handler, and return the payload to
      * the response.
      *
-     * @param array               $crudSchema The schema configuration
-     * @param CRUD6ModelInterface $crudModel  The configured model instance
      * @param Request             $request
      * @param Response            $response
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
+    public function __invoke(Request $request, Response $response): Response
     {
+        // Retrieve injected model and schema from request attributes
+        $crudSchema = $request->getAttribute('crudSchema');
+        $crudModel = $request->getAttribute('crudModel');
+        
         $this->logger->debug("CRUD6 [CreateAction] ===== CREATE REQUEST START =====", [
             'model' => $crudSchema['model'],
             'method' => $request->getMethod(),

@@ -57,15 +57,17 @@ class SprunjeAction extends Base
      * Returns paginated, filtered, and sorted data for the model.
      * Supports relation-specific queries based on schema detail configuration.
      * 
-     * @param array                  $crudSchema The schema configuration
-     * @param CRUD6ModelInterface    $crudModel  The configured model instance
      * @param ServerRequestInterface $request    The HTTP request
      * @param ResponseInterface      $response   The HTTP response
      * 
      * @return ResponseInterface JSON response with Sprunje data
      */
-    public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function __invoke(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // Retrieve injected model and schema from request attributes
+        $crudSchema = $request->getAttribute('crudSchema');
+        $crudModel = $request->getAttribute('crudModel');
+        
         parent::__invoke($crudSchema, $crudModel, $request, $response);
         
         $this->logger->debug("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [

@@ -45,6 +45,12 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 class CRUD6Injector extends AbstractInjector
 {
     /**
+     * @var string The primary attribute name for AbstractInjector auto-injection
+     * This is the model instance that will be automatically injected into controller parameters
+     */
+    protected string $attribute = 'crudModel';
+    
+    /**
      * @var string Placeholder name for record ID in route
      */
     protected string $placeholder = 'id';

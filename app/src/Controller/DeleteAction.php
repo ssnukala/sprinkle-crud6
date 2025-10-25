@@ -56,16 +56,45 @@ class DeleteAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Response $response): Response
     {
-        $modelDisplayName = $this->getModelDisplayName($crudSchema);
-        $this->handle($crudSchema, $crudModel);
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
+        $recordId = $crudModel->getAttribute($primaryKey);
 
-        // Write response with title and description
-        $title = $this->translator->translate('CRUD6.DELETE.SUCCESS_TITLE');
-        $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
-        $payload = new ApiResponse($title, $description);
-        $response->getBody()->write((string) $payload);
+        $this->logger->debug("CRUD6 [DeleteAction] ===== DELETE REQUEST START =====", [
+            'model' => $crudSchema['model'],
+            'record_id' => $recordId,
+        ]);
 
-        return $response->withHeader('Content-Type', 'application/json');
+        try {
+            $modelDisplayName = $this->getModelDisplayName($crudSchema);
+            $this->handle($crudSchema, $crudModel);
+
+            // Write response with title and description
+            $title = $this->translator->translate('CRUD6.DELETE.SUCCESS_TITLE');
+            $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
+            $payload = new ApiResponse($title, $description);
+            
+            $this->logger->debug("CRUD6 [DeleteAction] Delete response prepared", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'title' => $title,
+                'description' => $description,
+            ]);
+
+            $response->getBody()->write((string) $payload);
+
+            return $response->withHeader('Content-Type', 'application/json');
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -86,8 +115,12 @@ class DeleteAction extends Base
         /** @var UserInterface $currentUser */
         $currentUser = $this->authenticator->user();
 
-        $this->logger->debug("CRUD6: Deleting record ID: {$recordId} for model: {$crudSchema['model']}", [
+        $this->logger->debug("CRUD6 [DeleteAction] Starting delete operation", [
+            'model' => $crudSchema['model'],
+            'record_id' => $recordId,
             'user' => $currentUser->user_name,
+            'user_id' => $currentUser->id,
+            'soft_delete' => $crudSchema['soft_delete'] ?? false,
         ]);
 
         // Begin transaction - DB will be rolled back if an exception occurs
@@ -95,10 +128,16 @@ class DeleteAction extends Base
             // Delete the record (supports soft delete if configured)
             if ($crudSchema['soft_delete'] ?? false) {
                 $crudModel->softDelete();
-                $this->logger->debug("CRUD6: Soft deleted record ID: {$recordId} for model: {$crudSchema['model']}");
+                $this->logger->debug("CRUD6 [DeleteAction] Soft deleted record", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                ]);
             } else {
                 $crudModel->delete();
-                $this->logger->debug("CRUD6: Hard deleted record ID: {$recordId} for model: {$crudSchema['model']}");
+                $this->logger->debug("CRUD6 [DeleteAction] Hard deleted record", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                ]);
             }
 
             // Create activity record
@@ -109,6 +148,9 @@ class DeleteAction extends Base
             ]);
         });
 
-        $this->logger->debug("CRUD6: Successfully deleted record ID: {$recordId} for model: {$crudSchema['model']}");
+        $this->logger->debug("CRUD6 [DeleteAction] Transaction completed successfully", [
+            'model' => $crudSchema['model'],
+            'record_id' => $recordId,
+        ]);
     }
 }

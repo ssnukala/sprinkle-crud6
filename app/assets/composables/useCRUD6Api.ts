@@ -72,12 +72,26 @@ export function useCRUD6Api(modelName?: string) {
     const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(loadSchema()))
 
     async function fetchRow(id: string) {
+        const url = `/api/crud6/${model}/${toValue(id)}`
+        console.log('[useCRUD6Api] ===== FETCH ROW REQUEST START =====', {
+            model,
+            id: toValue(id),
+            url,
+        })
+
         apiLoading.value = true
         apiError.value = null
 
         return axios
-            .get<CRUD6Response>(`/api/crud6/${model}/${toValue(id)}`)
+            .get<CRUD6Response>(url)
             .then((response) => {
+                console.log('[useCRUD6Api] Fetch row response received', {
+                    model,
+                    id: toValue(id),
+                    status: response.status,
+                    data: response.data,
+                })
+
                 // The API wraps the data in a response object with {message, model, id, data}
                 // We need to extract just the data property for the CRUD6Response
                 if (response.data && typeof response.data === 'object' && 'data' in response.data) {
@@ -86,20 +100,51 @@ export function useCRUD6Api(modelName?: string) {
                 return response.data
             })
             .catch((err) => {
+                console.error('[useCRUD6Api] ===== FETCH ROW REQUEST FAILED =====', {
+                    model,
+                    id: toValue(id),
+                    url,
+                    error: err,
+                    response: err.response,
+                    responseData: err.response?.data,
+                    status: err.response?.status,
+                })
+
                 apiError.value = err.response.data
                 throw apiError.value
             })
             .finally(() => {
                 apiLoading.value = false
+                console.log('[useCRUD6Api] Fetch row request completed', {
+                    model,
+                    id: toValue(id),
+                    loading: apiLoading.value,
+                    hasError: !!apiError.value,
+                })
             })
     }
 
     async function createRow(data: CRUD6CreateRequest) {
+        const url = `/api/crud6/${model}`
+        console.log('[useCRUD6Api] ===== CREATE ROW REQUEST START =====', {
+            model,
+            url,
+            data,
+        })
+
         apiLoading.value = true
         apiError.value = null
         return axios
-            .post<CRUD6CreateResponse>(`/api/crud6/${model}`, data)
+            .post<CRUD6CreateResponse>(url, data)
             .then((response) => {
+                console.log('[useCRUD6Api] Create row response received', {
+                    model,
+                    status: response.status,
+                    data: response.data,
+                    title: response.data.title,
+                    description: response.data.description,
+                })
+
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -107,20 +152,52 @@ export function useCRUD6Api(modelName?: string) {
                 })
             })
             .catch((err) => {
+                console.error('[useCRUD6Api] ===== CREATE ROW REQUEST FAILED =====', {
+                    model,
+                    url,
+                    requestData: data,
+                    error: err,
+                    response: err.response,
+                    responseData: err.response?.data,
+                    status: err.response?.status,
+                })
+
                 apiError.value = err.response.data
                 throw apiError.value
             })
             .finally(() => {
                 apiLoading.value = false
+                console.log('[useCRUD6Api] Create row request completed', {
+                    model,
+                    loading: apiLoading.value,
+                    hasError: !!apiError.value,
+                })
             })
     }
 
     async function updateRow(id: string, data: CRUD6EditRequest) {
+        const url = `/api/crud6/${model}/${id}`
+        console.log('[useCRUD6Api] ===== UPDATE ROW REQUEST START =====', {
+            model,
+            id,
+            url,
+            data,
+        })
+
         apiLoading.value = true
         apiError.value = null
         return axios
-            .put<CRUD6EditResponse>(`/api/crud6/${model}/${id}`, data)
+            .put<CRUD6EditResponse>(url, data)
             .then((response) => {
+                console.log('[useCRUD6Api] Update row response received', {
+                    model,
+                    id,
+                    status: response.status,
+                    data: response.data,
+                    title: response.data.title,
+                    description: response.data.description,
+                })
+
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -128,21 +205,58 @@ export function useCRUD6Api(modelName?: string) {
                 })
             })
             .catch((err) => {
+                console.error('[useCRUD6Api] ===== UPDATE ROW REQUEST FAILED =====', {
+                    model,
+                    id,
+                    url,
+                    requestData: data,
+                    error: err,
+                    response: err.response,
+                    responseData: err.response?.data,
+                    status: err.response?.status,
+                    headers: err.response?.headers,
+                })
+
                 apiError.value = err.response.data
                 throw apiError.value
             })
             .finally(() => {
                 apiLoading.value = false
+                console.log('[useCRUD6Api] Update row request completed', {
+                    model,
+                    id,
+                    loading: apiLoading.value,
+                    hasError: !!apiError.value,
+                })
             })
     }
 
     async function updateField(id: string, field: string, value: any) {
+        const url = `/api/crud6/${model}/${id}/${field}`
+        console.log('[useCRUD6Api] ===== UPDATE FIELD REQUEST START =====', {
+            model,
+            id,
+            field,
+            value,
+            url,
+        })
+
         apiLoading.value = true
         apiError.value = null
         const data = { [field]: value }
         return axios
-            .put<CRUD6EditResponse>(`/api/crud6/${model}/${id}/${field}`, data)
+            .put<CRUD6EditResponse>(url, data)
             .then((response) => {
+                console.log('[useCRUD6Api] Update field response received', {
+                    model,
+                    id,
+                    field,
+                    status: response.status,
+                    data: response.data,
+                    title: response.data.title,
+                    description: response.data.description,
+                })
+
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -150,20 +264,56 @@ export function useCRUD6Api(modelName?: string) {
                 })
             })
             .catch((err) => {
+                console.error('[useCRUD6Api] ===== UPDATE FIELD REQUEST FAILED =====', {
+                    model,
+                    id,
+                    field,
+                    value,
+                    url,
+                    requestData: data,
+                    error: err,
+                    response: err.response,
+                    responseData: err.response?.data,
+                    status: err.response?.status,
+                })
+
                 apiError.value = err.response.data
                 throw apiError.value
             })
             .finally(() => {
                 apiLoading.value = false
+                console.log('[useCRUD6Api] Update field request completed', {
+                    model,
+                    id,
+                    field,
+                    loading: apiLoading.value,
+                    hasError: !!apiError.value,
+                })
             })
     }
 
     async function deleteRow(id: string) {
+        const url = `/api/crud6/${model}/${id}`
+        console.log('[useCRUD6Api] ===== DELETE ROW REQUEST START =====', {
+            model,
+            id,
+            url,
+        })
+
         apiLoading.value = true
         apiError.value = null
         return axios
-            .delete<CRUD6DeleteResponse>(`/api/crud6/${model}/${id}`)
+            .delete<CRUD6DeleteResponse>(url)
             .then((response) => {
+                console.log('[useCRUD6Api] Delete row response received', {
+                    model,
+                    id,
+                    status: response.status,
+                    data: response.data,
+                    title: response.data.title,
+                    description: response.data.description,
+                })
+
                 useAlertsStore().push({
                     title: response.data.title,
                     description: response.data.description,
@@ -171,11 +321,27 @@ export function useCRUD6Api(modelName?: string) {
                 })
             })
             .catch((err) => {
+                console.error('[useCRUD6Api] ===== DELETE ROW REQUEST FAILED =====', {
+                    model,
+                    id,
+                    url,
+                    error: err,
+                    response: err.response,
+                    responseData: err.response?.data,
+                    status: err.response?.status,
+                })
+
                 apiError.value = err.response.data
                 throw apiError.value
             })
             .finally(() => {
                 apiLoading.value = false
+                console.log('[useCRUD6Api] Delete row request completed', {
+                    model,
+                    id,
+                    loading: apiLoading.value,
+                    hasError: !!apiError.value,
+                })
             })
     }
 

@@ -65,19 +65,49 @@ class CreateAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        $this->validateAccess($crudSchema, 'create');
-        $record = $this->handle($crudModel, $crudSchema, $request);
+        $this->logger->debug("CRUD6 [CreateAction] ===== CREATE REQUEST START =====", [
+            'model' => $crudSchema['model'],
+            'method' => $request->getMethod(),
+            'uri' => (string) $request->getUri(),
+        ]);
 
-        // Get a display name for the model
-        $modelDisplayName = $this->getModelDisplayName($crudSchema);
+        try {
+            $this->validateAccess($crudSchema, 'create');
+            $this->logger->debug("CRUD6 [CreateAction] Access validated for create operation", [
+                'model' => $crudSchema['model'],
+            ]);
 
-        // Write response with title and description
-        $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
-        $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
-        $payload = new ApiResponse($title, $description);
-        $response->getBody()->write((string) $payload);
+            $record = $this->handle($crudModel, $crudSchema, $request);
 
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+            // Get a display name for the model
+            $modelDisplayName = $this->getModelDisplayName($crudSchema);
+
+            // Write response with title and description
+            $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
+            $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
+            $payload = new ApiResponse($title, $description);
+            
+            $this->logger->debug("CRUD6 [CreateAction] Response prepared successfully", [
+                'model' => $crudSchema['model'],
+                'title' => $title,
+                'description' => $description,
+                'status' => 201,
+            ]);
+
+            $response->getBody()->write((string) $payload);
+
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [CreateAction] ===== CREATE REQUEST FAILED =====", [
+                'model' => $crudSchema['model'],
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -93,22 +123,39 @@ class CreateAction extends Base
     {
         // Get POST parameters.
         $params = (array) $request->getParsedBody();
+        
+        $this->logger->debug("CRUD6 [CreateAction] Request parameters received", [
+            'model' => $schema['model'],
+            'params' => $params,
+            'param_count' => count($params),
+        ]);
 
         // Load the request schema
         $requestSchema = $this->getRequestSchema($schema);
 
         // Whitelist and set parameter defaults
         $data = $this->transformer->transform($requestSchema, $params);
+        
+        $this->logger->debug("CRUD6 [CreateAction] Data transformed", [
+            'model' => $schema['model'],
+            'transformed_data' => $data,
+        ]);
 
         // Validate request data
         $this->validateData($requestSchema, $data);
+        
+        $this->logger->debug("CRUD6 [CreateAction] Data validation passed", [
+            'model' => $schema['model'],
+        ]);
 
         // Get current user. Won't be null, as AuthGuard prevent it
         /** @var UserInterface */
         $currentUser = $this->authenticator->user();
 
-        $this->logger->debug("CRUD6: Creating new record for model: {$schema['model']}", [
+        $this->logger->debug("CRUD6 [CreateAction] Creating new record for model", [
+            'model' => $schema['model'],
             'user' => $currentUser->user_name,
+            'user_id' => $currentUser->id,
         ]);
 
         // All checks passed! Log events/activities and create record
@@ -117,13 +164,31 @@ class CreateAction extends Base
             // Prepare insert data
             $insertData = $this->prepareInsertData($schema, $data);
             
+            $this->logger->debug("CRUD6 [CreateAction] Insert data prepared", [
+                'model' => $schema['model'],
+                'insert_data' => $insertData,
+                'table' => $crudModel->getTable(),
+            ]);
+            
             // Insert the record
             $table = $crudModel->getTable();
             $primaryKey = $schema['primary_key'] ?? 'id';
             $insertId = $this->db->table($table)->insertGetId($insertData, $primaryKey);
             
+            $this->logger->debug("CRUD6 [CreateAction] Record inserted into database", [
+                'model' => $schema['model'],
+                'table' => $table,
+                'insert_id' => $insertId,
+                'primary_key' => $primaryKey,
+            ]);
+            
             // Load the created record into the model
             $crudModel = $crudModel->newQuery()->find($insertId);
+            
+            $this->logger->debug("CRUD6 [CreateAction] Created record loaded from database", [
+                'model' => $schema['model'],
+                'record_data' => $crudModel ? $crudModel->toArray() : null,
+            ]);
 
             // Create activity record
             $modelDisplayName = $this->getModelDisplayName($schema);
@@ -134,6 +199,10 @@ class CreateAction extends Base
 
             return $crudModel;
         });
+        
+        $this->logger->debug("CRUD6 [CreateAction] Transaction completed successfully", [
+            'model' => $schema['model'],
+        ]);
 
         return $record;
     }
@@ -161,12 +230,25 @@ class CreateAction extends Base
      */
     protected function validateData(RequestSchemaInterface $schema, array $data): void
     {
+        $this->logger->debug("CRUD6 [CreateAction] Starting validation", [
+            'data' => $data,
+        ]);
+
         $errors = $this->validator->validate($schema, $data);
         if (count($errors) !== 0) {
+            $this->logger->error("CRUD6 [CreateAction] Validation failed", [
+                'errors' => $errors,
+                'error_count' => count($errors),
+            ]);
+
             $e = new ValidationException();
             $e->addErrors($errors);
 
             throw $e;
         }
+
+        $this->logger->debug("CRUD6 [CreateAction] Validation successful", [
+            'data_validated' => true,
+        ]);
     }
 }

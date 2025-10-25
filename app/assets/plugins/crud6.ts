@@ -1,4 +1,5 @@
 import type { App } from 'vue'
+import axios from 'axios'
 import {
     CRUD6RowPage,
     CRUD6ListPage,
@@ -18,6 +19,64 @@ import {
  */
 export default {
     install: (app: App) => {
+        // Add axios request interceptor for CRUD6 debugging
+        axios.interceptors.request.use(
+            (config) => {
+                if (config.url?.includes('/api/crud6/')) {
+                    console.log('[CRUD6 Axios] ===== REQUEST START =====', {
+                        method: config.method?.toUpperCase(),
+                        url: config.url,
+                        baseURL: config.baseURL,
+                        fullURL: (config.baseURL || '') + (config.url || ''),
+                        params: config.params,
+                        data: config.data,
+                        headers: config.headers,
+                        timestamp: new Date().toISOString()
+                    })
+                }
+                return config
+            },
+            (error) => {
+                console.error('[CRUD6 Axios] Request error', error)
+                return Promise.reject(error)
+            }
+        )
+
+        // Add axios response interceptor for CRUD6 debugging
+        axios.interceptors.response.use(
+            (response) => {
+                if (response.config.url?.includes('/api/crud6/')) {
+                    console.log('[CRUD6 Axios] ===== RESPONSE RECEIVED =====', {
+                        method: response.config.method?.toUpperCase(),
+                        url: response.config.url,
+                        status: response.status,
+                        statusText: response.statusText,
+                        dataKeys: response.data ? Object.keys(response.data) : [],
+                        dataPreview: typeof response.data === 'object' ? 
+                            JSON.stringify(response.data).substring(0, 200) : 
+                            String(response.data).substring(0, 200),
+                        headers: response.headers,
+                        timestamp: new Date().toISOString()
+                    })
+                }
+                return response
+            },
+            (error) => {
+                if (error.config?.url?.includes('/api/crud6/')) {
+                    console.error('[CRUD6 Axios] ===== RESPONSE ERROR =====', {
+                        method: error.config?.method?.toUpperCase(),
+                        url: error.config?.url,
+                        status: error.response?.status,
+                        statusText: error.response?.statusText,
+                        errorMessage: error.message,
+                        responseData: error.response?.data,
+                        timestamp: new Date().toISOString()
+                    })
+                }
+                return Promise.reject(error)
+            }
+        )
+        
         // Register views from '../views'
         app.component('UFCRUD6RowPage', CRUD6RowPage)
             .component('UFCRUD6ListPage', CRUD6ListPage)

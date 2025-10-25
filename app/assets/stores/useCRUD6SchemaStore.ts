@@ -53,6 +53,14 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
      * Returns cached schema if available, otherwise fetches from API
      */
     async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
+        console.log('[useCRUD6SchemaStore] loadSchema called', {
+            model,
+            force,
+            hasCache: hasSchema(model),
+            isCurrentlyLoading: isLoading(model),
+            timestamp: new Date().toISOString()
+        })
+        
         // Return cached schema if available and not forcing reload
         if (!force && hasSchema(model)) {
             console.log('[useCRUD6SchemaStore] Using cached schema - model:', model)
@@ -78,33 +86,69 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         errorStates.value[model] = null
 
         try {
-            const response = await axios.get<any>(`/api/crud6/${model}/schema`)
+            const url = `/api/crud6/${model}/schema`
+            console.log('[useCRUD6SchemaStore] Making API request', {
+                url,
+                method: 'GET',
+                timestamp: new Date().toISOString()
+            })
+            
+            const response = await axios.get<any>(url)
+            
+            console.log('[useCRUD6SchemaStore] API response received', {
+                status: response.status,
+                statusText: response.statusText,
+                hasData: !!response.data,
+                dataKeys: response.data ? Object.keys(response.data) : [],
+                timestamp: new Date().toISOString()
+            })
 
             // Handle different response structures
             let schemaData: CRUD6Schema
             if (response.data.schema) {
                 // Response has nested schema property
                 schemaData = response.data.schema as CRUD6Schema
+                console.log('[useCRUD6SchemaStore] Schema found in response.data.schema')
             } else if (response.data.fields) {
                 // Response is the schema itself
                 schemaData = response.data as CRUD6Schema
+                console.log('[useCRUD6SchemaStore] Schema found in response.data (direct)')
             } else {
+                console.error('[useCRUD6SchemaStore] Invalid schema response structure', {
+                    dataKeys: Object.keys(response.data),
+                    data: response.data
+                })
                 throw new Error('Invalid schema response')
             }
             
             schemas.value[model] = schemaData
-            console.log('[useCRUD6SchemaStore] Schema loaded successfully - model:', model)
+            console.log('[useCRUD6SchemaStore] Schema loaded successfully', {
+                model,
+                schemaKeys: Object.keys(schemaData),
+                fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0,
+                timestamp: new Date().toISOString()
+            })
             return schemaData
         } catch (err: any) {
+            console.error('[useCRUD6SchemaStore] Schema load error', {
+                model,
+                errorType: err.constructor.name,
+                message: err.message,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                responseData: err.response?.data,
+                timestamp: new Date().toISOString()
+            })
+            
             const error = err.response?.data || { 
                 title: 'Schema Load Error',
                 description: 'Failed to load schema for model: ' + model
             }
             errorStates.value[model] = error
-            console.error('[useCRUD6SchemaStore] Schema load failed - model:', model, error)
             return null
         } finally {
             loadingStates.value[model] = false
+            console.log('[useCRUD6SchemaStore] Loading state cleared for model:', model)
         }
     }
 

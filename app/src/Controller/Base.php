@@ -81,11 +81,27 @@ abstract class Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
+        // Log that controller was successfully invoked with parameters
+        $this->logger->debug("CRUD6 [Base] Controller __invoke called", [
+            'controller_class' => get_class($this),
+            'schema_model' => $crudSchema['model'] ?? 'UNKNOWN',
+            'model_class' => get_class($crudModel),
+            'model_table' => $crudModel->getTable(),
+            'request_uri' => (string) $request->getUri(),
+            'request_method' => $request->getMethod(),
+            'schema_keys' => array_keys($crudSchema),
+        ]);
+        
         // Common logic here, e.g. logging, validation, etc.
         $modelName = $this->getModelNameFromRequest($request);
         $this->cachedSchema[$modelName] = $crudSchema;
         $this->validateAccess($modelName, 'read');
-        $this->logger->debug("Line 52 : Base::__invoke called for model: {$modelName}");
+        
+        $this->logger->debug("CRUD6 [Base] Common initialization complete", [
+            'model' => $modelName,
+            'cached_schema_count' => count($this->cachedSchema),
+        ]);
+        
         // You can set up other shared state here
         return $response;
     }

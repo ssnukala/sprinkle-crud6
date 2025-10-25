@@ -242,11 +242,40 @@ class CRUD6Injector extends AbstractInjector
             ->withAttribute($this->model_attribute, $instance)
             ->withAttribute($this->schema_attribute, $schema);
 
+        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Request attributes set", [
+            'model' => $this->currentModelName,
+            'model_attribute_name' => $this->model_attribute,
+            'schema_attribute_name' => $this->schema_attribute,
+            'model_class' => get_class($instance),
+            'model_table' => $instance->getTable(),
+            'has_model_attribute' => $request->getAttribute($this->model_attribute) !== null,
+            'has_schema_attribute' => $request->getAttribute($this->schema_attribute) !== null,
+        ]);
+
         $this->debugLogger->debug("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS COMPLETE =====", [
             'model' => $this->currentModelName,
         ]);
 
-        return $handler->handle($request);
+        try {
+            $response = $handler->handle($request);
+            
+            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Controller invocation successful", [
+                'model' => $this->currentModelName,
+                'response_status' => $response->getStatusCode(),
+            ]);
+            
+            return $response;
+        } catch (\Throwable $e) {
+            $this->debugLogger->error("CRUD6 [CRUD6Injector] Controller invocation failed", [
+                'model' => $this->currentModelName,
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**

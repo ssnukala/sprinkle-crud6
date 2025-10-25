@@ -4,6 +4,54 @@ UserFrosting 6 CRUD Sprinkle provides a generic API CRUD layer for any database 
 
 Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
 
+## 🚨 CRITICAL PATTERNS - DO NOT MODIFY 🚨
+
+### Controller Parameter Injection Pattern (Established in PR #119)
+
+**THIS PATTERN IS CORRECT AND WORKING - DO NOT CHANGE IT**
+
+All CRUD6 controllers MUST use this exact signature pattern:
+
+```php
+public function __invoke(
+    array $crudSchema,                      // ✅ Auto-injected from 'crudSchema' attribute
+    CRUD6ModelInterface $crudModel,         // ✅ Auto-injected from 'crudModel' attribute
+    ServerRequestInterface $request,
+    ResponseInterface $response
+): ResponseInterface
+```
+
+**Why this works:**
+- UserFrosting 6 extends Slim 4 with automatic parameter injection from request attributes
+- CRUD6Injector middleware sets BOTH `crudModel` and `crudSchema` request attributes
+- UserFrosting's framework automatically injects these as method parameters
+- This is NOT standard Slim 4 - it's a UserFrosting 6 enhancement
+
+**DO NOT:**
+- ❌ Change controllers to use `$request->getAttribute('crudSchema')` or `$request->getAttribute('crudModel')`
+- ❌ Remove the `array $crudSchema, CRUD6ModelInterface $crudModel` parameters
+- ❌ Assume this is wrong because "Slim 4 doesn't support this" (UserFrosting 6 does!)
+- ❌ Try to "fix" this pattern - it's working correctly
+- ❌ Modify CRUD6Injector to only inject one parameter
+
+**History:**
+- PR #119: Established this pattern for all controllers
+- This pattern matches sprinkle-admin's GroupApi + GroupInjector
+- Has been tested and verified working in production
+- Breaking this pattern causes 500 errors
+
+**Affected Files (ALL use this pattern):**
+- `app/src/Controller/ApiAction.php`
+- `app/src/Controller/CreateAction.php`
+- `app/src/Controller/DeleteAction.php`
+- `app/src/Controller/EditAction.php`
+- `app/src/Controller/RelationshipAction.php`
+- `app/src/Controller/SprunjeAction.php`
+- `app/src/Controller/UpdateFieldAction.php`
+- `app/src/Controller/Base.php`
+
+**If you see a 500 error, it's NOT because of this pattern - look elsewhere!**
+
 ## UserFrosting 6 Framework Reference
 
 ### Core Philosophy
@@ -64,7 +112,11 @@ Before creating new components, check if UserFrosting 6 already provides:
   - Middleware: `{Name}Injector.php` or `{Name}Middleware.php`
 
 #### 4. Middleware Injection Pattern
-**CRITICAL**: UserFrosting 6 supports automatic injection of middleware-set request attributes as controller parameters. This is a core framework feature used throughout UserFrosting.
+**⚠️ CRITICAL - SEE "CRITICAL PATTERNS" SECTION AT TOP OF FILE ⚠️**
+
+UserFrosting 6 supports automatic injection of middleware-set request attributes as controller parameters. This is a core framework feature used throughout UserFrosting.
+
+**THIS PATTERN IS WORKING CORRECTLY IN ALL CRUD6 CONTROLLERS - DO NOT MODIFY IT**
 
 **Pattern from sprinkle-admin** (GroupApi + GroupInjector):
 ```php
@@ -93,29 +145,63 @@ class GroupApi
 
 **CRUD6 Implementation** (CRUD6Injector + Controllers):
 ```php
-// Middleware sets attributes
-$request = $request
-    ->withAttribute('crudModel', $instance)
-    ->withAttribute('crudSchema', $schema);
+// Middleware (CRUD6Injector.php) sets BOTH attributes
+class CRUD6Injector extends AbstractInjector
+{
+    protected string $attribute = 'crudModel';  // Primary attribute for AbstractInjector
+    
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        // ... load schema and model ...
+        
+        // Set BOTH attributes - both will be auto-injected
+        $request = $request
+            ->withAttribute('crudModel', $instance)
+            ->withAttribute('crudSchema', $schema);
+        
+        return $handler->handle($request);
+    }
+}
 
-// Controllers receive as parameters - DO NOT CHANGE THIS PATTERN
+// Controllers receive BOTH as parameters - THIS IS THE CORRECT PATTERN
 public function __invoke(
-    array $crudSchema,                      // Injected from 'crudSchema' attribute
-    CRUD6ModelInterface $crudModel,         // Injected from 'crudModel' attribute  
+    array $crudSchema,                      // ✅ Auto-injected from 'crudSchema' attribute
+    CRUD6ModelInterface $crudModel,         // ✅ Auto-injected from 'crudModel' attribute  
     ServerRequestInterface $request,
     ResponseInterface $response
 ): ResponseInterface
+{
+    // Both $crudSchema and $crudModel are automatically available
+    // NO need to call $request->getAttribute('crudSchema') or $request->getAttribute('crudModel')
+}
 ```
 
-**DO NOT:**
-- ❌ Change controllers to retrieve from `$request->getAttribute()`
-- ❌ Assume Slim 4 doesn't support this (UserFrosting extends Slim with this capability)
-- ❌ Refactor working code that follows this pattern
+**WHY THIS WORKS:**
+- UserFrosting 6 extends Slim 4 with custom parameter resolution
+- The framework inspects controller method parameters by name and type
+- It automatically injects values from matching request attributes
+- This is NOT standard Slim 4 behavior - it's a UserFrosting 6 enhancement
+- Multiple parameters can be auto-injected (not limited to just one)
+
+**ABSOLUTELY DO NOT:**
+- ❌ Change controllers to retrieve from `$request->getAttribute('crudSchema')` or `$request->getAttribute('crudModel')`
+- ❌ Remove `array $crudSchema, CRUD6ModelInterface $crudModel` parameters from controllers
+- ❌ Assume Slim 4 doesn't support this (UserFrosting 6 does through its DI container!)
+- ❌ Try to "fix" this pattern because it "looks wrong" - it's the correct UserFrosting 6 pattern
+- ❌ Modify this pattern without checking ALL 8 controller files first
+- ❌ Make changes based on assumptions - verify against working sprinkle-admin examples
+
+**WHEN YOU SEE THIS PATTERN IN THE CODE:**
+1. ✅ Leave it alone - it's working correctly
+2. ✅ Trust that it matches the UserFrosting 6 framework design
+3. ✅ Reference sprinkle-admin's GroupApi as confirmation
+4. ✅ Check the git history - this was deliberately fixed in PR #119
 
 **Reference:**
-- [GroupApi.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Controller/Group/GroupApi.php)
-- [GroupInjector.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Middlewares/GroupInjector.php)
-- [PR #119](https://github.com/ssnukala/sprinkle-crud6/pull/119) - Fixed this pattern after it was broken
+- [GroupApi.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Controller/Group/GroupApi.php) - Official example
+- [GroupInjector.php](https://github.com/userfrosting/sprinkle-admin/blob/6.0/app/src/Middlewares/GroupInjector.php) - Official example
+- [PR #119](https://github.com/ssnukala/sprinkle-crud6/pull/119) - Established this pattern for all CRUD6 controllers
+- [.archive/MIDDLEWARE_INJECTION_PATTERN_CLARIFICATION.md](.archive/MIDDLEWARE_INJECTION_PATTERN_CLARIFICATION.md) - Detailed explanation
 
 #### 5. Testing Standards
 - Follow testing patterns from sprinkle-admin and sprinkle-account

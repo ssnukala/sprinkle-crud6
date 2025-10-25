@@ -118,41 +118,35 @@ class CRUD6Sprunje extends Sprunje
     }
 
     /**
-     * Apply filtering logic to the query.
+     * Apply global search filter across searchable fields.
      * 
-     * This method intercepts the "search" parameter and applies OR filtering
-     * across all searchable fields. This is in addition to any specific field
-     * filters that are applied by the parent class.
+     * This filter method is automatically called by the Sprunje when the "search"
+     * parameter is present in the request. It applies OR filtering across all
+     * fields defined in the $searchable array.
      * 
-     * @param mixed $query The query builder instance
+     * @param \Illuminate\Database\Eloquent\Builder $query      The query builder
+     * @param string                                 $value      The search term
      * 
-     * @return static
+     * @return \Illuminate\Database\Eloquent\Builder The modified query
      */
-    protected function applyTransformations($query): static
+    protected function filterSearch($query, $value)
     {
-        // First apply parent transformations (filters, sorts, etc.)
-        parent::applyTransformations($query);
-
-        // Handle global search if search parameter is present
-        if (isset($this->options['search']) && !empty($this->options['search'])) {
-            $searchTerm = $this->options['search'];
-            
-            // Apply search to all searchable fields using OR logic
-            if (!empty($this->searchable)) {
-                $query->where(function ($subQuery) use ($searchTerm) {
-                    $isFirst = true;
-                    foreach ($this->searchable as $field) {
-                        if ($isFirst) {
-                            $subQuery->where($field, 'LIKE', "%{$searchTerm}%");
-                            $isFirst = false;
-                        } else {
-                            $subQuery->orWhere($field, 'LIKE', "%{$searchTerm}%");
-                        }
-                    }
-                });
-            }
+        // Only apply search if we have searchable fields
+        if (empty($this->searchable)) {
+            return $query;
         }
 
-        return $this;
+        // Apply search to all searchable fields using OR logic
+        return $query->where(function ($subQuery) use ($value) {
+            $isFirst = true;
+            foreach ($this->searchable as $field) {
+                if ($isFirst) {
+                    $subQuery->where($field, 'LIKE', "%{$value}%");
+                    $isFirst = false;
+                } else {
+                    $subQuery->orWhere($field, 'LIKE', "%{$value}%");
+                }
+            }
+        });
     }
 }

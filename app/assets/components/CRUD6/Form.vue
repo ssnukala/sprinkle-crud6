@@ -110,23 +110,64 @@ const emits = defineEmits(['success'])
  * Methods - Submit the form to the API and handle the response
  */
 const submitForm = async () => {
+    console.log('[Form] ===== FORM SUBMIT START =====', {
+        model: props.model,
+        hasCrud6: !!props.crud6,
+        formData: formData.value,
+    })
+
     // Make sure validation is up to date
     const isValid = r$ ? await r$.$validate() : { valid: true }
-    if (!isValid.valid) return
+    
+    console.log('[Form] Validation result', {
+        model: props.model,
+        isValid: isValid.valid,
+        errors: r$ ? r$.$errors : null,
+    })
+
+    if (!isValid.valid) {
+        console.warn('[Form] Validation failed, form not submitted', {
+            model: props.model,
+            errors: r$ ? r$.$errors : null,
+        })
+        return
+    }
 
     // Use primary_key from schema, fallback to 'id'
     const primaryKey = schema.value?.primary_key || 'id'
     const recordId = props.crud6 ? props.crud6[primaryKey] : null
 
+    console.log('[Form] Preparing API call', {
+        model: props.model,
+        primaryKey,
+        recordId,
+        operation: recordId ? 'UPDATE' : 'CREATE',
+        formData: formData.value,
+    })
+
     const apiCall = recordId
         ? updateRow(recordId, formData.value)
         : createRow(formData.value)
+    
     apiCall
         .then(() => {
+            console.log('[Form] ===== FORM SUBMIT SUCCESS =====', {
+                model: props.model,
+                operation: recordId ? 'UPDATE' : 'CREATE',
+                recordId,
+            })
             emits('success')
             resetForm()
         })
-        .catch(() => {})
+        .catch((error) => {
+            console.error('[Form] ===== FORM SUBMIT FAILED =====', {
+                model: props.model,
+                operation: recordId ? 'UPDATE' : 'CREATE',
+                recordId,
+                error,
+                formData: formData.value,
+            })
+        })
 }
 
 /**

@@ -68,72 +68,151 @@ class SprunjeAction extends Base
     {
         parent::__invoke($crudSchema, $crudModel, $request, $response);
         
-        // Get the relation parameter if it exists
-        $relation = $this->getParameter($request, 'relation', 'NONE');
-        $this->logger->debug("SprunjeAction::__invoke called for relation: {$relation}");
-        
-        // Check if this relation is configured in the schema's detail section
-        $detailConfig = $crudSchema['detail'] ?? null;
-        
-        if ($relation !== 'NONE' && $detailConfig && $detailConfig['model'] === $relation) {
-            // Handle dynamic relation based on schema detail configuration
-            $this->logger->debug("Handling detail relation: {$relation}", $detailConfig);
+        $this->logger->debug("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
+            'model' => $crudSchema['model'],
+            'uri' => (string) $request->getUri(),
+            'query_params' => $request->getQueryParams(),
+        ]);
+
+        try {
+            // Get the relation parameter if it exists
+            $relation = $this->getParameter($request, 'relation', 'NONE');
             
-            // Load the related model's schema to get its configuration
-            $relatedSchema = $this->schemaService->getSchema($relation);
+            $this->logger->debug("CRUD6 [SprunjeAction] Request parameters parsed", [
+                'model' => $crudSchema['model'],
+                'relation' => $relation,
+                'has_detail_config' => isset($crudSchema['detail']),
+            ]);
             
-            // Get the foreign key from detail config
-            $foreignKey = $detailConfig['foreign_key'] ?? 'id';
+            // Check if this relation is configured in the schema's detail section
+            $detailConfig = $crudSchema['detail'] ?? null;
             
-            // Get query parameters
-            $params = $request->getQueryParams();
-            
-            // For 'users' relation, use UserSprunje for compatibility
-            if ($relation === 'users') {
-                $this->userSprunje->setOptions($params);
-                $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
+            if ($relation !== 'NONE' && $detailConfig && $detailConfig['model'] === $relation) {
+                // Handle dynamic relation based on schema detail configuration
+                $this->logger->debug("CRUD6 [SprunjeAction] Handling detail relation", [
+                    'model' => $crudSchema['model'],
+                    'relation' => $relation,
+                    'detail_config' => $detailConfig,
+                ]);
+                
+                // Load the related model's schema to get its configuration
+                $relatedSchema = $this->schemaService->getSchema($relation);
+                
+                $this->logger->debug("CRUD6 [SprunjeAction] Related schema loaded", [
+                    'relation' => $relation,
+                    'related_table' => $relatedSchema['table'] ?? null,
+                ]);
+                
+                // Get the foreign key from detail config
+                $foreignKey = $detailConfig['foreign_key'] ?? 'id';
+                
+                // Get query parameters
+                $params = $request->getQueryParams();
+                
+                $this->logger->debug("CRUD6 [SprunjeAction] Setting up relation sprunje", [
+                    'relation' => $relation,
+                    'foreign_key' => $foreignKey,
+                    'parent_id' => $crudModel->id,
+                    'query_params' => $params,
+                ]);
+                
+                // For 'users' relation, use UserSprunje for compatibility
+                if ($relation === 'users') {
+                    $this->logger->debug("CRUD6 [SprunjeAction] Using UserSprunje for users relation");
+                    
+                    $this->userSprunje->setOptions($params);
+                    $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
+                        return $query->where($foreignKey, $crudModel->id);
+                    });
+                    return $this->userSprunje->toResponse($response);
+                }
+                
+                // For other relations, use CRUD6Sprunje with dynamic configuration
+                $relatedModel = $this->schemaService->getModelInstance($relation);
+                
+                $sortableFields = $this->getSortableFieldsFromSchema($relatedSchema);
+                $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
+                $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
+                $searchableFields = $this->getSearchableFieldsFromSchema($relatedSchema);
+                
+                $this->logger->debug("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
+                    'relation' => $relation,
+                    'table' => $relatedModel->getTable(),
+                    'sortable_fields' => $sortableFields,
+                    'filterable_fields' => $filterableFields,
+                    'list_fields' => $listFields,
+                    'searchable_fields' => $searchableFields,
+                ]);
+                
+                // Setup sprunje with related model configuration
+                $this->sprunje->setupSprunje(
+                    $relatedModel->getTable(),
+                    $sortableFields,
+                    $filterableFields,
+                    $listFields,
+                    $searchableFields
+                );
+                
+                $this->sprunje->setOptions($params);
+                
+                // Filter by parent record's ID using the foreign key
+                $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
                     return $query->where($foreignKey, $crudModel->id);
                 });
-                return $this->userSprunje->toResponse($response);
+                
+                $this->logger->debug("CRUD6 [SprunjeAction] Relation sprunje configured, returning response", [
+                    'relation' => $relation,
+                    'parent_id' => $crudModel->id,
+                ]);
+                
+                return $this->sprunje->toResponse($response);
             }
             
-            // For other relations, use CRUD6Sprunje with dynamic configuration
-            $relatedModel = $this->schemaService->getModelInstance($relation);
+            // Default sprunje for main model listing
+            $modelName = $this->getModelNameFromRequest($request);
+            $params = $request->getQueryParams();
             
-            // Setup sprunje with related model configuration
+            $sortableFields = $this->getSortableFields($modelName);
+            $filterableFields = $this->getFilterableFields($modelName);
+            $listFields = $this->getListableFields($modelName);
+            $searchableFields = $this->getSearchableFields($modelName);
+
+            $this->logger->debug("CRUD6 [SprunjeAction] Setting up main model sprunje", [
+                'model' => $modelName,
+                'table' => $crudModel->getTable(),
+                'sortable_fields' => $sortableFields,
+                'filterable_fields' => $filterableFields,
+                'list_fields' => $listFields,
+                'searchable_fields' => $searchableFields,
+                'query_params' => $params,
+            ]);
+
             $this->sprunje->setupSprunje(
-                $relatedModel->getTable(),
-                $this->getSortableFieldsFromSchema($relatedSchema),
-                $this->getFilterableFieldsFromSchema($relatedSchema),
-                $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema),
-                $this->getSearchableFieldsFromSchema($relatedSchema)
+                $crudModel->getTable(),
+                $sortableFields,
+                $filterableFields,
+                $listFields,
+                $searchableFields
             );
-            
+
             $this->sprunje->setOptions($params);
             
-            // Filter by parent record's ID using the foreign key
-            $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
-                return $query->where($foreignKey, $crudModel->id);
-            });
-            
+            $this->logger->debug("CRUD6 [SprunjeAction] Main sprunje configured, returning response", [
+                'model' => $modelName,
+            ]);
+
             return $this->sprunje->toResponse($response);
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST FAILED =====", [
+                'model' => $crudSchema['model'],
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
         }
-        
-        // Default sprunje for main model listing
-        $modelName = $this->getModelNameFromRequest($request);
-        $params = $request->getQueryParams();
-
-        $this->sprunje->setupSprunje(
-            $crudModel->getTable(),
-            $this->getSortableFields($modelName),
-            $this->getFilterableFields($modelName),
-            $this->getListableFields($modelName),
-            $this->getSearchableFields($modelName)
-        );
-
-        $this->sprunje->setOptions($params);
-
-        return $this->sprunje->toResponse($response);
     }
     
     /**

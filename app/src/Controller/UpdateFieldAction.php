@@ -70,87 +70,191 @@ class UpdateFieldAction extends Base
         
         // Get the field name from the route
         $fieldName = $this->getParameter($request, 'field');
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
+        $recordId = $crudModel->getAttribute($primaryKey);
 
-        // Check if this field exists and is editable in the schema
-        if (!isset($crudSchema['fields'][$fieldName])) {
-            throw new \RuntimeException("Field '{$fieldName}' does not exist in schema for model '{$crudSchema['model']}'");
-        }
-
-        $fieldConfig = $crudSchema['fields'][$fieldName];
-
-        // Check if the field is readonly
-        if (isset($fieldConfig['readonly']) && $fieldConfig['readonly'] === true) {
-            throw new \RuntimeException("Field '{$fieldName}' is readonly and cannot be updated");
-        }
-
-        // Access control check
-        $this->validateAccess($crudSchema, 'update');
-
-        // The record is already loaded by the middleware into $crudModel
-
-        // Get PUT parameters
-        $params = (array) $request->getParsedBody();
-
-        // Create a validation schema for just this field
-        $validationSchema = new RequestSchema([
-            $fieldName => $fieldConfig['validation'] ?? []
+        $this->logger->debug("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST START =====", [
+            'model' => $crudSchema['model'],
+            'record_id' => $recordId,
+            'field' => $fieldName,
+            'uri' => (string) $request->getUri(),
         ]);
-
-        // Validate the single field
-        $validator = new ServerSideValidator($validationSchema, $this->translator);
-        if ($validator->validate($params) === false) {
-            $e = new ValidationException();
-            $e->addErrors($validator->errors());
-
-            throw $e;
-        }
-
-        // Transform data
-        $transformer = new RequestDataTransformer($validationSchema);
-        $data = $transformer->transform($params);
-
-        // Begin transaction
-        $this->db->beginTransaction();
 
         try {
-            // Only update the specific field
-            if (array_key_exists($fieldName, $data)) {
-                $crudModel->{$fieldName} = $data[$fieldName];
+            // Check if this field exists and is editable in the schema
+            if (!isset($crudSchema['fields'][$fieldName])) {
+                $this->logger->error("CRUD6 [UpdateFieldAction] Field does not exist", [
+                    'model' => $crudSchema['model'],
+                    'field' => $fieldName,
+                    'available_fields' => array_keys($crudSchema['fields'] ?? []),
+                ]);
+                throw new \RuntimeException("Field '{$fieldName}' does not exist in schema for model '{$crudSchema['model']}'");
             }
 
-            $crudModel->save();
+            $fieldConfig = $crudSchema['fields'][$fieldName];
 
-            // Get the current user for logging
-            /** @var UserInterface */
-            $currentUser = $this->authenticator->user();
+            // Check if the field is readonly
+            if (isset($fieldConfig['readonly']) && $fieldConfig['readonly'] === true) {
+                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update readonly field", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                ]);
+                throw new \RuntimeException("Field '{$fieldName}' is readonly and cannot be updated");
+            }
 
-            // Log activity
-            $this->userActivityLogger->info(
-                "User {$currentUser->user_name} updated field '{$fieldName}' for {$crudSchema['model']} {$crudModel->id}.",
-                [
-                    'type'    => 'update_field',
-                    'model'   => $crudSchema['model'],
-                    'id'      => $crudModel->id,
-                    'field'   => $fieldName,
-                ]
-            );
+            // Access control check
+            $this->validateAccess($crudSchema, 'update');
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Access validated", [
+                'model' => $crudSchema['model'],
+                'field' => $fieldName,
+            ]);
 
-            $this->db->commit();
+            // The record is already loaded by the middleware into $crudModel
+
+            // Get PUT parameters
+            $params = (array) $request->getParsedBody();
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Request parameters received", [
+                'model' => $crudSchema['model'],
+                'field' => $fieldName,
+                'params' => $params,
+            ]);
+
+            // Create a validation schema for just this field
+            $validationSchema = new RequestSchema([
+                $fieldName => $fieldConfig['validation'] ?? []
+            ]);
+
+            // Validate the single field
+            $validator = new ServerSideValidator($validationSchema, $this->translator);
+            if ($validator->validate($params) === false) {
+                $this->logger->error("CRUD6 [UpdateFieldAction] Validation failed", [
+                    'model' => $crudSchema['model'],
+                    'field' => $fieldName,
+                    'errors' => $validator->errors(),
+                ]);
+
+                $e = new ValidationException();
+                $e->addErrors($validator->errors());
+
+                throw $e;
+            }
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Validation passed", [
+                'model' => $crudSchema['model'],
+                'field' => $fieldName,
+            ]);
+
+            // Transform data
+            $transformer = new RequestDataTransformer($validationSchema);
+            $data = $transformer->transform($params);
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Data transformed", [
+                'model' => $crudSchema['model'],
+                'field' => $fieldName,
+                'transformed_data' => $data,
+            ]);
+
+            // Begin transaction
+            $this->db->beginTransaction();
+
+            try {
+                // Only update the specific field
+                if (array_key_exists($fieldName, $data)) {
+                    $oldValue = $crudModel->{$fieldName};
+                    $crudModel->{$fieldName} = $data[$fieldName];
+                    
+                    $this->logger->debug("CRUD6 [UpdateFieldAction] Field value updated", [
+                        'model' => $crudSchema['model'],
+                        'record_id' => $recordId,
+                        'field' => $fieldName,
+                        'old_value' => $oldValue,
+                        'new_value' => $data[$fieldName],
+                    ]);
+                }
+
+                $crudModel->save();
+                
+                $this->logger->debug("CRUD6 [UpdateFieldAction] Model saved to database", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                ]);
+
+                // Get the current user for logging
+                /** @var UserInterface */
+                $currentUser = $this->authenticator->user();
+
+                // Log activity
+                $this->userActivityLogger->info(
+                    "User {$currentUser->user_name} updated field '{$fieldName}' for {$crudSchema['model']} {$crudModel->id}.",
+                    [
+                        'type'    => 'update_field',
+                        'model'   => $crudSchema['model'],
+                        'id'      => $crudModel->id,
+                        'field'   => $fieldName,
+                    ]
+                );
+
+                $this->db->commit();
+                
+                $this->logger->debug("CRUD6 [UpdateFieldAction] Transaction committed", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                ]);
+            } catch (\Exception $e) {
+                $this->db->rollBack();
+                
+                $this->logger->error("CRUD6 [UpdateFieldAction] Transaction rolled back", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                    'error_type' => get_class($e),
+                    'error_message' => $e->getMessage(),
+                ]);
+
+                throw $e;
+            }
+
+            // Get updated record data
+            $recordData = $crudModel->toArray();
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Record data retrieved", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'field' => $fieldName,
+                'updated_value' => $recordData[$fieldName] ?? null,
+            ]);
+
+            // Success message
+            $message = $this->translator->translate('CRUD6.UPDATE_FIELD_SUCCESSFUL', [
+                'model' => $crudSchema['title'] ?? $crudSchema['model'],
+                'field' => $fieldConfig['label'] ?? $fieldName,
+            ]);
+            
+            $this->logger->debug("CRUD6 [UpdateFieldAction] Update field response prepared", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'field' => $fieldName,
+                'message' => $message,
+            ]);
+
+            return ApiResponse::success($response, $message, $recordData);
         } catch (\Exception $e) {
-            $this->db->rollBack();
-
+            $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'field' => $fieldName,
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             throw $e;
         }
-
-        // Get updated record data
-        $recordData = $crudModel->toArray();
-
-        // Success message
-        $message = $this->translator->translate('CRUD6.UPDATE_FIELD_SUCCESSFUL', [
-            'model' => $crudSchema['title'] ?? $crudSchema['model'],
-            'field' => $fieldConfig['label'] ?? $fieldName,
-        ]);
-
-        return ApiResponse::success($response, $message, $recordData);
     }
 }

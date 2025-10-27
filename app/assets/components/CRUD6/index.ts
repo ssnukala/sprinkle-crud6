@@ -4,6 +4,8 @@ import CRUD6EditModal from './EditModal.vue'
 import CRUD6Form from './Form.vue'
 import CRUD6Info from './Info.vue'
 import CRUD6Details from './Details.vue'
+import CRUD6DetailGrid from './DetailGrid.vue'
+import CRUD6MasterDetailForm from './MasterDetailForm.vue'
 
 export {
     CRUD6CreateModal,
@@ -11,5 +13,7 @@ export {
     CRUD6EditModal,
     CRUD6Form,
     CRUD6Info,
-    CRUD6Details
+    CRUD6Details,
+    CRUD6DetailGrid,
+    CRUD6MasterDetailForm
 }

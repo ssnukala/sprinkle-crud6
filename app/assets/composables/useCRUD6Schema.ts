@@ -22,6 +22,16 @@ export interface DetailConfig {
     title?: string
 }
 
+export interface DetailEditableConfig {
+    model: string
+    foreign_key: string
+    fields: string[]
+    title?: string
+    allow_add?: boolean
+    allow_edit?: boolean
+    allow_delete?: boolean
+}
+
 export interface CRUD6Schema {
     model: string
     title: string
@@ -39,6 +49,7 @@ export interface CRUD6Schema {
     default_sort?: Record<string, 'asc' | 'desc'>
     fields: Record<string, SchemaField>
     detail?: DetailConfig
+    detail_editable?: DetailEditableConfig
 }
 
 /**

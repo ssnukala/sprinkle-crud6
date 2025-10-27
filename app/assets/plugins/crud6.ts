@@ -10,7 +10,9 @@ import {
     CRUD6EditModal,
     CRUD6Form,
     CRUD6Info,
-    CRUD6Details
+    CRUD6Details,
+    CRUD6DetailGrid,
+    CRUD6MasterDetailForm
 } from '../components/CRUD6'
 
 /**
@@ -87,6 +89,8 @@ export default {
             .component('UFCRUD6Form', CRUD6Form)
             .component('UFCRUD6Info', CRUD6Info)
             .component('UFCRUD6Details', CRUD6Details)
+            .component('UFCRUD6DetailGrid', CRUD6DetailGrid)
+            .component('UFCRUD6MasterDetailForm', CRUD6MasterDetailForm)
     }
 }
 
@@ -103,5 +107,7 @@ declare module 'vue' {
         UFCRUD6Form: typeof CRUD6Form
         UFCRUD6Info: typeof CRUD6Info
         UFCRUD6Details: typeof CRUD6Details
+        UFCRUD6DetailGrid: typeof CRUD6DetailGrid
+        UFCRUD6MasterDetailForm: typeof CRUD6MasterDetailForm
     }
 }

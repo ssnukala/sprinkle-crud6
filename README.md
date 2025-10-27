@@ -12,7 +12,9 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
 - **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
+- **Master-Detail Data Entry**: Create and edit master records with their detail records in a single form
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
+- **Inline Editable Grids**: Edit detail records with add/edit/delete capabilities
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
 - **Sorting & Filtering**: Automatic sortable and filterable columns
@@ -228,6 +230,56 @@ When viewing a group detail page, the users belonging to that group will be auto
 
 See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) for more information.
 
+### Master-Detail Data Entry Configuration
+
+Configure editable master-detail relationships to allow creating/editing master records with their detail records in a single form:
+
+```json
+{
+  "model": "orders",
+  "title": "Order Management",
+  "table": "orders",
+  "detail_editable": {
+    "model": "order_details",
+    "foreign_key": "order_id",
+    "fields": ["line_number", "sku", "product_name", "quantity", "unit_price", "notes"],
+    "title": "Order Items",
+    "allow_add": true,
+    "allow_edit": true,
+    "allow_delete": true
+  },
+  "fields": {
+    "id": { "type": "integer", "auto_increment": true },
+    "order_number": { "type": "string", "required": true },
+    "customer_name": { "type": "string", "required": true },
+    "total_amount": { "type": "decimal", "readonly": true }
+  }
+}
+```
+
+**Detail Editable Configuration Properties:**
+- **model**: The detail model name
+- **foreign_key**: The foreign key field in detail records that references the master
+- **fields**: Array of field names to display in the editable grid
+- **title** (optional): Title for the detail section
+- **allow_add** (optional): Allow adding new detail records (default: true)
+- **allow_edit** (optional): Allow editing detail records (default: true)
+- **allow_delete** (optional): Allow deleting detail records (default: true)
+
+**Use Cases:**
+- **Order Entry**: Create orders with line items in a single form
+- **Invoice Management**: Create invoices with detail lines
+- **Bill of Materials**: Define products with component lists
+- **Any One-to-Many Relationship**: Where child records need to be managed with the parent
+
+The master-detail form includes:
+- Standard form fields for the master record
+- Inline editable grid for detail records with add/edit/delete
+- Single save operation that processes both master and details
+- Automatic foreign key population for detail records
+
+See [Master-Detail Usage Guide](examples/master-detail-usage.md) for detailed examples and code samples.
+
 ### Many-to-Many Relationship Configuration
 
 Define many-to-many relationships for managing associations through pivot tables:
@@ -409,6 +461,10 @@ This sprinkle includes a complete set of Vue.js components and views for buildin
 - `Info.vue` - Display record information with edit/delete actions
 - `Users.vue` - Related users display (for group/role management)
 
+**Master-Detail Components:**
+- `MasterDetailForm.vue` - Complete master-detail form for creating/editing records with their details
+- `DetailGrid.vue` - Inline editable grid for managing detail records with add/edit/delete capabilities
+
 #### Component Registration
 
 Components are automatically registered globally when the sprinkle is installed. You can use them directly in your templates:
@@ -419,9 +475,26 @@ Components are automatically registered globally when the sprinkle is installed.
   <UFCRUD6ListPage />
   <UFCRUD6RowPage />
   
-  <!-- Or use individual components -->
+  <!-- Use individual components -->
   <UFCRUD6CreateModal :model="'users'" :schema="schema" @saved="refresh" />
   <UFCRUD6EditModal :crud6="record" :model="'users'" :schema="schema" @saved="refresh" />
+  
+  <!-- Use master-detail components -->
+  <UFCRUD6MasterDetailForm 
+    model="orders" 
+    :record-id="orderId"
+    :detail-config="detailConfig" 
+    @saved="handleSaved"
+  />
+  
+  <UFCRUD6DetailGrid
+    v-model="detailRecords"
+    :detail-schema="detailSchema"
+    :fields="['line_number', 'sku', 'quantity', 'price']"
+    :allow-add="true"
+    :allow-edit="true"
+    :allow-delete="true"
+  />
 </template>
 ```
 
@@ -433,7 +506,8 @@ The sprinkle provides Vue composables for API interactions:
 import { 
   useCRUD6Api, 
   useCRUD6Schema, 
-  useCRUD6Relationships 
+  useCRUD6Relationships,
+  useMasterDetail
 } from '@ssnukala/sprinkle-crud6/composables'
 
 // CRUD operations
@@ -464,6 +538,23 @@ const {
 // Manage user roles
 await attachRelationships('users', '5', 'roles', [1, 2, 3])
 await detachRelationships('users', '5', 'roles', [2])
+
+// Master-detail operations
+const {
+  saveMasterWithDetails,
+  loadDetails,
+  apiLoading,
+  apiError
+} = useMasterDetail('orders', 'order_details', 'order_id')
+
+// Save order with line items
+await saveMasterWithDetails(
+  orderId,  // null for create
+  { order_number: 'ORD-001', customer_name: 'John Doe' },  // Master data
+  [  // Detail records
+    { line_number: 1, sku: 'PROD-001', quantity: 10, unit_price: 9.99, _action: 'create' }
+  ]
+)
 ```
 
 #### Routes

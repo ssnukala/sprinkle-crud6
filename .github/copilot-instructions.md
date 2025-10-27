@@ -110,6 +110,10 @@ Before creating new components, check if UserFrosting 6 already provides:
   - Service Providers: `{Name}ServiceProvider.php`
   - Sprunje: `{Model}Sprunje.php`
   - Middleware: `{Name}Injector.php` or `{Name}Middleware.php`
+- **Folder Structure**: ONLY create folders when they contain actual content
+  - DO NOT create empty folders or folders with only `.gitkeep` files
+  - Runtime directories (cache, logs, sessions, storage, database) are excluded in `.gitignore` and created by the application
+  - Test directories should ONLY contain CRUD6-specific tests, not copies from other sprinkles
 
 #### 4. Middleware Injection Pattern
 **⚠️ CRITICAL - SEE "CRITICAL PATTERNS" SECTION AT TOP OF FILE ⚠️**
@@ -432,6 +436,15 @@ examples/                   # Usage examples and documentation
 - `composer.json`: Project dependencies and scripts
 - `phpunit.xml`: PHPUnit test suite configuration
 - `app/schema/crud6/*.json`: Schema definitions for different models
+
+### Folder Creation Policy
+**CRITICAL**: Do NOT create empty folders or folders with only `.gitkeep` files in this repository.
+
+- **Runtime directories** (cache, logs, sessions, storage, database) are managed by the UserFrosting application at runtime and should NOT be created in the sprinkle repository
+- **Test directories** should only contain CRUD6-specific tests, not tests from other UserFrosting sprinkles (e.g., admin sprinkle's Role/Group/User tests)
+- Only create folders when they contain actual content relevant to the CRUD6 sprinkle
+- The `.gitignore` file excludes runtime directories - they will be created by the application when needed
+- If you find empty folders or non-CRUD6 test folders, they should be removed to keep the repository clean
 
 ## Time Expectations
 

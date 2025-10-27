@@ -18,6 +18,13 @@ mix-manifest.json
 .DS_Store
 Thumbs.db
 
+# Runtime directories
+app/cache/
+app/logs/
+app/sessions/
+app/storage/
+app/database/
+
 # Logs
 *.log
 npm-debug.log*

@@ -27,7 +27,7 @@ export default [
                         slug: 'uri_crud6'
                     }
                 },
-                component: () => import('../views/PageRow.vue')
+                component: () => import('../views/PageDynamic.vue')
             }
         ]
     }

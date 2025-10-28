@@ -13,7 +13,9 @@ import {
 // Test that views can be imported
 import {
     CRUD6RowPage,
-    CRUD6ListPage
+    CRUD6ListPage,
+    CRUD6MasterDetailPage,
+    CRUD6DynamicPage
 } from '../../views'
 
 describe('Component Imports', () => {
@@ -32,5 +34,7 @@ describe('Component Imports', () => {
     test('CRUD6 view pages should be defined', () => {
         expect(CRUD6RowPage).toBeDefined()
         expect(CRUD6ListPage).toBeDefined()
+        expect(CRUD6MasterDetailPage).toBeDefined()
+        expect(CRUD6DynamicPage).toBeDefined()
     })
 })

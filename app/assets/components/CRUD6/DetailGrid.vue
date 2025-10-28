@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import type { DetailRecord } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import CRUD6AutoLookup from './AutoLookup.vue'
 
 /**
  * DetailGrid Component
@@ -82,6 +83,9 @@ function addRow() {
                     break
                 case 'boolean':
                     newRow[fieldKey] = config.default ?? false
+                    break
+                case 'smartlookup':
+                    newRow[fieldKey] = config.default ?? null
                     break
                 default:
                     newRow[fieldKey] = config.default ?? ''
@@ -177,6 +181,9 @@ const calculateLineTotal = (row: DetailRecord): number => {
                                 <template v-else-if="getFieldType(fieldKey) === 'decimal' || getFieldType(fieldKey) === 'float'">
                                     {{ Number(row[fieldKey]).toFixed(2) }}
                                 </template>
+                                <template v-else-if="getFieldType(fieldKey) === 'smartlookup'">
+                                    {{ row[fieldKey] }}
+                                </template>
                                 <template v-else>
                                     {{ row[fieldKey] }}
                                 </template>
@@ -212,6 +219,17 @@ const calculateLineTotal = (row: DetailRecord): number => {
                                     class="uk-checkbox"
                                     :checked="row[fieldKey]"
                                     @change="onFieldChange(index, fieldKey, ($event.target as HTMLInputElement).checked)"
+                                    :disabled="disabled || allowEdit === false"
+                                />
+
+                                <!-- SmartLookup field -->
+                                <CRUD6AutoLookup
+                                    v-else-if="getFieldType(fieldKey) === 'smartlookup'"
+                                    :model="getFieldConfig(fieldKey).lookup_model || getFieldConfig(fieldKey).model"
+                                    :id-field="getFieldConfig(fieldKey).lookup_id || getFieldConfig(fieldKey).id || 'id'"
+                                    :display-field="getFieldConfig(fieldKey).lookup_desc || getFieldConfig(fieldKey).desc || 'name'"
+                                    :model-value="row[fieldKey]"
+                                    @update:model-value="onFieldChange(index, fieldKey, $event)"
                                     :disabled="disabled || allowEdit === false"
                                 />
 

@@ -35,6 +35,7 @@ export interface DetailEditableConfig {
 export interface CRUD6Schema {
     model: string
     title: string
+    singular_title?: string
     description?: string
     table: string
     primary_key: string
@@ -50,6 +51,13 @@ export interface CRUD6Schema {
     fields: Record<string, SchemaField>
     detail?: DetailConfig
     detail_editable?: DetailEditableConfig
+    /** 
+     * Render mode for the detail page
+     * - 'row': Use PageRow component (default)
+     * - 'master-detail': Use PageMasterDetail component
+     * If not specified, defaults to 'master-detail' when detail_editable is present, otherwise 'row'
+     */
+    render_mode?: 'row' | 'master-detail'
 }
 
 /**

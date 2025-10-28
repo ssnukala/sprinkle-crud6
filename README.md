@@ -12,6 +12,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
 - **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
+- **AutoLookup Component**: Generic searchable auto-complete for selecting records from any model
 - **Master-Detail Data Entry**: Create and edit master records with their detail records in a single form
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
 - **Inline Editable Grids**: Edit detail records with add/edit/delete capabilities
@@ -465,6 +466,9 @@ This sprinkle includes a complete set of Vue.js components and views for buildin
 - `MasterDetailForm.vue` - Complete master-detail form for creating/editing records with their details
 - `DetailGrid.vue` - Inline editable grid for managing detail records with add/edit/delete capabilities
 
+**Lookup Components:**
+- `AutoLookup.vue` - Generic searchable auto-complete component for selecting records from any model
+
 #### Component Registration
 
 Components are automatically registered globally when the sprinkle is installed. You can use them directly in your templates:
@@ -495,8 +499,85 @@ Components are automatically registered globally when the sprinkle is installed.
     :allow-edit="true"
     :allow-delete="true"
   />
+  
+  <!-- Use lookup components for searchable selection -->
+  <UFCRUD6AutoLookup
+    model="products"
+    id-field="id"
+    :display-fields="['sku', 'name']"
+    placeholder="Search products..."
+    v-model="selectedProductId"
+    @select="handleProductSelect"
+  />
 </template>
 ```
+
+##### AutoLookup Component
+
+The AutoLookup component provides a searchable auto-complete interface for selecting records from any CRUD6 model. Perfect for product lookups, category selection, or any scenario where you need to search and select from a large dataset.
+
+**Basic Usage:**
+```vue
+<UFCRUD6AutoLookup
+  model="products"
+  id-field="id"
+  display-field="name"
+  placeholder="Search for a product..."
+  v-model="selectedProductId"
+  @select="handleProductSelect"
+/>
+```
+
+**With Multiple Display Fields:**
+```vue
+<UFCRUD6AutoLookup
+  model="products"
+  id-field="id"
+  :display-fields="['sku', 'name']"
+  placeholder="Search by SKU or name..."
+  v-model="selectedProductId"
+/>
+```
+
+**With Custom Display Format:**
+```vue
+<UFCRUD6AutoLookup
+  model="products"
+  id-field="id"
+  :display-format="(item) => `${item.sku} - ${item.name} ($${item.price})`"
+  placeholder="Search products..."
+  v-model="selectedProductId"
+/>
+```
+
+**Key Features:**
+- Works with any CRUD6 model
+- Real-time search with debouncing
+- Keyboard navigation (arrows, enter, escape)
+- Configurable display fields
+- Custom format functions
+- Loading states and clear button
+- v-model support
+- Form validation support
+
+**Props:**
+- `model` - CRUD6 model name (required)
+- `id-field` - ID field name (default: 'id')
+- `display-field` - Single field to display (default: 'name')
+- `display-fields` - Array of fields to display (alternative to display-field)
+- `display-format` - Custom format function
+- `placeholder` - Input placeholder text
+- `min-search-length` - Minimum characters before search (default: 1)
+- `debounce-delay` - Debounce delay in ms (default: 300)
+- `required` - Field is required
+- `disabled` - Field is disabled
+
+**Events:**
+- `@select` - Fired when item is selected (includes full item data)
+- `@clear` - Fired when selection is cleared
+- `@update:modelValue` - v-model update (selected ID)
+
+For detailed documentation and more examples, see [AutoLookup Documentation](docs/AutoLookup.md).
 
 #### Composables
 

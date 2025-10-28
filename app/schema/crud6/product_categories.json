@@ -1,0 +1,58 @@
+{
+  "model": "product_categories",
+  "title": "Product Category Assignments",
+  "singular_title": "Product Category",
+  "description": "Manage product-category relationships",
+  "table": "product_categories",
+  "permissions": {
+    "read": "view_products",
+    "create": "edit_product",
+    "update": "edit_product",
+    "delete": "edit_product"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": true
+    },
+    "product_id": {
+      "type": "integer",
+      "label": "Product ID",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true,
+      "validation": {
+        "required": true
+      }
+    },
+    "category_id": {
+      "type": "integer",
+      "label": "Category ID",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true,
+      "validation": {
+        "required": true
+      }
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": false
+    }
+  }
+}

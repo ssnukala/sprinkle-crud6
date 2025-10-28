@@ -3,6 +3,7 @@ import { watch, computed, onMounted } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import CRUD6AutoLookup from './AutoLookup.vue'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -244,9 +245,21 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
                     </button>
                     
+                    <!-- SmartLookup field -->
+                    <CRUD6AutoLookup
+                        v-if="field.type === 'smartlookup'"
+                        :model="field.lookup_model || field.model"
+                        :id-field="field.lookup_id || field.id || 'id'"
+                        :display-field="field.lookup_desc || field.desc || 'name'"
+                        :placeholder="field.placeholder"
+                        :required="field.required"
+                        :disabled="field.readonly"
+                        v-model="formData[fieldKey]"
+                    />
+                    
                     <!-- Text input -->
                     <input
-                        v-if="['string', 'email', 'url'].includes(field.type) || !field.type"
+                        v-else-if="['string', 'email', 'url'].includes(field.type) || !field.type"
                         :id="fieldKey"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"

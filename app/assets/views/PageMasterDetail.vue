@@ -2,12 +2,26 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
-import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6Api, useCRUD6Schema, useMasterDetail } from '@ssnukala/sprinkle-crud6/composables'
+import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
+import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6Info from '../components/CRUD6/Info.vue'
 import CRUD6Details from '../components/CRUD6/Details.vue'
+import CRUD6DetailGrid from '../components/CRUD6/DetailGrid.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
-import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+
+/**
+ * PageMasterDetail Component
+ * 
+ * Extends PageRow with master-detail features:
+ * - Supports master record with related detail records
+ * - Provides inline detail editing with DetailGrid
+ * - Supports "smartlookup" field type for autolookup functionality
+ * - Saves master and details together in a single transaction
+ * 
+ * Usage:
+ * Route should include detailConfig in meta or component props
+ */
 
 /**
  * Variables and composables
@@ -19,7 +33,7 @@ const page = usePageMeta()
 // Get model and ID from route parameters
 const model = computed(() => route.params.model as string)
 const recordId = computed(() => route.params.id as string)
-const isCreateMode = computed(() => route.name === 'crud6-create')
+const isCreateMode = computed(() => route.name === 'crud6-create' || route.name === 'crud6-master-detail-create')
 const isEditMode = ref(isCreateMode.value)
 
 // Use composables for schema and API
@@ -31,8 +45,14 @@ const {
     hasPermission
 } = useCRUD6Schema()
 
+// Load detail schema for detail_editable configuration
 const {
-    fetchRows,
+    schema: detailSchema,
+    loading: detailSchemaLoading,
+    loadSchema: loadDetailSchema
+} = useCRUD6Schema()
+
+const {
     fetchRow,
     createRow,
     updateRow,
@@ -41,6 +61,9 @@ const {
     formData,
     resetForm
 } = useCRUD6Api()
+
+// Master-detail composable - will be initialized when schema is loaded
+let masterDetailComposable: ReturnType<typeof useMasterDetail> | null = null
 
 // Helper function to create initial object based on schema
 function createInitialRecord(schemaFields?: any): CRUD6Response {
@@ -106,9 +129,12 @@ const CRUD6Row = ref<CRUD6Response>(createInitialRecord())
 const record = ref<CRUD6Interface | null>(null)
 const originalRecord = ref<CRUD6Interface | null>(null)
 
+// Detail records for master-detail editing
+const detailRecords = ref<DetailRecord[]>([])
+
 // Combined loading and error states
-const loading = computed(() => schemaLoading.value || apiLoading.value)
-const error = computed(() => schemaError.value || apiError.value)
+const loading = computed(() => schemaLoading.value || detailSchemaLoading.value || apiLoading.value)
+const error = computed(() => schemaError.value || detailSchemaError.value || apiError.value)
 
 // Permission checks
 const hasCreatePermission = computed(() => hasPermission('create'))
@@ -123,10 +149,20 @@ const modelLabel = computed(() => {
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
 })
 
+// Check if this is a master-detail enabled schema
+const hasMasterDetail = computed(() => {
+    return schema.value?.detail_editable !== undefined
+})
+
+// Get the detail configuration
+const detailConfig = computed(() => {
+    return schema.value?.detail_editable as DetailEditableConfig | undefined
+})
+
 /**
  * Methods - Fetch record
  */
-function fetch() {
+async function fetch() {
     if (recordId.value && fetchRow) {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
@@ -146,6 +182,24 @@ function fetch() {
     }
 }
 
+// Load detail records for editing
+async function loadDetailRecords() {
+    if (!hasMasterDetail.value || !recordId.value || !masterDetailComposable) {
+        return
+    }
+    
+    try {
+        const details = await masterDetailComposable.loadDetails(recordId.value)
+        detailRecords.value = details.map(detail => ({
+            ...detail,
+            _action: 'update' as const
+        }))
+        console.log('[PageMasterDetail] Detail records loaded', { count: detailRecords.value.length })
+    } catch (error) {
+        console.error('[PageMasterDetail] Failed to load details:', error)
+    }
+}
+
 // Actions for form management
 function goBack() {
     router.push(`/crud6/${model.value}`)
@@ -157,22 +211,46 @@ function cancelEdit() {
         CRUD6Row.value = { ...originalRecord.value } as CRUD6Response
     }
     isEditMode.value = false
+    
+    // Reload detail records if in master-detail mode
+    if (hasMasterDetail.value && recordId.value) {
+        loadDetailRecords()
+    }
 }
 
 async function saveRecord() {
     if (!record.value) return
 
     try {
-        if (isCreateMode.value) {
-            await createRow(record.value)
+        if (hasMasterDetail.value && masterDetailComposable) {
+            // Save master and details together
+            console.log('[PageMasterDetail] Saving master with details', {
+                recordId: recordId.value,
+                record: record.value,
+                detailCount: detailRecords.value.length
+            })
+            
+            await masterDetailComposable.saveMasterWithDetails(
+                isCreateMode.value ? null : recordId.value,
+                record.value,
+                detailRecords.value
+            )
+            
+            // Navigate back to list
             router.push(`/crud6/${model.value}`)
         } else {
-            await updateRow(recordId.value, record.value)
-            isEditMode.value = false
-            originalRecord.value = { ...record.value }
-            CRUD6Row.value = { ...record.value } as CRUD6Response
-            // Refresh the data
-            fetch()
+            // Standard save for non-master-detail records
+            if (isCreateMode.value) {
+                await createRow(record.value)
+                router.push(`/crud6/${model.value}`)
+            } else {
+                await updateRow(recordId.value, record.value)
+                isEditMode.value = false
+                originalRecord.value = { ...record.value }
+                CRUD6Row.value = { ...record.value } as CRUD6Response
+                // Refresh the data
+                fetch()
+            }
         }
     } catch (error) {
         console.error('Save failed:', error)
@@ -221,6 +299,9 @@ watch(
     () => {
         if (!isCreateMode.value) {
             fetch()
+            if (hasMasterDetail.value) {
+                loadDetailRecords()
+            }
         }
     },
     { immediate: false }
@@ -229,10 +310,28 @@ watch(
 // Watch for schema changes to update initial record structure
 watch(
     () => schema.value,
-    (newSchema) => {
+    async (newSchema) => {
         if (newSchema?.fields && isCreateMode.value) {
             // Update the initial record structure when schema loads in create mode
             CRUD6Row.value = createInitialRecord(newSchema.fields)
+        }
+        
+        // Initialize master-detail composable if needed
+        if (newSchema?.detail_editable && !masterDetailComposable) {
+            const detailConfig = newSchema.detail_editable
+            masterDetailComposable = useMasterDetail(
+                model.value,
+                detailConfig.model,
+                detailConfig.foreign_key
+            )
+            
+            // Load detail schema
+            await loadDetailSchema(detailConfig.model)
+            
+            // Load detail records if editing
+            if (!isCreateMode.value && recordId.value) {
+                loadDetailRecords()
+            }
         }
     }
 )
@@ -241,7 +340,7 @@ watch(
 let currentModel = ''
 watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
-        console.log('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
+        console.log('[PageMasterDetail] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
         // Set initial page title immediately for breadcrumbs
         const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
@@ -251,7 +350,7 @@ watch(model, async (newModel) => {
         const schemaPromise = loadSchema(newModel)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
-            console.log('[PageRow] Schema loaded successfully for model:', newModel)
+            console.log('[PageMasterDetail] Schema loaded successfully for model:', newModel)
             
             // Update page title and description
             if (schema.value) {
@@ -272,6 +371,9 @@ watch(model, async (newModel) => {
 watch(recordId, (newId) => {
     if (newId && !isCreateMode.value) {
         fetch()
+        if (hasMasterDetail.value) {
+            loadDetailRecords()
+        }
     }
 }, { immediate: true })
 </script>
@@ -280,15 +382,184 @@ watch(recordId, (newId) => {
     <template v-if="error">
         <UFErrorPage :errorCode="error.status || 500" />
     </template>
-    <template v-else-if="loading">
+    <template v-else-if="loading && !schema">
         <div class="uk-text-center uk-padding">
             <div uk-spinner></div>
             <p>{{ $t('LOADING') }}</p>
         </div>
     </template>
     <template v-else>
-        <!-- Schema-driven edit/create mode -->
-        <div v-if="isEditMode && schema" class="uk-container">
+        <!-- Master-Detail edit/create mode -->
+        <div v-if="isEditMode && schema && hasMasterDetail" class="uk-container">
+            <div class="uk-card uk-card-default">
+                <div class="uk-card-header">
+                    <div class="uk-flex uk-flex-between uk-flex-middle">
+                        <div>
+                            <h3 class="uk-card-title uk-margin-remove">
+                                {{ isCreateMode ? $t('CRUD6.CREATE', { model: schema?.title || model }) : $t('CRUD6.EDIT', { model: schema?.title || model }) }}
+                            </h3>
+                            <small v-if="recordId" class="uk-text-muted">ID: {{ recordId }}</small>
+                        </div>
+                        <div>
+                            <button
+                                type="button"
+                                class="uk-button uk-button-default"
+                                @click="goBack">
+                                <font-awesome-icon icon="arrow-left" /> Back
+                            </button>
+                            <button
+                                type="button"
+                                class="uk-button uk-button-primary"
+                                @click="saveRecord"
+                                :disabled="loading">
+                                <font-awesome-icon icon="save" /> Save
+                            </button>
+                            <button
+                                v-if="!isCreateMode"
+                                type="button"
+                                class="uk-button uk-button-secondary"
+                                @click="cancelEdit">
+                                <font-awesome-icon icon="times" /> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="uk-card-body">
+                    <!-- Master Record Form -->
+                    <form v-if="schema && record" @submit.prevent="saveRecord" class="uk-form-stacked">
+                        <div class="uk-grid-small" uk-grid>
+                            <div
+                                v-for="[fieldKey, field] in Object.entries(schema.fields)"
+                                :key="fieldKey"
+                                :class="field.width || (field.type === 'text' ? 'uk-width-1-1' : 'uk-width-1-2')"
+                                v-if="field.editable !== false">
+                                
+                                <label :for="fieldKey" class="uk-form-label">
+                                    {{ field.label || fieldKey }}
+                                    <span v-if="field.required" class="uk-text-danger">*</span>
+                                </label>
+                                
+                                <!-- SmartLookup field -->
+                                <CRUD6AutoLookup
+                                    v-if="field.type === 'smartlookup'"
+                                    :model="field.lookup_model || field.model"
+                                    :id-field="field.lookup_id || field.id || 'id'"
+                                    :display-field="field.lookup_desc || field.desc || 'name'"
+                                    :placeholder="field.placeholder"
+                                    :required="field.required"
+                                    v-model="record[fieldKey]"
+                                />
+                                
+                                <!-- Text input -->
+                                <input
+                                    v-else-if="field.type === 'string' || !field.type"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    type="text"
+                                    class="uk-input"
+                                    :required="field.required"
+                                    :placeholder="field.placeholder"
+                                />
+                                
+                                <!-- Number input -->
+                                <input
+                                    v-else-if="['integer', 'decimal', 'float'].includes(field.type)"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    type="number"
+                                    class="uk-input"
+                                    :required="field.required"
+                                    :step="field.type === 'integer' ? '1' : 'any'"
+                                />
+                                
+                                <!-- Boolean checkbox -->
+                                <label v-else-if="field.type === 'boolean'" class="uk-form-label">
+                                    <input
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="checkbox"
+                                        class="uk-checkbox"
+                                    />
+                                    {{ field.label || fieldKey }}
+                                </label>
+                                
+                                <!-- Date input -->
+                                <input
+                                    v-else-if="field.type === 'date'"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    type="date"
+                                    class="uk-input"
+                                    :required="field.required"
+                                />
+                                
+                                <!-- DateTime input -->
+                                <input
+                                    v-else-if="field.type === 'datetime'"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    type="datetime-local"
+                                    class="uk-input"
+                                    :required="field.required"
+                                />
+                                
+                                <!-- Text area -->
+                                <textarea
+                                    v-else-if="field.type === 'text'"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    class="uk-textarea"
+                                    :rows="field.rows || 3"
+                                    :required="field.required"
+                                    :placeholder="field.placeholder"
+                                ></textarea>
+                                
+                                <!-- JSON field -->
+                                <textarea
+                                    v-else-if="field.type === 'json'"
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    class="uk-textarea"
+                                    :rows="field.rows || 5"
+                                    placeholder="Enter valid JSON"
+                                ></textarea>
+                                
+                                <!-- Default text input -->
+                                <input
+                                    v-else
+                                    :id="fieldKey"
+                                    v-model="record[fieldKey]"
+                                    type="text"
+                                    class="uk-input"
+                                    :required="field.required"
+                                />
+                                
+                                <small v-if="field.description" class="uk-text-muted">
+                                    {{ field.description }}
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Detail Records Section -->
+                    <div v-if="detailConfig && detailSchema" class="uk-margin-top">
+                        <h4>{{ detailConfig.title || detailSchema.title }}</h4>
+                        <CRUD6DetailGrid
+                            v-model="detailRecords"
+                            :detail-schema="detailSchema"
+                            :fields="detailConfig.fields"
+                            :allow-add="detailConfig.allow_add !== false"
+                            :allow-edit="detailConfig.allow_edit !== false"
+                            :allow-delete="detailConfig.allow_delete !== false"
+                            :disabled="loading"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Standard edit/create mode (without master-detail) -->
+        <div v-else-if="isEditMode && schema" class="uk-container">
             <div class="uk-card uk-card-default">
                 <div class="uk-card-header">
                     <div class="uk-flex uk-flex-between uk-flex-middle">
@@ -329,7 +600,7 @@ watch(recordId, (newId) => {
                             <div
                                 v-for="[fieldKey, field] in Object.entries(schema.fields)"
                                 :key="fieldKey"
-                                :class="field.width || 'uk-width-1-2'"
+                                :class="field.width || (field.type === 'text' ? 'uk-width-1-1' : 'uk-width-1-2')"
                                 v-if="field.editable !== false">
                                 
                                 <label :for="fieldKey" class="uk-form-label">

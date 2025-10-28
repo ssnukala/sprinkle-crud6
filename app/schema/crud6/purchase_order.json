@@ -1,0 +1,245 @@
+{
+  "model": "purchase_order",
+  "title": "Purchase Order Management",
+  "description": "Manage purchase orders",
+  "table": "or_purchase_order",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": true,
+  "permissions": {
+    "read": "uri_purchase_orders",
+    "create": "create_purchase_order",
+    "update": "update_purchase_order",
+    "delete": "delete_purchase_order"
+  },
+  "default_sort": {
+    "id": "desc"
+  },
+  "detail": {
+    "model": "purchase_order_lines",
+    "foreign_key": "order_id",
+    "list_fields": ["line_no", "description", "unit_price", "quantity", "gross_amount"],
+    "title": "Purchase Order Line Items"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true
+    },
+    "year": {
+      "type": "integer",
+      "label": "Year",
+      "sortable": true,
+      "filterable": true
+    },
+    "name": {
+      "type": "string",
+      "label": "PO Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "min": 1,
+          "max": 255
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true
+    },
+    "order_number": {
+      "type": "string",
+      "label": "PO Number",
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "contract_number": {
+      "type": "string",
+      "label": "Contract Number",
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "type": {
+      "type": "string",
+      "label": "Type",
+      "sortable": true,
+      "filterable": true,
+      "validation": {
+        "length": {
+          "max": 50
+        }
+      }
+    },
+    "parent_id": {
+      "type": "integer",
+      "label": "Parent PO ID",
+      "sortable": false,
+      "filterable": true
+    },
+    "user_id": {
+      "type": "integer",
+      "label": "User ID",
+      "required": true,
+      "sortable": true,
+      "filterable": true
+    },
+    "approver_id": {
+      "type": "integer",
+      "label": "Approver ID",
+      "sortable": false,
+      "filterable": true
+    },
+    "order_date": {
+      "type": "datetime",
+      "label": "Order Date",
+      "sortable": true,
+      "filterable": true
+    },
+    "expiry_date": {
+      "type": "datetime",
+      "label": "Expiry Date",
+      "sortable": true,
+      "filterable": true
+    },
+    "net_amount": {
+      "type": "decimal",
+      "label": "Net Amount",
+      "sortable": true
+    },
+    "tax": {
+      "type": "decimal",
+      "label": "Tax",
+      "sortable": false
+    },
+    "discount": {
+      "type": "decimal",
+      "label": "Discount",
+      "sortable": false
+    },
+    "epay_commission": {
+      "type": "decimal",
+      "label": "E-Pay Commission",
+      "sortable": false
+    },
+    "gross_amount": {
+      "type": "decimal",
+      "label": "Gross Amount",
+      "sortable": true
+    },
+    "payment_ref": {
+      "type": "string",
+      "label": "Payment Reference",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "notes": {
+      "type": "text",
+      "label": "Notes",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true
+    },
+    "contact_name": {
+      "type": "string",
+      "label": "Contact Name",
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 255
+        }
+      }
+    },
+    "contact_email": {
+      "type": "string",
+      "label": "Contact Email",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "email": true,
+        "length": {
+          "max": 255
+        }
+      }
+    },
+    "contact_phone": {
+      "type": "string",
+      "label": "Contact Phone",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 50
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "label": "Status",
+      "sortable": true,
+      "filterable": true,
+      "validation": {
+        "length": {
+          "max": 10
+        }
+      }
+    },
+    "created_by": {
+      "type": "integer",
+      "label": "Created By",
+      "readonly": true
+    },
+    "updated_by": {
+      "type": "integer",
+      "label": "Updated By",
+      "readonly": true
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true
+    },
+    "deleted_at": {
+      "type": "datetime",
+      "label": "Deleted At",
+      "readonly": true
+    }
+  }
+}

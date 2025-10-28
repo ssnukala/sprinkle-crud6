@@ -14,7 +14,8 @@ import {
 import {
     CRUD6RowPage,
     CRUD6ListPage,
-    CRUD6MasterDetailPage
+    CRUD6MasterDetailPage,
+    CRUD6DynamicPage
 } from '../../views'
 
 describe('Component Imports', () => {
@@ -34,5 +35,6 @@ describe('Component Imports', () => {
         expect(CRUD6RowPage).toBeDefined()
         expect(CRUD6ListPage).toBeDefined()
         expect(CRUD6MasterDetailPage).toBeDefined()
+        expect(CRUD6DynamicPage).toBeDefined()
     })
 })

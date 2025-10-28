@@ -1,0 +1,190 @@
+{
+  "model": "catalog",
+  "title": "Catalog Management",
+  "description": "Manage product catalogs",
+  "table": "pr_catalog",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": true,
+  "permissions": {
+    "read": "uri_catalogs",
+    "create": "create_catalog",
+    "update": "update_catalog",
+    "delete": "delete_catalog"
+  },
+  "default_sort": {
+    "id": "desc"
+  },
+  "detail": {
+    "model": "product_catalog",
+    "foreign_key": "catalog_id",
+    "list_fields": ["product_id", "name", "unit_price", "status"],
+    "title": "Catalog Products"
+  },
+  "detail_editable": {
+    "model": "product_catalog",
+    "foreign_key": "catalog_id",
+    "fields": ["product_id", "name", "description", "unit_price", "tax", "active_date", "status"],
+    "title": "Catalog Products",
+    "allow_add": true,
+    "allow_edit": true,
+    "allow_delete": true
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "short_name": {
+      "type": "string",
+      "label": "Short Name",
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "slug": {
+      "type": "string",
+      "label": "Slug",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "photo": {
+      "type": "string",
+      "label": "Photo",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 500
+        }
+      }
+    },
+    "type": {
+      "type": "string",
+      "label": "Type",
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 50
+        }
+      }
+    },
+    "parent_id": {
+      "type": "integer",
+      "label": "Parent Catalog ID",
+      "sortable": false,
+      "filterable": true,
+      "searchable": false
+    },
+    "user_id": {
+      "type": "integer",
+      "label": "User ID",
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "name": {
+      "type": "string",
+      "label": "Catalog Name",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 255
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true
+    },
+    "notes": {
+      "type": "text",
+      "label": "Notes",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true
+    },
+    "meta": {
+      "type": "json",
+      "label": "Metadata",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "status": {
+      "type": "string",
+      "label": "Status",
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 1
+        }
+      }
+    },
+    "created_by": {
+      "type": "string",
+      "label": "Created By",
+      "readonly": true,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 20
+        }
+      }
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "deleted_at": {
+      "type": "datetime",
+      "label": "Deleted At",
+      "readonly": true,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    }
+  }
+}

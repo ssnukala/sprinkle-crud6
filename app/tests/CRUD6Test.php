@@ -17,11 +17,15 @@ use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\MigrationRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateCategoriesTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateOrdersTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateProductsTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateOrderDetailsTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateProductCategoriesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CatalogTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CategoryTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CommerceRolesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductCatalogTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderLinesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderLinesTable;
 
 /**
  * Test CRUD6 sprinkle configuration.
@@ -72,11 +76,15 @@ class CRUD6Test extends TestCase
 
         // Assert that all expected migrations are present
         $expectedMigrations = [
-            CreateCategoriesTable::class,
-            CreateProductsTable::class,
-            CreateOrdersTable::class,
-            CreateOrderDetailsTable::class,
-            CreateProductCategoriesTable::class,
+            CategoryTable::class,
+            CatalogTable::class,
+            ProductTable::class,
+            ProductCatalogTable::class,
+            SalesOrderTable::class,
+            SalesOrderLinesTable::class,
+            PurchaseOrderTable::class,
+            PurchaseOrderLinesTable::class,
+            CommerceRolesTable::class,
         ];
 
         $this->assertEquals($expectedMigrations, $migrations);

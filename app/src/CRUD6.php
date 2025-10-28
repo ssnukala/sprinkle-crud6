@@ -23,11 +23,24 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateCategoriesTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateOrdersTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateProductsTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateOrderDetailsTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\CreateProductCategoriesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\CatalogSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\CategorySeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\CommerceSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\ProductCatalogSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\ProductSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\PurchaseOrderLinesSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\PurchaseOrderSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\SalesOrderLinesSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Seeds\SalesOrderSeeder;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CatalogTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CategoryTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CommerceRolesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductCatalogTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderLinesTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderTable;
+use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderLinesTable;
 
 /**
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6
@@ -86,11 +99,22 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
     public function getMigrations(): array
     {
         return [
-            CreateCategoriesTable::class,
-            CreateProductsTable::class,
-            CreateOrdersTable::class,
-            CreateOrderDetailsTable::class,
-            CreateProductCategoriesTable::class,
+            // Base tables
+            CategoryTable::class,
+            CatalogTable::class,
+            ProductTable::class,
+            
+            // Relationship tables
+            ProductCatalogTable::class,
+            
+            // Order tables
+            SalesOrderTable::class,
+            SalesOrderLinesTable::class,
+            PurchaseOrderTable::class,
+            PurchaseOrderLinesTable::class,
+            
+            // Commerce roles
+            CommerceRolesTable::class,
         ];
     }
 
@@ -104,6 +128,15 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
         return [
             DefaultRoles::class,
             DefaultPermissions::class,
+            CommerceSeeder::class,
+            CategorySeeder::class,
+            CatalogSeeder::class,
+            ProductSeeder::class,
+            ProductCatalogSeeder::class,
+            SalesOrderSeeder::class,
+            SalesOrderLinesSeeder::class,
+            PurchaseOrderSeeder::class,
+            PurchaseOrderLinesSeeder::class,
         ];
     }
 

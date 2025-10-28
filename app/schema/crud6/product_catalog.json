@@ -1,0 +1,172 @@
+{
+  "model": "product_catalog",
+  "title": "Product Catalog Management",
+  "description": "Manage product-catalog relationships",
+  "table": "pr_product_catalog",
+  "primary_key": "id",
+  "timestamps": true,
+  "soft_delete": true,
+  "permissions": {
+    "read": "uri_product_catalogs",
+    "create": "create_product_catalog",
+    "update": "update_product_catalog",
+    "delete": "delete_product_catalog"
+  },
+  "default_sort": {
+    "id": "desc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "slug": {
+      "type": "string",
+      "label": "Slug",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "product_id": {
+      "type": "integer",
+      "label": "Product ID",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "catalog_id": {
+      "type": "integer",
+      "label": "Catalog ID",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "name": {
+      "type": "string",
+      "label": "Name",
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 255
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true
+    },
+    "photo": {
+      "type": "string",
+      "label": "Photo",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 500
+        }
+      }
+    },
+    "unit_price": {
+      "type": "decimal",
+      "label": "Unit Price",
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "tax": {
+      "type": "decimal",
+      "label": "Tax",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "notes": {
+      "type": "string",
+      "label": "Notes",
+      "sortable": false,
+      "filterable": true,
+      "searchable": true,
+      "validation": {
+        "length": {
+          "max": 500
+        }
+      }
+    },
+    "active_date": {
+      "type": "datetime",
+      "label": "Active Date",
+      "sortable": true,
+      "filterable": true,
+      "searchable": false
+    },
+    "meta": {
+      "type": "json",
+      "label": "Metadata",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "product_meta": {
+      "type": "json",
+      "label": "Product Metadata",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    },
+    "status": {
+      "type": "string",
+      "label": "Status",
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "validation": {
+        "length": {
+          "max": 1
+        }
+      }
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false
+    },
+    "deleted_at": {
+      "type": "datetime",
+      "label": "Deleted At",
+      "readonly": true,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false
+    }
+  }
+}

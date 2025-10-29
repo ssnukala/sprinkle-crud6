@@ -168,6 +168,146 @@ jobs:
           php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
           php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
 
+      - name: Validate CRUD6 seed data
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Validating CRUD6 Seed Data"
+          echo "========================================="
+          
+          # Validate crud6-admin role was created
+          echo "Checking crud6-admin role..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$role = \UserFrosting\Sprinkle\Account\Database\Models\Role::where('slug', 'crud6-admin')->first();
+          if (!\$role) {
+              echo 'ERROR: crud6-admin role not found\n';
+              exit(1);
+          }
+          echo '✅ crud6-admin role exists\n';
+          echo '   Name: ' . \$role->name . '\n';
+          echo '   Description: ' . \$role->description . '\n';
+          "
+          
+          # Validate CRUD6 permissions were created
+          echo ""
+          echo "Checking CRUD6 permissions..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$expectedPermissions = ['create_crud6', 'delete_crud6', 'update_crud6_field', 'uri_crud6', 'uri_crud6_list', 'view_crud6_field'];
+          \$allFound = true;
+          foreach (\$expectedPermissions as \$slug) {
+              \$perm = \UserFrosting\Sprinkle\Account\Database\Models\Permission::where('slug', \$slug)->first();
+              if (!\$perm) {
+                  echo 'ERROR: Permission ' . \$slug . ' not found\n';
+                  \$allFound = false;
+              } else {
+                  echo '✅ ' . \$slug . ' permission exists\n';
+              }
+          }
+          if (!\$allFound) {
+              exit(1);
+          }
+          "
+          
+          # Validate permissions are assigned to crud6-admin role
+          echo ""
+          echo "Checking permission assignments to crud6-admin role..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$role = \UserFrosting\Sprinkle\Account\Database\Models\Role::where('slug', 'crud6-admin')->first();
+          if (!\$role) {
+              echo 'ERROR: crud6-admin role not found\n';
+              exit(1);
+          }
+          \$permCount = \$role->permissions()->count();
+          if (\$permCount < 6) {
+              echo 'ERROR: crud6-admin role should have at least 6 permissions, found ' . \$permCount . '\n';
+              exit(1);
+          }
+          echo '✅ crud6-admin role has ' . \$permCount . ' permissions assigned\n';
+          "
+          
+          # Validate permissions are assigned to site-admin role  
+          echo ""
+          echo "Checking permission assignments to site-admin role..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$role = \UserFrosting\Sprinkle\Account\Database\Models\Role::where('slug', 'site-admin')->first();
+          if (!\$role) {
+              echo 'WARNING: site-admin role not found (expected in Account sprinkle)\n';
+              exit(0);
+          }
+          \$crud6Perms = \$role->permissions()->whereIn('slug', ['create_crud6', 'delete_crud6', 'update_crud6_field', 'uri_crud6', 'uri_crud6_list', 'view_crud6_field'])->count();
+          if (\$crud6Perms < 6) {
+              echo 'ERROR: site-admin role should have CRUD6 permissions, found ' . \$crud6Perms . '\n';
+              exit(1);
+          }
+          echo '✅ site-admin role has CRUD6 permissions (' . \$crud6Perms . ' permissions)\n';
+          "
+          
+          echo ""
+          echo "========================================="
+          echo "✅ All CRUD6 seed data validated successfully"
+          echo "========================================="
+
+      - name: Test seed idempotency
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Seed Idempotency"
+          echo "========================================="
+          
+          # Count records before re-seeding
+          echo "Counting records before re-seeding..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$roleCount = \UserFrosting\Sprinkle\Account\Database\Models\Role::where('slug', 'crud6-admin')->count();
+          \$permCount = \UserFrosting\Sprinkle\Account\Database\Models\Permission::whereIn('slug', ['create_crud6', 'delete_crud6', 'update_crud6_field', 'uri_crud6', 'uri_crud6_list', 'view_crud6_field'])->count();
+          echo 'crud6-admin roles: ' . \$roleCount . '\n';
+          echo 'CRUD6 permissions: ' . \$permCount . '\n';
+          file_put_contents('/tmp/before_reseed.txt', \$roleCount . ',' . \$permCount);
+          "
+          
+          # Re-run seeds
+          echo ""
+          echo "Re-running CRUD6 seeds..."
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+          
+          # Count records after re-seeding
+          echo ""
+          echo "Counting records after re-seeding..."
+          php -r "
+          require 'vendor/autoload.php';
+          \$app = require 'app/app.php';
+          \$roleCount = \UserFrosting\Sprinkle\Account\Database\Models\Role::where('slug', 'crud6-admin')->count();
+          \$permCount = \UserFrosting\Sprinkle\Account\Database\Models\Permission::whereIn('slug', ['create_crud6', 'delete_crud6', 'update_crud6_field', 'uri_crud6', 'uri_crud6_list', 'view_crud6_field'])->count();
+          echo 'crud6-admin roles: ' . \$roleCount . '\n';
+          echo 'CRUD6 permissions: ' . \$permCount . '\n';
+          
+          \$before = file_get_contents('/tmp/before_reseed.txt');
+          \$after = \$roleCount . ',' . \$permCount;
+          
+          if (\$before !== \$after) {
+              echo 'ERROR: Seed counts changed after re-seeding!\n';
+              echo 'Before: ' . \$before . '\n';
+              echo 'After: ' . \$after . '\n';
+              exit(1);
+          }
+          echo '✅ Seeds are idempotent - no duplicates created\n';
+          "
+          
+          echo ""
+          echo "========================================="
+          echo "✅ Seed idempotency test passed"
+          echo "========================================="
+
       - name: Create admin user
         run: |
           cd userfrosting
@@ -360,6 +500,15 @@ jobs:
           echo "✅ Integration test completed for PHP 8.1 with UserFrosting ^6.0-beta"
           echo "✅ sprinkle-crud6 installed successfully"
           echo "✅ Database migrations ran successfully"
+          echo "✅ Database seeding completed:"
+          echo "   - Account sprinkle seeds (DefaultGroups, DefaultPermissions, DefaultRoles, UpdatePermissions)"
+          echo "   - CRUD6 sprinkle seeds (DefaultRoles, DefaultPermissions)"
+          echo "✅ Seed validation passed:"
+          echo "   - crud6-admin role created"
+          echo "   - 6 CRUD6 permissions created (create_crud6, delete_crud6, update_crud6_field, uri_crud6, uri_crud6_list, view_crud6_field)"
+          echo "   - Permissions assigned to crud6-admin role"
+          echo "   - Permissions assigned to site-admin role"
+          echo "✅ Seed idempotency test passed (no duplicates created on re-run)"
           echo "✅ Admin user created: admin / admin123"
           echo "✅ NPM package verified"
           echo "✅ Schema file loaded successfully"
@@ -389,11 +538,22 @@ jobs:
           
           ### Test Coverage
           - ✅ Database migrations
+          - ✅ Database seeding (Account + CRUD6 sprinkles)
+          - ✅ Seed data validation
+          - ✅ Seed idempotency testing
           - ✅ Admin user creation
           - ✅ Schema loading
           - ✅ API endpoints (GET /api/crud6/groups, GET /api/crud6/groups/1)
           - ✅ Frontend routes (/crud6/groups, /crud6/groups/1)
           - ✅ Screenshot capture
+          
+          ### Seed Testing Details
+          **CRUD6 Seeds Validated:**
+          - DefaultRoles seed creates crud6-admin role
+          - DefaultPermissions seed creates 6 CRUD6 permissions
+          - Permissions correctly assigned to crud6-admin role
+          - Permissions correctly assigned to site-admin role
+          - Seeds are idempotent (can be run multiple times without duplicates)
           
           ### 📸 View Screenshots
           Screenshots have been captured and uploaded as artifacts.

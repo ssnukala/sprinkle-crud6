@@ -40,7 +40,24 @@ const {
 } = useCRUD6Schema()
 
 // Use provided schema or fallback to composable schema
-const schema = computed(() => props.schema || composableSchema.value)
+// If the provided schema has contexts (multi-context), extract the form context
+const schema = computed(() => {
+    if (props.schema) {
+        // Check if this is a multi-context schema response
+        if (props.schema.contexts?.form) {
+            // Extract form context and merge with base metadata
+            return {
+                ...props.schema,
+                fields: props.schema.contexts.form.fields || props.schema.fields,
+                ...props.schema.contexts.form
+            }
+        }
+        // Single-context or legacy schema
+        return props.schema
+    }
+    // Fallback to composable schema
+    return composableSchema.value
+})
 
 /**
  * Computed properties for form rendering

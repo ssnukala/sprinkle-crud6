@@ -57,6 +57,19 @@ export interface CRUD6Schema {
      * If not specified, defaults to 'master-detail' when detail_editable is present, otherwise 'row'
      */
     render_mode?: 'row' | 'master-detail'
+    /**
+     * Multi-context schema data (when multiple contexts are requested)
+     * Each key is a context name ('list', 'form', 'detail', etc.)
+     * Each value contains the context-specific schema data
+     */
+    contexts?: Record<string, {
+        fields?: Record<string, SchemaField>
+        default_sort?: Record<string, 'asc' | 'desc'>
+        detail?: DetailConfig
+        detail_editable?: DetailEditableConfig
+        render_mode?: 'row' | 'master-detail'
+        title_field?: string
+    }>
 }
 
 /**

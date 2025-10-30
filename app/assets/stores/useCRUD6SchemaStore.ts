@@ -71,7 +71,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
      * 
      * @param model Model name to load schema for
      * @param force Force reload even if cached
-     * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
+     * @param context Optional context for filtering ('list', 'form', 'detail', 'meta', or comma-separated for multiple)
      */
     async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
         const cacheKey = getCacheKey(model, context)
@@ -141,6 +141,24 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 // Response has nested schema property
                 schemaData = response.data.schema as CRUD6Schema
                 console.log('[useCRUD6SchemaStore] Schema found in response.data.schema')
+                
+                // If schema has contexts (multi-context response), cache each context separately
+                if (schemaData.contexts) {
+                    console.log('[useCRUD6SchemaStore] Multi-context schema detected, caching contexts separately')
+                    const baseSchema = { ...schemaData }
+                    delete baseSchema.contexts
+                    
+                    // Cache each context separately for future single-context requests
+                    for (const [ctxName, ctxData] of Object.entries(schemaData.contexts)) {
+                        const ctxCacheKey = getCacheKey(model, ctxName)
+                        const ctxSchema = { ...baseSchema, ...ctxData }
+                        schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
+                        console.log('[useCRUD6SchemaStore] Cached context separately', {
+                            context: ctxName,
+                            cacheKey: ctxCacheKey
+                        })
+                    }
+                }
             } else if (response.data.fields) {
                 // Response is the schema itself
                 schemaData = response.data as CRUD6Schema
@@ -160,6 +178,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 cacheKey,
                 schemaKeys: Object.keys(schemaData),
                 fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0,
+                hasContexts: !!schemaData.contexts,
                 timestamp: new Date().toISOString()
             })
             return schemaData

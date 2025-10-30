@@ -67,7 +67,6 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         $sprunje->setupSprunje(
             'groups',
             ['name', 'slug'],  // sortable
-            ['name'],           // filterable
             ['name', 'slug', 'description'],  // listable
             ['name', 'description']  // searchable - search in name and description only
         );
@@ -97,10 +96,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'slug', 'description'],  // listable
+            ['name', 'description']  // searchable
         );
         
         // Search for "test" - should match all groups (all have "test" in description)
@@ -122,10 +120,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'slug', 'description'],  // listable
+            ['name', 'description']  // searchable
         );
         
         // Search for something that doesn't exist
@@ -147,10 +144,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'slug', 'description'],  // listable
+            ['name', 'description']  // searchable
         );
         
         // Search for "alpha" in lowercase - should match "Alpha Group"
@@ -172,9 +168,8 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with only 'name' as searchable (not description or slug)
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
+            ['name'],  // sortable
+            ['name', 'slug', 'description'],  // listable
             ['name']  // Only name is searchable
         );
         
@@ -204,9 +199,8 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with no searchable fields
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
+            ['name'],  // sortable
+            ['name', 'slug', 'description'],  // listable
             []  // No searchable fields
         );
         

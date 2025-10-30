@@ -42,11 +42,6 @@ class CRUD6Sprunje extends Sprunje
     protected array $sortable = ["name"];
 
     /**
-     * @var string[] List of filterable fields
-     */
-    protected array $filterable = [];
-
-    /**
      * @var string[] List of listable/visible fields
      */
     protected array $listable = [];
@@ -77,20 +72,16 @@ class CRUD6Sprunje extends Sprunje
      * 
      * @param string   $name       The model/table name
      * @param string[] $sortable   List of sortable field names
-     * @param string[] $filterable List of filterable field names
      * @param string[] $listable   List of listable/visible field names
      * @param string[] $searchable List of searchable field names (for global search)
      * 
      * @return void
      */
-    public function setupSprunje($name, $sortable = [], $filterable = [], $listable = [], $searchable = []): void
+    public function setupSprunje($name, $sortable = [], $listable = [], $searchable = []): void
     {
-        //$this->debugLogger->debug("Line 45: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->model->setTable($name);
-        //$this->debugLogger->debug("Line 47: CRUD6 Sprunje: {" . $name . "} Model table is " . $this->model->getTable(), ['sortable' => $sortable, "filterable" => $filterable]);
         $this->name = $name;
         $this->sortable = $sortable;
-        $this->filterable = $filterable;
         $this->listable = $listable;
         $this->searchable = $searchable;
 

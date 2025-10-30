@@ -7,7 +7,6 @@ export interface SchemaField {
     label: string
     required?: boolean
     sortable?: boolean
-    filterable?: boolean
     searchable?: boolean
     readonly?: boolean
     filter_type?: string
@@ -143,16 +142,6 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Get filterable fields from schema
-     */
-    const filterableFields = computed(() => {
-        if (!schema.value?.fields) return []
-        return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.filterable)
-            .map(([key]) => key)
-    })
-
-    /**
      * Get searchable fields from schema
      */
     const searchableFields = computed(() => {
@@ -169,12 +158,11 @@ export function useCRUD6Schema(modelName?: string) {
         if (!schema.value?.fields) return []
         
         return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.sortable || field.filterable || field.searchable)
+            .filter(([_, field]) => field.sortable || field.searchable)
             .map(([key, field]) => ({
                 key,
                 label: field.label || key,
                 sortable: field.sortable || false,
-                filterable: field.filterable || false,
                 searchable: field.searchable || false,
                 type: field.type || 'string',
                 readonly: field.readonly || false,
@@ -213,7 +201,6 @@ export function useCRUD6Schema(modelName?: string) {
         loadSchema,
         setSchema,
         sortableFields,
-        filterableFields,
         searchableFields,
         tableColumns,
         defaultSort,

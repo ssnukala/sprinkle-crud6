@@ -17,7 +17,6 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true
     },
@@ -26,7 +25,6 @@
       "label": "Product ID",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true,
       "validation": {
@@ -38,7 +36,6 @@
       "label": "Category ID",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true,
       "validation": {
@@ -50,7 +47,6 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": false
     }

@@ -306,7 +306,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false
     },
     "slug": {
@@ -314,7 +313,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Slug",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "validation": {
         "required": true,
@@ -326,7 +324,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "validation": {
         "required": true,
@@ -338,7 +335,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Description",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": true
     },
     "icon": {
@@ -346,7 +342,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Icon",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "validation": {
         "max": 100
@@ -357,7 +352,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false
     },
     "updated_at": {
@@ -365,7 +359,6 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false
     }
   }

@@ -26,7 +26,6 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true
     },
@@ -35,7 +34,6 @@
       "label": "Category Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -51,7 +49,6 @@
       "label": "Slug",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -64,7 +61,6 @@
       "label": "Description",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": true,
       "listable": true,
       "field_template": "<div class='uk-text-meta'><strong>ID:</strong> {{id}} | <strong>Slug:</strong> {{slug}}<br/><strong>Status:</strong> {{is_active}}<br/>{{description}}</div>"
@@ -74,7 +70,6 @@
       "label": "Icon",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "listable": false
     },
@@ -83,7 +78,6 @@
       "label": "Active",
       "default": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true
     }

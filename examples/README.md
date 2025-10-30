@@ -33,7 +33,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false
     },
     "name": {
@@ -41,7 +40,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Product Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "validation": {
         "required": true,
@@ -56,7 +54,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "SKU",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "validation": {
         "required": true,
@@ -68,7 +65,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Price",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "validation": {
         "required": true,
@@ -81,7 +77,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Description",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": true
     },
     "category_id": {
@@ -89,7 +84,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Category",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "filter_type": "equals"
     },
@@ -98,7 +92,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Active",
       "default": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false
     },
     "metadata": {
@@ -106,7 +99,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Metadata",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": false
     },
     "created_at": {
@@ -114,7 +106,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "date_format": "Y-m-d H:i:s"
     },
@@ -123,7 +114,6 @@ Create a schema file `app/schema/crud6/products.json`:
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "date_format": "Y-m-d H:i:s"
     }

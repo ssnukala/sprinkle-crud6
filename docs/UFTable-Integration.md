@@ -86,7 +86,6 @@ const {
 The table automatically configures columns based on schema field properties:
 
 - `sortable`: Enables column sorting
-- `filterable`: Enables column filtering  
 - `searchable`: Includes field in search
 - `readonly`: Makes field read-only in edit mode
 - `label`: Sets column header text

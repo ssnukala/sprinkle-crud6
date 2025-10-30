@@ -20,7 +20,6 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true
     },
@@ -29,7 +28,6 @@
       "label": "Username",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -45,7 +43,6 @@
       "label": "Email",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -58,7 +55,6 @@
       "label": "First Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -74,7 +70,6 @@
       "label": "Last Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -90,7 +85,6 @@
       "label": "Password",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "listable": false,
       "readonly": true,
@@ -106,7 +100,6 @@
       "label": "Locale",
       "default": "en_US",
       "sortable": false,
-      "filterable": true,
       "searchable": false,
       "listable": false
     },
@@ -114,7 +107,6 @@
       "type": "string",
       "label": "Theme",
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "listable": false
     },
@@ -123,7 +115,6 @@
       "label": "Group",
       "required": false,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true
     },
@@ -132,7 +123,6 @@
       "label": "Verified",
       "default": false,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true
     },
@@ -141,7 +131,6 @@
       "label": "Enabled",
       "default": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": true
     },
@@ -149,7 +138,6 @@
       "type": "integer",
       "label": "Last Activity ID",
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "listable": false
     },
@@ -158,7 +146,6 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"
@@ -168,7 +155,6 @@
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"
@@ -178,7 +164,6 @@
       "label": "Deleted At",
       "readonly": true,
       "sortable": false,
-      "filterable": false,
       "searchable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"

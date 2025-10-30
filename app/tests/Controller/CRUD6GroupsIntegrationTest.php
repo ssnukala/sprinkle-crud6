@@ -300,7 +300,6 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
             'rows',
             'listable',
             'sortable',
-            'filterable',
         ], $response);
 
         // Verify the response contains users from the group

@@ -20,7 +20,6 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true
     },
@@ -29,7 +28,6 @@
       "label": "Order ID",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": false,
       "listable": false,
       "validation": {
@@ -41,7 +39,6 @@
       "label": "Line #",
       "required": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true,
       "validation": {
@@ -54,7 +51,6 @@
       "label": "SKU",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -66,7 +62,6 @@
       "label": "Product Name",
       "required": true,
       "sortable": true,
-      "filterable": true,
       "searchable": true,
       "listable": true,
       "validation": {
@@ -82,7 +77,6 @@
       "label": "Quantity",
       "required": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true,
       "validation": {
@@ -96,7 +90,6 @@
       "label": "Unit Price",
       "required": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true,
       "validation": {
@@ -110,7 +103,6 @@
       "label": "Line Total",
       "required": false,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": true,
       "readonly": true,
@@ -124,7 +116,6 @@
       "label": "Notes",
       "required": false,
       "sortable": false,
-      "filterable": false,
       "searchable": true,
       "listable": false
     },
@@ -133,7 +124,6 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": false
     },
@@ -142,7 +132,6 @@
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "filterable": false,
       "searchable": false,
       "listable": false
     }

@@ -176,7 +176,6 @@ const {
   
   // Computed
   sortableFields,   // string[]
-  filterableFields, // string[]
   searchableFields, // string[]
   tableColumns,     // TableColumn[]
   defaultSort,      // Record<string, 'asc' | 'desc'>

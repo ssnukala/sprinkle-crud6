@@ -120,7 +120,8 @@ onMounted(() => {
     // Set initial page title immediately for breadcrumbs
     page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     
-    const schemaPromise = loadSchema(model.value)
+    // Request 'list' context to get only listable fields
+    const schemaPromise = loadSchema(model.value, false, 'list')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(() => {
         // Update page title and description using schema

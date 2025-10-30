@@ -347,7 +347,8 @@ watch(model, async (newModel) => {
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
         
         currentModel = newModel
-        const schemaPromise = loadSchema(newModel)
+        // Request 'detail' context to get full field information for master-detail pages
+        const schemaPromise = loadSchema(newModel, false, 'detail')
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             console.log('[PageMasterDetail] Schema loaded successfully for model:', newModel)

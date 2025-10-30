@@ -60,7 +60,8 @@ export function useCRUD6Api(modelName?: string) {
     async function loadSchema() {
         try {
             // Use the store's loadSchema which has caching
-            const schema = await schemaStore.loadSchema(model)
+            // Request 'form' context to get only editable fields with validation
+            const schema = await schemaStore.loadSchema(model, false, 'form')
             return schema || {}
         } catch (error) {
             console.error('[useCRUD6Api] Schema load error:', error)

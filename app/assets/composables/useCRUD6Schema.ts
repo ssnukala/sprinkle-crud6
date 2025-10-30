@@ -79,12 +79,12 @@ export function useCRUD6Schema(modelName?: string) {
      * Set schema directly without making an API call
      * Useful when schema is already available from parent component
      */
-    function setSchema(schemaData: CRUD6Schema, model?: string): void {
+    function setSchema(schemaData: CRUD6Schema, model?: string, context?: string): void {
         schema.value = schemaData
         if (model) {
             currentModel.value = model
             // Also update the global store
-            schemaStore.setSchema(model, schemaData)
+            schemaStore.setSchema(model, schemaData, context)
         }
         error.value = null
     }
@@ -92,29 +92,33 @@ export function useCRUD6Schema(modelName?: string) {
     /**
      * Load schema for a specific model
      * Uses global store for caching to prevent duplicate API calls
+     * 
+     * @param model Model name to load
+     * @param force Force reload even if cached
+     * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
      */
-    async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
         // Check if already loaded in this instance and not forcing
         if (!force && currentModel.value === model && schema.value) {
             console.log('[useCRUD6Schema] Using local cached schema - model:', model)
             return schema.value
         }
 
-        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force)
+        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force, 'context:', context)
         loading.value = true
         error.value = null
 
         try {
-            // Delegate to global store
-            const schemaData = await schemaStore.loadSchema(model, force)
+            // Delegate to global store with context parameter
+            const schemaData = await schemaStore.loadSchema(model, force, context)
             
             if (schemaData) {
                 schema.value = schemaData
                 currentModel.value = model
                 return schemaData
             } else {
-                // Get error from store
-                const storeError = schemaStore.getError(model)
+                // Get error from store with context
+                const storeError = schemaStore.getError(model, context)
                 if (storeError) {
                     error.value = storeError
                 }

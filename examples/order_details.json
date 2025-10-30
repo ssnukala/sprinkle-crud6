@@ -20,7 +20,7 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true
     },
     "order_id": {
@@ -28,7 +28,7 @@
       "label": "Order ID",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": false,
       "validation": {
         "required": true
@@ -39,7 +39,7 @@
       "label": "Line #",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -51,7 +51,7 @@
       "label": "SKU",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "listable": true,
       "validation": {
         "required": true
@@ -62,7 +62,7 @@
       "label": "Product Name",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -77,7 +77,7 @@
       "label": "Quantity",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -90,7 +90,7 @@
       "label": "Unit Price",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -103,7 +103,7 @@
       "label": "Line Total",
       "required": false,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "readonly": true,
       "validation": {
@@ -116,7 +116,7 @@
       "label": "Notes",
       "required": false,
       "sortable": false,
-      "searchable": true,
+      "filterable": false,
       "listable": false
     },
     "created_at": {
@@ -124,7 +124,7 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": false
     },
     "updated_at": {
@@ -132,7 +132,7 @@
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": false
     }
   }

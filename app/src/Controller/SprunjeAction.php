@@ -132,23 +132,23 @@ class SprunjeAction extends Base
                 $relatedModel = $this->schemaService->getModelInstance($relation);
                 
                 $sortableFields = $this->getSortableFieldsFromSchema($relatedSchema);
+                $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
                 $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
-                $searchableFields = $this->getSearchableFieldsFromSchema($relatedSchema);
                 
                 $this->logger->debug("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
                     'relation' => $relation,
                     'table' => $relatedModel->getTable(),
                     'sortable_fields' => $sortableFields,
+                    'filterable_fields' => $filterableFields,
                     'list_fields' => $listFields,
-                    'searchable_fields' => $searchableFields,
                 ]);
                 
                 // Setup sprunje with related model configuration
                 $this->sprunje->setupSprunje(
                     $relatedModel->getTable(),
                     $sortableFields,
-                    $listFields,
-                    $searchableFields
+                    $filterableFields,
+                    $listFields
                 );
                 
                 $this->sprunje->setOptions($params);
@@ -171,23 +171,23 @@ class SprunjeAction extends Base
             $params = $request->getQueryParams();
             
             $sortableFields = $this->getSortableFields($modelName);
+            $filterableFields = $this->getFilterableFields($modelName);
             $listFields = $this->getListableFields($modelName);
-            $searchableFields = $this->getSearchableFields($modelName);
 
             $this->logger->debug("CRUD6 [SprunjeAction] Setting up main model sprunje", [
                 'model' => $modelName,
                 'table' => $crudModel->getTable(),
                 'sortable_fields' => $sortableFields,
+                'filterable_fields' => $filterableFields,
                 'list_fields' => $listFields,
-                'searchable_fields' => $searchableFields,
                 'query_params' => $params,
             ]);
 
             $this->sprunje->setupSprunje(
                 $crudModel->getTable(),
                 $sortableFields,
-                $listFields,
-                $searchableFields
+                $filterableFields,
+                $listFields
             );
 
             $this->sprunje->setOptions($params);
@@ -233,6 +233,28 @@ class SprunjeAction extends Base
     }
     
     /**
+     * Get filterable fields from a schema array.
+     * 
+     * @param array $schema The schema configuration
+     * 
+     * @return array List of filterable field names
+     */
+    protected function getFilterableFieldsFromSchema(array $schema): array
+    {
+        $filterable = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['filterable']) && $fieldConfig['filterable'] === true) {
+                    $filterable[] = $fieldName;
+                }
+            }
+        }
+        
+        return $filterable;
+    }
+    
+    /**
      * Get listable fields from a schema array.
      * 
      * Only fields with explicit `listable: true` are included.
@@ -256,27 +278,5 @@ class SprunjeAction extends Base
         }
         
         return $listable;
-    }
-
-    /**
-     * Get searchable fields from a schema array.
-     * 
-     * @param array $schema The schema configuration
-     * 
-     * @return array List of searchable field names
-     */
-    protected function getSearchableFieldsFromSchema(array $schema): array
-    {
-        $searchable = [];
-        
-        if (isset($schema['fields'])) {
-            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                if (isset($fieldConfig['searchable']) && $fieldConfig['searchable'] === true) {
-                    $searchable[] = $fieldName;
-                }
-            }
-        }
-        
-        return $searchable;
     }
 }

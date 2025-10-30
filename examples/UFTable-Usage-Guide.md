@@ -64,14 +64,16 @@ Create `app/schema/crud6/products.json`:
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false,
+      "filterable": false
     },
     "name": {
       "type": "string",
       "label": "Product Name",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
+      "filterable": true,
       "validation": {
         "required": true,
         "length": {
@@ -85,7 +87,8 @@ Create `app/schema/crud6/products.json`:
       "label": "Price",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
+      "filterable": false,
       "filter_type": "between"
     },
     "is_active": {
@@ -93,7 +96,8 @@ Create `app/schema/crud6/products.json`:
       "label": "Active",
       "default": true,
       "sortable": true,
-      "searchable": false
+      "filterable": true,
+      "filterable": false
     }
   }
 }
@@ -226,7 +230,8 @@ Support for various field types with appropriate input controls:
 ### Filtering and Sorting
 Automatic filtering and sorting based on schema configuration:
 - Set `sortable: true` for sortable columns
-- Set `searchable: true` for global search inclusion
+- Set `filterable: true` for filterable columns
+- Set `filterable: true` for global search inclusion
 
 ### Validation
 Schema-based validation with support for:

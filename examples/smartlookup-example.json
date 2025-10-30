@@ -20,7 +20,12 @@
   "detail_editable": {
     "model": "order_lines",
     "foreign_key": "order_id",
-    "fields": ["product_id", "quantity", "unit_price", "line_total"],
+    "fields": [
+      "product_id",
+      "quantity",
+      "unit_price",
+      "line_total"
+    ],
     "title": "Order Lines",
     "allow_add": true,
     "allow_edit": true,
@@ -33,14 +38,14 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": true
     },
     "customer_id": {
       "type": "smartlookup",
       "label": "Customer",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "lookup_model": "customers",
       "lookup_id": "id",
       "lookup_desc": "name",
@@ -52,7 +57,7 @@
       "label": "Order Number",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "validation": {
         "length": {
           "max": 50
@@ -64,14 +69,14 @@
       "label": "Order Date",
       "required": true,
       "sortable": true,
-      "searchable": false
+      "filterable": true
     },
     "status": {
       "type": "string",
       "label": "Status",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "default": "pending",
       "validation": {
         "length": {
@@ -83,35 +88,35 @@
       "type": "decimal",
       "label": "Total Amount",
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "readonly": true
     },
     "notes": {
       "type": "text",
       "label": "Notes",
       "sortable": false,
-      "searchable": true
+      "filterable": false
     },
     "created_at": {
       "type": "datetime",
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false
     },
     "deleted_at": {
       "type": "datetime",
       "label": "Deleted At",
       "readonly": true,
       "sortable": false,
-      "searchable": false
+      "filterable": false
     }
   }
 }

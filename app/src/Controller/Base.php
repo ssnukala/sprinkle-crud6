@@ -186,6 +186,26 @@ abstract class Base
     }
 
     /**
+     * Get filterable fields from the model schema.
+     * 
+     * @param string $modelName The model name
+     * 
+     * @return string[] Array of filterable field names
+     */
+    protected function getFilterableFields(string $modelName): array
+    {
+        $filterable = [];
+        $fields = $this->getFields($modelName);
+
+        foreach ($fields as $name => $field) {
+            if ($field['filterable'] ?? false) {
+                $filterable[] = $name;
+            }
+        }
+        return $filterable;
+    }
+
+    /**
      * Get listable fields from the model schema.
      * 
      * Only fields with explicit `listable: true` are included.
@@ -207,26 +227,6 @@ abstract class Base
             }
         }
         return $listable;
-    }
-
-    /**
-     * Get searchable fields from the model schema.
-     * 
-     * @param string $modelName The model name
-     * 
-     * @return string[] Array of searchable field names
-     */
-    protected function getSearchableFields(string $modelName): array
-    {
-        $searchable = [];
-        $fields = $this->getFields($modelName);
-
-        foreach ($fields as $name => $field) {
-            if ($field['searchable'] ?? false) {
-                $searchable[] = $name;
-            }
-        }
-        return $searchable;
     }
 
     /**

@@ -42,14 +42,14 @@ class CRUD6Sprunje extends Sprunje
     protected array $sortable = ["name"];
 
     /**
+     * @var string[] List of filterable fields (used for global search)
+     */
+    protected array $filterable = [];
+
+    /**
      * @var string[] List of listable/visible fields
      */
     protected array $listable = [];
-
-    /**
-     * @var string[] List of searchable fields (for global search)
-     */
-    protected array $searchable = [];
 
     /**
      * Constructor for CRUD6Sprunje.
@@ -66,29 +66,27 @@ class CRUD6Sprunje extends Sprunje
         parent::__construct();
     }
 
-
     /**
      * Configure the Sprunje with dynamic settings from schema.
      * 
-     * BREAKING CHANGE: The `$filterable` parameter was removed in this version.
-     * It was being passed through but never actually used for filtering operations.
-     * Code calling this method with 5 parameters must be updated to use only 4 parameters.
-     * For global text search functionality, use the `$searchable` parameter.
+     * Filterable fields are used for global text search functionality.
+     * This aligns with UserFrosting's Sprunje pattern where filterable
+     * is the standard property for searchable/filterable fields.
      * 
      * @param string   $name       The model/table name
      * @param string[] $sortable   List of sortable field names
+     * @param string[] $filterable List of filterable field names (for global search)
      * @param string[] $listable   List of listable/visible field names
-     * @param string[] $searchable List of searchable field names (for global search)
      * 
      * @return void
      */
-    public function setupSprunje($name, $sortable = [], $listable = [], $searchable = []): void
+    public function setupSprunje($name, $sortable = [], $filterable = [], $listable = []): void
     {
         $this->model->setTable($name);
         $this->name = $name;
         $this->sortable = $sortable;
+        $this->filterable = $filterable;
         $this->listable = $listable;
-        $this->searchable = $searchable;
 
         $query = $this->baseQuery();
 
@@ -114,11 +112,11 @@ class CRUD6Sprunje extends Sprunje
     }
 
     /**
-     * Apply global search filter across searchable fields.
+     * Apply global search filter across filterable fields.
      * 
      * This filter method is automatically called by the Sprunje when the "search"
      * parameter is present in the request. It applies OR filtering across all
-     * fields defined in the $searchable array.
+     * fields defined in the $filterable array.
      * 
      * @param \Illuminate\Database\Eloquent\Builder $query      The query builder
      * @param string                                 $value      The search term
@@ -127,15 +125,15 @@ class CRUD6Sprunje extends Sprunje
      */
     protected function filterSearch($query, $value)
     {
-        // Only apply search if we have searchable fields
-        if (empty($this->searchable)) {
+        // Only apply search if we have filterable fields
+        if (empty($this->filterable)) {
             return $query;
         }
 
-        // Apply search to all searchable fields using OR logic
+        // Apply search to all filterable fields using OR logic
         return $query->where(function ($subQuery) use ($value) {
             $isFirst = true;
-            foreach ($this->searchable as $field) {
+            foreach ($this->filterable as $field) {
                 if ($isFirst) {
                     $subQuery->where($field, 'LIKE', "%{$value}%");
                     $isFirst = false;

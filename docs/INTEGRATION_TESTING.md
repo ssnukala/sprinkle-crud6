@@ -306,14 +306,14 @@ Create the schema file `app/schema/crud6/groups.json`:
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false,
     },
     "slug": {
       "type": "string",
       "label": "Slug",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "validation": {
         "required": true,
         "max": 255
@@ -324,7 +324,7 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Name",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "validation": {
         "required": true,
         "max": 255
@@ -335,14 +335,14 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Description",
       "required": false,
       "sortable": false,
-      "searchable": true
+      "filterable": false,
     },
     "icon": {
       "type": "string",
       "label": "Icon",
       "required": false,
       "sortable": false,
-      "searchable": false,
+      "filterable": false,
       "validation": {
         "max": 100
       }
@@ -352,14 +352,14 @@ Create the schema file `app/schema/crud6/groups.json`:
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false,
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "searchable": false
+      "filterable": false,
     }
   }
 }

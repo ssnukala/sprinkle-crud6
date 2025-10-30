@@ -20,7 +20,7 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true
     },
     "title": {
@@ -28,7 +28,7 @@
       "label": "Task Title",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -43,7 +43,7 @@
       "label": "Task Details",
       "required": false,
       "sortable": false,
-      "searchable": true,
+      "filterable": false,
       "listable": true,
       "field_template": "<div class='uk-card uk-card-small uk-card-default uk-card-body'><div class='uk-grid-small uk-flex-middle' uk-grid><div class='uk-width-auto'><span class='uk-badge uk-badge-{{status}}'>{{status}}</span></div><div class='uk-width-expand'><div class='uk-text-bold'>Task #{{id}}: {{title}}</div><div class='uk-text-meta uk-text-small'>Assigned to: {{assigned_to}} | Priority: {{priority}}</div><p class='uk-margin-small-top uk-text-small'>{{description}}</p></div><div class='uk-width-auto uk-text-nowrap'><span class='uk-text-meta'>Due: {{due_date}}</span></div></div></div>"
     },
@@ -52,7 +52,7 @@
       "label": "Status",
       "default": "pending",
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": false,
       "filter_type": "equals"
     },
@@ -61,7 +61,7 @@
       "label": "Priority",
       "default": "medium",
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": false,
       "filter_type": "equals"
     },
@@ -70,7 +70,7 @@
       "label": "Assigned To",
       "required": false,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "listable": false
     },
     "due_date": {
@@ -78,7 +78,7 @@
       "label": "Due Date",
       "required": false,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": false,
       "filter_type": "between",
       "date_format": "Y-m-d"
@@ -88,7 +88,7 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
@@ -97,7 +97,7 @@
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"
     }

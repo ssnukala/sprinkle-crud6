@@ -7,7 +7,7 @@ export interface SchemaField {
     label: string
     required?: boolean
     sortable?: boolean
-    searchable?: boolean
+    filterable?: boolean
     readonly?: boolean
     filter_type?: string
     validation?: any
@@ -142,32 +142,30 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Get searchable fields from schema
+     * Get filterable fields from schema.
+     * These fields are used for global text search.
      */
-    const searchableFields = computed(() => {
+    const filterableFields = computed(() => {
         if (!schema.value?.fields) return []
         return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.searchable)
+            .filter(([_, field]) => field.filterable)
             .map(([key]) => key)
     })
 
     /**
      * Get table columns configuration for UFTable.
-     * 
-     * Returns columns that are either sortable or searchable.
-     * Note: Previously also included filterable fields, but that attribute
-     * has been removed as it was redundant with searchable.
+     * Returns columns that are either sortable or filterable.
      */
     const tableColumns = computed(() => {
         if (!schema.value?.fields) return []
         
         return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.sortable || field.searchable)
+            .filter(([_, field]) => field.sortable || field.filterable)
             .map(([key, field]) => ({
                 key,
                 label: field.label || key,
                 sortable: field.sortable || false,
-                searchable: field.searchable || false,
+                filterable: field.filterable || false,
                 type: field.type || 'string',
                 readonly: field.readonly || false,
                 filterType: field.filter_type || 'equals'
@@ -205,7 +203,7 @@ export function useCRUD6Schema(modelName?: string) {
         loadSchema,
         setSchema,
         sortableFields,
-        searchableFields,
+        filterableFields,
         tableColumns,
         defaultSort,
         hasPermission

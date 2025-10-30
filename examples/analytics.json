@@ -21,7 +21,7 @@
       "auto_increment": true,
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true
     },
     "page_url": {
@@ -29,7 +29,7 @@
       "label": "Page URL",
       "required": true,
       "sortable": true,
-      "searchable": true,
+      "filterable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -43,7 +43,7 @@
       "label": "User ID",
       "required": false,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": true,
       "filter_type": "equals"
     },
@@ -52,7 +52,7 @@
       "label": "IP Address",
       "required": false,
       "sortable": false,
-      "searchable": false,
+      "filterable": true,
       "listable": true,
       "filter_type": "equals"
     },
@@ -61,7 +61,7 @@
       "label": "User Agent",
       "required": false,
       "sortable": false,
-      "searchable": true,
+      "filterable": false,
       "listable": false
     },
     "viewed_at": {
@@ -69,7 +69,7 @@
       "label": "Viewed At",
       "required": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": true,
       "listable": true,
       "filter_type": "between",
       "date_format": "Y-m-d H:i:s"
@@ -79,7 +79,7 @@
       "label": "Session Data",
       "required": false,
       "sortable": false,
-      "searchable": false,
+      "filterable": false,
       "listable": false
     },
     "created_at": {
@@ -87,7 +87,7 @@
       "label": "Created At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
@@ -96,7 +96,7 @@
       "label": "Updated At",
       "readonly": true,
       "sortable": true,
-      "searchable": false,
+      "filterable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"
     }

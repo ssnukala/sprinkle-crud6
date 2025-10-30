@@ -176,7 +176,8 @@ const {
   
   // Computed
   sortableFields,   // string[]
-  searchableFields, // string[]
+  filterableFields, // string[]
+  filterableFields, // string[]
   tableColumns,     // TableColumn[]
   defaultSort,      // Record<string, 'asc' | 'desc'>
   hasPermission     // (action) → boolean

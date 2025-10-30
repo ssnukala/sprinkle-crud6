@@ -1,0 +1,187 @@
+{
+  "model": "users",
+  "title": "User Management",
+  "singular_title": "User",
+  "description": "Manage system users",
+  "table": "users",
+  "permissions": {
+    "read": "uri_users",
+    "create": "create_user",
+    "update": "update_user_field",
+    "delete": "delete_user"
+  },
+  "default_sort": {
+    "user_name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": true
+    },
+    "user_name": {
+      "type": "string",
+      "label": "Username",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 3,
+          "max": 50
+        }
+      }
+    },
+    "email": {
+      "type": "string",
+      "label": "Email",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "email": true
+      }
+    },
+    "first_name": {
+      "type": "string",
+      "label": "First Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 1,
+          "max": 50
+        }
+      }
+    },
+    "last_name": {
+      "type": "string",
+      "label": "Last Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 1,
+          "max": 50
+        }
+      }
+    },
+    "password": {
+      "type": "string",
+      "label": "Password",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "listable": false,
+      "readonly": true,
+      "validation": {
+        "length": {
+          "min": 8,
+          "max": 255
+        }
+      }
+    },
+    "locale": {
+      "type": "string",
+      "label": "Locale",
+      "default": "en_US",
+      "sortable": false,
+      "filterable": true,
+      "searchable": false,
+      "listable": false
+    },
+    "theme": {
+      "type": "string",
+      "label": "Theme",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "listable": false
+    },
+    "group_id": {
+      "type": "integer",
+      "label": "Group",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
+    },
+    "flag_verified": {
+      "type": "boolean",
+      "label": "Verified",
+      "default": false,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
+    },
+    "flag_enabled": {
+      "type": "boolean",
+      "label": "Enabled",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "searchable": false,
+      "listable": true
+    },
+    "last_activity_id": {
+      "type": "integer",
+      "label": "Last Activity ID",
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "listable": false
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": false,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "searchable": false,
+      "listable": false,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "deleted_at": {
+      "type": "datetime",
+      "label": "Deleted At",
+      "readonly": true,
+      "sortable": false,
+      "filterable": false,
+      "searchable": false,
+      "listable": false,
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

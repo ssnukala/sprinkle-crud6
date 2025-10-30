@@ -79,12 +79,12 @@ export function useCRUD6Schema(modelName?: string) {
      * Set schema directly without making an API call
      * Useful when schema is already available from parent component
      */
-    function setSchema(schemaData: CRUD6Schema, model?: string): void {
+    function setSchema(schemaData: CRUD6Schema, model?: string, context?: string): void {
         schema.value = schemaData
         if (model) {
             currentModel.value = model
             // Also update the global store
-            schemaStore.setSchema(model, schemaData)
+            schemaStore.setSchema(model, schemaData, context)
         }
         error.value = null
     }
@@ -117,8 +117,8 @@ export function useCRUD6Schema(modelName?: string) {
                 currentModel.value = model
                 return schemaData
             } else {
-                // Get error from store
-                const storeError = schemaStore.getError(model)
+                // Get error from store with context
+                const storeError = schemaStore.getError(model, context)
                 if (storeError) {
                     error.value = storeError
                 }

@@ -9,43 +9,60 @@ import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
  * 
  * Provides centralized schema caching across all components to eliminate
  * duplicate API calls for the same model schema.
+ * 
+ * Caching Strategy:
+ * - Schemas are cached by model name AND context
+ * - Cache key format: `${model}:${context || 'full'}`
+ * - Different contexts of same model are cached separately
+ * - This prevents duplicate API calls while supporting context filtering
  */
 export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
-    // Map of model name to schema data
+    // Map of cache key (model:context) to schema data
     const schemas = ref<Record<string, CRUD6Schema>>({})
     
-    // Map of model name to loading state
+    // Map of cache key to loading state
     const loadingStates = ref<Record<string, boolean>>({})
     
-    // Map of model name to error state
+    // Map of cache key to error state
     const errorStates = ref<Record<string, ApiErrorResponse | null>>({})
 
     /**
-     * Check if a schema is already loaded for a model
+     * Generate cache key for model and context
      */
-    function hasSchema(model: string): boolean {
-        return !!schemas.value[model]
+    function getCacheKey(model: string, context?: string): string {
+        return `${model}:${context || 'full'}`
     }
 
     /**
-     * Get schema for a model (may be undefined if not loaded)
+     * Check if a schema is already loaded for a model+context
      */
-    function getSchema(model: string): CRUD6Schema | undefined {
-        return schemas.value[model]
+    function hasSchema(model: string, context?: string): boolean {
+        const key = getCacheKey(model, context)
+        return !!schemas.value[key]
+    }
+
+    /**
+     * Get schema for a model+context (may be undefined if not loaded)
+     */
+    function getSchema(model: string, context?: string): CRUD6Schema | undefined {
+        const key = getCacheKey(model, context)
+        return schemas.value[key]
     }
 
     /**
      * Check if a schema is currently loading
      */
-    function isLoading(model: string): boolean {
-        return loadingStates.value[model] || false
+    function isLoading(model: string, context?: string): boolean {
+        const key = getCacheKey(model, context)
+        return loadingStates.value[key] || false
     }
 
     /**
-     * Get error for a model (if any)
+     * Get error for a model+context (if any)
      */
-    function getError(model: string): ApiErrorResponse | null {
-        return errorStates.value[model] || null
+    function getError(model: string, context?: string): ApiErrorResponse | null {
+        const key = getCacheKey(model, context)
+        return errorStates.value[key] || null
     }
 
     /**
@@ -57,38 +74,41 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
      * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
      */
     async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
+        const cacheKey = getCacheKey(model, context)
+        
         console.log('[useCRUD6SchemaStore] loadSchema called', {
             model,
             force,
             context,
-            hasCache: hasSchema(model),
-            isCurrentlyLoading: isLoading(model),
+            cacheKey,
+            hasCache: hasSchema(model, context),
+            isCurrentlyLoading: isLoading(model, context),
             timestamp: new Date().toISOString()
         })
         
         // Return cached schema if available and not forcing reload
-        if (!force && hasSchema(model)) {
-            console.log('[useCRUD6SchemaStore] Using cached schema - model:', model)
-            return schemas.value[model] || null
+        if (!force && hasSchema(model, context)) {
+            console.log('[useCRUD6SchemaStore] Using cached schema - cacheKey:', cacheKey)
+            return schemas.value[cacheKey] || null
         }
 
         // Return existing promise if already loading
-        if (isLoading(model)) {
-            console.log('[useCRUD6SchemaStore] Schema already loading - model:', model)
+        if (isLoading(model, context)) {
+            console.log('[useCRUD6SchemaStore] Schema already loading - cacheKey:', cacheKey)
             // Wait for the loading to complete by polling
             return new Promise((resolve) => {
                 const checkInterval = setInterval(() => {
-                    if (!isLoading(model)) {
+                    if (!isLoading(model, context)) {
                         clearInterval(checkInterval)
-                        resolve(schemas.value[model] || null)
+                        resolve(schemas.value[cacheKey] || null)
                     }
                 }, 100)
             })
         }
 
-        console.log('[useCRUD6SchemaStore] Loading schema from API - model:', model, 'force:', force, 'context:', context)
-        loadingStates.value[model] = true
-        errorStates.value[model] = null
+        console.log('[useCRUD6SchemaStore] Loading schema from API - cacheKey:', cacheKey, 'force:', force, 'context:', context)
+        loadingStates.value[cacheKey] = true
+        errorStates.value[cacheKey] = null
 
         try {
             // Build URL with optional context parameter
@@ -100,6 +120,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             console.log('[useCRUD6SchemaStore] Making API request', {
                 url,
                 method: 'GET',
+                cacheKey,
                 timestamp: new Date().toISOString()
             })
             
@@ -110,6 +131,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 statusText: response.statusText,
                 hasData: !!response.data,
                 dataKeys: response.data ? Object.keys(response.data) : [],
+                cacheKey,
                 timestamp: new Date().toISOString()
             })
 
@@ -131,9 +153,11 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 throw new Error('Invalid schema response')
             }
             
-            schemas.value[model] = schemaData
+            schemas.value[cacheKey] = schemaData
             console.log('[useCRUD6SchemaStore] Schema loaded successfully', {
                 model,
+                context,
+                cacheKey,
                 schemaKeys: Object.keys(schemaData),
                 fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0,
                 timestamp: new Date().toISOString()
@@ -142,6 +166,8 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         } catch (err: any) {
             console.error('[useCRUD6SchemaStore] Schema load error', {
                 model,
+                context,
+                cacheKey,
                 errorType: err.constructor.name,
                 message: err.message,
                 status: err.response?.status,
@@ -154,11 +180,11 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 title: 'Schema Load Error',
                 description: 'Failed to load schema for model: ' + model
             }
-            errorStates.value[model] = error
+            errorStates.value[cacheKey] = error
             return null
         } finally {
-            loadingStates.value[model] = false
-            console.log('[useCRUD6SchemaStore] Loading state cleared for model:', model)
+            loadingStates.value[cacheKey] = false
+            console.log('[useCRUD6SchemaStore] Loading state cleared for cacheKey:', cacheKey)
         }
     }
 
@@ -166,19 +192,21 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
      * Set schema directly without making an API call
      * Useful when schema is already available from another source
      */
-    function setSchema(model: string, schemaData: CRUD6Schema): void {
-        schemas.value[model] = schemaData
-        errorStates.value[model] = null
-        console.log('[useCRUD6SchemaStore] Schema set directly - model:', model)
+    function setSchema(model: string, schemaData: CRUD6Schema, context?: string): void {
+        const cacheKey = getCacheKey(model, context)
+        schemas.value[cacheKey] = schemaData
+        errorStates.value[cacheKey] = null
+        console.log('[useCRUD6SchemaStore] Schema set directly - cacheKey:', cacheKey)
     }
 
     /**
-     * Clear cached schema for a model
+     * Clear cached schema for a model+context
      */
-    function clearSchema(model: string): void {
-        delete schemas.value[model]
-        delete loadingStates.value[model]
-        delete errorStates.value[model]
+    function clearSchema(model: string, context?: string): void {
+        const cacheKey = getCacheKey(model, context)
+        delete schemas.value[cacheKey]
+        delete loadingStates.value[cacheKey]
+        delete errorStates.value[cacheKey]
     }
 
     /**

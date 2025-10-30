@@ -263,6 +263,9 @@ class SprunjeAction extends Base
     /**
      * Get listable fields from a schema array.
      * 
+     * Only fields with explicit `listable: true` are included.
+     * This prevents sensitive fields (password, timestamps, etc.) from being exposed by default.
+     * 
      * @param array $schema The schema configuration
      * 
      * @return array List of listable field names
@@ -273,12 +276,8 @@ class SprunjeAction extends Base
         
         if (isset($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                // Check if explicitly set to listable, or default to true if not readonly
-                $isListable = isset($fieldConfig['listable']) 
-                    ? $fieldConfig['listable'] 
-                    : !($fieldConfig['readonly'] ?? false);
-                    
-                if ($isListable) {
+                // Only include fields explicitly marked as listable: true
+                if (isset($fieldConfig['listable']) && $fieldConfig['listable'] === true) {
                     $listable[] = $fieldName;
                 }
             }

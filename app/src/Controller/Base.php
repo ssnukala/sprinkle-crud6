@@ -208,6 +208,9 @@ abstract class Base
     /**
      * Get listable fields from the model schema.
      * 
+     * Only fields with explicit `listable: true` are included.
+     * This prevents sensitive fields (password, timestamps, etc.) from being exposed by default.
+     * 
      * @param string $modelName The model name
      * 
      * @return string[] Array of listable field names
@@ -218,7 +221,8 @@ abstract class Base
         $fields = $this->getFields($modelName);
 
         foreach ($fields as $name => $field) {
-            if ($field['listable'] ?? false) {
+            // Only include fields explicitly marked as listable: true
+            if (isset($field['listable']) && $field['listable'] === true) {
                 $listable[] = $name;
             }
         }

@@ -39,7 +39,14 @@ const modelLabel = computed(() => {
 })
 
 // Schema fields
-const schemaFields = computed(() => Object.entries(schema.value?.fields || {}))
+const schemaFields = computed(() => {
+  // If schema has contexts (multi-context response), use the list context
+  if (schema.value?.contexts?.list?.fields) {
+    return Object.entries(schema.value.contexts.list.fields)
+  }
+  // Otherwise use the fields directly (single-context or legacy response)
+  return Object.entries(schema.value?.fields || {})
+})
 
 // API URL
 const apiUrl = computed(() =>
@@ -120,8 +127,9 @@ onMounted(() => {
     // Set initial page title immediately for breadcrumbs
     page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     
-    // Request 'list' context to get only listable fields
-    const schemaPromise = loadSchema(model.value, false, 'list')
+    // Request BOTH 'list' and 'form' contexts in a single call
+    // This avoids duplicate API calls when the create/edit modal is opened
+    const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(() => {
         // Update page title and description using schema

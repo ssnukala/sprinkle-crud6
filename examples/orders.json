@@ -30,7 +30,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true
     },
     "order_number": {
@@ -39,7 +38,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -52,7 +50,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -68,7 +65,6 @@
       "required": false,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "email": true
@@ -80,7 +76,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "readonly": true,
       "validation": {
@@ -94,7 +89,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "default": "pending",
       "validation": {
@@ -107,7 +101,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true
@@ -119,7 +112,6 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": true,
       "listable": false
     },
     "created_at": {
@@ -128,7 +120,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true
     },
     "updated_at": {
@@ -137,7 +128,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": false
     }
   }

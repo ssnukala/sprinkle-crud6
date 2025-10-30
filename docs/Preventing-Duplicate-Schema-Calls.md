@@ -134,7 +134,7 @@ watch([model], async ([newModel]) => {
 - `setSchema(schemaData: CRUD6Schema, model?: string)`: Set schema directly
 - `sortableFields`: Computed<string[]> - List of sortable fields
 - `filterableFields`: Computed<string[]> - List of filterable fields
-- `searchableFields`: Computed<string[]> - List of searchable fields
+- `filterableFields`: Computed<string[]> - List of searchable fields
 - `tableColumns`: Computed<TableColumn[]> - Table column configuration
 - `defaultSort`: Computed<Record<string, 'asc' | 'desc'>> - Default sort
 - `hasPermission(action)`: Check user permission

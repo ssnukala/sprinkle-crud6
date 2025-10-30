@@ -8,7 +8,6 @@ export interface SchemaField {
     required?: boolean
     sortable?: boolean
     filterable?: boolean
-    searchable?: boolean
     readonly?: boolean
     filter_type?: string
     validation?: any
@@ -143,7 +142,8 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Get filterable fields from schema
+     * Get filterable fields from schema.
+     * These fields are used for global text search.
      */
     const filterableFields = computed(() => {
         if (!schema.value?.fields) return []
@@ -153,29 +153,19 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Get searchable fields from schema
-     */
-    const searchableFields = computed(() => {
-        if (!schema.value?.fields) return []
-        return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.searchable)
-            .map(([key]) => key)
-    })
-
-    /**
-     * Get table columns configuration for UFTable
+     * Get table columns configuration for UFTable.
+     * Returns columns that are either sortable or filterable.
      */
     const tableColumns = computed(() => {
         if (!schema.value?.fields) return []
         
         return Object.entries(schema.value.fields)
-            .filter(([_, field]) => field.sortable || field.filterable || field.searchable)
+            .filter(([_, field]) => field.sortable || field.filterable)
             .map(([key, field]) => ({
                 key,
                 label: field.label || key,
                 sortable: field.sortable || false,
                 filterable: field.filterable || false,
-                searchable: field.searchable || false,
                 type: field.type || 'string',
                 readonly: field.readonly || false,
                 filterType: field.filter_type || 'equals'
@@ -214,7 +204,6 @@ export function useCRUD6Schema(modelName?: string) {
         setSchema,
         sortableFields,
         filterableFields,
-        searchableFields,
         tableColumns,
         defaultSort,
         hasPermission

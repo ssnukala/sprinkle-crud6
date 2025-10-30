@@ -56,20 +56,19 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
     }
 
     /**
-     * Test search across multiple searchable fields.
+     * Test search across multiple filterable fields.
      */
     public function testSearchAcrossMultipleFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with groups table and searchable fields
+        // Setup sprunje with groups table and filterable fields
         $sprunje->setupSprunje(
             'groups',
             ['name', 'slug'],  // sortable
-            ['name'],           // filterable
-            ['name', 'slug', 'description'],  // listable
-            ['name', 'description']  // searchable - search in name and description only
+            ['name', 'description'],  // filterable - search in name and description only
+            ['name', 'slug', 'description']  // listable
         );
         
         // Search for "Alpha" - should match both Alpha Group (by name) and Gamma Group (by description)
@@ -97,10 +96,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'description'],  // filterable
+            ['name', 'slug', 'description']  // listable
         );
         
         // Search for "test" - should match all groups (all have "test" in description)
@@ -122,10 +120,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'description'],  // filterable
+            ['name', 'slug', 'description']  // listable
         );
         
         // Search for something that doesn't exist
@@ -147,10 +144,9 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         // Setup sprunje with groups table
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name', 'description']
+            ['name'],  // sortable
+            ['name', 'description'],  // filterable
+            ['name', 'slug', 'description']  // listable
         );
         
         // Search for "alpha" in lowercase - should match "Alpha Group"
@@ -162,27 +158,27 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
     }
 
     /**
-     * Test that search does not search non-searchable fields.
+     * Test that search does not search non-filterable fields.
      */
     public function testSearchOnlySearchableFields(): void
+    public function testSearchOnlyFilterableFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with only 'name' as searchable (not description or slug)
+        // Setup sprunje with only 'name' as filterable (not description or slug)
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            ['name']  // Only name is searchable
+            ['name'],  // sortable
+            ['name'],  // filterable - Only name is filterable
+            ['name', 'slug', 'description']  // listable
         );
         
-        // Search for "beta-group" which is in slug but slug is not searchable
+        // Search for "beta-group" which is in slug but slug is not filterable
         $sprunje->setOptions(['search' => 'beta-group']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(0, $data['count_filtered'], 'Should not find groups by slug when slug is not searchable');
+        $this->assertEquals(0, $data['count_filtered'], 'Should not find groups by slug when slug is not filterable');
         $this->assertCount(0, $data['rows']); // @phpstan-ignore-line
         
         // Now search for "Beta" which is in name
@@ -194,20 +190,19 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
     }
 
     /**
-     * Test that search works with empty searchable fields (no search performed).
+     * Test that search works with empty filterable fields (no search performed).
      */
-    public function testSearchWithNoSearchableFields(): void
+    public function testSearchWithNoFilterableFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with no searchable fields
+        // Setup sprunje with no filterable fields
         $sprunje->setupSprunje(
             'groups',
-            ['name'],
-            [],
-            ['name', 'slug', 'description'],
-            []  // No searchable fields
+            ['name'],  // sortable
+            [],  // filterable - No filterable fields
+            ['name', 'slug', 'description']  // listable
         );
         
         // Search should have no effect
@@ -215,7 +210,7 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
         $data = $sprunje->getArray();
 
         // Should return all groups since search has no fields to search
-        $this->assertEquals(3, $data['count_filtered'], 'Should return all groups when no fields are searchable');
+        $this->assertEquals(3, $data['count_filtered'], 'Should return all groups when no fields are filterable');
         $this->assertCount(3, $data['rows']); // @phpstan-ignore-line
     }
 }

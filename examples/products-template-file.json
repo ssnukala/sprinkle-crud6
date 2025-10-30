@@ -21,7 +21,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true
     },
     "name": {
@@ -30,7 +29,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -46,7 +44,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": false,
       "filter_type": "starts_with",
       "validation": {
@@ -60,7 +57,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "filter_type": "between",
       "validation": {
@@ -75,7 +71,6 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": true,
       "listable": true,
       "field_template": "product-card.html"
     },
@@ -85,7 +80,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "filter_type": "equals"
     },
@@ -95,7 +89,6 @@
       "default": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": false
     },
     "created_at": {
@@ -104,7 +97,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
@@ -114,7 +106,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": false,
       "date_format": "Y-m-d H:i:s"
     }

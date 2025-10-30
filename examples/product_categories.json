@@ -18,7 +18,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true
     },
     "product_id": {
@@ -27,7 +26,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true
@@ -39,7 +37,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true
@@ -51,7 +48,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": false
     }
   }

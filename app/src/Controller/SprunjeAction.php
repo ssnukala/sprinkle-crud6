@@ -134,7 +134,6 @@ class SprunjeAction extends Base
                 $sortableFields = $this->getSortableFieldsFromSchema($relatedSchema);
                 $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
                 $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
-                $searchableFields = $this->getSearchableFieldsFromSchema($relatedSchema);
                 
                 $this->logger->debug("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
                     'relation' => $relation,
@@ -142,7 +141,6 @@ class SprunjeAction extends Base
                     'sortable_fields' => $sortableFields,
                     'filterable_fields' => $filterableFields,
                     'list_fields' => $listFields,
-                    'searchable_fields' => $searchableFields,
                 ]);
                 
                 // Setup sprunje with related model configuration
@@ -150,8 +148,7 @@ class SprunjeAction extends Base
                     $relatedModel->getTable(),
                     $sortableFields,
                     $filterableFields,
-                    $listFields,
-                    $searchableFields
+                    $listFields
                 );
                 
                 $this->sprunje->setOptions($params);
@@ -176,7 +173,6 @@ class SprunjeAction extends Base
             $sortableFields = $this->getSortableFields($modelName);
             $filterableFields = $this->getFilterableFields($modelName);
             $listFields = $this->getListableFields($modelName);
-            $searchableFields = $this->getSearchableFields($modelName);
 
             $this->logger->debug("CRUD6 [SprunjeAction] Setting up main model sprunje", [
                 'model' => $modelName,
@@ -184,7 +180,6 @@ class SprunjeAction extends Base
                 'sortable_fields' => $sortableFields,
                 'filterable_fields' => $filterableFields,
                 'list_fields' => $listFields,
-                'searchable_fields' => $searchableFields,
                 'query_params' => $params,
             ]);
 
@@ -192,8 +187,7 @@ class SprunjeAction extends Base
                 $crudModel->getTable(),
                 $sortableFields,
                 $filterableFields,
-                $listFields,
-                $searchableFields
+                $listFields
             );
 
             $this->sprunje->setOptions($params);
@@ -284,27 +278,5 @@ class SprunjeAction extends Base
         }
         
         return $listable;
-    }
-
-    /**
-     * Get searchable fields from a schema array.
-     * 
-     * @param array $schema The schema configuration
-     * 
-     * @return array List of searchable field names
-     */
-    protected function getSearchableFieldsFromSchema(array $schema): array
-    {
-        $searchable = [];
-        
-        if (isset($schema['fields'])) {
-            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                if (isset($fieldConfig['searchable']) && $fieldConfig['searchable'] === true) {
-                    $searchable[] = $fieldName;
-                }
-            }
-        }
-        
-        return $searchable;
     }
 }

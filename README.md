@@ -88,7 +88,6 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false
     },
     "user_name": {
       "type": "string", 
@@ -96,7 +95,6 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "validation": {
         "required": true,
         "length": {
@@ -119,8 +117,7 @@ Each field in the schema can have the following properties:
 - **label**: Human-readable field name
 - **required**: Whether the field is required for creation
 - **sortable**: Whether the field can be sorted in lists
-- **filterable**: Whether the field can be filtered
-- **searchable**: Whether the field is included in global search
+- **filterable**: Whether the field is included in global search and filtering
 - **listable**: Whether the field should be displayed in list views (must be explicitly set to `true` to show; defaults to `false` for security)
 - **readonly**: Whether the field is read-only (not editable)
 - **auto_increment**: Whether the field is auto-incremented

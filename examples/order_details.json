@@ -21,7 +21,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true
     },
     "order_id": {
@@ -30,7 +29,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": false,
       "listable": false,
       "validation": {
         "required": true
@@ -42,7 +40,6 @@
       "required": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -55,7 +52,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "required": true
@@ -67,7 +63,6 @@
       "required": true,
       "sortable": true,
       "filterable": true,
-      "searchable": true,
       "listable": true,
       "validation": {
         "required": true,
@@ -83,7 +78,6 @@
       "required": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -97,7 +91,6 @@
       "required": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true,
       "validation": {
         "required": true,
@@ -111,7 +104,6 @@
       "required": false,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": true,
       "readonly": true,
       "validation": {
@@ -125,7 +117,6 @@
       "required": false,
       "sortable": false,
       "filterable": false,
-      "searchable": true,
       "listable": false
     },
     "created_at": {
@@ -134,7 +125,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": false
     },
     "updated_at": {
@@ -143,7 +133,6 @@
       "readonly": true,
       "sortable": true,
       "filterable": false,
-      "searchable": false,
       "listable": false
     }
   }

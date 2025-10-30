@@ -152,7 +152,8 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Get table columns configuration for UFTable
+     * Get table columns configuration for UFTable.
+     * Returns columns that are either sortable or searchable.
      */
     const tableColumns = computed(() => {
         if (!schema.value?.fields) return []

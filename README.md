@@ -121,13 +121,15 @@ Each field in the schema can have the following properties:
 - **sortable**: Whether the field can be sorted in lists
 - **filterable**: Whether the field can be filtered
 - **searchable**: Whether the field is included in global search
+- **listable**: Whether the field should be displayed in list views (must be explicitly set to `true` to show; defaults to `false` for security)
 - **readonly**: Whether the field is read-only (not editable)
 - **auto_increment**: Whether the field is auto-incremented
 - **default**: Default value for the field
 - **validation**: Validation rules for the field
 - **filter_type**: Type of filter (`equals`, `like`, `starts_with`, `ends_with`, `in`, `between`, `greater_than`, `less_than`, `not_equals`)
 - **field_template**: Custom Vue.js HTML template for rendering the field in list views (supports placeholders like `{{field_name}}`)
-- **listable**: Whether the field should be displayed in list views (defaults based on field configuration)
+
+> **Security Note**: The `listable` field property defaults to `false` for security. Only fields explicitly marked as `listable: true` will be displayed in list views. This prevents sensitive data (such as passwords, API keys, or internal timestamps) from being accidentally exposed. Always review which fields should be visible in your application's list views.
 
 ### Schema Defaults
 

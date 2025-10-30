@@ -210,4 +210,216 @@ class SchemaService
 
         return $modelInstance;
     }
+
+    /**
+     * Filter schema for a specific context.
+     * 
+     * Returns only the schema properties needed for a specific frontend context,
+     * reducing payload size and preventing exposure of sensitive information.
+     * 
+     * Supported contexts:
+     * - 'list': Fields for listing/table view (listable fields only)
+     * - 'form': Fields for create/edit forms (editable fields with validation)
+     * - 'detail': Full field information for detail/view pages
+     * - 'meta': Just model metadata (no field details)
+     * - null/'full': Complete schema (backward compatible, but not recommended)
+     * 
+     * @param array       $schema  The complete schema array
+     * @param string|null $context The context ('list', 'form', 'detail', 'meta', or null for full)
+     * 
+     * @return array The filtered schema appropriate for the context
+     */
+    public function filterSchemaForContext(array $schema, ?string $context = null): array
+    {
+        // If no context or 'full', return complete schema (backward compatible)
+        if ($context === null || $context === 'full') {
+            return $schema;
+        }
+
+        // Start with base metadata that all contexts need
+        $filtered = [
+            'model' => $schema['model'],
+            'title' => $schema['title'] ?? ucfirst($schema['model']),
+            'singular_title' => $schema['singular_title'] ?? $schema['title'] ?? ucfirst($schema['model']),
+            'primary_key' => $schema['primary_key'] ?? 'id',
+        ];
+
+        // Add description if present
+        if (isset($schema['description'])) {
+            $filtered['description'] = $schema['description'];
+        }
+
+        // Add permissions if present (needed for permission checks)
+        if (isset($schema['permissions'])) {
+            $filtered['permissions'] = $schema['permissions'];
+        }
+
+        switch ($context) {
+            case 'meta':
+                // Minimal metadata only - no field information
+                // Just model identification and permissions
+                break;
+
+            case 'list':
+                // For list/table views: only listable fields with display properties
+                $filtered['fields'] = [];
+                $filtered['default_sort'] = $schema['default_sort'] ?? [];
+                
+                foreach ($schema['fields'] as $fieldKey => $field) {
+                    // Include field if it's explicitly listable or listable is not set (default true)
+                    if (($field['listable'] ?? true) === true) {
+                        $filtered['fields'][$fieldKey] = [
+                            'type' => $field['type'] ?? 'string',
+                            'label' => $field['label'] ?? $fieldKey,
+                            'sortable' => $field['sortable'] ?? false,
+                            'filterable' => $field['filterable'] ?? false,
+                        ];
+
+                        // Include width if specified
+                        if (isset($field['width'])) {
+                            $filtered['fields'][$fieldKey]['width'] = $field['width'];
+                        }
+
+                        // Include field_template if specified (for custom rendering)
+                        if (isset($field['field_template'])) {
+                            $filtered['fields'][$fieldKey]['field_template'] = $field['field_template'];
+                        }
+
+                        // Include filter_type if field is filterable
+                        if (isset($field['filter_type']) && ($field['filterable'] ?? false)) {
+                            $filtered['fields'][$fieldKey]['filter_type'] = $field['filter_type'];
+                        }
+                    }
+                }
+                break;
+
+            case 'form':
+                // For create/edit forms: editable fields with validation
+                $filtered['fields'] = [];
+                
+                foreach ($schema['fields'] as $fieldKey => $field) {
+                    // Include field if it's explicitly editable or editable is not set (default true)
+                    if (($field['editable'] ?? true) !== false) {
+                        $filtered['fields'][$fieldKey] = [
+                            'type' => $field['type'] ?? 'string',
+                            'label' => $field['label'] ?? $fieldKey,
+                            'required' => $field['required'] ?? false,
+                            'readonly' => $field['readonly'] ?? false,
+                        ];
+
+                        // Include validation rules if present
+                        if (isset($field['validation'])) {
+                            $filtered['fields'][$fieldKey]['validation'] = $field['validation'];
+                        }
+
+                        // Include placeholder if present
+                        if (isset($field['placeholder'])) {
+                            $filtered['fields'][$fieldKey]['placeholder'] = $field['placeholder'];
+                        }
+
+                        // Include description if present (helpful hint text)
+                        if (isset($field['description'])) {
+                            $filtered['fields'][$fieldKey]['description'] = $field['description'];
+                        }
+
+                        // Include default value if present
+                        if (isset($field['default'])) {
+                            $filtered['fields'][$fieldKey]['default'] = $field['default'];
+                        }
+
+                        // Include icon if present
+                        if (isset($field['icon'])) {
+                            $filtered['fields'][$fieldKey]['icon'] = $field['icon'];
+                        }
+
+                        // Include rows for textarea fields
+                        if (isset($field['rows'])) {
+                            $filtered['fields'][$fieldKey]['rows'] = $field['rows'];
+                        }
+
+                        // Include smartlookup configuration if present
+                        if ($field['type'] === 'smartlookup') {
+                            if (isset($field['lookup_model'])) {
+                                $filtered['fields'][$fieldKey]['lookup_model'] = $field['lookup_model'];
+                            }
+                            if (isset($field['lookup_id'])) {
+                                $filtered['fields'][$fieldKey]['lookup_id'] = $field['lookup_id'];
+                            }
+                            if (isset($field['lookup_desc'])) {
+                                $filtered['fields'][$fieldKey]['lookup_desc'] = $field['lookup_desc'];
+                            }
+                            if (isset($field['model'])) {
+                                $filtered['fields'][$fieldKey]['model'] = $field['model'];
+                            }
+                            if (isset($field['id'])) {
+                                $filtered['fields'][$fieldKey]['id'] = $field['id'];
+                            }
+                            if (isset($field['desc'])) {
+                                $filtered['fields'][$fieldKey]['desc'] = $field['desc'];
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case 'detail':
+                // For detail/view pages: all fields with full display properties
+                $filtered['fields'] = [];
+                
+                foreach ($schema['fields'] as $fieldKey => $field) {
+                    $filtered['fields'][$fieldKey] = [
+                        'type' => $field['type'] ?? 'string',
+                        'label' => $field['label'] ?? $fieldKey,
+                        'readonly' => $field['readonly'] ?? false,
+                    ];
+
+                    // Include description if present
+                    if (isset($field['description'])) {
+                        $filtered['fields'][$fieldKey]['description'] = $field['description'];
+                    }
+
+                    // Include field_template if specified
+                    if (isset($field['field_template'])) {
+                        $filtered['fields'][$fieldKey]['field_template'] = $field['field_template'];
+                    }
+
+                    // Include editable flag for detail pages that allow inline editing
+                    if (isset($field['editable'])) {
+                        $filtered['fields'][$fieldKey]['editable'] = $field['editable'];
+                    }
+
+                    // Include default value for display purposes
+                    if (isset($field['default'])) {
+                        $filtered['fields'][$fieldKey]['default'] = $field['default'];
+                    }
+                }
+
+                // Include detail configuration if present (for related data)
+                if (isset($schema['detail'])) {
+                    $filtered['detail'] = $schema['detail'];
+                }
+
+                // Include detail_editable configuration if present
+                if (isset($schema['detail_editable'])) {
+                    $filtered['detail_editable'] = $schema['detail_editable'];
+                }
+
+                // Include render_mode if present
+                if (isset($schema['render_mode'])) {
+                    $filtered['render_mode'] = $schema['render_mode'];
+                }
+
+                // Include title_field if present (for displaying record name)
+                if (isset($schema['title_field'])) {
+                    $filtered['title_field'] = $schema['title_field'];
+                }
+                break;
+
+            default:
+                // Unknown context - return full schema for safety
+                return $schema;
+        }
+
+        return $filtered;
+    }
 }

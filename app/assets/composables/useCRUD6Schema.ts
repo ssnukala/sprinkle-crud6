@@ -92,21 +92,25 @@ export function useCRUD6Schema(modelName?: string) {
     /**
      * Load schema for a specific model
      * Uses global store for caching to prevent duplicate API calls
+     * 
+     * @param model Model name to load
+     * @param force Force reload even if cached
+     * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
      */
-    async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
         // Check if already loaded in this instance and not forcing
         if (!force && currentModel.value === model && schema.value) {
             console.log('[useCRUD6Schema] Using local cached schema - model:', model)
             return schema.value
         }
 
-        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force)
+        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force, 'context:', context)
         loading.value = true
         error.value = null
 
         try {
-            // Delegate to global store
-            const schemaData = await schemaStore.loadSchema(model, force)
+            // Delegate to global store with context parameter
+            const schemaData = await schemaStore.loadSchema(model, force, context)
             
             if (schemaData) {
                 schema.value = schemaData

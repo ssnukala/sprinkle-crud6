@@ -48,6 +48,15 @@ class ApiAction extends Base
      * Invoke the API schema action.
      * 
      * Returns schema information and metadata for the requested model.
+     * Supports context-based filtering via query parameter to return only relevant data.
+     * 
+     * Query parameters:
+     * - context: Filter schema for specific use case (list|form|detail|meta)
+     *   - list: Only listable fields for table views
+     *   - form: Only editable fields with validation for forms
+     *   - detail: Full field information for detail pages
+     *   - meta: Just model metadata (minimal)
+     *   - Omit for full schema (not recommended, for backward compatibility)
      * 
      * @param array                  $crudSchema The schema configuration array (auto-injected)
      * @param CRUD6ModelInterface    $crudModel  The configured model instance (auto-injected)
@@ -65,19 +74,31 @@ class ApiAction extends Base
 
         $this->logger->debug("Line 34 : CRUD6: API request for model: {$crudSchema['model']}");
 
+        // Get context parameter from query string
+        $queryParams = $request->getQueryParams();
+        $context = $queryParams['context'] ?? null;
+
+        // Filter schema based on context
+        $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
+
         // Get a display name for the model (title or capitalized model name)
         // For button labels, we want singular form like "Group" not "groups" or "Group Management"
-        $modelDisplayName = $crudSchema['title'] ?? ucfirst($crudSchema['model']);
+        $modelDisplayName = $filteredSchema['title'] ?? ucfirst($filteredSchema['model']);
         // If title ends with "Management", extract the entity name
         if (preg_match('/^(.+)\s+Management$/i', $modelDisplayName, $matches)) {
             $modelDisplayName = $matches[1];
         }
 
+        // Log context filtering for debugging
+        if ($context !== null) {
+            $this->logger->debug("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
+        }
+
         $responseData = [
             'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $modelDisplayName]),
-            'model' => $crudSchema['model'],
+            'model' => $filteredSchema['model'],
             'modelDisplayName' => $modelDisplayName,
-            'schema' => $crudSchema
+            'schema' => $filteredSchema
         ];
 
         $response->getBody()->write(json_encode($responseData));

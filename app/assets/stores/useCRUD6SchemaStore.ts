@@ -51,11 +51,16 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     /**
      * Load schema for a specific model
      * Returns cached schema if available, otherwise fetches from API
+     * 
+     * @param model Model name to load schema for
+     * @param force Force reload even if cached
+     * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
      */
-    async function loadSchema(model: string, force: boolean = false): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
         console.log('[useCRUD6SchemaStore] loadSchema called', {
             model,
             force,
+            context,
             hasCache: hasSchema(model),
             isCurrentlyLoading: isLoading(model),
             timestamp: new Date().toISOString()
@@ -81,12 +86,17 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             })
         }
 
-        console.log('[useCRUD6SchemaStore] Loading schema from API - model:', model, 'force:', force)
+        console.log('[useCRUD6SchemaStore] Loading schema from API - model:', model, 'force:', force, 'context:', context)
         loadingStates.value[model] = true
         errorStates.value[model] = null
 
         try {
-            const url = `/api/crud6/${model}/schema`
+            // Build URL with optional context parameter
+            let url = `/api/crud6/${model}/schema`
+            if (context) {
+                url += `?context=${encodeURIComponent(context)}`
+            }
+            
             console.log('[useCRUD6SchemaStore] Making API request', {
                 url,
                 method: 'GET',

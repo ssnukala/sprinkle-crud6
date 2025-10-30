@@ -86,7 +86,8 @@ watch(
         // 2. We have a loadSchema function 
         // 3. NO schema was provided as a prop (PageRow should provide it)
         if (newModel && loadSchema && !props.schema) {
-            const schemaPromise = loadSchema(newModel)
+            // Request 'form' context to get only editable fields with validation
+            const schemaPromise = loadSchema(newModel, false, 'form')
             if (schemaPromise && typeof schemaPromise.then === 'function') {
                 schemaPromise.then(() => {
                 }).catch((error) => {

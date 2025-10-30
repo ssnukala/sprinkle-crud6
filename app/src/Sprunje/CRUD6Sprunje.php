@@ -70,8 +70,10 @@ class CRUD6Sprunje extends Sprunje
     /**
      * Configure the Sprunje with dynamic settings from schema.
      * 
-     * Note: The `$filterable` parameter was removed as it was not being used
-     * for actual filtering. Use `$searchable` for global text search functionality.
+     * BREAKING CHANGE: The `$filterable` parameter was removed in this version.
+     * It was being passed through but never actually used for filtering operations.
+     * Code calling this method with 5 parameters must be updated to use only 4 parameters.
+     * For global text search functionality, use the `$searchable` parameter.
      * 
      * @param string   $name       The model/table name
      * @param string[] $sortable   List of sortable field names

@@ -3,8 +3,8 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useCRUD6Api } from './useCRUD6Api'
 import type { ActionConfig } from './useCRUD6Schema'
-import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
-import { useAlerts, useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { Severity, type ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
+import { useAlertsStore, useTranslator } from '@userfrosting/sprinkle-core/stores'
 
 /**
  * Vue composable for executing custom CRUD6 actions.
@@ -19,7 +19,7 @@ import { useAlerts, useTranslator } from '@userfrosting/sprinkle-core/stores'
 export function useCRUD6Actions(model?: string) {
     const router = useRouter()
     const { updateField } = useCRUD6Api()
-    const alerts = useAlerts()
+    const alertsStore = useAlertsStore()
     const translator = useTranslator()
     
     const loading = ref(false)
@@ -73,7 +73,11 @@ export function useCRUD6Actions(model?: string) {
                 title: 'Action Failed',
                 description: 'Failed to execute action: ' + action.label
             }
-            alerts.addError(error.value.description || 'Action failed')
+            alertsStore.push({
+                title: error.value.title || 'Action Failed',
+                description: error.value.description || 'Action failed',
+                style: Severity.Danger
+            })
             return false
         } finally {
             loading.value = false
@@ -125,7 +129,11 @@ export function useCRUD6Actions(model?: string) {
             const successMsg = action.success_message 
                 ? translator.translate(action.success_message) 
                 : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
-            alerts.addSuccess(successMsg)
+            alertsStore.push({
+                title: translator.translate('CRUD6.ACTION.SUCCESS_TITLE') || 'Success',
+                description: successMsg,
+                style: Severity.Success
+            })
             
             return true
         } catch (err) {
@@ -187,7 +195,11 @@ export function useCRUD6Actions(model?: string) {
             const successMsg = action.success_message 
                 ? translator.translate(action.success_message) 
                 : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
-            alerts.addSuccess(successMsg)
+            alertsStore.push({
+                title: translator.translate('CRUD6.ACTION.SUCCESS_TITLE') || 'Success',
+                description: successMsg,
+                style: Severity.Success
+            })
 
             return true
         } catch (err) {

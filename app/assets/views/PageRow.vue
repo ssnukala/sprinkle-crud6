@@ -110,14 +110,55 @@ const originalRecord = ref<CRUD6Interface | null>(null)
 const loading = computed(() => schemaLoading.value || apiLoading.value)
 const error = computed(() => schemaError.value || apiError.value)
 
+// Flattened schema - handles multi-context responses
+// When schema has 'contexts' property (multi-context response), merge detail context data to root
+const flattenedSchema = computed(() => {
+    if (!schema.value) return null
+    
+    // If schema has contexts property (multi-context response from 'detail,form' request)
+    if (schema.value.contexts) {
+        console.log('[PageRow] Multi-context schema detected, flattening...')
+        
+        // Start with base schema properties
+        const flattened = {
+            model: schema.value.model,
+            title: schema.value.title,
+            singular_title: schema.value.singular_title,
+            description: schema.value.description,
+            primary_key: schema.value.primary_key,
+            permissions: schema.value.permissions,
+        }
+        
+        // Merge 'detail' context data if present (for detail view display)
+        if (schema.value.contexts.detail) {
+            Object.assign(flattened, schema.value.contexts.detail)
+            console.log('[PageRow] Merged detail context - hasDetail:', !!flattened.detail)
+        }
+        
+        // If we're in edit/create mode, also check for 'form' context
+        // Form context provides editable fields which may have additional properties
+        if (isEditMode.value && schema.value.contexts.form) {
+            // Merge form fields, but don't overwrite detail fields
+            if (!flattened.fields && schema.value.contexts.form.fields) {
+                flattened.fields = schema.value.contexts.form.fields
+            }
+        }
+        
+        return flattened
+    }
+    
+    // Single-context or full schema - use as-is
+    return schema.value
+})
+
 // Permission checks
 const hasCreatePermission = computed(() => hasPermission('create'))
 const hasViewPermission = computed(() => hasPermission('view'))
 
 // Model label for page titles - prioritize singular_title over title
 const modelLabel = computed(() => {
-    if (schema.value?.singular_title) {
-        return schema.value.singular_title
+    if (flattenedSchema.value?.singular_title) {
+        return flattenedSchema.value.singular_title
     }
     // Capitalize first letter of model name as fallback
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
@@ -135,7 +176,7 @@ function fetch() {
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 // Update page title with record name if available
-                const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
+                const recordName = fetchedRow[flattenedSchema.value?.title_field || 'name'] || fetchedRow.name
                 if (recordName) {
                     page.title = `${recordName} - ${modelLabel.value}`
                 }
@@ -208,7 +249,7 @@ onMounted(async () => {
     } else if (isCreateMode.value) {
         // Initialize empty record for create mode using schema
         record.value = {}
-        CRUD6Row.value = createInitialRecord(schema.value?.fields)
+        CRUD6Row.value = createInitialRecord(flattenedSchema.value?.fields)
         resetForm()
     }
 })
@@ -228,7 +269,7 @@ watch(
 
 // Watch for schema changes to update initial record structure
 watch(
-    () => schema.value,
+    () => flattenedSchema.value,
     (newSchema) => {
         if (newSchema?.fields && isCreateMode.value) {
             // Update the initial record structure when schema loads in create mode
@@ -256,14 +297,14 @@ watch(model, async (newModel) => {
             console.log('[PageRow] Schema loaded successfully for model:', newModel)
             
             // Update page title and description
-            if (schema.value) {
+            if (flattenedSchema.value) {
                 if (isCreateMode.value) {
                     page.title = `Create ${modelLabel.value}`
-                    page.description = schema.value.description || `Create a new ${modelLabel.value}`
+                    page.description = flattenedSchema.value.description || `Create a new ${modelLabel.value}`
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    page.title = schema.value.title || modelLabel.value
-                    page.description = schema.value.description || `View and edit ${modelLabel.value} details.`
+                    page.title = flattenedSchema.value.title || modelLabel.value
+                    page.description = flattenedSchema.value.description || `View and edit ${modelLabel.value} details.`
                 }
             }
         }
@@ -290,13 +331,13 @@ watch(recordId, (newId) => {
     </template>
     <template v-else>
         <!-- Schema-driven edit/create mode -->
-        <div v-if="isEditMode && schema" class="uk-container">
+        <div v-if="isEditMode && flattenedSchema" class="uk-container">
             <div class="uk-card uk-card-default">
                 <div class="uk-card-header">
                     <div class="uk-flex uk-flex-between uk-flex-middle">
                         <div>
                             <h3 class="uk-card-title uk-margin-remove">
-                                {{ isCreateMode ? $t('CRUD6.CREATE', { model: schema?.title || model }) : $t('CRUD6.EDIT', { model: schema?.title || model }) }}
+                                {{ isCreateMode ? $t('CRUD6.CREATE', { model: flattenedSchema?.title || model }) : $t('CRUD6.EDIT', { model: flattenedSchema?.title || model }) }}
                             </h3>
                             <small v-if="recordId" class="uk-text-muted">ID: {{ recordId }}</small>
                         </div>
@@ -326,10 +367,10 @@ watch(recordId, (newId) => {
                 </div>
                 <div class="uk-card-body">
                     <!-- Dynamic Form based on schema -->
-                    <form v-if="schema && record" @submit.prevent="saveRecord" class="uk-form-stacked">
+                    <form v-if="flattenedSchema && record" @submit.prevent="saveRecord" class="uk-form-stacked">
                         <div class="uk-grid-small" uk-grid>
                             <div
-                                v-for="[fieldKey, field] in Object.entries(schema.fields)"
+                                v-for="[fieldKey, field] in Object.entries(flattenedSchema.fields)"
                                 :key="fieldKey"
                                 :class="field.width || 'uk-width-1-2'"
                                 v-if="field.editable !== false">
@@ -447,13 +488,13 @@ watch(recordId, (newId) => {
         <!-- Default view mode with existing components -->
         <div v-else class="uk-child-width-expand" uk-grid>
             <div>
-                <CRUD6Info :crud6="CRUD6Row" :schema="schema" @crud6Updated="fetch()" />
+                <CRUD6Info :crud6="CRUD6Row" :schema="flattenedSchema" @crud6Updated="fetch()" />
             </div>
-            <div class="uk-width-2-3" v-if="schema?.detail && $checkAccess('view_crud6_field')">
+            <div class="uk-width-2-3" v-if="flattenedSchema?.detail && $checkAccess('view_crud6_field')">
                 <CRUD6Details 
                     :recordId="recordId" 
                     :parentModel="model" 
-                    :detailConfig="schema.detail" 
+                    :detailConfig="flattenedSchema.detail" 
                 />
             </div>
         </div>

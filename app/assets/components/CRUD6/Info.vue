@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useI18n } from 'vue-i18n'
+import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
+import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response
@@ -39,6 +42,9 @@ function requestDeleteModal() {
 console.log('[Info] Creating schemaComposable - providedSchema exists:', !!providedSchema, 'model:', model.value)
 const schemaComposable = providedSchema ? null : useCRUD6Schema()
 
+// Create actions composable for executing custom actions
+const { executeAction, loading: actionLoading } = useCRUD6Actions(model.value)
+
 // Extract functions with fallbacks
 const hasPermission = schemaComposable?.hasPermission || (() => true)
 
@@ -62,9 +68,11 @@ const hasDeletePermission = computed(() => hasPermission('delete'))
 const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 
 // Model label for buttons - prioritize singular_title over model name
+// Support translation keys (e.g., "USER.SINGULAR") or plain text
 const modelLabel = computed(() => {
     if (finalSchema.value?.singular_title) {
-        return finalSchema.value.singular_title
+        // Try to translate - if key doesn't exist, returns the key itself
+        return t(finalSchema.value.singular_title)
     }
     // Capitalize first letter of model name as fallback
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
@@ -105,6 +113,29 @@ function formatFieldValue(value: any, field: any): string {
             return String(value)
     }
 }
+
+// Handle custom action execution
+async function handleActionClick(action: ActionConfig) {
+    const success = await executeAction(action, crud6.id, crud6)
+    if (success && action.type === 'field_update') {
+        // Refresh the record data after field update
+        emits('crud6Updated')
+    }
+}
+
+// Check if action should be visible based on permissions
+function isActionVisible(action: ActionConfig): boolean {
+    if (!action.permission) {
+        return true
+    }
+    return hasPermission(action.permission as any)
+}
+
+// Get custom actions from schema
+const customActions = computed(() => {
+    if (!finalSchema.value?.actions) return []
+    return finalSchema.value.actions.filter(isActionVisible)
+})
 
 // Schema loading is completely handled by parent PageRow component and passed as a prop
 // When schema prop is provided, we don't use the composable for loading at all to avoid redundant API calls
@@ -166,6 +197,24 @@ function formatFieldValue(value: any, field: any): string {
             <hr />
             
             <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
+            
+            <!-- Custom action buttons from schema -->
+            <button
+                v-for="action in customActions"
+                :key="action.key"
+                @click="handleActionClick(action)"
+                :disabled="actionLoading"
+                :class="[
+                    'uk-width-1-1',
+                    'uk-margin-small-bottom',
+                    'uk-button',
+                    'uk-button-small',
+                    action.style ? `uk-button-${action.style}` : 'uk-button-default'
+                ]">
+                <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                {{ $t(action.label) }}
+            </button>
+            
             <!-- Edit button - shows modal only after user clicks -->
             <button
                 v-if="hasUpdatePermission && !showEditModal"

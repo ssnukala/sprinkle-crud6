@@ -15,6 +15,8 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **AutoLookup Component**: Generic searchable auto-complete for selecting records from any model
 - **Master-Detail Data Entry**: Create and edit master records with their detail records in a single form
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
+- **Multiple Detail Sections**: Display multiple related tables on a single detail page
+- **Custom Action Buttons**: Schema-driven buttons for custom operations (field updates, API calls, navigation)
 - **Inline Editable Grids**: Edit detail records with add/edit/delete capabilities
 - **Flexible Permissions**: Schema-based permission system
 - **Data Validation**: Built-in validation based on field definitions
@@ -210,7 +212,9 @@ See `examples/categories.json`, `examples/products.json`, `examples/products-tem
 
 ### Detail Section Configuration
 
-Define one-to-many relationships declaratively in your schemas to display related data on detail pages:
+Define one-to-many relationships declaratively in your schemas to display related data on detail pages.
+
+#### Single Detail Section
 
 ```json
 {
@@ -230,15 +234,118 @@ Define one-to-many relationships declaratively in your schemas to display relate
 }
 ```
 
+#### Multiple Detail Sections (NEW!)
+
+Display multiple related tables on a single detail page:
+
+```json
+{
+  "model": "users",
+  "title": "User Management",
+  "table": "users",
+  "details": [
+    {
+      "model": "activities",
+      "foreign_key": "user_id",
+      "list_fields": ["type", "message", "created_at"],
+      "title": "USER.ACTIVITIES"
+    },
+    {
+      "model": "roles",
+      "foreign_key": "user_id",
+      "list_fields": ["name", "slug", "description"],
+      "title": "USER.ROLES"
+    },
+    {
+      "model": "permissions",
+      "foreign_key": "user_id",
+      "list_fields": ["slug", "name", "description"],
+      "title": "USER.PERMISSIONS"
+    }
+  ],
+  "fields": {
+    "id": { "type": "integer", "label": "ID" },
+    "user_name": { "type": "string", "label": "Username" }
+  }
+}
+```
+
 **Detail Configuration Properties:**
 - **model**: The name of the related model to display
 - **foreign_key**: The foreign key field in the related table that references this model
 - **list_fields**: Array of field names to display in the detail list
 - **title** (optional): Title for the detail section (supports i18n keys)
 
-When viewing a group detail page, the users belonging to that group will be automatically displayed in a data table. The detail section is optional - if not configured, no related data section will be shown.
+When viewing a detail page, related records will be automatically displayed in data tables. Both `detail` (single) and `details` (multiple) configurations are supported for backward compatibility.
 
-See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) for more information.
+See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) and [Multiple Details Feature](docs/MULTIPLE_DETAILS_FEATURE.md) for more information.
+
+### Custom Action Buttons (NEW!)
+
+Add schema-driven custom action buttons to detail pages for operations beyond standard Edit/Delete:
+
+```json
+{
+  "model": "users",
+  "title": "User Management",
+  "table": "users",
+  "actions": [
+    {
+      "key": "toggle_enabled",
+      "label": "Toggle Enabled",
+      "icon": "power-off",
+      "type": "field_update",
+      "field": "flag_enabled",
+      "toggle": true,
+      "style": "default",
+      "permission": "update_user_field",
+      "success_message": "User status updated successfully"
+    },
+    {
+      "key": "reset_password",
+      "label": "Reset Password",
+      "icon": "envelope",
+      "type": "api_call",
+      "endpoint": "/api/users/{id}/password/reset",
+      "method": "POST",
+      "style": "secondary",
+      "permission": "update_user_field",
+      "confirm": "Send password reset email?",
+      "success_message": "Password reset email sent"
+    },
+    {
+      "key": "change_password",
+      "label": "Change Password",
+      "icon": "key",
+      "type": "route",
+      "route": "user.password",
+      "style": "primary",
+      "permission": "update_user_field"
+    }
+  ],
+  "fields": {
+    "flag_enabled": { "type": "boolean", "label": "Enabled" }
+  }
+}
+```
+
+**Action Types:**
+- **`field_update`**: Update a single field value (toggle boolean or set specific value)
+- **`route`**: Navigate to a specific route/page
+- **`api_call`**: Make a custom API call to a backend endpoint
+- **`modal`**: Display a custom modal (future implementation)
+
+**Common Action Properties:**
+- **key** (required): Unique identifier for the action
+- **label** (required): Button text displayed to users
+- **type** (required): Action type (field_update, route, api_call, modal)
+- **icon** (optional): FontAwesome icon name
+- **style** (optional): Button style (primary, secondary, default, danger)
+- **permission** (optional): Required permission to see/use the action
+- **confirm** (optional): Confirmation message before executing
+- **success_message** (optional): Message shown on successful completion
+
+See [Custom Actions Feature Documentation](docs/CUSTOM_ACTIONS_FEATURE.md) for complete reference and examples.
 
 ### Master-Detail Data Entry Configuration
 
@@ -597,7 +704,8 @@ import {
   useCRUD6Api, 
   useCRUD6Schema, 
   useCRUD6Relationships,
-  useMasterDetail
+  useMasterDetail,
+  useCRUD6Actions
 } from '@ssnukala/sprinkle-crud6/composables'
 
 // CRUD operations
@@ -616,6 +724,12 @@ await updateField('5', 'flag_enabled', true)
 
 // Schema loading and permissions
 const { schema, loading, error, loadSchema, hasPermission } = useCRUD6Schema()
+
+// Custom actions
+const { executeAction, loading, error } = useCRUD6Actions('users')
+
+// Execute a custom action
+const success = await executeAction(actionConfig, recordId, currentRecord)
 
 // Many-to-many relationship management
 const { 

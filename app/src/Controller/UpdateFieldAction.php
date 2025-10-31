@@ -94,9 +94,20 @@ class UpdateFieldAction extends Base
 
             $fieldConfig = $crudSchema['fields'][$fieldName];
 
-            // Check if the field is readonly
+            // Check if the field is not editable (readonly)
+            // editable: false means the field is readonly
+            if (isset($fieldConfig['editable']) && $fieldConfig['editable'] === false) {
+                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update non-editable field", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                ]);
+                throw new \RuntimeException("Field '{$fieldName}' is not editable and cannot be updated");
+            }
+            
+            // Also check legacy readonly attribute for backward compatibility
             if (isset($fieldConfig['readonly']) && $fieldConfig['readonly'] === true) {
-                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update readonly field", [
+                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update readonly field (legacy attribute)", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,

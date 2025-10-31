@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -10,7 +10,7 @@ import CRUD6DeleteModal from './DeleteModal.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const translator = useTranslator()
 
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response
@@ -72,7 +72,7 @@ const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 const modelLabel = computed(() => {
     if (finalSchema.value?.singular_title) {
         // Try to translate - if key doesn't exist, returns the key itself
-        return t(finalSchema.value.singular_title)
+        return translator.translate(finalSchema.value.singular_title)
     }
     // Capitalize first letter of model name as fallback
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'

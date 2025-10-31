@@ -4,8 +4,7 @@ import axios from 'axios'
 import { useCRUD6Api } from './useCRUD6Api'
 import type { ActionConfig } from './useCRUD6Schema'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
-import { useAlerts } from '@userfrosting/sprinkle-core/stores'
-import { useI18n } from 'vue-i18n'
+import { useAlerts, useTranslator } from '@userfrosting/sprinkle-core/stores'
 
 /**
  * Vue composable for executing custom CRUD6 actions.
@@ -21,7 +20,7 @@ export function useCRUD6Actions(model?: string) {
     const router = useRouter()
     const { updateField } = useCRUD6Api()
     const alerts = useAlerts()
-    const { t } = useI18n()
+    const translator = useTranslator()
     
     const loading = ref(false)
     const error = ref<ApiErrorResponse | null>(null)
@@ -39,7 +38,7 @@ export function useCRUD6Actions(model?: string) {
         // for better user experience and consistency
         if (action.confirm) {
             // Translate the confirmation message if it's a translation key
-            const confirmMessage = t(action.confirm)
+            const confirmMessage = translator.translate(action.confirm)
             if (!confirm(confirmMessage)) {
                 return false
             }
@@ -124,8 +123,8 @@ export function useCRUD6Actions(model?: string) {
             
             // Show success message - translate if it's a translation key
             const successMsg = action.success_message 
-                ? t(action.success_message) 
-                : t('CRUD6.ACTION.SUCCESS', { action: t(action.label) })
+                ? translator.translate(action.success_message) 
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
             alerts.addSuccess(successMsg)
             
             return true
@@ -186,8 +185,8 @@ export function useCRUD6Actions(model?: string) {
 
             // Show success message - translate if it's a translation key
             const successMsg = action.success_message 
-                ? t(action.success_message) 
-                : t('CRUD6.ACTION.SUCCESS', { action: t(action.label) })
+                ? translator.translate(action.success_message) 
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
             alerts.addSuccess(successMsg)
 
             return true

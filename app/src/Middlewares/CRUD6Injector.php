@@ -124,9 +124,12 @@ class CRUD6Injector extends AbstractInjector
         // Load schema and configure model - pass connection for path-based lookup
         $schema = $this->schemaService->getSchema($modelName, $this->currentConnectionName);
         
+        // Store schema for reuse in process() to avoid duplicate loading
+        $this->currentSchema = $schema;
+        
         // DEBUG: Log after schema load
         error_log(sprintf(
-            "[CRUD6 CRUD6Injector] Schema loaded in getInstance() - model: %s, table: %s",
+            "[CRUD6 CRUD6Injector] Schema loaded in getInstance() and CACHED for reuse - model: %s, table: %s",
             $modelName,
             $schema['table'] ?? 'unknown'
         ));
@@ -218,6 +221,16 @@ class CRUD6Injector extends AbstractInjector
      * @var string|null
      */
     private ?string $currentConnectionName = null;
+    
+    /**
+     * Store the loaded schema to avoid duplicate loading.
+     * 
+     * Schema is loaded once in getInstance() and reused in process().
+     * This eliminates the duplicate schema load that was happening on every request.
+     * 
+     * @var array|null
+     */
+    private ?array $currentSchema = null;
 
     /**
      * Override the process method to handle both ID-based and model-only injection.
@@ -299,19 +312,27 @@ class CRUD6Injector extends AbstractInjector
         ));
         $instance = $this->getInstance($id);
 
-        // DEBUG: Log before SECOND schema load (DUPLICATE!)
+        // DEBUG: Reuse cached schema instead of loading again (FIX for duplicate load)
         error_log(sprintf(
-            "[CRUD6 CRUD6Injector] ⚠️ DUPLICATE SCHEMA LOAD: Calling getSchema() AGAIN in process() - model: %s, connection: %s",
-            $this->currentModelName,
-            $this->currentConnectionName ?? 'null'
+            "[CRUD6 CRUD6Injector] ✅ REUSING cached schema from getInstance() - model: %s (avoiding duplicate load)",
+            $this->currentModelName
         ));
 
-        // Get schema - pass connection for path-based lookup
-        // NOTE: This is a DUPLICATE call - schema was already loaded in getInstance()!
-        $schema = $this->schemaService->getSchema($this->currentModelName, $this->currentConnectionName);
+        // Reuse schema that was loaded in getInstance() instead of loading again
+        // This eliminates the duplicate schema load that was happening on every request
+        $schema = $this->currentSchema;
+        
+        if ($schema === null) {
+            // This should never happen, but log if it does
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] ⚠️ WARNING: Schema cache was null, falling back to loading - model: %s",
+                $this->currentModelName
+            ));
+            $schema = $this->schemaService->getSchema($this->currentModelName, $this->currentConnectionName);
+        }
         
         error_log(sprintf(
-            "[CRUD6 CRUD6Injector] ⚠️ DUPLICATE SCHEMA LOADED in process() - model: %s, table: %s",
+            "[CRUD6 CRUD6Injector] Schema ready for injection - model: %s, table: %s",
             $this->currentModelName,
             $schema['table'] ?? 'unknown'
         ));

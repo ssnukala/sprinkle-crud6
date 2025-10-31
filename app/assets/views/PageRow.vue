@@ -248,8 +248,9 @@ watch(model, async (newModel) => {
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
         
         currentModel = newModel
-        // Request 'detail' context to get full field information for detail pages
-        const schemaPromise = loadSchema(newModel, false, 'detail')
+        // Request 'detail,form' contexts to get both in one API call for efficiency
+        // This prevents child components (Info, EditModal) from making separate schema calls
+        const schemaPromise = loadSchema(newModel, false, 'detail,form')
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             console.log('[PageRow] Schema loaded successfully for model:', newModel)

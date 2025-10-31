@@ -93,6 +93,7 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => false,
                     'filterable' => false,
                     'listable' => false,
+                    'viewable' => true,
                     'editable' => true,
                     'validation' => [
                         'length' => ['min' => 8],
@@ -104,6 +105,7 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => false,
                     'filterable' => false,
                     'listable' => false,
+                    'viewable' => false,
                     'editable' => true,
                     'description' => 'Internal staff notes',
                 ],
@@ -114,6 +116,7 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => true,
                     'filterable' => true,
                     'listable' => true,
+                    'viewable' => true,
                     'editable' => true,
                 ],
                 'created_at' => [
@@ -123,6 +126,7 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => true,
                     'filterable' => false,
                     'listable' => true,
+                    'viewable' => true,
                     'editable' => false,
                 ],
             ],
@@ -371,5 +375,92 @@ class SchemaFilteringTest extends TestCase
         foreach ($expectedPermissions as $permission) {
             $this->assertArrayHasKey($permission, $schema['permissions']);
         }
+    }
+
+    /**
+     * Test viewable attribute filtering in detail context
+     * 
+     * The viewable attribute controls which fields appear in detail/view pages.
+     * Fields with viewable: false should be excluded from detail context.
+     * Fields with viewable: true or no viewable attribute (default true) should be included.
+     */
+    public function testViewableAttributeFiltering(): void
+    {
+        // Create schema with various viewable settings
+        $schema = [
+            'model' => 'test_viewable',
+            'title' => 'Viewable Test',
+            'table' => 'test_table',
+            'fields' => [
+                'id' => [
+                    'type' => 'integer',
+                    'label' => 'ID',
+                    // No viewable attribute - should default to true
+                ],
+                'name' => [
+                    'type' => 'string',
+                    'label' => 'Name',
+                    'viewable' => true,
+                ],
+                'email' => [
+                    'type' => 'string',
+                    'label' => 'Email',
+                    'viewable' => true,
+                ],
+                'password' => [
+                    'type' => 'string',
+                    'label' => 'Password',
+                    'viewable' => true,  // Viewable but not editable
+                    'editable' => false,
+                    'readonly' => true,
+                ],
+                'secret_token' => [
+                    'type' => 'string',
+                    'label' => 'Secret Token',
+                    'viewable' => false,  // Should be excluded from detail view
+                ],
+                'internal_flags' => [
+                    'type' => 'json',
+                    'label' => 'Internal Flags',
+                    'viewable' => false,  // Hidden from detail view
+                    'editable' => true,   // But can be edited in forms
+                ],
+            ],
+        ];
+
+        // Manually load SchemaService and test the filtering
+        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
+        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        
+        // Include the service class
+        require_once $serviceFile;
+        
+        // Create a mock ResourceLocatorInterface
+        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
+        
+        // Create SchemaService instance
+        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        
+        // Use reflection to access the protected method
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('getContextSpecificData');
+        $method->setAccessible(true);
+        
+        // Test detail context filtering
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        
+        // Verify viewable fields are included
+        $this->assertArrayHasKey('id', $detailData['fields'], 'id should be included (default viewable: true)');
+        $this->assertArrayHasKey('name', $detailData['fields'], 'name should be included (viewable: true)');
+        $this->assertArrayHasKey('email', $detailData['fields'], 'email should be included (viewable: true)');
+        $this->assertArrayHasKey('password', $detailData['fields'], 'password should be included (viewable: true, readonly)');
+        
+        // Verify non-viewable fields are excluded
+        $this->assertArrayNotHasKey('secret_token', $detailData['fields'], 'secret_token should be excluded (viewable: false)');
+        $this->assertArrayNotHasKey('internal_flags', $detailData['fields'], 'internal_flags should be excluded (viewable: false)');
+        
+        // Verify that readonly and editable flags are preserved for viewable fields
+        $this->assertTrue($detailData['fields']['password']['readonly'], 'password should be readonly');
+        $this->assertFalse($detailData['fields']['password']['editable'], 'password should not be editable');
     }
 }

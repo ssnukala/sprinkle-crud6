@@ -87,7 +87,8 @@
       "sortable": false,
       "filterable": false,
       "listable": false,
-      "readonly": true,
+      "viewable": true,
+      "editable": false,
       "validation": {
         "length": {
           "min": 8,
@@ -144,28 +145,31 @@
     "created_at": {
       "type": "datetime",
       "label": "Created At",
-      "readonly": true,
       "sortable": true,
       "filterable": false,
       "listable": false,
+      "viewable": true,
+      "editable": false,
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
-      "readonly": true,
       "sortable": true,
       "filterable": false,
       "listable": false,
+      "viewable": true,
+      "editable": false,
       "date_format": "Y-m-d H:i:s"
     },
     "deleted_at": {
       "type": "datetime",
       "label": "Deleted At",
-      "readonly": true,
       "sortable": false,
       "filterable": false,
       "listable": false,
+      "viewable": false,
+      "editable": false,
       "date_format": "Y-m-d H:i:s"
     }
   }

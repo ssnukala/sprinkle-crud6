@@ -119,6 +119,8 @@ Each field in the schema can have the following properties:
 - **sortable**: Whether the field can be sorted in lists
 - **filterable**: Whether the field is included in global search and filtering
 - **listable**: Whether the field should be displayed in list views (must be explicitly set to `true` to show; defaults to `false` for security)
+- **viewable**: Whether the field should be displayed in detail/view pages (defaults to `true`; set to `false` to hide sensitive fields from detail views)
+- **editable**: Whether the field can be edited in forms (defaults to `true` unless field is `readonly`)
 - **readonly**: Whether the field is read-only (not editable)
 - **auto_increment**: Whether the field is auto-incremented
 - **default**: Default value for the field
@@ -127,6 +129,12 @@ Each field in the schema can have the following properties:
 - **field_template**: Custom Vue.js HTML template for rendering the field in list views (supports placeholders like `{{field_name}}`)
 
 > **Security Note**: The `listable` field property defaults to `false` for security. Only fields explicitly marked as `listable: true` will be displayed in list views. This prevents sensitive data (such as passwords, API keys, or internal timestamps) from being accidentally exposed. Always review which fields should be visible in your application's list views.
+
+> **Visibility Control**: Use `listable`, `viewable`, and `editable` together for fine-grained control:
+> - `listable: true` - Shows field in list/table views
+> - `viewable: true` - Shows field in detail/view pages (good for readonly fields like timestamps)
+> - `editable: true` - Allows field to be edited in forms
+> - Example: A `password` field might be `listable: false`, `viewable: true`, `editable: false` to show it in detail view but not allow editing
 
 ### Schema Defaults
 

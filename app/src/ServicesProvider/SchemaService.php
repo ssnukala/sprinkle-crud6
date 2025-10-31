@@ -459,34 +459,37 @@ class SchemaService
                 return $data;
 
             case 'detail':
-                // For detail/view pages: all fields with full display properties
+                // For detail/view pages: only viewable fields with full display properties
                 $data = ['fields' => []];
                 
                 foreach ($schema['fields'] as $fieldKey => $field) {
-                    $data['fields'][$fieldKey] = [
-                        'type' => $field['type'] ?? 'string',
-                        'label' => $field['label'] ?? $fieldKey,
-                        'readonly' => $field['readonly'] ?? false,
-                    ];
+                    // Include field if it's explicitly viewable or viewable is not set (default true)
+                    if (($field['viewable'] ?? true) === true) {
+                        $data['fields'][$fieldKey] = [
+                            'type' => $field['type'] ?? 'string',
+                            'label' => $field['label'] ?? $fieldKey,
+                            'readonly' => $field['readonly'] ?? false,
+                        ];
 
-                    // Include description if present
-                    if (isset($field['description'])) {
-                        $data['fields'][$fieldKey]['description'] = $field['description'];
-                    }
+                        // Include description if present
+                        if (isset($field['description'])) {
+                            $data['fields'][$fieldKey]['description'] = $field['description'];
+                        }
 
-                    // Include field_template if specified
-                    if (isset($field['field_template'])) {
-                        $data['fields'][$fieldKey]['field_template'] = $field['field_template'];
-                    }
+                        // Include field_template if specified
+                        if (isset($field['field_template'])) {
+                            $data['fields'][$fieldKey]['field_template'] = $field['field_template'];
+                        }
 
-                    // Include editable flag for detail pages that allow inline editing
-                    if (isset($field['editable'])) {
-                        $data['fields'][$fieldKey]['editable'] = $field['editable'];
-                    }
+                        // Include editable flag for detail pages that allow inline editing
+                        if (isset($field['editable'])) {
+                            $data['fields'][$fieldKey]['editable'] = $field['editable'];
+                        }
 
-                    // Include default value for display purposes
-                    if (isset($field['default'])) {
-                        $data['fields'][$fieldKey]['default'] = $field['default'];
+                        // Include default value for display purposes
+                        if (isset($field['default'])) {
+                            $data['fields'][$fieldKey]['default'] = $field['default'];
+                        }
                     }
                 }
 

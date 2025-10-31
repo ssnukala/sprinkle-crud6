@@ -268,6 +268,106 @@ class SchemaFilteringTest extends TestCase
     }
 
     /**
+     * Test detail context includes details array and actions array
+     * 
+     * The detail context should include:
+     * - details (plural) - Array of relationship configurations
+     * - actions - Array of custom action button configurations
+     * - relationships - Array of relationship definitions for data fetching
+     * 
+     * This is critical for advanced layouts showing multiple related tables
+     * and custom action buttons on detail pages.
+     */
+    public function testDetailContextIncludesDetailsAndActions(): void
+    {
+        // Create schema with details, actions, and relationships
+        $schema = [
+            'model' => 'users',
+            'title' => 'Users',
+            'singular_title' => 'User',
+            'table' => 'users',
+            'fields' => [
+                'id' => ['type' => 'integer', 'label' => 'ID'],
+                'user_name' => ['type' => 'string', 'label' => 'Username'],
+                'email' => ['type' => 'string', 'label' => 'Email'],
+            ],
+            'details' => [
+                [
+                    'model' => 'activities',
+                    'foreign_key' => 'user_id',
+                    'list_fields' => ['occurred_at', 'type', 'description'],
+                    'title' => 'Recent Activities',
+                ],
+                [
+                    'model' => 'roles',
+                    'foreign_key' => 'user_id',
+                    'list_fields' => ['name', 'slug'],
+                    'title' => 'User Roles',
+                ],
+            ],
+            'actions' => [
+                [
+                    'key' => 'toggle_enabled',
+                    'label' => 'Toggle Enabled',
+                    'icon' => 'power-off',
+                    'type' => 'field_update',
+                    'field' => 'flag_enabled',
+                ],
+                [
+                    'key' => 'reset_password',
+                    'label' => 'Reset Password',
+                    'icon' => 'envelope',
+                    'type' => 'api_call',
+                ],
+            ],
+            'relationships' => [
+                [
+                    'name' => 'roles',
+                    'type' => 'many_to_many',
+                    'pivot_table' => 'role_user',
+                ],
+            ],
+        ];
+
+        // Load SchemaService and test the filtering
+        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
+        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        
+        require_once $serviceFile;
+        
+        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
+        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        
+        // Use reflection to access the protected method
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('getContextSpecificData');
+        $method->setAccessible(true);
+        
+        // Test detail context filtering
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        
+        // Verify details array is included
+        $this->assertArrayHasKey('details', $detailData, 'Detail context should include details array');
+        $this->assertIsArray($detailData['details'], 'details should be an array');
+        $this->assertCount(2, $detailData['details'], 'Should have 2 detail configurations');
+        $this->assertEquals('activities', $detailData['details'][0]['model'], 'First detail should be activities');
+        $this->assertEquals('roles', $detailData['details'][1]['model'], 'Second detail should be roles');
+        
+        // Verify actions array is included
+        $this->assertArrayHasKey('actions', $detailData, 'Detail context should include actions array');
+        $this->assertIsArray($detailData['actions'], 'actions should be an array');
+        $this->assertCount(2, $detailData['actions'], 'Should have 2 action configurations');
+        $this->assertEquals('toggle_enabled', $detailData['actions'][0]['key'], 'First action should be toggle_enabled');
+        $this->assertEquals('reset_password', $detailData['actions'][1]['key'], 'Second action should be reset_password');
+        
+        // Verify relationships array is included
+        $this->assertArrayHasKey('relationships', $detailData, 'Detail context should include relationships array');
+        $this->assertIsArray($detailData['relationships'], 'relationships should be an array');
+        $this->assertCount(1, $detailData['relationships'], 'Should have 1 relationship configuration');
+        $this->assertEquals('roles', $detailData['relationships'][0]['name'], 'Relationship should be roles');
+    }
+
+    /**
      * Test meta context filtering logic
      * 
      * Meta context should only include:

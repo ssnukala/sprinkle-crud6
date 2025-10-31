@@ -66,6 +66,46 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     }
 
     /**
+     * Check if a broader context (containing the requested context) is currently loading
+     * OR if we should wait because the requested context is broader than what's loading
+     * 
+     * For example:
+     * - If "detail,form" is loading and we request "form" → wait (subset)
+     * - If "form" is loading and we request "detail,form" → DON'T wait, make new call (superset)
+     */
+    function isRelatedContextLoading(model: string, context?: string): string | null {
+        if (!context) return null
+        
+        // Get all loading states for this model
+        const requestedContexts = context.split(',').map(c => c.trim())
+        
+        for (const [loadingKey, loading] of Object.entries(loadingStates.value)) {
+            if (!loading) continue
+            
+            // Check if this loading key is for the same model
+            const [loadingModel, loadingContext] = loadingKey.split(':')
+            if (loadingModel !== model) continue
+            if (!loadingContext || loadingContext === 'full') continue
+            
+            // Check if the loading context contains all requested contexts (broader or equal)
+            const loadingContexts = loadingContext.split(',').map(c => c.trim())
+            const containsAll = requestedContexts.every(rc => loadingContexts.includes(rc))
+            
+            if (containsAll) {
+                console.log('[useCRUD6SchemaStore] ⏳ Related context loading (broader or equal):', {
+                    requested: context,
+                    loading: loadingContext,
+                    loadingKey,
+                    message: 'Will wait for broader context to complete'
+                })
+                return loadingKey
+            }
+        }
+        
+        return null
+    }
+
+    /**
      * Load schema for a specific model
      * Returns cached schema if available, otherwise fetches from API
      * 
@@ -102,6 +142,23 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     if (!isLoading(model, context)) {
                         clearInterval(checkInterval)
                         console.log('[useCRUD6SchemaStore] ✅ Wait complete, schema loaded - cacheKey:', cacheKey)
+                        resolve(schemas.value[cacheKey] || null)
+                    }
+                }, 100)
+            })
+        }
+
+        // Check if a broader context is loading that would include this context
+        const relatedLoadingKey = isRelatedContextLoading(model, context)
+        if (relatedLoadingKey) {
+            console.log('[useCRUD6SchemaStore] ⏳ Waiting for related context to finish loading - relatedKey:', relatedLoadingKey)
+            // Wait for the related context to complete, then check cache again
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (!loadingStates.value[relatedLoadingKey]) {
+                        clearInterval(checkInterval)
+                        console.log('[useCRUD6SchemaStore] ✅ Related context loaded, checking cache - cacheKey:', cacheKey)
+                        // After the broader context loads, our specific context should be cached
                         resolve(schemas.value[cacheKey] || null)
                     }
                 }, 100)

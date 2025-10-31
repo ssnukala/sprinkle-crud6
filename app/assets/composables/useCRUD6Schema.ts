@@ -93,6 +93,15 @@ export function useCRUD6Schema(modelName?: string) {
      * Useful when schema is already available from parent component
      */
     function setSchema(schemaData: CRUD6Schema, model?: string, context?: string): void {
+        console.log('[useCRUD6Schema] ===== SET SCHEMA (NO API CALL) =====', {
+            model: model || 'unknown',
+            context: context || 'none',
+            hasSchemaData: !!schemaData,
+            fieldCount: schemaData?.fields ? Object.keys(schemaData.fields).length : 0,
+            timestamp: new Date().toISOString(),
+            source: 'setSchema() called directly'
+        })
+        
         schema.value = schemaData
         if (model) {
             currentModel.value = model
@@ -111,13 +120,23 @@ export function useCRUD6Schema(modelName?: string) {
      * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
      */
     async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
+        console.log('[useCRUD6Schema] ===== LOAD SCHEMA CALLED =====', {
+            model,
+            force,
+            context: context || 'full',
+            hasLocalCache: !!(currentModel.value === model && schema.value),
+            currentModel: currentModel.value,
+            timestamp: new Date().toISOString(),
+            caller: new Error().stack?.split('\n')[2]?.trim()
+        })
+        
         // Check if already loaded in this instance and not forcing
         if (!force && currentModel.value === model && schema.value) {
-            console.log('[useCRUD6Schema] Using local cached schema - model:', model)
+            console.log('[useCRUD6Schema] ✅ Using LOCAL cached schema - model:', model, 'context:', context || 'full')
             return schema.value
         }
 
-        console.log('[useCRUD6Schema] Delegating to store - model:', model, 'force:', force, 'context:', context)
+        console.log('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full')
         loading.value = true
         error.value = null
 
@@ -128,6 +147,7 @@ export function useCRUD6Schema(modelName?: string) {
             if (schemaData) {
                 schema.value = schemaData
                 currentModel.value = model
+                console.log('[useCRUD6Schema] ✅ Schema loaded and set - model:', model, 'context:', context || 'full', 'fieldCount:', Object.keys(schemaData.fields || {}).length)
                 return schemaData
             } else {
                 // Get error from store with context
@@ -135,9 +155,11 @@ export function useCRUD6Schema(modelName?: string) {
                 if (storeError) {
                     error.value = storeError
                 }
+                console.error('[useCRUD6Schema] ❌ Schema load failed - model:', model, 'context:', context || 'full', 'error:', storeError)
                 return null
             }
         } catch (err: any) {
+            console.error('[useCRUD6Schema] ❌ Schema load exception - model:', model, 'context:', context || 'full', 'error:', err)
             error.value = err.response?.data || { 
                 title: 'Schema Load Error',
                 description: 'Failed to load schema for model: ' + model

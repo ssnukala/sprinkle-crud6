@@ -31,6 +31,15 @@ const {
     hasPermission
 } = useCRUD6Schema()
 
+// Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
+// This ensures the schema is loaded/loading before useCRUD6Api tries to load it for validation
+if (model.value && loadSchema) {
+    console.log('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
+    loadSchema(model.value, false, 'detail,form').catch(err => {
+        console.error('[PageRow] Schema pre-load failed:', err)
+    })
+}
+
 const {
     fetchRows,
     fetchRow,

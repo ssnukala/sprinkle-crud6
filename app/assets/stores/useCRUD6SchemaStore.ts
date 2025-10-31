@@ -67,7 +67,11 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
 
     /**
      * Check if a broader context (containing the requested context) is currently loading
-     * For example, if "detail,form" is loading, it includes "form"
+     * OR if we should wait because the requested context is broader than what's loading
+     * 
+     * For example:
+     * - If "detail,form" is loading and we request "form" → wait (subset)
+     * - If "form" is loading and we request "detail,form" → DON'T wait, make new call (superset)
      */
     function isRelatedContextLoading(model: string, context?: string): string | null {
         if (!context) return null
@@ -83,12 +87,12 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             if (loadingModel !== model) continue
             if (!loadingContext || loadingContext === 'full') continue
             
-            // Check if the loading context contains all requested contexts
+            // Check if the loading context contains all requested contexts (broader or equal)
             const loadingContexts = loadingContext.split(',').map(c => c.trim())
             const containsAll = requestedContexts.every(rc => loadingContexts.includes(rc))
             
             if (containsAll) {
-                console.log('[useCRUD6SchemaStore] ⏳ Related context loading:', {
+                console.log('[useCRUD6SchemaStore] ⏳ Related context loading (broader or equal):', {
                     requested: context,
                     loading: loadingContext,
                     loadingKey,

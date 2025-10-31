@@ -66,24 +66,88 @@ Added `isRelatedContextLoading()` function that detects when a broader context i
 - After broader context completes, check cache (which will now have the requested context)
 
 **How it works**:
-1. PageRow calls `loadSchema('users', false, 'detail,form')`
-   - Not in cache, not loading → makes API call
-   - Sets loading state for `users:detail,form`
+1. When a schema load request comes in with a specific context (e.g., 'form')
+2. Check all currently loading requests for the same model
+3. If any loading request has a context that INCLUDES the requested context (e.g., 'detail,form' includes 'form')
+4. Wait for that broader request to complete
+5. When it completes, return the cached sub-context (which was cached separately during multi-context processing)
 
-2. useCRUD6Api calls `loadSchema('users', false, 'form')`
-   - Not in cache yet (call #1 hasn't completed)
-   - Checks `isRelatedContextLoading('users', 'form')`
-   - Finds that `users:detail,form` is loading (which includes 'form')
-   - **Waits** for that request to complete
-   - When complete, checks cache for `users:form` (now available from multi-context caching)
-   - Returns cached schema - **NO API CALL**
+### Fix #3: Schema Pre-loading in PageRow
+**File**: `app/assets/views/PageRow.vue`
 
-3. Multi-context caching (existing feature in lines 161-171):
-   - When `'detail,form'` response arrives, store caches it under multiple keys:
-     - `users:detail,form` (original request)
-     - `users:detail` (extracted context)
-     - `users:form` (extracted context)
-   - This ensures future single-context requests are cached
+Added schema pre-loading before useCRUD6Api initialization to ensure correct execution order.
+
+**Problem**: JavaScript execution order meant useCRUD6Api could initialize and try to load schema BEFORE PageRow's schema loading, creating a race condition.
+
+**Solution**: Call `loadSchema('detail,form')` immediately after initializing useCRUD6Schema, BEFORE initializing useCRUD6Api.
+
+**Execution Order** (after fix):
+1. useCRUD6Schema initialized
+2. **loadSchema('users', 'detail,form') called immediately** → starts API call
+3. useCRUD6Api initialized → tries to load schema for validation
+4. useCRUD6Api's loadSchema('users', 'form') detects 'detail,form' is loading
+5. useCRUD6Api waits for 'detail,form' to complete
+6. When complete, useCRUD6Api gets cached 'form' context
+7. **Only ONE API call made**
+
+**Code added**:
+```typescript
+// Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
+if (model.value && loadSchema) {
+    console.log('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
+    loadSchema(model.value, false, 'detail,form').catch(err => {
+        console.error('[PageRow] Schema pre-load failed:', err)
+    })
+}
+```
+
+## How It All Works Together
+
+### Execution Flow (After All Fixes)
+
+**T=0ms: Navigation to /crud6/users/1**
+- Vue Router activates PageDynamic
+- PageDynamic renders without loading schema (Fix #1)
+- PageDynamic renders PageRow
+
+**T=10ms: PageRow Setup Begins**
+1. useCRUD6Schema composable initialized
+2. **loadSchema('users', false, 'detail,form') called immediately** (Fix #3)
+   - Store checks cache: empty
+   - Store checks `isRelatedContextLoading`: none
+   - 🌐 **Makes API call to `/api/crud6/users/schema?context=detail%2Cform`**
+   - Sets `loadingStates['users:detail,form'] = true`
+3. useCRUD6Api composable initialized
+   - Calls `loadSchema('users', false, 'form')` for validation
+   - Store checks cache: empty (request still in flight)
+   - Store calls `isRelatedContextLoading('users', 'form')` (Fix #2)
+   - **Detects 'users:detail,form' is loading (contains 'form')**
+   - ⏳ **Waits** for 'detail,form' request to complete
+4. PageRow model watcher fires (now redundant, but harmless)
+   - Calls `loadSchema('users', false, 'detail,form')` again
+   - Store checks cache: empty but already loading
+   - Store detects same request in progress
+   - ⏳ Waits for existing request
+
+**T=100ms: API Response Received**
+- Multi-context response for 'detail,form' arrives
+- Store processes response and caches separately:
+  - `schemas['users:detail,form']` = full response
+  - `schemas['users:detail']` = detail context
+  - `schemas['users:form']` = form context
+- Sets `loadingStates['users:detail,form'] = false`
+
+**T=110ms: Waiting Requests Resolve**
+- useCRUD6Api's wait completes
+  - Checks `schemas['users:form']` → found!
+  - Returns cached schema
+  - ✅ **No API call**
+- PageRow watcher's wait completes
+  - Checks `schemas['users:detail,form']` → found!
+  - Returns cached schema
+  - ✅ **No API call**
+
+**Result: ONLY ONE API call made to `/api/crud6/users/schema?context=detail%2Cform`**
 
 ## Result
 After these fixes, navigating to `/crud6/users/1` should make only **ONE** schema API call:
@@ -110,9 +174,10 @@ To verify the fix:
 5. **Smarter Caching**: Context-aware waiting prevents race conditions
 
 ## Files Changed
-1. `app/assets/views/PageDynamic.vue` - Removed schema loading
-2. `app/assets/stores/useCRUD6SchemaStore.ts` - Added smart context waiting
-3. `app/assets/composables/useCRUD6Api.ts` - Updated comments to reflect new behavior
+1. `app/assets/views/PageDynamic.vue` - Removed schema loading (Fix #1)
+2. `app/assets/stores/useCRUD6SchemaStore.ts` - Added smart context waiting (Fix #2)
+3. `app/assets/views/PageRow.vue` - Added schema pre-loading (Fix #3)
+4. `app/assets/composables/useCRUD6Api.ts` - Updated comments to reflect new behavior
 
 ## Backward Compatibility
 - ✅ All existing functionality preserved

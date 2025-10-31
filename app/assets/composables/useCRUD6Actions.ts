@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { useCRUD6Api } from './useCRUD6Api'
 import type { ActionConfig } from './useCRUD6Schema'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
@@ -27,7 +28,9 @@ export function useCRUD6Actions(model?: string) {
         recordId: string | number,
         currentRecord?: any
     ): Promise<boolean> {
-        // Check for confirmation
+        // Check for confirmation using native browser dialog
+        // Note: In a production application, consider using a UIKit modal
+        // for better user experience and consistency
         if (action.confirm) {
             if (!confirm(action.confirm)) {
                 return false
@@ -86,9 +89,15 @@ export function useCRUD6Actions(model?: string) {
         let newValue: any
 
         if (action.toggle && currentRecord) {
-            // Toggle boolean field
+            // Toggle boolean field - handle null/undefined values
             const currentValue = currentRecord[action.field]
-            newValue = !currentValue
+            
+            // If field doesn't exist or is null/undefined, default to false then toggle to true
+            if (currentValue === null || currentValue === undefined) {
+                newValue = true
+            } else {
+                newValue = !currentValue
+            }
         } else if (action.value !== undefined) {
             // Set specific value
             newValue = action.value
@@ -128,9 +137,14 @@ export function useCRUD6Actions(model?: string) {
             return false
         }
 
+        if (!model) {
+            console.error('Route action requires model to be specified in useCRUD6Actions')
+            return false
+        }
+
         router.push({
             name: action.route,
-            params: { id: String(recordId), model: model || 'unknown' }
+            params: { id: String(recordId), model: model }
         })
 
         return true
@@ -150,9 +164,6 @@ export function useCRUD6Actions(model?: string) {
 
         const method = action.method || 'POST'
         const endpoint = action.endpoint.replace('{id}', String(recordId))
-
-        // Use axios or fetch to make the API call
-        const axios = (await import('axios')).default
         
         try {
             await axios.request({

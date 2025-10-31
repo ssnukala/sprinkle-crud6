@@ -244,11 +244,37 @@ See detailed analysis with code examples, implementation plan, and migration gui
 
 ---
 
+## 🔄 Update: "viewable" Attribute Enhancement
+
+**New Requirement Identified**: Need to distinguish between fields visible in detail/view pages vs editable in forms.
+
+**Proposed Solution**: Add `viewable` attribute alongside `listable` and `editable`.
+
+See detailed analysis: `.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md`
+
+### Quick Example
+```json
+"password": {
+  "type": "string",
+  "listable": false,   // Don't show in table
+  "viewable": true,    // Show in detail/view page
+  "editable": false,   // Can't be edited
+  "readonly": true
+}
+```
+
+This provides complete visibility control:
+- **listable** - List/table views
+- **viewable** - Detail/view pages (NEW)
+- **editable** - Form editability
+
+---
+
 ## 💭 Your Feedback
 
 Please review and let me know:
 1. Do you agree with keeping the current structure?
 2. Would you like the optional "schema-level defaults" enhancement implemented?
-3. Any other considerations I missed?
+3. Should we implement the "viewable" attribute enhancement?
 
 **No changes have been made to code** - this is analysis only.

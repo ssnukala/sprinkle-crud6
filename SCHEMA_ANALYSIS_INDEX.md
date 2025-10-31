@@ -12,6 +12,7 @@ Quick overview with:
 - Key findings
 - Statistics
 - Next steps
+- **NEW**: "viewable" attribute enhancement
 
 ### 2. Executive Summary (7 min)
 **File**: [`SCHEMA_RECOMMENDATION_SUMMARY.md`](SCHEMA_RECOMMENDATION_SUMMARY.md)
@@ -21,6 +22,7 @@ Detailed recommendation with:
 - Comparison tables
 - Code examples
 - Decision rationale
+- **NEW**: "viewable" attribute proposal
 
 ### 3. Visual Comparison (10 min)
 **File**: [`.archive/VISUAL_SCHEMA_COMPARISON.md`](.archive/VISUAL_SCHEMA_COMPARISON.md)
@@ -39,6 +41,20 @@ Comprehensive deep-dive with:
 - Repetition analysis
 - Implementation plan
 - Migration guide
+
+### 5. **NEW**: Viewable Attribute Enhancement (10 min) 🆕
+**File**: [`.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md`](.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md)
+
+Addresses new requirement for distinguishing:
+- Fields visible in list views (`listable`)
+- Fields visible in detail/view pages (`viewable`)
+- Fields editable in forms (`editable`)
+
+Includes:
+- Use cases and examples
+- Implementation plan
+- Migration strategy
+- Effort estimate (7-10 hours)
 
 ---
 
@@ -88,6 +104,30 @@ Different use cases require different approaches:
 
 ---
 
+## 🆕 New Enhancement: "viewable" Attribute
+
+**Issue Identified**: Need to distinguish between fields visible in detail/view pages vs editable in forms.
+
+**Example Use Case**:
+- `password`, `created_at`, `updated_at` are readonly
+- Should be **visible** in detail/view page
+- But **not editable** in forms
+- Different from `listable` (table views)
+
+**Proposed Solution**:
+```json
+"password": {
+  "listable": false,   // Don't show in table
+  "viewable": true,    // Show in detail/view page
+  "editable": false,   // Can't be edited
+  "readonly": true
+}
+```
+
+**See**: `.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md` for complete analysis.
+
+---
+
 ## 🔧 Optional Enhancement
 
 Schema-level defaults (optional, backward compatible):
@@ -97,7 +137,9 @@ Schema-level defaults (optional, backward compatible):
   "defaults": {
     "sortable": true,
     "filterable": false,
-    "listable": false
+    "listable": false,
+    "viewable": true,     // NEW
+    "editable": true
   },
   "fields": {
     "name": {
@@ -117,11 +159,12 @@ Implementation time: 9-13 hours (optional)
 
 **Code**: Nothing - this is research only
 
-**Documentation**: 4 new files
-1. `ANALYSIS_COMPLETE_SUMMARY.md` - Complete summary (284 lines)
-2. `SCHEMA_RECOMMENDATION_SUMMARY.md` - Executive summary (254 lines)
+**Documentation**: 5 new files
+1. `ANALYSIS_COMPLETE_SUMMARY.md` - Complete summary (284+ lines)
+2. `SCHEMA_RECOMMENDATION_SUMMARY.md` - Executive summary (254+ lines)
 3. `.archive/SCHEMA_STRUCTURE_ANALYSIS_AND_RECOMMENDATION.md` - Full analysis (518 lines)
 4. `.archive/VISUAL_SCHEMA_COMPARISON.md` - Visual comparison (425 lines)
+5. `.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md` - Viewable attribute analysis (NEW)
 
 ---
 
@@ -130,7 +173,8 @@ Implementation time: 9-13 hours (optional)
 User to review and decide:
 1. ✅ Accept current structure (recommended)
 2. 🔧 Implement optional defaults (if desired)
-3. 💬 Provide feedback
+3. 🆕 Implement "viewable" attribute (recommended for complete visibility control)
+4. 💬 Provide feedback
 
 ---
 

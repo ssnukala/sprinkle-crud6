@@ -208,6 +208,37 @@ Visual illustrations with:
 
 ---
 
+## 🆕 Update: "viewable" Attribute Enhancement
+
+**New Requirement**: Distinguish between fields visible in detail/view pages vs editable in forms.
+
+**Current Issue**:
+- Fields like `password`, `created_at`, `updated_at` are `readonly: true`
+- They should be **visible** in detail/view page
+- But are **not editable** in forms
+- Need separate control from `listable` (table views) and `editable` (forms)
+
+**Proposed Solution**: Add `viewable` attribute
+
+```json
+"password": {
+  "type": "string",
+  "listable": false,   // Don't show in table
+  "viewable": true,    // Show in detail/view page
+  "editable": false,   // Can't be edited
+  "readonly": true
+}
+```
+
+**Complete visibility control**:
+- **listable** - List/table views
+- **viewable** - Detail/view pages (NEW)
+- **editable** - Form editability
+
+**See**: `.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md` for full analysis and implementation plan.
+
+---
+
 ## 🚀 Next Steps
 
 ### For User Review
@@ -217,6 +248,7 @@ Visual illustrations with:
 3. **Decide**:
    - ✅ Accept current structure (recommended)
    - 🔧 Implement optional defaults enhancement (if desired)
+   - 🆕 Implement "viewable" attribute enhancement (recommended)
    - 💬 Provide additional considerations
 
 ### If Optional Defaults Desired
@@ -227,6 +259,16 @@ Implementation plan available in full analysis document:
 - Phase 3: Schema validation warnings (3-4 hours)
 
 **Total effort**: 9-13 hours for full implementation
+
+### If "viewable" Attribute Desired
+
+Implementation plan in `.archive/VIEWABLE_ATTRIBUTE_ENHANCEMENT.md`:
+- Schema Service update (2-3 hours)
+- Testing (2-3 hours)
+- Documentation (2-3 hours)
+- Example updates (1 hour)
+
+**Total effort**: 7-10 hours
 
 ---
 

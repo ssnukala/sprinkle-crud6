@@ -649,9 +649,24 @@ class SchemaService
                     }
                 }
 
-                // Include detail configuration if present (for related data)
+                // Include detail configuration if present (for related data - singular, legacy)
                 if (isset($schema['detail'])) {
                     $data['detail'] = $schema['detail'];
+                }
+
+                // Include details configuration if present (for related data - plural, new format)
+                if (isset($schema['details'])) {
+                    $data['details'] = $schema['details'];
+                }
+
+                // Include actions configuration if present (for custom action buttons)
+                if (isset($schema['actions'])) {
+                    $data['actions'] = $schema['actions'];
+                }
+
+                // Include relationships configuration if present (for data fetching)
+                if (isset($schema['relationships'])) {
+                    $data['relationships'] = $schema['relationships'];
                 }
 
                 // Include detail_editable configuration if present

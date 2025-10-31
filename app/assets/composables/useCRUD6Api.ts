@@ -58,13 +58,27 @@ export function useCRUD6Api(modelName?: string) {
     // Dynamically load the schema file for the current model
     // Uses the global store cache to prevent duplicate API calls
     async function loadSchema() {
+        console.log('[useCRUD6Api] ===== LOAD SCHEMA FOR VALIDATION =====', {
+            model,
+            context: 'form',
+            purpose: 'validation rules',
+            timestamp: new Date().toISOString()
+        })
+        
         try {
             // Use the store's loadSchema which has caching
             // Request 'form' context to get only editable fields with validation
             const schema = await schemaStore.loadSchema(model, false, 'form')
+            
+            console.log('[useCRUD6Api] ✅ Schema loaded for validation', {
+                model,
+                hasSchema: !!schema,
+                fieldCount: schema?.fields ? Object.keys(schema.fields).length : 0
+            })
+            
             return schema || {}
         } catch (error) {
-            console.error('[useCRUD6Api] Schema load error:', error)
+            console.error('[useCRUD6Api] ❌ Schema load error:', error)
             return {}
         }
     }

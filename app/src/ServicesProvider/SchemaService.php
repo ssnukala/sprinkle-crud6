@@ -25,6 +25,9 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
  * Schema files are loaded from the 'schema://crud6/' location and can be organized
  * by database connection in subdirectories for multi-database support.
  * 
+ * Implements in-memory caching to prevent loading the same schema file multiple times
+ * during a single request lifecycle. Cache keys are based on model name and connection.
+ * 
  * @see \UserFrosting\Support\Repository\Loader\YamlFileLoader
  */
 class SchemaService
@@ -33,6 +36,16 @@ class SchemaService
      * @var string Base path for schema files
      */
     protected string $schemaPath = 'schema://crud6/';
+    
+    /**
+     * In-memory cache of loaded schemas.
+     * 
+     * Cache key format: "{model}:{connection}" or "{model}:default"
+     * This prevents loading the same schema file multiple times during a request.
+     * 
+     * @var array<string, array>
+     */
+    private array $schemaCache = [];
 
     /**
      * Constructor for SchemaService.
@@ -155,12 +168,41 @@ class SchemaService
      */
     public function getSchema(string $model, ?string $connection = null): array
     {
+        // Generate cache key
+        $cacheKey = $this->getCacheKey($model, $connection);
+        
+        // Check cache first
+        if (isset($this->schemaCache[$cacheKey])) {
+            error_log(sprintf(
+                "[CRUD6 SchemaService] ✅ Using CACHED schema (in-memory) - model: %s, connection: %s, cache_key: %s, timestamp: %s",
+                $model,
+                $connection ?? 'null',
+                $cacheKey,
+                date('Y-m-d H:i:s.u')
+            ));
+            return $this->schemaCache[$cacheKey];
+        }
+        
+        // DEBUG: Log every schema load attempt to track duplicate calls
+        error_log(sprintf(
+            "[CRUD6 SchemaService] getSchema() called - model: %s, connection: %s, cache_key: %s, timestamp: %s, caller: %s",
+            $model,
+            $connection ?? 'null',
+            $cacheKey,
+            date('Y-m-d H:i:s.u'),
+            $this->getCallerInfo()
+        ));
+        
         $schema = null;
         $schemaPath = null;
 
         // If connection is specified, try connection-based path first
         if ($connection !== null) {
             $schemaPath = $this->getSchemaFilePath($model, $connection);
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Trying connection-based path: %s",
+                $schemaPath
+            ));
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
@@ -168,11 +210,19 @@ class SchemaService
         // If not found in connection-based path, try default path
         if ($schema === null) {
             $schemaPath = $this->getSchemaFilePath($model);
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Trying default path: %s",
+                $schemaPath
+            ));
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
 
         if ($schema === null) {
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Schema file not found for model: %s",
+                $model
+            ));
             throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
         }
 
@@ -187,7 +237,96 @@ class SchemaService
             $schema['connection'] = $connection;
         }
 
+        error_log(sprintf(
+            "[CRUD6 SchemaService] Schema loaded successfully and CACHED - model: %s, table: %s, field_count: %d, cache_key: %s",
+            $model,
+            $schema['table'] ?? 'unknown',
+            count($schema['fields'] ?? []),
+            $cacheKey
+        ));
+
+        // Store in cache for future requests during this request lifecycle
+        $this->schemaCache[$cacheKey] = $schema;
+
         return $schema;
+    }
+    
+    /**
+     * Generate cache key for a model and connection.
+     * 
+     * @param string      $model      The model name
+     * @param string|null $connection Optional connection name
+     * 
+     * @return string Cache key in format "model:connection" or "model:default"
+     */
+    private function getCacheKey(string $model, ?string $connection = null): string
+    {
+        return sprintf('%s:%s', $model, $connection ?? 'default');
+    }
+    
+    /**
+     * Get caller information for debugging.
+     * 
+     * Returns information about who called getSchema() to help track down duplicate calls.
+     * 
+     * @return string Caller information
+     */
+    private function getCallerInfo(): string
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $callers = [];
+        
+        // Skip the first entry (this method) and get the next 2 callers
+        for ($i = 2; $i < count($trace) && $i < 4; $i++) {
+            $frame = $trace[$i];
+            $class = $frame['class'] ?? 'unknown';
+            $function = $frame['function'] ?? 'unknown';
+            $line = $trace[$i - 1]['line'] ?? '?';
+            $callers[] = sprintf("%s::%s():%s", basename($class), $function, $line);
+        }
+        
+        return implode(' <- ', $callers);
+    }
+    
+    /**
+     * Clear cached schema for a specific model.
+     * 
+     * Useful for testing or when schema files are updated during runtime.
+     * 
+     * @param string      $model      The model name
+     * @param string|null $connection Optional connection name
+     * 
+     * @return void
+     */
+    public function clearCache(string $model, ?string $connection = null): void
+    {
+        $cacheKey = $this->getCacheKey($model, $connection);
+        unset($this->schemaCache[$cacheKey]);
+        
+        error_log(sprintf(
+            "[CRUD6 SchemaService] Cache cleared for model: %s, connection: %s, cache_key: %s",
+            $model,
+            $connection ?? 'null',
+            $cacheKey
+        ));
+    }
+    
+    /**
+     * Clear all cached schemas.
+     * 
+     * Useful for testing or when multiple schema files are updated.
+     * 
+     * @return void
+     */
+    public function clearAllCache(): void
+    {
+        $count = count($this->schemaCache);
+        $this->schemaCache = [];
+        
+        error_log(sprintf(
+            "[CRUD6 SchemaService] All schema cache cleared - %d entries removed",
+            $count
+        ));
     }
 
     /**
@@ -235,18 +374,35 @@ class SchemaService
      */
     public function filterSchemaForContext(array $schema, ?string $context = null): array
     {
+        // DEBUG: Log context filtering to track which contexts are being requested
+        error_log(sprintf(
+            "[CRUD6 SchemaService] filterSchemaForContext() called - model: %s, context: %s, timestamp: %s",
+            $schema['model'] ?? 'unknown',
+            $context ?? 'null/full',
+            date('Y-m-d H:i:s.u')
+        ));
+        
         // If no context or 'full', return complete schema (backward compatible)
         if ($context === null || $context === 'full') {
+            error_log("[CRUD6 SchemaService] Returning full schema (no filtering)");
             return $schema;
         }
 
         // Check if multiple contexts are requested (comma-separated)
         if (strpos($context, ',') !== false) {
             $contexts = array_map('trim', explode(',', $context));
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Multiple contexts requested: %s",
+                implode(', ', $contexts)
+            ));
             return $this->filterSchemaForMultipleContexts($schema, $contexts);
         }
 
         // Single context - use existing logic
+        error_log(sprintf(
+            "[CRUD6 SchemaService] Single context filtering: %s",
+            $context
+        ));
         return $this->filterSchemaForSingleContext($schema, $context);
     }
 

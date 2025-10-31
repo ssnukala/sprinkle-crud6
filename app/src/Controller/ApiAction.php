@@ -72,14 +72,38 @@ class ApiAction extends Base
         ///$schema = $this->getSchema($modelName);
         //$this->validateAccess($modelName, 'read');
 
+        // DEBUG: Log API schema request
+        $queryParams = $request->getQueryParams();
+        $context = $queryParams['context'] ?? null;
+        
+        error_log(sprintf(
+            "[CRUD6 ApiAction] ===== SCHEMA API REQUEST ===== model: %s, context: %s, URI: %s, timestamp: %s",
+            $crudSchema['model'],
+            $context ?? 'null/full',
+            (string) $request->getUri(),
+            date('Y-m-d H:i:s.u')
+        ));
+
         $this->logger->debug("Line 34 : CRUD6: API request for model: {$crudSchema['model']}");
 
         // Get context parameter from query string
-        $queryParams = $request->getQueryParams();
-        $context = $queryParams['context'] ?? null;
+        
+
+        // DEBUG: Log before filtering
+        error_log(sprintf(
+            "[CRUD6 ApiAction] Filtering schema for context: %s",
+            $context ?? 'null/full'
+        ));
 
         // Filter schema based on context
         $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
+
+        // DEBUG: Log after filtering
+        error_log(sprintf(
+            "[CRUD6 ApiAction] Schema filtered - field_count: %d, has_contexts: %s",
+            count($filteredSchema['fields'] ?? []),
+            isset($filteredSchema['contexts']) ? 'yes' : 'no'
+        ));
 
         // Get a display name for the model (title or capitalized model name)
         // For button labels, we want singular form like "Group" not "groups" or "Group Management"
@@ -100,6 +124,13 @@ class ApiAction extends Base
             'modelDisplayName' => $modelDisplayName,
             'schema' => $filteredSchema
         ];
+
+        error_log(sprintf(
+            "[CRUD6 ApiAction] ===== SCHEMA API RESPONSE ===== model: %s, context: %s, response_size: %d bytes",
+            $filteredSchema['model'],
+            $context ?? 'null/full',
+            strlen(json_encode($responseData))
+        ));
 
         $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');

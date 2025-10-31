@@ -155,12 +155,25 @@ class SchemaService
      */
     public function getSchema(string $model, ?string $connection = null): array
     {
+        // DEBUG: Log every schema load attempt to track duplicate calls
+        error_log(sprintf(
+            "[CRUD6 SchemaService] getSchema() called - model: %s, connection: %s, timestamp: %s, caller: %s",
+            $model,
+            $connection ?? 'null',
+            date('Y-m-d H:i:s.u'),
+            $this->getCallerInfo()
+        ));
+        
         $schema = null;
         $schemaPath = null;
 
         // If connection is specified, try connection-based path first
         if ($connection !== null) {
             $schemaPath = $this->getSchemaFilePath($model, $connection);
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Trying connection-based path: %s",
+                $schemaPath
+            ));
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
@@ -168,11 +181,19 @@ class SchemaService
         // If not found in connection-based path, try default path
         if ($schema === null) {
             $schemaPath = $this->getSchemaFilePath($model);
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Trying default path: %s",
+                $schemaPath
+            ));
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
 
         if ($schema === null) {
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Schema file not found for model: %s",
+                $model
+            ));
             throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
         }
 
@@ -187,7 +208,38 @@ class SchemaService
             $schema['connection'] = $connection;
         }
 
+        error_log(sprintf(
+            "[CRUD6 SchemaService] Schema loaded successfully - model: %s, table: %s, field_count: %d",
+            $model,
+            $schema['table'] ?? 'unknown',
+            count($schema['fields'] ?? [])
+        ));
+
         return $schema;
+    }
+    
+    /**
+     * Get caller information for debugging.
+     * 
+     * Returns information about who called getSchema() to help track down duplicate calls.
+     * 
+     * @return string Caller information
+     */
+    private function getCallerInfo(): string
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $callers = [];
+        
+        // Skip the first entry (this method) and get the next 2 callers
+        for ($i = 2; $i < count($trace) && $i < 4; $i++) {
+            $frame = $trace[$i];
+            $class = $frame['class'] ?? 'unknown';
+            $function = $frame['function'] ?? 'unknown';
+            $line = $trace[$i - 1]['line'] ?? '?';
+            $callers[] = sprintf("%s::%s():%s", basename($class), $function, $line);
+        }
+        
+        return implode(' <- ', $callers);
     }
 
     /**
@@ -235,18 +287,35 @@ class SchemaService
      */
     public function filterSchemaForContext(array $schema, ?string $context = null): array
     {
+        // DEBUG: Log context filtering to track which contexts are being requested
+        error_log(sprintf(
+            "[CRUD6 SchemaService] filterSchemaForContext() called - model: %s, context: %s, timestamp: %s",
+            $schema['model'] ?? 'unknown',
+            $context ?? 'null/full',
+            date('Y-m-d H:i:s.u')
+        ));
+        
         // If no context or 'full', return complete schema (backward compatible)
         if ($context === null || $context === 'full') {
+            error_log("[CRUD6 SchemaService] Returning full schema (no filtering)");
             return $schema;
         }
 
         // Check if multiple contexts are requested (comma-separated)
         if (strpos($context, ',') !== false) {
             $contexts = array_map('trim', explode(',', $context));
+            error_log(sprintf(
+                "[CRUD6 SchemaService] Multiple contexts requested: %s",
+                implode(', ', $contexts)
+            ));
             return $this->filterSchemaForMultipleContexts($schema, $contexts);
         }
 
         // Single context - use existing logic
+        error_log(sprintf(
+            "[CRUD6 SchemaService] Single context filtering: %s",
+            $context
+        ));
         return $this->filterSchemaForSingleContext($schema, $context);
     }
 

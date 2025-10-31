@@ -20,7 +20,7 @@ export function useCRUD6Actions(model?: string) {
     const router = useRouter()
     const { updateField } = useCRUD6Api()
     const alerts = useAlerts()
-    const { translate } = useTranslator()
+    const translator = useTranslator()
     
     const loading = ref(false)
     const error = ref<ApiErrorResponse | null>(null)
@@ -38,7 +38,7 @@ export function useCRUD6Actions(model?: string) {
         // for better user experience and consistency
         if (action.confirm) {
             // Translate the confirmation message if it's a translation key
-            const confirmMessage = translate(action.confirm)
+            const confirmMessage = translator.translate(action.confirm)
             if (!confirm(confirmMessage)) {
                 return false
             }
@@ -123,8 +123,8 @@ export function useCRUD6Actions(model?: string) {
             
             // Show success message - translate if it's a translation key
             const successMsg = action.success_message 
-                ? translate(action.success_message) 
-                : translate('CRUD6.ACTION.SUCCESS', { action: translate(action.label) })
+                ? translator.translate(action.success_message) 
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
             alerts.addSuccess(successMsg)
             
             return true
@@ -185,8 +185,8 @@ export function useCRUD6Actions(model?: string) {
 
             // Show success message - translate if it's a translation key
             const successMsg = action.success_message 
-                ? translate(action.success_message) 
-                : translate('CRUD6.ACTION.SUCCESS', { action: translate(action.label) })
+                ? translator.translate(action.success_message) 
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
             alerts.addSuccess(successMsg)
 
             return true

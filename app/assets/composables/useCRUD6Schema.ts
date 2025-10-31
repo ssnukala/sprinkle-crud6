@@ -31,6 +31,42 @@ export interface DetailEditableConfig {
     allow_delete?: boolean
 }
 
+/**
+ * Custom action configuration for buttons and operations
+ */
+export interface ActionConfig {
+    /** Unique key for the action */
+    key: string
+    /** Display label for the button */
+    label: string
+    /** Icon to display on the button */
+    icon?: string
+    /** Action type */
+    type: 'field_update' | 'modal' | 'route' | 'api_call'
+    /** Permission required to see/use this action */
+    permission?: string
+    /** For field_update: field to update */
+    field?: string
+    /** For field_update: value to set */
+    value?: any
+    /** For field_update: toggle boolean instead of setting specific value */
+    toggle?: boolean
+    /** For modal: modal component to show */
+    modal?: string
+    /** For route: route name to navigate to */
+    route?: string
+    /** For api_call: API endpoint to call */
+    endpoint?: string
+    /** For api_call: HTTP method */
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+    /** Button style class (primary, secondary, danger, etc.) */
+    style?: string
+    /** Confirmation message before executing action */
+    confirm?: string
+    /** Success message after action completes */
+    success_message?: string
+}
+
 export interface CRUD6Schema {
     model: string
     title: string
@@ -48,8 +84,13 @@ export interface CRUD6Schema {
     }
     default_sort?: Record<string, 'asc' | 'desc'>
     fields: Record<string, SchemaField>
+    /** Single detail configuration (backward compatible) */
     detail?: DetailConfig
+    /** Multiple detail configurations */
+    details?: DetailConfig[]
     detail_editable?: DetailEditableConfig
+    /** Custom actions for detail pages */
+    actions?: ActionConfig[]
     /** 
      * Render mode for the detail page
      * - 'row': Use PageRow component (default)
@@ -66,7 +107,9 @@ export interface CRUD6Schema {
         fields?: Record<string, SchemaField>
         default_sort?: Record<string, 'asc' | 'desc'>
         detail?: DetailConfig
+        details?: DetailConfig[]
         detail_editable?: DetailEditableConfig
+        actions?: ActionConfig[]
         render_mode?: 'row' | 'master-detail'
         title_field?: string
     }>

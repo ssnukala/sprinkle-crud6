@@ -141,7 +141,7 @@ const flattenedSchema = computed(() => {
         // Merge 'detail' context data if present (for detail view display)
         if (schema.value.contexts.detail) {
             Object.assign(flattened, schema.value.contexts.detail)
-            console.log('[PageRow] Merged detail context - hasDetail:', !!flattened.detail)
+            console.log('[PageRow] Merged detail context - hasDetail:', !!flattened.detail, 'hasDetails:', !!flattened.details)
         }
         
         // If we're in edit/create mode, also check for 'form' context
@@ -158,6 +158,23 @@ const flattenedSchema = computed(() => {
     
     // Single-context or full schema - use as-is
     return schema.value
+})
+
+// Computed property for detail configurations (supports both single and multiple)
+const detailConfigs = computed(() => {
+    if (!flattenedSchema.value) return []
+    
+    // If schema has 'details' array (new format), use it
+    if (flattenedSchema.value.details && Array.isArray(flattenedSchema.value.details)) {
+        return flattenedSchema.value.details
+    }
+    
+    // If schema has single 'detail' object (legacy format), convert to array
+    if (flattenedSchema.value.detail) {
+        return [flattenedSchema.value.detail]
+    }
+    
+    return []
 })
 
 // Permission checks
@@ -499,11 +516,15 @@ watch(recordId, (newId) => {
             <div>
                 <CRUD6Info :crud6="CRUD6Row" :schema="flattenedSchema" @crud6Updated="fetch()" />
             </div>
-            <div class="uk-width-2-3" v-if="flattenedSchema?.detail && $checkAccess('view_crud6_field')">
+            <div class="uk-width-2-3" v-if="detailConfigs.length > 0 && $checkAccess('view_crud6_field')">
+                <!-- Render multiple detail sections -->
                 <CRUD6Details 
+                    v-for="(detailConfig, index) in detailConfigs"
+                    :key="`detail-${index}-${detailConfig.model}`"
                     :recordId="recordId" 
                     :parentModel="model" 
-                    :detailConfig="flattenedSchema.detail" 
+                    :detailConfig="detailConfig"
+                    class="uk-margin-bottom"
                 />
             </div>
         </div>

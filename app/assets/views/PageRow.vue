@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
@@ -15,6 +16,7 @@ import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/int
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const { t } = useI18n()
 
 // Get model and ID from route parameters
 const model = computed(() => route.params.model as string)
@@ -182,9 +184,11 @@ const hasCreatePermission = computed(() => hasPermission('create'))
 const hasViewPermission = computed(() => hasPermission('view'))
 
 // Model label for page titles - prioritize singular_title over title
+// Support translation keys (e.g., "USER.SINGULAR") or plain text
 const modelLabel = computed(() => {
     if (flattenedSchema.value?.singular_title) {
-        return flattenedSchema.value.singular_title
+        // Try to translate - if key doesn't exist, returns the original value
+        return t(flattenedSchema.value.singular_title)
     }
     // Capitalize first letter of model name as fallback
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
@@ -322,15 +326,22 @@ watch(model, async (newModel) => {
             await schemaPromise
             console.log('[PageRow] Schema loaded successfully for model:', newModel)
             
-            // Update page title and description
+            // Update page title and description with translation support
             if (flattenedSchema.value) {
                 if (isCreateMode.value) {
-                    page.title = `Create ${modelLabel.value}`
-                    page.description = flattenedSchema.value.description || `Create a new ${modelLabel.value}`
+                    page.title = t('CRUD6.CREATE', { model: modelLabel.value })
+                    page.description = flattenedSchema.value.description 
+                        ? t(flattenedSchema.value.description) 
+                        : t('CRUD6.CREATE.SUCCESS', { model: modelLabel.value })
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    page.title = flattenedSchema.value.title || modelLabel.value
-                    page.description = flattenedSchema.value.description || `View and edit ${modelLabel.value} details.`
+                    // Translate title if it's a translation key
+                    page.title = flattenedSchema.value.title 
+                        ? t(flattenedSchema.value.title) 
+                        : modelLabel.value
+                    page.description = flattenedSchema.value.description 
+                        ? t(flattenedSchema.value.description) 
+                        : t('CRUD6.INFO_PAGE', { model: modelLabel.value })
                 }
             }
         }

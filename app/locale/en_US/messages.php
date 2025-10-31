@@ -67,7 +67,40 @@ return [
             'DETACH_SUCCESS' => 'Successfully detached {{count}} {{relation}} from {{model}}',
         ],
         'USERS'               => 'Users in this {{model}}',
+        
+        // Custom Actions
+        'ACTION' => [
+            'SUCCESS'            => '{{action}} completed successfully',
+            'TOGGLE_ENABLED'     => 'Toggle Enabled',
+            'TOGGLE_VERIFIED'    => 'Toggle Verified',
+            'CHANGE_PASSWORD'    => 'Change Password',
+            'RESET_PASSWORD'     => 'Reset Password',
+            'DISABLE_USER'       => 'Disable User',
+            'ENABLE_USER'        => 'Enable User',
+        ],
     ],
     'CRUD6_PANEL'               => 'CRUD6 Management',
+    
+    // Model names - singular forms
+    'USER' => [
+        'SINGULAR'  => 'User',
+        'PLURAL'    => 'Users',
+    ],
+    'GROUP' => [
+        'SINGULAR'  => 'Group',
+        'PLURAL'    => 'Groups',
+    ],
+    'ROLE' => [
+        'SINGULAR'  => 'Role',
+        'PLURAL'    => 'Roles',
+    ],
+    'PERMISSION' => [
+        'SINGULAR'  => 'Permission',
+        'PLURAL'    => 'Permissions',
+    ],
+    'ACTIVITY' => [
+        'SINGULAR'  => 'Activity',
+        'PLURAL'    => 'Activities',
+    ],
 
 ];

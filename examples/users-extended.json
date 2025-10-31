@@ -1,7 +1,7 @@
 {
   "model": "users",
-  "title": "User Management",
-  "singular_title": "User",
+  "title": "USER.PLURAL",
+  "singular_title": "USER.SINGULAR",
   "description": "Manage system users with enhanced features",
   "table": "users",
   "permissions": {
@@ -18,47 +18,47 @@
       "model": "activities",
       "foreign_key": "user_id",
       "list_fields": ["type", "message", "created_at"],
-      "title": "USER.ACTIVITIES"
+      "title": "ACTIVITY.PLURAL"
     },
     {
       "model": "roles",
       "foreign_key": "user_id",
       "list_fields": ["name", "slug", "description"],
-      "title": "USER.ROLES"
+      "title": "ROLE.PLURAL"
     },
     {
       "model": "permissions",
       "foreign_key": "user_id",
       "list_fields": ["slug", "name", "description"],
-      "title": "USER.PERMISSIONS"
+      "title": "PERMISSION.PLURAL"
     }
   ],
   "actions": [
     {
       "key": "toggle_enabled",
-      "label": "Toggle Enabled",
+      "label": "CRUD6.ACTION.TOGGLE_ENABLED",
       "icon": "power-off",
       "type": "field_update",
       "field": "flag_enabled",
       "toggle": true,
       "style": "default",
       "permission": "update_user_field",
-      "success_message": "User status updated successfully"
+      "success_message": "CRUD6.ACTION.SUCCESS"
     },
     {
       "key": "toggle_verified",
-      "label": "Toggle Verified",
+      "label": "CRUD6.ACTION.TOGGLE_VERIFIED",
       "icon": "check-circle",
       "type": "field_update",
       "field": "flag_verified",
       "toggle": true,
       "style": "default",
       "permission": "update_user_field",
-      "success_message": "User verification status updated successfully"
+      "success_message": "CRUD6.ACTION.SUCCESS"
     },
     {
       "key": "change_password",
-      "label": "Change Password",
+      "label": "CRUD6.ACTION.CHANGE_PASSWORD",
       "icon": "key",
       "type": "route",
       "route": "user.password",
@@ -67,7 +67,7 @@
     },
     {
       "key": "reset_password",
-      "label": "Reset Password",
+      "label": "CRUD6.ACTION.RESET_PASSWORD",
       "icon": "envelope",
       "type": "api_call",
       "endpoint": "/api/users/{id}/password/reset",
@@ -79,7 +79,7 @@
     },
     {
       "key": "disable_user",
-      "label": "Disable User",
+      "label": "CRUD6.ACTION.DISABLE_USER",
       "icon": "ban",
       "type": "field_update",
       "field": "flag_enabled",

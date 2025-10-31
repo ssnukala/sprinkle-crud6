@@ -5,17 +5,23 @@ import { useCRUD6Api } from './useCRUD6Api'
 import type { ActionConfig } from './useCRUD6Schema'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import { useAlerts } from '@userfrosting/sprinkle-core/stores'
+import { useI18n } from 'vue-i18n'
 
 /**
  * Vue composable for executing custom CRUD6 actions.
  * 
  * Provides methods to execute schema-defined custom actions like
  * field updates, modal displays, route navigation, and API calls.
+ * 
+ * Supports i18n for confirm and success messages. Messages can be either:
+ * - Translation keys (e.g., "CRUD6.ACTION.RESET_PASSWORD.CONFIRM")
+ * - Plain text strings for backward compatibility
  */
 export function useCRUD6Actions(model?: string) {
     const router = useRouter()
     const { updateField } = useCRUD6Api()
     const alerts = useAlerts()
+    const { t } = useI18n()
     
     const loading = ref(false)
     const error = ref<ApiErrorResponse | null>(null)
@@ -32,7 +38,9 @@ export function useCRUD6Actions(model?: string) {
         // Note: In a production application, consider using a UIKit modal
         // for better user experience and consistency
         if (action.confirm) {
-            if (!confirm(action.confirm)) {
+            // Translate the confirmation message if it's a translation key
+            const confirmMessage = t(action.confirm)
+            if (!confirm(confirmMessage)) {
                 return false
             }
         }
@@ -114,8 +122,10 @@ export function useCRUD6Actions(model?: string) {
         try {
             await updateField(String(recordId), action.field, newValue)
             
-            // Show success message
-            const successMsg = action.success_message || `${action.label} completed successfully`
+            // Show success message - translate if it's a translation key
+            const successMsg = action.success_message 
+                ? t(action.success_message) 
+                : t('CRUD6.ACTION.SUCCESS', { action: t(action.label) })
             alerts.addSuccess(successMsg)
             
             return true
@@ -174,8 +184,10 @@ export function useCRUD6Actions(model?: string) {
                 }
             })
 
-            // Show success message
-            const successMsg = action.success_message || `${action.label} completed successfully`
+            // Show success message - translate if it's a translation key
+            const successMsg = action.success_message 
+                ? t(action.success_message) 
+                : t('CRUD6.ACTION.SUCCESS', { action: t(action.label) })
             alerts.addSuccess(successMsg)
 
             return true

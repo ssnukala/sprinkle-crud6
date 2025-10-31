@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -9,6 +10,7 @@ import CRUD6DeleteModal from './DeleteModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response
@@ -66,9 +68,11 @@ const hasDeletePermission = computed(() => hasPermission('delete'))
 const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 
 // Model label for buttons - prioritize singular_title over model name
+// Support translation keys (e.g., "USER.SINGULAR") or plain text
 const modelLabel = computed(() => {
     if (finalSchema.value?.singular_title) {
-        return finalSchema.value.singular_title
+        // Try to translate - if key doesn't exist, returns the key itself
+        return t(finalSchema.value.singular_title)
     }
     // Capitalize first letter of model name as fallback
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
@@ -208,7 +212,7 @@ const customActions = computed(() => {
                     action.style ? `uk-button-${action.style}` : 'uk-button-default'
                 ]">
                 <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-                {{ action.label }}
+                {{ $t(action.label) }}
             </button>
             
             <!-- Edit button - shows modal only after user clicks -->

@@ -83,12 +83,28 @@ class SprunjeAction extends Base
                 'model' => $crudSchema['model'],
                 'relation' => $relation,
                 'has_detail_config' => isset($crudSchema['detail']),
+                'has_details_array' => isset($crudSchema['details']),
             ]);
             
-            // Check if this relation is configured in the schema's detail section
-            $detailConfig = $crudSchema['detail'] ?? null;
+            // Check if this relation is configured in the schema's detail/details section
+            // Support both singular 'detail' (legacy) and plural 'details' array
+            $detailConfig = null;
+            if (isset($crudSchema['details']) && is_array($crudSchema['details'])) {
+                // Search through details array for matching model
+                foreach ($crudSchema['details'] as $config) {
+                    if (isset($config['model']) && $config['model'] === $relation) {
+                        $detailConfig = $config;
+                        break;
+                    }
+                }
+            } elseif (isset($crudSchema['detail']) && is_array($crudSchema['detail'])) {
+                // Backward compatibility: support singular 'detail' object
+                if (isset($crudSchema['detail']['model']) && $crudSchema['detail']['model'] === $relation) {
+                    $detailConfig = $crudSchema['detail'];
+                }
+            }
             
-            if ($relation !== 'NONE' && $detailConfig && $detailConfig['model'] === $relation) {
+            if ($relation !== 'NONE' && $detailConfig !== null) {
                 // Handle dynamic relation based on schema detail configuration
                 $this->logger->debug("CRUD6 [SprunjeAction] Handling detail relation", [
                     'model' => $crudSchema['model'],

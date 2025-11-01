@@ -182,12 +182,26 @@ class SprunjeAction extends Base
                         'related_key' => $relationshipConfig['related_key'] ?? null,
                     ]);
                     
+                    // Validate required relationship configuration
+                    if (empty($relationshipConfig['pivot_table'])) {
+                        throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'pivot_table' configuration");
+                    }
+                    if (empty($relationshipConfig['foreign_key'])) {
+                        throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'foreign_key' configuration");
+                    }
+                    if (empty($relationshipConfig['related_key'])) {
+                        throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'related_key' configuration");
+                    }
+                    
                     $pivotTable = $relationshipConfig['pivot_table'];
                     $pivotForeignKey = $relationshipConfig['foreign_key'];
                     $pivotRelatedKey = $relationshipConfig['related_key'];
                     $relatedTable = $relatedModel->getTable();
                     $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
                     
+                    // Security Note: Table and column names come from trusted schema configuration
+                    // (JSON files in app/schema), not user input. Laravel's query builder
+                    // provides identifier escaping. Values ($crudModel->id) are bound as parameters.
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
                         $pivotTable,
@@ -202,6 +216,8 @@ class SprunjeAction extends Base
                     });
                 } elseif ($relation === 'permissions') {
                     // Special handling for permissions: query through roles
+                    // NOTE: This is a hard-coded special case for the common users->roles->permissions pattern.
+                    // Future enhancement: Make nested relationships configurable via schema.
                     // users -> role_user -> roles -> role_permission -> permissions
                     $this->logger->debug("CRUD6 [SprunjeAction] Using nested many-to-many for permissions through roles");
                     
@@ -209,11 +225,24 @@ class SprunjeAction extends Base
                     $rolesRelationship = $this->findRelationshipConfig($crudSchema, 'roles');
                     
                     if ($rolesRelationship !== null) {
+                        // Validate required relationship configuration
+                        if (empty($rolesRelationship['pivot_table'])) {
+                            throw new \RuntimeException("Roles relationship missing required 'pivot_table' configuration for permissions query");
+                        }
+                        if (empty($rolesRelationship['foreign_key'])) {
+                            throw new \RuntimeException("Roles relationship missing required 'foreign_key' configuration for permissions query");
+                        }
+                        if (empty($rolesRelationship['related_key'])) {
+                            throw new \RuntimeException("Roles relationship missing required 'related_key' configuration for permissions query");
+                        }
+                        
                         $roleUserPivot = $rolesRelationship['pivot_table'];
                         $roleUserForeignKey = $rolesRelationship['foreign_key'];
                         $roleUserRelatedKey = $rolesRelationship['related_key'];
                         $permissionsTable = $relatedModel->getTable();
                         
+                        // Security Note: Table/column names from trusted schema config, values bound as parameters.
+                        // Hard-coded 'role_permission' table is a known UserFrosting convention.
                         $this->sprunje->extendQuery(function ($query) use (
                             $crudModel,
                             $roleUserPivot,

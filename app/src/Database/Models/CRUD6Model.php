@@ -353,8 +353,24 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     {
         $type = $config['type'] ?? 'belongs_to_many';
 
+        error_log(sprintf(
+            "[CRUD6Model] dynamicRelationship called - relationName: %s, type: %s, relatedClass: %s, config: %s",
+            $relationName,
+            $type,
+            $relatedClass,
+            json_encode($config)
+        ));
+
         if ($type === 'many_to_many') {
             // Standard many-to-many relationship (e.g., users -> roles)
+            error_log(sprintf(
+                "[CRUD6Model] Creating many-to-many relationship - relationName: %s, pivot_table: %s, foreign_key: %s, related_key: %s",
+                $relationName,
+                $config['pivot_table'] ?? 'null',
+                $config['foreign_key'] ?? 'null',
+                $config['related_key'] ?? 'null'
+            ));
+            
             return $this->belongsToMany(
                 $relatedClass,
                 $config['pivot_table'],
@@ -370,6 +386,13 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
             // Nested many-to-many through intermediate model (e.g., users -> roles -> permissions)
             $throughClass = $config['through'];
 
+            error_log(sprintf(
+                "[CRUD6Model] Creating belongs-to-many-through relationship - relationName: %s, throughClass: %s, config: %s",
+                $relationName,
+                $throughClass ?? 'null',
+                json_encode($config)
+            ));
+
             return $this->belongsToManyThrough(
                 $relatedClass,
                 $throughClass,
@@ -383,6 +406,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
                 $relationName
             );
         }
+
+        error_log(sprintf(
+            "[CRUD6Model] ERROR: Unsupported relationship type '%s' for relationship '%s'",
+            $type,
+            $relationName
+        ));
 
         throw new \InvalidArgumentException("Unsupported relationship type '{$type}' for relationship '{$relationName}'");
     }

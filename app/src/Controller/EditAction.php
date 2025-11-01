@@ -145,24 +145,11 @@ class EditAction extends Base
             
             $recordData = $crudModel->toArray();
             
-            error_log(sprintf(
-                "[CRUD6 EditAction] Record data retrieved - model: %s, id: %s, data_keys: %s, data_count: %d",
-                $crudSchema['model'],
-                $recordId,
-                json_encode(array_keys($recordData)),
-                count($recordData)
-            ));
-            
-            error_log(sprintf(
-                "[CRUD6 EditAction] Full record data - model: %s, id: %s, data: %s",
-                $crudSchema['model'],
-                $recordId,
-                json_encode($recordData, JSON_PRETTY_PRINT)
-            ));
-            
             $this->logger->debug("CRUD6 [EditAction] Record data retrieved", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
+                'data_keys' => array_keys($recordData),
+                'data_count' => count($recordData),
                 'data' => $recordData,
             ]);
             

@@ -193,77 +193,98 @@ class SprunjeAction extends Base
                         throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'related_key' configuration");
                     }
                     
-                    $pivotTable = $relationshipConfig['pivot_table'];
-                    $pivotForeignKey = $relationshipConfig['foreign_key'];
-                    $pivotRelatedKey = $relationshipConfig['related_key'];
-                    $relatedTable = $relatedModel->getTable();
-                    $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+                    // Use UserFrosting's built-in belongsToMany relationship method
+                    // This leverages the framework's relationship handling instead of manual JOINs
+                    $relatedClass = get_class($relatedModel);
                     
-                    // Security Note: Table and column names come from trusted schema configuration
-                    // (JSON files in app/schema), not user input. Laravel's query builder
-                    // provides identifier escaping. Values ($crudModel->id) are bound as parameters.
+                    $this->logger->debug("CRUD6 [SprunjeAction] Creating dynamic belongsToMany relationship", [
+                        'related_class' => $relatedClass,
+                        'parent_class' => get_class($crudModel),
+                    ]);
+                    
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
-                        $pivotTable,
-                        $pivotForeignKey,
-                        $pivotRelatedKey,
-                        $relatedTable,
-                        $relatedPrimaryKey
+                        $relationshipConfig,
+                        $relatedClass,
+                        $relation
                     ) {
-                        return $query->join($pivotTable, "{$relatedTable}.{$relatedPrimaryKey}", '=', "{$pivotTable}.{$pivotRelatedKey}")
-                            ->where("{$pivotTable}.{$pivotForeignKey}", $crudModel->id)
-                            ->select("{$relatedTable}.*");
+                        // Create a dynamic belongsToMany relationship using UserFrosting's built-in method
+                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedClass);
+                        
+                        // Get the relationship query (this handles all the JOIN logic internally)
+                        return $relationship->getQuery();
                     });
                 } elseif ($relation === 'permissions') {
                     // Special handling for permissions: query through roles
-                    // NOTE: This is a hard-coded special case for the common users->roles->permissions pattern.
-                    // Future enhancement: Make nested relationships configurable via schema.
-                    // users -> role_user -> roles -> role_permission -> permissions
-                    $this->logger->debug("CRUD6 [SprunjeAction] Using nested many-to-many for permissions through roles");
+                    // Check if a 'through' configuration is provided for belongsToManyThrough
+                    $this->logger->debug("CRUD6 [SprunjeAction] Handling permissions relationship");
                     
-                    // Find the roles relationship to get the pivot table info
-                    $rolesRelationship = $this->findRelationshipConfig($crudSchema, 'roles');
-                    
-                    if ($rolesRelationship !== null) {
-                        // Validate required relationship configuration
-                        if (empty($rolesRelationship['pivot_table'])) {
-                            throw new \RuntimeException("Roles relationship missing required 'pivot_table' configuration for permissions query");
-                        }
-                        if (empty($rolesRelationship['foreign_key'])) {
-                            throw new \RuntimeException("Roles relationship missing required 'foreign_key' configuration for permissions query");
-                        }
-                        if (empty($rolesRelationship['related_key'])) {
-                            throw new \RuntimeException("Roles relationship missing required 'related_key' configuration for permissions query");
-                        }
+                    // Check if schema defines this as a belongsToManyThrough relationship
+                    if (isset($detailConfig['through']) || isset($relationshipConfig['through'])) {
+                        $this->logger->debug("CRUD6 [SprunjeAction] Using belongsToManyThrough for permissions");
                         
-                        $roleUserPivot = $rolesRelationship['pivot_table'];
-                        $roleUserForeignKey = $rolesRelationship['foreign_key'];
-                        $roleUserRelatedKey = $rolesRelationship['related_key'];
-                        $permissionsTable = $relatedModel->getTable();
+                        $throughConfig = $detailConfig['through'] ?? $relationshipConfig;
+                        $relatedClass = get_class($relatedModel);
                         
-                        // Security Note: Table/column names from trusted schema config, values bound as parameters.
-                        // Hard-coded 'role_permission' table is a known UserFrosting convention.
                         $this->sprunje->extendQuery(function ($query) use (
                             $crudModel,
-                            $roleUserPivot,
-                            $roleUserForeignKey,
-                            $roleUserRelatedKey,
-                            $permissionsTable
+                            $throughConfig,
+                            $relatedClass,
+                            $relation
                         ) {
-                            // Join role_user to get user's roles
-                            // Then join role_permission to get permissions for those roles
-                            return $query->join('role_permission', "{$permissionsTable}.id", '=', 'role_permission.permission_id')
-                                ->join($roleUserPivot, 'role_permission.role_id', '=', "{$roleUserPivot}.{$roleUserRelatedKey}")
-                                ->where("{$roleUserPivot}.{$roleUserForeignKey}", $crudModel->id)
-                                ->select("{$permissionsTable}.*")
-                                ->distinct();
+                            // Use UserFrosting's belongsToManyThrough relationship
+                            $relationship = $crudModel->dynamicRelationship($relation, $throughConfig, $relatedClass);
+                            return $relationship->getQuery();
                         });
                     } else {
-                        // Fallback to direct foreign key if roles relationship not found
-                        $this->logger->warning("CRUD6 [SprunjeAction] Roles relationship not found, falling back to direct foreign key for permissions");
-                        $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
-                            return $query->where($foreignKey, $crudModel->id);
-                        });
+                        // Fallback: Manual JOIN approach for backward compatibility
+                        // users -> role_user -> roles -> role_permission -> permissions
+                        $this->logger->debug("CRUD6 [SprunjeAction] Using manual JOIN approach for permissions (legacy)");
+                        
+                        // Find the roles relationship to get the pivot table info
+                        $rolesRelationship = $this->findRelationshipConfig($crudSchema, 'roles');
+                        
+                        if ($rolesRelationship !== null) {
+                            // Validate required relationship configuration
+                            if (empty($rolesRelationship['pivot_table'])) {
+                                throw new \RuntimeException("Roles relationship missing required 'pivot_table' configuration for permissions query");
+                            }
+                            if (empty($rolesRelationship['foreign_key'])) {
+                                throw new \RuntimeException("Roles relationship missing required 'foreign_key' configuration for permissions query");
+                            }
+                            if (empty($rolesRelationship['related_key'])) {
+                                throw new \RuntimeException("Roles relationship missing required 'related_key' configuration for permissions query");
+                            }
+                            
+                            $roleUserPivot = $rolesRelationship['pivot_table'];
+                            $roleUserForeignKey = $rolesRelationship['foreign_key'];
+                            $roleUserRelatedKey = $rolesRelationship['related_key'];
+                            $permissionsTable = $relatedModel->getTable();
+                            
+                            // Security Note: Table/column names from trusted schema config, values bound as parameters.
+                            // Hard-coded 'role_permission' table is a known UserFrosting convention.
+                            $this->sprunje->extendQuery(function ($query) use (
+                                $crudModel,
+                                $roleUserPivot,
+                                $roleUserForeignKey,
+                                $roleUserRelatedKey,
+                                $permissionsTable
+                            ) {
+                                // Join role_user to get user's roles
+                                // Then join role_permission to get permissions for those roles
+                                return $query->join('role_permission', "{$permissionsTable}.id", '=', 'role_permission.permission_id')
+                                    ->join($roleUserPivot, 'role_permission.role_id', '=', "{$roleUserPivot}.{$roleUserRelatedKey}")
+                                    ->where("{$roleUserPivot}.{$roleUserForeignKey}", $crudModel->id)
+                                    ->select("{$permissionsTable}.*")
+                                    ->distinct();
+                            });
+                        } else {
+                            // Fallback to direct foreign key if roles relationship not found
+                            $this->logger->warning("CRUD6 [SprunjeAction] Roles relationship not found, falling back to direct foreign key for permissions");
+                            $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
+                                return $query->where($foreignKey, $crudModel->id);
+                            });
+                        }
                     }
                 } else {
                     // Default: filter by foreign key (one-to-many relationship)

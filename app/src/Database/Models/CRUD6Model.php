@@ -336,4 +336,54 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     {
         return $this->deleted_at ?? 'deleted_at';
     }
+
+    /**
+     * Create a dynamic relationship based on schema configuration.
+     *
+     * Leverages UserFrosting's built-in relationship methods (belongsToMany, belongsToManyThrough)
+     * to create relationships from schema definitions without requiring hard-coded model classes.
+     *
+     * @param string $relationName The name of the relationship
+     * @param array  $config       The relationship configuration from schema
+     * @param string $relatedClass The related model class name (fully qualified)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function dynamicRelationship(string $relationName, array $config, string $relatedClass): \Illuminate\Database\Eloquent\Relations\Relation
+    {
+        $type = $config['type'] ?? 'belongs_to_many';
+
+        if ($type === 'many_to_many') {
+            // Standard many-to-many relationship (e.g., users -> roles)
+            return $this->belongsToMany(
+                $relatedClass,
+                $config['pivot_table'],
+                $config['foreign_key'],
+                $config['related_key'],
+                null, // parentKey (use default)
+                null, // relatedKey (use default)
+                $relationName
+            );
+        }
+
+        if ($type === 'belongs_to_many_through' || isset($config['through'])) {
+            // Nested many-to-many through intermediate model (e.g., users -> roles -> permissions)
+            $throughClass = $config['through'];
+
+            return $this->belongsToManyThrough(
+                $relatedClass,
+                $throughClass,
+                $config['first_pivot_table'] ?? null,
+                $config['first_foreign_key'] ?? null,
+                $config['first_related_key'] ?? null,
+                $config['second_pivot_table'] ?? null,
+                $config['second_foreign_key'] ?? null,
+                $config['second_related_key'] ?? null,
+                null, // throughRelation (use default)
+                $relationName
+            );
+        }
+
+        throw new \InvalidArgumentException("Unsupported relationship type '{$type}' for relationship '{$relationName}'");
+    }
 }

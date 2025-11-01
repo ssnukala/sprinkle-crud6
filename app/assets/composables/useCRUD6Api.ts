@@ -102,18 +102,43 @@ export function useCRUD6Api(modelName?: string) {
         return axios
             .get<CRUD6Response>(url)
             .then((response) => {
-                console.log('[useCRUD6Api] Fetch row response received', {
+                console.log('[useCRUD6Api] ===== FETCH ROW RESPONSE RECEIVED =====', {
                     model,
                     id: toValue(id),
+                    url,
                     status: response.status,
-                    data: response.data,
+                    statusText: response.statusText,
+                    hasData: !!response.data,
+                    dataKeys: response.data ? Object.keys(response.data) : [],
+                    timestamp: new Date().toISOString()
                 })
 
-                // The API wraps the data in a response object with {message, model, id, data}
-                // We need to extract just the data property for the CRUD6Response
+                console.log('[useCRUD6Api] Response data structure', {
+                    model,
+                    id: toValue(id),
+                    responseData: response.data,
+                    hasDataProperty: response.data && typeof response.data === 'object' && 'data' in response.data,
+                })
+
+                // Log the actual record data
                 if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+                    console.log('[useCRUD6Api] ===== RECORD DATA =====', {
+                        model,
+                        id: toValue(id),
+                        recordDataKeys: Object.keys(response.data.data as any),
+                        recordData: response.data.data,
+                        timestamp: new Date().toISOString()
+                    })
+                    
                     return response.data.data as CRUD6Response
                 }
+                
+                console.log('[useCRUD6Api] Returning full response data (no data property found)', {
+                    model,
+                    id: toValue(id),
+                    responseData: response.data,
+                })
+                
                 return response.data
             })
             .catch((err) => {

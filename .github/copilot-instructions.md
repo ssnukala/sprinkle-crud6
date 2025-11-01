@@ -104,6 +104,11 @@ Before creating new components, check if UserFrosting 6 already provides:
 - **PSR-12**: All code must follow PSR-12 coding standards
 - **Type Declarations**: Use strict types (`declare(strict_types=1);`)
 - **Dependency Injection**: Use constructor injection with PHP-DI
+- **Logging**: ALWAYS use `DebugLoggerInterface` (injected as `$this->logger`) for debug logging
+  - ❌ **DO NOT use `error_log()`** - this is not part of UserFrosting 6 standards
+  - ✅ **USE `$this->logger->debug()`** instead with structured array parameters
+  - Example: `$this->logger->debug("Message", ['key' => 'value'])`
+  - Reference: See `app/src/Sprunje/CRUD6Sprunje.php` for proper usage
 - **Naming Conventions**: Follow UserFrosting naming conventions
   - Controllers: `{Action}Action.php` (e.g., `CreateAction.php`)
   - Services: `{Name}Service.php` (e.g., `SchemaService.php`)

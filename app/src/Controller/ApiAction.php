@@ -72,38 +72,27 @@ class ApiAction extends Base
         ///$schema = $this->getSchema($modelName);
         //$this->validateAccess($modelName, 'read');
 
-        // DEBUG: Log API schema request
+        // Get context parameter from query string
         $queryParams = $request->getQueryParams();
         $context = $queryParams['context'] ?? null;
         
-        error_log(sprintf(
-            "[CRUD6 ApiAction] ===== SCHEMA API REQUEST ===== model: %s, context: %s, URI: %s, timestamp: %s",
-            $crudSchema['model'],
-            $context ?? 'null/full',
-            (string) $request->getUri(),
-            date('Y-m-d H:i:s.u')
-        ));
-
-        $this->logger->debug("Line 34 : CRUD6: API request for model: {$crudSchema['model']}");
-
-        // Get context parameter from query string
-        
-
-        // DEBUG: Log before filtering
-        error_log(sprintf(
-            "[CRUD6 ApiAction] Filtering schema for context: %s",
-            $context ?? 'null/full'
-        ));
+        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
+            'model' => $crudSchema['model'],
+            'context' => $context ?? 'null/full',
+            'uri' => (string) $request->getUri(),
+        ]);
 
         // Filter schema based on context
+        $this->logger->debug("CRUD6 [ApiAction] Filtering schema for context", [
+            'context' => $context ?? 'null/full',
+        ]);
+
         $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
 
-        // DEBUG: Log after filtering
-        error_log(sprintf(
-            "[CRUD6 ApiAction] Schema filtered - field_count: %d, has_contexts: %s",
-            count($filteredSchema['fields'] ?? []),
-            isset($filteredSchema['contexts']) ? 'yes' : 'no'
-        ));
+        $this->logger->debug("CRUD6 [ApiAction] Schema filtered", [
+            'field_count' => count($filteredSchema['fields'] ?? []),
+            'has_contexts' => isset($filteredSchema['contexts']) ? 'yes' : 'no',
+        ]);
 
         // Get a display name for the model (title or capitalized model name)
         // For button labels, we want singular form like "Group" not "groups" or "Group Management"
@@ -125,12 +114,11 @@ class ApiAction extends Base
             'schema' => $filteredSchema
         ];
 
-        error_log(sprintf(
-            "[CRUD6 ApiAction] ===== SCHEMA API RESPONSE ===== model: %s, context: %s, response_size: %d bytes",
-            $filteredSchema['model'],
-            $context ?? 'null/full',
-            strlen(json_encode($responseData))
-        ));
+        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
+            'model' => $filteredSchema['model'],
+            'context' => $context ?? 'null/full',
+            'response_size' => strlen(json_encode($responseData)) . ' bytes',
+        ]);
 
         $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');

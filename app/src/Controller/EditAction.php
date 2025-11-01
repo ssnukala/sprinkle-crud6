@@ -148,6 +148,8 @@ class EditAction extends Base
             $this->logger->debug("CRUD6 [EditAction] Record data retrieved", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
+                'data_keys' => array_keys($recordData),
+                'data_count' => count($recordData),
                 'data' => $recordData,
             ]);
             

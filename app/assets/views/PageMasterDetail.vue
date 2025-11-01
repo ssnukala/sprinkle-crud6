@@ -159,6 +159,23 @@ const detailConfig = computed(() => {
     return schema.value?.detail_editable as DetailEditableConfig | undefined
 })
 
+// Computed property for detail configurations (supports both single and multiple)
+const detailConfigs = computed(() => {
+    if (!schema.value) return []
+    
+    // If schema has 'details' array (new format), use it
+    if (schema.value.details && Array.isArray(schema.value.details)) {
+        return schema.value.details
+    }
+    
+    // If schema has single 'detail' object (legacy format), convert to array
+    if (schema.value.detail) {
+        return [schema.value.detail]
+    }
+    
+    return []
+})
+
 /**
  * Methods - Fetch record
  */
@@ -719,11 +736,15 @@ watch(recordId, (newId) => {
             <div>
                 <CRUD6Info :crud6="CRUD6Row" :schema="schema" @crud6Updated="fetch()" />
             </div>
-            <div class="uk-width-2-3" v-if="schema?.detail && $checkAccess('view_crud6_field')">
+            <div class="uk-width-2-3" v-if="detailConfigs.length > 0 && $checkAccess('view_crud6_field')">
+                <!-- Render multiple detail sections -->
                 <CRUD6Details 
+                    v-for="(detailConfiguration, index) in detailConfigs"
+                    :key="`detail-${index}-${detailConfiguration.model}`"
                     :recordId="recordId" 
                     :parentModel="model" 
-                    :detailConfig="schema.detail" 
+                    :detailConfig="detailConfiguration"
+                    class="uk-margin-bottom"
                 />
             </div>
         </div>

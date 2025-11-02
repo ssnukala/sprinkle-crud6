@@ -343,20 +343,25 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      * Leverages UserFrosting's built-in relationship methods (belongsToMany, belongsToManyThrough)
      * to create relationships from schema definitions without requiring hard-coded model classes.
      *
-     * @param string $relationName The name of the relationship
-     * @param array  $config       The relationship configuration from schema
-     * @param string $relatedClass The related model class name (fully qualified)
+     * IMPORTANT: Pass a configured CRUD6Model instance (not a class name) to ensure the related
+     * model has its table name and schema properly configured. Passing a class name will result
+     * in Eloquent creating an unconfigured instance with the default table 'CRUD6_NOT_SET'.
+     *
+     * @param string                                                    $relationName The name of the relationship
+     * @param array                                                     $config       The relationship configuration from schema
+     * @param \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model  $relatedModel The configured related model instance
      *
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
-    public function dynamicRelationship(string $relationName, array $config, string $relatedClass): \Illuminate\Database\Eloquent\Relations\Relation
+    public function dynamicRelationship(string $relationName, array $config, CRUD6Model $relatedModel): \Illuminate\Database\Eloquent\Relations\Relation
     {
         $type = $config['type'] ?? 'belongs_to_many';
 
         if ($type === 'many_to_many') {
             // Standard many-to-many relationship (e.g., users -> roles)
+            // Pass the configured model instance to ensure proper table configuration
             return $this->belongsToMany(
-                $relatedClass,
+                $relatedModel,
                 $config['pivot_table'],
                 $config['foreign_key'],
                 $config['related_key'],
@@ -371,7 +376,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
             $throughClass = $config['through'];
 
             return $this->belongsToManyThrough(
-                $relatedClass,
+                $relatedModel,
                 $throughClass,
                 $config['first_pivot_table'] ?? null,
                 $config['first_foreign_key'] ?? null,

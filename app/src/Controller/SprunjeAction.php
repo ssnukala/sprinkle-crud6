@@ -248,10 +248,25 @@ class SprunjeAction extends Base
                 } elseif ($relationshipConfig !== null && $relationshipConfig['type'] === 'belongs_to_many_through') {
                     // Handle belongs-to-many-through relationship (e.g., users -> roles -> permissions)
                     // This is completely generic - works for any through relationship defined in the schema
+                    $throughModelName = $relationshipConfig['through'] ?? null;
+                    
                     $this->logger->debug("CRUD6 [SprunjeAction] Using belongs-to-many-through relationship", [
                         'relation' => $relation,
-                        'through' => $relationshipConfig['through'] ?? null,
+                        'through' => $throughModelName,
                         'config' => $relationshipConfig,
+                    ]);
+                    
+                    if (empty($throughModelName)) {
+                        throw new \RuntimeException("belongs_to_many_through relationship '{$relation}' missing required 'through' configuration");
+                    }
+                    
+                    // Instantiate and configure the through model (e.g., "roles")
+                    // This ensures the through model has its table name properly set
+                    $throughModel = $this->schemaService->getModelInstance($throughModelName);
+                    
+                    $this->logger->debug("CRUD6 [SprunjeAction] Through model instantiated", [
+                        'through_model' => $throughModelName,
+                        'through_table' => $throughModel->getTable(),
                     ]);
                     
                     $logger = $this->logger; // Capture logger for use in closure
@@ -260,6 +275,7 @@ class SprunjeAction extends Base
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
+                        $throughModel,
                         $relation,
                         $logger
                     ) {
@@ -268,8 +284,8 @@ class SprunjeAction extends Base
                         ]);
                         
                         // Use UserFrosting's belongsToManyThrough relationship (dynamic from schema)
-                        // Pass the configured model instance to ensure it has the correct table name
-                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel);
+                        // Pass BOTH the configured related model AND through model instances
+                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel, $throughModel);
                         return $relationship->getQuery();
                     });
                 } else {

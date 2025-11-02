@@ -347,13 +347,17 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      * model has its table name and schema properly configured. Passing a class name will result
      * in Eloquent creating an unconfigured instance with the default table 'CRUD6_NOT_SET'.
      *
-     * @param string                                                    $relationName The name of the relationship
-     * @param array                                                     $config       The relationship configuration from schema
-     * @param \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model  $relatedModel The configured related model instance
+     * For belongs_to_many_through relationships, you must also pass a configured $throughModel
+     * instance to ensure the intermediate model has its table properly configured.
+     *
+     * @param string                                                    $relationName  The name of the relationship
+     * @param array                                                     $config        The relationship configuration from schema
+     * @param \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model  $relatedModel  The configured related model instance
+     * @param \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model|null $throughModel The configured through model instance (required for belongs_to_many_through)
      *
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
-    public function dynamicRelationship(string $relationName, array $config, CRUD6Model $relatedModel): \Illuminate\Database\Eloquent\Relations\Relation
+    public function dynamicRelationship(string $relationName, array $config, CRUD6Model $relatedModel, ?CRUD6Model $throughModel = null): \Illuminate\Database\Eloquent\Relations\Relation
     {
         $type = $config['type'] ?? 'belongs_to_many';
 
@@ -373,11 +377,17 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         if ($type === 'belongs_to_many_through' || isset($config['through'])) {
             // Nested many-to-many through intermediate model (e.g., users -> roles -> permissions)
-            $throughClass = $config['through'];
+            // The through model must be a configured CRUD6Model instance, not a class name string
+            if ($throughModel === null) {
+                throw new \InvalidArgumentException(
+                    "belongs_to_many_through relationship '{$relationName}' requires a configured \$throughModel instance. " .
+                    "The through model ('{$config['through']}') must be instantiated and configured with its schema before being passed."
+                );
+            }
 
             return $this->belongsToManyThrough(
                 $relatedModel,
-                $throughClass,
+                $throughModel,
                 $config['first_pivot_table'] ?? null,
                 $config['first_foreign_key'] ?? null,
                 $config['first_related_key'] ?? null,

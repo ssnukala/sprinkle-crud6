@@ -208,7 +208,7 @@ For external templates, create your template file in `app/assets/templates/crud6
 - Use reactive computed properties for dynamic displays
 - Keep complex templates in separate files for better maintainability
 
-See `examples/categories.json`, `examples/products.json`, `examples/products-template-file.json`, and `examples/products-vue-template.json` for working examples.
+See `examples/schema/categories.json`, `examples/schema/products.json`, `examples/schema/products-template-file.json`, and `examples/schema/products-vue-template.json` for working examples.
 
 ### Detail Section Configuration
 

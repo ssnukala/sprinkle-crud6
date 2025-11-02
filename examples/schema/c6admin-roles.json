@@ -1,0 +1,109 @@
+{
+    "model": "roles",
+    "title": "ROLE.PAGE",
+    "singular_title": "ROLE.1",
+    "description": "ROLE.PAGE_DESCRIPTION",
+    "table": "roles",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_roles",
+        "create": "create_role",
+        "update": "update_role_field",
+        "delete": "delete_role"
+    },
+    "default_sort": {
+        "name": "asc"
+    },
+    "relationships": [
+        {
+            "name": "permissions",
+            "type": "many_to_many",
+            "pivot_table": "permission_roles",
+            "foreign_key": "role_id",
+            "related_key": "permission_id",
+            "title": "ROLE.PERMISSIONS"
+        },
+        {
+            "name": "users",
+            "type": "many_to_many",
+            "pivot_table": "role_users",
+            "foreign_key": "role_id",
+            "related_key": "user_id",
+            "title": "ROLE.USERS"
+        }
+    ],
+    "details": [
+        {
+            "model": "users",
+            "list_fields": ["user_name", "first_name", "last_name", "email", "flag_enabled"],
+            "title": "ROLE.USERS"
+        },
+        {
+            "model": "permissions",
+            "list_fields": ["slug", "name", "description"],
+            "title": "ROLE.PERMISSIONS"
+        }
+    ],
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "viewable": true,
+            "listable": false
+        },
+        "slug": {
+            "type": "string",
+            "label": "Slug",
+            "required": true,
+            "listable": false,
+            "validation": {
+                "required": true,
+                "unique": true,
+                "length": {
+                    "max": 255
+                }
+            }
+        },
+        "name": {
+            "type": "string",
+            "label": "Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 255
+                }
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": true
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "viewable": true,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "viewable": true,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
+        }
+    }
+}

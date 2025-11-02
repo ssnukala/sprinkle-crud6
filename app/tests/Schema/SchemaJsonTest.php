@@ -77,7 +77,7 @@ class SchemaJsonTest extends TestCase
      */
     public function testSchemasHaveRequiredFields(): void
     {
-        $path = __DIR__ . '/../../../examples/products.json';
+        $path = __DIR__ . '/../../../examples/schema/products.json';
         $content = file_get_contents($path);
         $schema = json_decode($content, true);
 
@@ -95,7 +95,7 @@ class SchemaJsonTest extends TestCase
      */
     public function testFieldTemplateStructure(): void
     {
-        $path = __DIR__ . '/../../../examples/field-template-example.json';
+        $path = __DIR__ . '/../../../examples/schema/field-template-example.json';
         $content = file_get_contents($path);
         $schema = json_decode($content, true);
 
@@ -124,7 +124,7 @@ class SchemaJsonTest extends TestCase
      */
     public function testSchemasCanOmitDefaults(): void
     {
-        $path = __DIR__ . '/../../../examples/products.json';
+        $path = __DIR__ . '/../../../examples/schema/products.json';
         $content = file_get_contents($path);
         $schema = json_decode($content, true);
 
@@ -148,7 +148,7 @@ class SchemaJsonTest extends TestCase
      */
     public function testFieldTemplateFileReferences(): void
     {
-        $path = __DIR__ . '/../../../examples/products-template-file.json';
+        $path = __DIR__ . '/../../../examples/schema/products-template-file.json';
         $content = file_get_contents($path);
         $schema = json_decode($content, true);
 

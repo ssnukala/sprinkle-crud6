@@ -210,11 +210,32 @@
                 }
             }
         },
+        "theme": {
+            "type": "string",
+            "label": "Theme",
+            "required": false,
+            "listable": false,
+            "viewable": true,
+            "editable": true,
+            "validation": {
+                "length": {
+                    "max": 100
+                }
+            }
+        },
         "group_id": {
             "type": "integer",
             "label": "Group",
             "required": false,
             "listable": false
+        },
+        "last_activity_id": {
+            "type": "integer",
+            "label": "Last Activity ID",
+            "required": false,
+            "listable": false,
+            "viewable": false,
+            "editable": false
         },
         "flag_verified": {
             "type": "boolean",

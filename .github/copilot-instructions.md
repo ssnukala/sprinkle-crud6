@@ -318,7 +318,7 @@ class MySprunje extends Sprunje
   - If dependencies not installed: Tests will fail with missing class errors
   - Unit tests for models: `vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php`
 - **MANUAL VALIDATION**: When composer install fails, validate JSON schemas and PHP syntax manually
-- **JSON Schema Validation**: `php -r "echo json_encode(json_decode(file_get_contents('examples/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"`
+- **JSON Schema Validation**: `php -r "echo json_encode(json_decode(file_get_contents('examples/schema/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"`
 
 ### Development Tools
 - **Requires successful composer install** for development tools to be available
@@ -349,7 +349,7 @@ Always test these scenarios after making changes:
 1. **Syntax Validation**: `find app/src -name "*.php" -exec php -l {} \;` - must pass for all files
 2. **JSON Schema Validation**: 
    - `php -r "echo json_decode(file_get_contents('app/schema/crud6/users.json')) ? 'users.json valid' : 'users.json invalid';"`
-   - `php -r "echo json_decode(file_get_contents('examples/products.json')) ? 'products.json valid' : 'products.json invalid';"`
+   - `php -r "echo json_decode(file_get_contents('examples/schema/products.json')) ? 'products.json valid' : 'products.json invalid';"`
 3. **Schema Structure Check**: Verify required fields exist in JSON schemas:
    - `model`, `table`, `fields` keys must be present
    - Each field must have a `type` property
@@ -360,7 +360,7 @@ Always test these scenarios after making changes:
 ### CRITICAL Manual Validation Steps
 After making ANY changes to CRUD6Model, schema files, or controllers:
 1. Run full syntax check: `find app/src -name "*.php" -exec php -l {} \;`
-2. Validate all JSON schemas: `for file in app/schema/crud6/*.json examples/*.json; do php -r "if(json_decode(file_get_contents('$file'))) { echo '$file valid'; } else { echo '$file invalid'; } echo PHP_EOL;"; done`
+2. Validate all JSON schemas: `for file in app/schema/crud6/*.json examples/schema/*.json; do php -r "if(json_decode(file_get_contents('$file'))) { echo '$file valid'; } else { echo '$file invalid'; } echo PHP_EOL;"; done`
 3. Check autoloader: `composer dump-autoload`
 4. If dependencies available, run tests: `vendor/bin/phpunit`
 
@@ -382,7 +382,7 @@ When `composer install` fails due to authentication issues:
 
 ### Adding New Model Support
 1. Create JSON schema file in `app/schema/crud6/model_name.json`
-2. Follow existing schema patterns in `examples/products.json`
+2. Follow existing schema patterns in `examples/schema/products.json`
 3. Test schema: `php -r "echo json_decode(file_get_contents('app/schema/crud6/model_name.json')) ? 'valid' : 'invalid';"`
 4. Verify required fields: `model`, `table`, `fields`
 5. Add database migration if needed in `app/src/Database/Migrations/`
@@ -408,7 +408,7 @@ Since this is a UserFrosting 6 sprinkle:
 5. **Testing**: Add corresponding tests in `app/tests/` following the existing pattern
 
 ### Working with Examples
-- Review example schemas: `examples/products.json` and `app/schema/crud6/users.json`
+- Review example schemas: `examples/schema/products.json` and `app/schema/crud6/users.json`
 - Test model usage: Run through scenarios in `examples/model-usage-examples.php`
 - API documentation: Check `examples/README.md` for API usage patterns
 
@@ -463,7 +463,7 @@ examples/                   # Usage examples and documentation
 ### Development Workflow
 1. Make changes to source files
 2. **ALWAYS run syntax check first**: `find app/src -name "*.php" -exec php -l {} \;` (under 1 second)
-3. Validate JSON schemas: `php -r "echo json_encode(json_decode(file_get_contents('examples/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"`
+3. Validate JSON schemas: `php -r "echo json_encode(json_decode(file_get_contents('examples/schema/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"`
 4. **If dependencies available**: Run specific tests: `vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php` (30 seconds)
 5. **If dependencies available**: Run full tests: `vendor/bin/phpunit` (3 minutes - use 10+ minute timeout)
 6. **If dependencies available**: Format code: `vendor/bin/php-cs-fixer fix` (2 minutes - use 10+ minute timeout) 
@@ -477,7 +477,7 @@ examples/                   # Usage examples and documentation
 find app/src -name "*.php" -exec php -l {} \;
 
 # Validate JSON schemas
-php -r "echo json_encode(json_decode(file_get_contents('examples/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"
+php -r "echo json_encode(json_decode(file_get_contents('examples/schema/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"
 
 # If dependencies available (run these if vendor/bin exists):
 # Code formatting (2 minutes - NEVER CANCEL)

@@ -1,0 +1,98 @@
+{
+    "model": "groups",
+    "title": "GROUP.PAGE",
+    "singular_title": "GROUP.1",
+    "description": "GROUP.PAGE_DESCRIPTION",
+    "table": "groups",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_groups",
+        "create": "create_group",
+        "update": "update_group_field",
+        "delete": "delete_group"
+    },
+    "default_sort": {
+        "name": "asc"
+    },
+    "details": [
+        {
+            "model": "users",
+            "foreign_key": "group_id",
+            "list_fields": ["user_name", "first_name", "last_name", "email", "flag_enabled"],
+            "title": "GROUP.USERS"
+        }
+    ],
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "viewable": true,
+            "listable": false
+        },
+        "slug": {
+            "type": "string",
+            "label": "Slug",
+            "required": true,
+            "listable": false,
+            "validation": {
+                "required": true,
+                "unique": true,
+                "length": {
+                    "max": 255
+                }
+            }
+        },
+        "name": {
+            "type": "string",
+            "label": "Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 255
+                }
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": true
+        },
+        "icon": {
+            "type": "string",
+            "label": "Icon",
+            "required": false,
+            "listable": false,
+            "validation": {
+                "length": {
+                    "max": 100
+                }
+            }
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "viewable": true,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "viewable": true,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
+        }
+    }
+}

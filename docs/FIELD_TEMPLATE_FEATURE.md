@@ -206,7 +206,7 @@ For complex HTML templates, it's often cleaner to use external template files:
 </div>
 ```
 
-See `examples/products-template-file.json` for a complete working example.
+See `examples/schema/products-template-file.json` for a complete working example.
 
 ### Example 5: Using Vue Component Templates
 
@@ -261,11 +261,11 @@ const statusClass = computed(() =>
 </template>
 ```
 
-See `examples/products-vue-template.json` for a complete working example.
+See `examples/schema/products-vue-template.json` for a complete working example.
 
 ### Example 6: Full-Featured Inline Template
 
-See `examples/field-template-example.json` for a comprehensive example showing:
+See `examples/schema/field-template-example.json` for a comprehensive example showing:
 - Multiple field values in a single template
 - UIkit grid system for layout
 - Status badges with dynamic classes
@@ -452,10 +452,10 @@ See the main README for more details on schema defaults.
 
 Check these files for working examples:
 
-1. **examples/categories.json** - Simple multi-field display (inline template)
-2. **examples/products.json** - Card-style layout with badges (inline template)
-3. **examples/products-template-file.json** - Using external template file
-4. **examples/field-template-example.json** - Comprehensive task management example (inline template)
+1. **examples/schema/categories.json** - Simple multi-field display (inline template)
+2. **examples/schema/products.json** - Card-style layout with badges (inline template)
+3. **examples/schema/products-template-file.json** - Using external template file
+4. **examples/schema/field-template-example.json** - Comprehensive task management example (inline template)
 5. **app/assets/templates/crud6/product-card.html** - Example external template file
 6. **app/assets/templates/crud6/category-info.html** - Example external template file
 

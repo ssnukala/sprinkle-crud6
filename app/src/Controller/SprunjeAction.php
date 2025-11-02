@@ -219,18 +219,18 @@ class SprunjeAction extends Base
                     
                     // Use UserFrosting's built-in belongsToMany relationship method
                     // This leverages the framework's relationship handling instead of manual JOINs
-                    $relatedClass = get_class($relatedModel);
+                    // Pass the configured model instance (not class name) to ensure proper table configuration
                     $logger = $this->logger; // Capture logger for use in closure
                     
                     $this->logger->debug("CRUD6 [SprunjeAction] Creating dynamic belongsToMany relationship", [
-                        'related_class' => $relatedClass,
-                        'parent_class' => get_class($crudModel),
+                        'related_model_table' => $relatedModel->getTable(),
+                        'parent_model_table' => $crudModel->getTable(),
                     ]);
                     
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
-                        $relatedClass,
+                        $relatedModel,
                         $relation,
                         $logger
                     ) {
@@ -239,7 +239,8 @@ class SprunjeAction extends Base
                         ]);
                         
                         // Create a dynamic belongsToMany relationship using UserFrosting's built-in method
-                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedClass);
+                        // Pass the configured model instance to ensure it has the correct table name
+                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel);
                         
                         // Get the relationship query (this handles all the JOIN logic internally)
                         return $relationship->getQuery();
@@ -253,13 +254,12 @@ class SprunjeAction extends Base
                         'config' => $relationshipConfig,
                     ]);
                     
-                    $relatedClass = get_class($relatedModel);
                     $logger = $this->logger; // Capture logger for use in closure
                     
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
-                        $relatedClass,
+                        $relatedModel,
                         $relation,
                         $logger
                     ) {
@@ -268,7 +268,8 @@ class SprunjeAction extends Base
                         ]);
                         
                         // Use UserFrosting's belongsToManyThrough relationship (dynamic from schema)
-                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedClass);
+                        // Pass the configured model instance to ensure it has the correct table name
+                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel);
                         return $relationship->getQuery();
                     });
                 } else {

@@ -217,12 +217,12 @@ class SprunjeAction extends Base
                         throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'related_key' configuration");
                     }
                     
-                    // Use UserFrosting's built-in belongsToMany relationship method
-                    // This leverages the framework's relationship handling instead of manual JOINs
-                    // Pass the configured model instance (not class name) to ensure proper table configuration
+                    // Build manual JOIN query to avoid Eloquent's relationship methods
+                    // Eloquent's belongsToMany creates fresh CRUD6Model instances with default table 'CRUD6_NOT_SET'
+                    // We build the JOIN manually using the configured model's actual table names
                     $logger = $this->logger; // Capture logger for use in closure
                     
-                    $this->logger->debug("CRUD6 [SprunjeAction] Creating dynamic belongsToMany relationship", [
+                    $this->logger->debug("CRUD6 [SprunjeAction] Building manual belongsToMany JOIN", [
                         'related_model_table' => $relatedModel->getTable(),
                         'parent_model_table' => $crudModel->getTable(),
                     ]);
@@ -231,19 +231,30 @@ class SprunjeAction extends Base
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
-                        $relation,
                         $logger
                     ) {
-                        $logger->debug("CRUD6 [SprunjeAction] Creating belongsToMany relationship query", [
-                            'relation' => $relation,
+                        $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToMany query", [
+                            'related_table' => $relatedModel->getTable(),
+                            'pivot_table' => $relationshipConfig['pivot_table'],
+                            'foreign_key' => $relationshipConfig['foreign_key'],
+                            'related_key' => $relationshipConfig['related_key'],
+                            'parent_id' => $crudModel->id,
                         ]);
                         
-                        // Create a dynamic belongsToMany relationship using UserFrosting's built-in method
-                        // Pass the configured model instance to ensure it has the correct table name
-                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel);
+                        // Build the query manually to avoid Eloquent creating unconfigured CRUD6Model instances
+                        // Start with the related model's table
+                        $relatedTable = $relatedModel->getTable();
+                        $pivotTable = $relationshipConfig['pivot_table'];
+                        $foreignKey = $relationshipConfig['foreign_key'];
+                        $relatedKey = $relationshipConfig['related_key'];
                         
-                        // Get the relationship query (this handles all the JOIN logic internally)
-                        return $relationship->getQuery();
+                        // Join the pivot table with the related table
+                        return $query->join(
+                            $pivotTable,
+                            "{$relatedTable}.id",
+                            '=',
+                            "{$pivotTable}.{$relatedKey}"
+                        )->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
                     });
                 } elseif ($relationshipConfig !== null && $relationshipConfig['type'] === 'belongs_to_many_through') {
                     // Handle belongs-to-many-through relationship (e.g., users -> roles -> permissions)
@@ -276,17 +287,41 @@ class SprunjeAction extends Base
                         $relationshipConfig,
                         $relatedModel,
                         $throughModel,
-                        $relation,
                         $logger
                     ) {
-                        $logger->debug("CRUD6 [SprunjeAction] Creating belongsToManyThrough relationship query", [
-                            'relation' => $relation,
+                        $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToManyThrough query", [
+                            'related_table' => $relatedModel->getTable(),
+                            'through_table' => $throughModel->getTable(),
+                            'first_pivot_table' => $relationshipConfig['first_pivot_table'],
+                            'second_pivot_table' => $relationshipConfig['second_pivot_table'],
+                            'parent_id' => $crudModel->id,
                         ]);
                         
-                        // Use UserFrosting's belongsToManyThrough relationship (dynamic from schema)
-                        // Pass BOTH the configured related model AND through model instances
-                        $relationship = $crudModel->dynamicRelationship($relation, $relationshipConfig, $relatedModel, $throughModel);
-                        return $relationship->getQuery();
+                        // Build the query manually to avoid Eloquent creating unconfigured CRUD6Model instances
+                        // This handles the double many-to-many relationship (e.g., users -> roles -> permissions)
+                        $relatedTable = $relatedModel->getTable();
+                        $secondPivotTable = $relationshipConfig['second_pivot_table'];
+                        $secondForeignKey = $relationshipConfig['second_foreign_key'];
+                        $secondRelatedKey = $relationshipConfig['second_related_key'];
+                        $firstPivotTable = $relationshipConfig['first_pivot_table'];
+                        $firstForeignKey = $relationshipConfig['first_foreign_key'];
+                        $firstRelatedKey = $relationshipConfig['first_related_key'];
+                        
+                        // Join chain: related_table -> second_pivot -> first_pivot
+                        return $query
+                            ->join(
+                                $secondPivotTable,
+                                "{$relatedTable}.id",
+                                '=',
+                                "{$secondPivotTable}.{$secondRelatedKey}"
+                            )
+                            ->join(
+                                $firstPivotTable,
+                                "{$firstPivotTable}.{$firstRelatedKey}",
+                                '=',
+                                "{$secondPivotTable}.{$secondForeignKey}"
+                            )
+                            ->where("{$firstPivotTable}.{$firstForeignKey}", $crudModel->id);
                     });
                 } else {
                     // Default: filter by foreign key (one-to-many relationship)

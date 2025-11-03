@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import type { CRUD6Schema } from '../composables/useCRUD6Schema'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
+import { debugLog, debugError } from '../utils/debug'
 
 /**
  * Global Pinia store for CRUD6 schema management.
@@ -92,7 +93,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             const containsAll = requestedContexts.every(rc => loadingContexts.includes(rc))
             
             if (containsAll) {
-                console.log('[useCRUD6SchemaStore] ⏳ Related context loading (broader or equal):', {
+                debugLog('[useCRUD6SchemaStore] ⏳ Related context loading (broader or equal):', {
                     requested: context,
                     loading: loadingContext,
                     loadingKey,
@@ -116,7 +117,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
         const cacheKey = getCacheKey(model, context)
         
-        console.log('[useCRUD6SchemaStore] ===== LOAD SCHEMA CALLED =====', {
+        debugLog('[useCRUD6SchemaStore] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
@@ -129,19 +130,19 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         
         // Return cached schema if available and not forcing reload
         if (!force && hasSchema(model, context)) {
-            console.log('[useCRUD6SchemaStore] ✅ Using CACHED schema - cacheKey:', cacheKey, '(NO API CALL)')
+            debugLog('[useCRUD6SchemaStore] ✅ Using CACHED schema - cacheKey:', cacheKey, '(NO API CALL)')
             return schemas.value[cacheKey] || null
         }
 
         // Return existing promise if already loading
         if (isLoading(model, context)) {
-            console.log('[useCRUD6SchemaStore] ⏳ Schema already loading, waiting for completion - cacheKey:', cacheKey)
+            debugLog('[useCRUD6SchemaStore] ⏳ Schema already loading, waiting for completion - cacheKey:', cacheKey)
             // Wait for the loading to complete by polling
             return new Promise((resolve) => {
                 const checkInterval = setInterval(() => {
                     if (!isLoading(model, context)) {
                         clearInterval(checkInterval)
-                        console.log('[useCRUD6SchemaStore] ✅ Wait complete, schema loaded - cacheKey:', cacheKey)
+                        debugLog('[useCRUD6SchemaStore] ✅ Wait complete, schema loaded - cacheKey:', cacheKey)
                         resolve(schemas.value[cacheKey] || null)
                     }
                 }, 100)
@@ -151,13 +152,13 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         // Check if a broader context is loading that would include this context
         const relatedLoadingKey = isRelatedContextLoading(model, context)
         if (relatedLoadingKey) {
-            console.log('[useCRUD6SchemaStore] ⏳ Waiting for related context to finish loading - relatedKey:', relatedLoadingKey)
+            debugLog('[useCRUD6SchemaStore] ⏳ Waiting for related context to finish loading - relatedKey:', relatedLoadingKey)
             // Wait for the related context to complete, then check cache again
             return new Promise((resolve) => {
                 const checkInterval = setInterval(() => {
                     if (!loadingStates.value[relatedLoadingKey]) {
                         clearInterval(checkInterval)
-                        console.log('[useCRUD6SchemaStore] ✅ Related context loaded, checking cache - cacheKey:', cacheKey)
+                        debugLog('[useCRUD6SchemaStore] ✅ Related context loaded, checking cache - cacheKey:', cacheKey)
                         // After the broader context loads, our specific context should be cached
                         resolve(schemas.value[cacheKey] || null)
                     }
@@ -165,7 +166,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             })
         }
 
-        console.log('[useCRUD6SchemaStore] 🌐 MAKING API CALL to load schema - cacheKey:', cacheKey, 'force:', force, 'context:', context || 'full')
+        debugLog('[useCRUD6SchemaStore] 🌐 MAKING API CALL to load schema - cacheKey:', cacheKey, 'force:', force, 'context:', context || 'full')
         loadingStates.value[cacheKey] = true
         errorStates.value[cacheKey] = null
 
@@ -176,7 +177,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 url += `?context=${encodeURIComponent(context)}`
             }
             
-            console.log('[useCRUD6SchemaStore] 📤 HTTP GET REQUEST', {
+            debugLog('[useCRUD6SchemaStore] 📤 HTTP GET REQUEST', {
                 url,
                 method: 'GET',
                 cacheKey,
@@ -186,7 +187,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             
             const response = await axios.get<any>(url)
             
-            console.log('[useCRUD6SchemaStore] 📥 HTTP RESPONSE RECEIVED', {
+            debugLog('[useCRUD6SchemaStore] 📥 HTTP RESPONSE RECEIVED', {
                 url,
                 status: response.status,
                 statusText: response.statusText,
@@ -201,14 +202,14 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             if (response.data.schema) {
                 // Response has nested schema property
                 schemaData = response.data.schema as CRUD6Schema
-                console.log('[useCRUD6SchemaStore] ✅ Schema found in response.data.schema', {
+                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data.schema', {
                     model: schemaData.model,
                     fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0
                 })
                 
                 // If schema has contexts (multi-context response), cache each context separately
                 if (schemaData.contexts) {
-                    console.log('[useCRUD6SchemaStore] 📦 Multi-context schema detected, caching contexts separately', {
+                    debugLog('[useCRUD6SchemaStore] 📦 Multi-context schema detected, caching contexts separately', {
                         contexts: Object.keys(schemaData.contexts)
                     })
                     const baseSchema = { ...schemaData }
@@ -219,7 +220,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                         const ctxCacheKey = getCacheKey(model, ctxName)
                         const ctxSchema = { ...baseSchema, ...ctxData }
                         schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
-                        console.log('[useCRUD6SchemaStore] ✅ Cached context separately', {
+                        debugLog('[useCRUD6SchemaStore] ✅ Cached context separately', {
                             context: ctxName,
                             cacheKey: ctxCacheKey,
                             fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
@@ -229,12 +230,12 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             } else if (response.data.fields) {
                 // Response is the schema itself
                 schemaData = response.data as CRUD6Schema
-                console.log('[useCRUD6SchemaStore] ✅ Schema found in response.data (direct)', {
+                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (direct)', {
                     model: schemaData.model,
                     fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0
                 })
             } else {
-                console.error('[useCRUD6SchemaStore] ❌ Invalid schema response structure', {
+                debugError('[useCRUD6SchemaStore] ❌ Invalid schema response structure', {
                     dataKeys: Object.keys(response.data),
                     data: response.data
                 })
@@ -242,7 +243,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             }
             
             schemas.value[cacheKey] = schemaData
-            console.log('[useCRUD6SchemaStore] ✅ Schema loaded and CACHED successfully', {
+            debugLog('[useCRUD6SchemaStore] ✅ Schema loaded and CACHED successfully', {
                 model,
                 context: context || 'full',
                 cacheKey,
@@ -253,7 +254,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             })
             return schemaData
         } catch (err: any) {
-            console.error('[useCRUD6SchemaStore] ❌ Schema load ERROR', {
+            debugError('[useCRUD6SchemaStore] ❌ Schema load ERROR', {
                 model,
                 context: context || 'full',
                 cacheKey,
@@ -273,7 +274,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             return null
         } finally {
             loadingStates.value[cacheKey] = false
-            console.log('[useCRUD6SchemaStore] Loading state cleared for cacheKey:', cacheKey)
+            debugLog('[useCRUD6SchemaStore] Loading state cleared for cacheKey:', cacheKey)
         }
     }
 
@@ -284,7 +285,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     function setSchema(model: string, schemaData: CRUD6Schema, context?: string): void {
         const cacheKey = getCacheKey(model, context)
         
-        console.log('[useCRUD6SchemaStore] ===== SET SCHEMA DIRECTLY (NO API CALL) =====', {
+        debugLog('[useCRUD6SchemaStore] ===== SET SCHEMA DIRECTLY (NO API CALL) =====', {
             model,
             context: context || 'full',
             cacheKey,
@@ -296,7 +297,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         schemas.value[cacheKey] = schemaData
         errorStates.value[cacheKey] = null
         
-        console.log('[useCRUD6SchemaStore] ✅ Schema cached directly - cacheKey:', cacheKey)
+        debugLog('[useCRUD6SchemaStore] ✅ Schema cached directly - cacheKey:', cacheKey)
     }
 
     /**

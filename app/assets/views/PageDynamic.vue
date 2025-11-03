@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * PageDynamic Component
@@ -53,7 +54,7 @@ const PageMasterDetail = defineAsyncComponent(() => import('./PageMasterDetail.v
 
 // Watch for query parameter changes
 watch(() => route.query, () => {
-    console.log('[PageDynamic] Query params changed, render mode:', componentToRender.value)
+    debugLog('[PageDynamic] Query params changed, render mode:', componentToRender.value)
 }, { deep: true })
 </script>
 

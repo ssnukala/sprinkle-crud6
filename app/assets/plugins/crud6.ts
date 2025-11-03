@@ -1,5 +1,6 @@
 import type { App } from 'vue'
 import axios from 'axios'
+import { debugLog, debugError, initDebugMode } from '../utils/debug'
 import {
     CRUD6RowPage,
     CRUD6ListPage,
@@ -21,11 +22,16 @@ import {
  */
 export default {
     install: (app: App) => {
+        // Initialize debug mode from backend config
+        // This runs asynchronously and updates debug mode when ready
+        initDebugMode().catch(error => {
+            console.error('[CRUD6 Plugin] Failed to initialize debug mode:', error)
+        })
         // Add axios request interceptor for CRUD6 debugging
         axios.interceptors.request.use(
             (config) => {
                 if (config.url?.includes('/api/crud6/')) {
-                    console.log('[CRUD6 Axios] ===== REQUEST START =====', {
+                    debugLog('[CRUD6 Axios] ===== REQUEST START =====', {
                         method: config.method?.toUpperCase(),
                         url: config.url,
                         baseURL: config.baseURL,
@@ -39,7 +45,7 @@ export default {
                 return config
             },
             (error) => {
-                console.error('[CRUD6 Axios] Request error', error)
+                debugError('[CRUD6 Axios] Request error', error)
                 return Promise.reject(error)
             }
         )
@@ -48,7 +54,7 @@ export default {
         axios.interceptors.response.use(
             (response) => {
                 if (response.config.url?.includes('/api/crud6/')) {
-                    console.log('[CRUD6 Axios] ===== RESPONSE RECEIVED =====', {
+                    debugLog('[CRUD6 Axios] ===== RESPONSE RECEIVED =====', {
                         method: response.config.method?.toUpperCase(),
                         url: response.config.url,
                         status: response.status,
@@ -65,7 +71,7 @@ export default {
             },
             (error) => {
                 if (error.config?.url?.includes('/api/crud6/')) {
-                    console.error('[CRUD6 Axios] ===== RESPONSE ERROR =====', {
+                    debugError('[CRUD6 Axios] ===== RESPONSE ERROR =====', {
                         method: error.config?.method?.toUpperCase(),
                         url: error.config?.url,
                         status: error.response?.status,

@@ -18,6 +18,7 @@ use UserFrosting\Routes\RouteDefinitionInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\AuthGuard;
 use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
 use UserFrosting\Sprinkle\CRUD6\Controller\ApiAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\ConfigAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
@@ -67,6 +68,11 @@ class CRUD6Routes implements RouteDefinitionInterface
      */
     public function register(App $app): void
     {
+        // CRUD6 Config endpoint (public, no auth required)
+        $app->get('/api/crud6/config', ConfigAction::class)
+            ->setName('api.crud6.config')
+            ->add(NoCache::class);
+
         // CRUD6 API routes (Action-based, matching sprinkle-admin pattern)
         $app->group('/api/crud6/{model}', function (RouteCollectorProxy $group) {
             // API meta/schema endpoint (must be before /{id} routes)

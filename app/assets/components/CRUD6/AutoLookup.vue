@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import axios from 'axios'
 import type { CRUD6SprunjerResponse } from '@ssnukala/sprinkle-crud6/interfaces'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * AutoLookup Component
@@ -125,7 +126,7 @@ async function search(query: string) {
     isOpen.value = results.value.length > 0
     selectedIndex.value = -1
   } catch (error) {
-    console.error('[AutoLookup] Search failed:', error)
+    debugError('[AutoLookup] Search failed:', error)
     results.value = []
     isOpen.value = false
   } finally {
@@ -237,7 +238,7 @@ watch(() => props.modelValue, async (newValue) => {
         searchQuery.value = getItemDisplayText(response.data.data)
       }
     } catch (error) {
-      console.error('[AutoLookup] Failed to load initial value:', error)
+      debugError('[AutoLookup] Failed to load initial value:', error)
     }
   }
 }, { immediate: true })

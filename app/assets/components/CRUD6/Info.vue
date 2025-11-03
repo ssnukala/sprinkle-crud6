@@ -7,6 +7,7 @@ import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +18,7 @@ const { crud6, schema: providedSchema } = defineProps<{
     schema?: any
 }>()
 
-console.log('[Info] Component initialized - hasProvidedSchema:', !!providedSchema, 'crud6.id:', crud6?.id)
+debugLog('[Info] Component initialized - hasProvidedSchema:', !!providedSchema, 'crud6.id:', crud6?.id)
 
 const emits = defineEmits(['crud6Updated'])
 
@@ -39,7 +40,7 @@ function requestDeleteModal() {
 
 // Conditional composable usage - only when no schema prop provided
 // This prevents the automatic schema loading that happens in useCRUD6Schema initialization
-console.log('[Info] Creating schemaComposable - providedSchema exists:', !!providedSchema, 'model:', model.value)
+debugLog('[Info] Creating schemaComposable - providedSchema exists:', !!providedSchema, 'model:', model.value)
 const schemaComposable = providedSchema ? null : useCRUD6Schema()
 
 // Create actions composable for executing custom actions
@@ -51,13 +52,13 @@ const hasPermission = schemaComposable?.hasPermission || (() => true)
 // Final schema resolution - prioritize provided schema
 const finalSchema = computed(() => {
     if (providedSchema) {
-        console.log('[Info] Using PROVIDED schema from parent')
+        debugLog('[Info] Using PROVIDED schema from parent')
         return providedSchema
     } else if (schemaComposable?.schema.value) {
-        console.log('[Info] Using COMPOSABLE schema (fallback - this may indicate duplicate load)')
+        debugLog('[Info] Using COMPOSABLE schema (fallback - this may indicate duplicate load)')
         return schemaComposable.schema.value
     } else {
-        console.log('[Info] NO schema available')
+        debugLog('[Info] NO schema available')
         return null
     }
 })

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useMasterDetail, useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
 import DetailGrid from './DetailGrid.vue'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * MasterDetailForm Component
@@ -104,7 +105,7 @@ const editableMasterFields = computed(() => {
 
 // Load schemas on mount
 onMounted(async () => {
-    console.log('[MasterDetailForm] Component mounted', {
+    debugLog('[MasterDetailForm] Component mounted', {
         model: props.model,
         recordId: props.recordId,
         detailConfig: props.detailConfig,
@@ -139,19 +140,19 @@ onMounted(async () => {
                 _action: 'update' as const, // Mark existing records for potential update
             }))
 
-            console.log('[MasterDetailForm] Record loaded', {
+            debugLog('[MasterDetailForm] Record loaded', {
                 masterRecord,
                 detailCount: detailRecords.value.length,
             })
         } catch (error) {
-            console.error('[MasterDetailForm] Failed to load record', error)
+            debugError('[MasterDetailForm] Failed to load record', error)
         }
     }
 })
 
 // Submit form
 async function submitForm() {
-    console.log('[MasterDetailForm] Submit form', {
+    debugLog('[MasterDetailForm] Submit form', {
         recordId: props.recordId,
         masterData: masterFormData.value,
         detailCount: detailRecords.value.length,
@@ -164,19 +165,19 @@ async function submitForm() {
             detailRecords.value
         )
 
-        console.log('[MasterDetailForm] Save successful', response)
+        debugLog('[MasterDetailForm] Save successful', response)
         emit('saved')
 
         // Navigate to list page
         router.push(`/crud6/${props.model}`)
     } catch (error) {
-        console.error('[MasterDetailForm] Save failed', error)
+        debugError('[MasterDetailForm] Save failed', error)
     }
 }
 
 // Cancel form
 function cancelForm() {
-    console.log('[MasterDetailForm] Cancel form')
+    debugLog('[MasterDetailForm] Cancel form')
     emit('cancelled')
     router.push(`/crud6/${props.model}`)
 }

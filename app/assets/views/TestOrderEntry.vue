@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import type { DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Order Entry Page Example
@@ -40,13 +41,13 @@ const detailConfig: DetailEditableConfig = {
 
 // Handle save event
 function handleSaved() {
-  console.log('[OrderEntry] Order saved successfully')
+  debugLog('[OrderEntry] Order saved successfully')
   router.push('/testc6/orders')
 }
 
 // Handle cancel event
 function handleCancelled() {
-  console.log('[OrderEntry] Order entry cancelled')
+  debugLog('[OrderEntry] Order entry cancelled')
   router.push('/testc6/orders')
 }
 </script>

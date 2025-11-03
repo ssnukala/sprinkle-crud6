@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Variables and composables
@@ -56,7 +57,7 @@ const deleteConfirmed = () => {
             emits('deleted')
         })
         .catch((error) => {
-            console.error('[DeleteModal] ❌ Delete failed for:', recordId.value, 'error:', error)
+            debugError('[DeleteModal] ❌ Delete failed for:', recordId.value, 'error:', error)
         })
 }
 </script>

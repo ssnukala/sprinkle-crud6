@@ -238,3 +238,114 @@ If using SchemaService's error_log fallback, check:
 - [UserFrosting Logging Documentation](https://learn.userfrosting.com/logging)
 - [Previous Debug Logging Documentation](.archive/DEBUG_LOGGING_GUIDE.md)
 - [Schema Optimization Summary](.archive/SCHEMA_OPTIMIZATION_SUMMARY_2025-10-31.md)
+
+## Frontend Debug Mode
+
+The frontend also supports debug mode through a JavaScript/TypeScript utility that matches the backend pattern.
+
+### Setup
+
+Import and initialize the debug utility early in your application:
+
+```typescript
+import { setDebugMode } from '@/utils/debug';
+
+// Enable debug mode
+setDebugMode(true);
+
+// Or get from config/environment
+const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true';
+setDebugMode(debugMode);
+```
+
+### Usage
+
+Replace `console.log()` calls with `debugLog()`:
+
+```typescript
+import { debugLog, debugWarn, debugError, logError } from '@/utils/debug';
+
+// Debug logging (only when debug mode enabled)
+debugLog('[useCRUD6Api] ===== CREATE ROW REQUEST START =====', {
+    model: 'users',
+    data: formData
+});
+
+// Debug warnings (only when debug mode enabled)
+debugWarn('[Form] Validation failed', { errors });
+
+// Debug errors (only when debug mode enabled)
+debugError('[API] Request failed', { error, response });
+
+// Critical errors (always logged, bypasses debug mode)
+logError('[CRITICAL] Unhandled exception', { error });
+```
+
+### Environment Configuration
+
+Add to your `.env` file:
+
+```bash
+# Enable frontend debug logging
+VITE_DEBUG_MODE=true
+```
+
+Then in your app initialization:
+
+```typescript
+import { setDebugMode } from '@/utils/debug';
+
+setDebugMode(import.meta.env.VITE_DEBUG_MODE === 'true');
+```
+
+### API
+
+The frontend debug utility provides:
+
+- **`setDebugMode(enabled: boolean)`** - Enable or disable debug mode
+- **`isDebugMode(): boolean`** - Check if debug mode is enabled
+- **`debugLog(message, ...args)`** - Conditional console.log
+- **`debugWarn(message, ...args)`** - Conditional console.warn
+- **`debugError(message, ...args)`** - Conditional console.error
+- **`logError(message, ...args)`** - Always log errors (bypasses debug mode)
+
+### Migration Guide
+
+To migrate existing console.log statements:
+
+**Before:**
+```typescript
+console.log('[useCRUD6Api] Request start', { model, id });
+console.warn('[Form] Validation issue', { errors });
+console.error('[API] Request failed', { error });
+```
+
+**After:**
+```typescript
+import { debugLog, debugWarn, debugError } from '@/utils/debug';
+
+debugLog('[useCRUD6Api] Request start', { model, id });
+debugWarn('[Form] Validation issue', { errors });
+debugError('[API] Request failed', { error });
+```
+
+### Current Status
+
+- **Debug utility created**: `app/assets/utils/debug.ts`
+- **Console.log statements**: ~83 statements identified for migration
+- **Migration**: Not yet complete - statements still use console.log directly
+
+To complete the migration, replace console.log/warn/error calls with the debug utilities.
+
+### Performance Impact
+
+When debug mode is disabled (`setDebugMode(false)`):
+- **No logging**: All debugLog/debugWarn/debugError calls are no-ops
+- **Minimal overhead**: Simple boolean check before returning
+- **Production-safe**: Can safely leave debug calls in production code
+
+When debug mode is enabled (`setDebugMode(true)`):
+- **Full console logging**: All debug statements output to browser console
+- **Suitable for development**: Helps debug issues during development
+- **Not recommended for production**: May impact performance and expose internal details
+

@@ -68,31 +68,54 @@ This pattern allows:
 
 Applied same fix to: `CREATE`, `DELETE`, and `UPDATE` keys.
 
-### Fix 2: Use Empty Strings for Route Meta Titles
+### Fix 2: Restore 0.3.3 Route Configuration Pattern
 
-Changed static title placeholders to empty strings to allow breadcrumb initialization:
+Restored the working 0.3.3 route configuration where the list route has NO title/description:
 
 ```typescript
-// AFTER (FIXED)
+// Parent route - HAS title and description
+{
+    path: '/crud6/:model',
+    meta: {
+        auth: {},
+        title: 'CRUD6.PAGE',
+        description: 'CRUD6.PAGE_DESCRIPTION'
+    }
+}
+
+// List route - NO title/description
+{
+    path: '',
+    name: 'crud6.list',
+    meta: {
+        permission: { slug: 'uri_crud6' }
+        // NO title/description - allows PageList.vue to set dynamically
+    }
+}
+
+// View route - HAS title and description
 {
     path: ':id',
     name: 'crud6.view',
     meta: {
-        title: '',        // Empty string allows breadcrumb initialization; component updates dynamically
+        title: 'CRUD6.PAGE',
         description: 'CRUD6.INFO_PAGE',
-        permission: {
-            slug: 'uri_crud6'
-        }
-    },
-    component: () => import('../views/PageDynamic.vue')
+        permission: { slug: 'uri_crud6' }
+    }
 }
 ```
 
-**Why Empty Strings Instead of Removing the Field:**
-- UserFrosting's breadcrumb component requires `title` and `description` fields to exist in route meta
-- Empty strings (`''`) allow breadcrumb component to initialize properly
-- Vue components can then dynamically update these values after loading schema/data
-- Completely removing the fields prevents breadcrumb component from rendering
+**Why This Pattern Works (from 0.3.3 analysis):**
+- List route WITHOUT title/description prevents conflict with PageList.vue dynamic updates
+- PageList.vue sets `page.title` immediately on mount with capitalized model name
+- PageList.vue updates `page.title` again after schema loads with proper title
+- Breadcrumb component reads from `page.title` without route meta interference
+- Parent and view routes keep title/description for breadcrumb hierarchy
+
+**Why Empty Strings or Removing All Titles Failed:**
+- Empty strings (`title: ''`) still interfere with Vue component updates
+- Removing title from ALL routes breaks breadcrumb component initialization
+- Only the list route should omit title/description for dynamic updates to work
 
 Components handle dynamic title updates:
 - **PageList.vue**: Sets title from `schema.title` or capitalized model name

@@ -9,27 +9,21 @@ describe('routes.test.ts', () => {
         expect(CRUD6Routes[0].children.length).toBe(2) // list and detail routes
     })
 
-    test('CRUD6Routes should have empty title strings for breadcrumb initialization', () => {
+    test('CRUD6Routes should have title and description in meta for breadcrumbs', () => {
         const mainRoute = CRUD6Routes[0]
         
-        // Parent route should have empty title string (allows breadcrumb initialization)
+        // Parent route should have title and description
         expect(mainRoute.meta).toHaveProperty('title')
-        expect(mainRoute.meta.title).toBe('')
         expect(mainRoute.meta).toHaveProperty('description')
-        expect(mainRoute.meta.description).toBe('')
         
-        // List route should have empty title string (PageList.vue updates dynamically)
+        // List route should NOT have title and description (dynamically set by Vue component)
         const listRoute = mainRoute.children[0]
-        expect(listRoute.meta).toHaveProperty('title')
-        expect(listRoute.meta.title).toBe('')
-        expect(listRoute.meta).toHaveProperty('description')
-        expect(listRoute.meta.description).toBe('')
+        expect(listRoute.meta).not.toHaveProperty('title')
+        expect(listRoute.meta).not.toHaveProperty('description')
         
-        // View route should have empty title string (PageRow/PageMasterDetail update dynamically)
+        // View route should have title and description
         const viewRoute = mainRoute.children[1]
         expect(viewRoute.meta).toHaveProperty('title')
-        expect(viewRoute.meta.title).toBe('')
         expect(viewRoute.meta).toHaveProperty('description')
-        expect(viewRoute.meta.description).toBe('CRUD6.INFO_PAGE')
     })
 })

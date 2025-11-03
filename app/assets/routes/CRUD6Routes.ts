@@ -3,8 +3,8 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            title: '',        // Empty string allows breadcrumb initialization; components update dynamically
-            description: ''   // Empty string allows breadcrumb initialization; components update dynamically
+            title: 'CRUD6.PAGE',
+            description: 'CRUD6.PAGE_DESCRIPTION'
         },
         children: [
             {
@@ -13,9 +13,7 @@ export default [
                 meta: {
                     permission: {
                         slug: 'uri_crud6'
-                    },
-                    title: '',        // Empty string allows breadcrumb initialization; PageList.vue updates dynamically
-                    description: ''   // Empty string allows breadcrumb initialization; PageList.vue updates dynamically
+                    }
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -23,7 +21,7 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    title: '',        // Empty string allows breadcrumb initialization; PageRow/PageMasterDetail update dynamically
+                    title: 'CRUD6.PAGE',
                     description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'

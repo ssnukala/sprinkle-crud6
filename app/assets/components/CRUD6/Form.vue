@@ -4,7 +4,7 @@ import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
-import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads

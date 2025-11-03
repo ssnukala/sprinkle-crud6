@@ -7,7 +7,7 @@ import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
-import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 const route = useRoute()
 const router = useRouter()

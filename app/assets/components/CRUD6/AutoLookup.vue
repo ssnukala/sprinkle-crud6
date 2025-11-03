@@ -2,7 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import axios from 'axios'
 import type { CRUD6SprunjerResponse } from '@ssnukala/sprinkle-crud6/interfaces'
-import { debugLog, debugWarn, debugError } from '../utils/debug'
+//import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 /**
  * AutoLookup Component

@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Routing\RouteContext;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
@@ -54,13 +55,43 @@ abstract class Base
      * @param Authenticator        $authenticator Authenticator for access control
      * @param DebugLoggerInterface $logger        Debug logger for diagnostics
      * @param SchemaService        $schemaService Schema service for loading model definitions
+     * @param Config               $config        Configuration repository
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
-        protected SchemaService $schemaService
+        protected SchemaService $schemaService,
+        protected Config $config
     ) {}
+
+    /**
+     * Check if debug mode is enabled.
+     * 
+     * @return bool True if debug mode is enabled
+     */
+    protected function isDebugMode(): bool
+    {
+        return $this->config->get('crud6.debug_mode', false);
+    }
+
+    /**
+     * Log debug message if debug mode is enabled.
+     * 
+     * Wrapper around DebugLoggerInterface that only logs when debug_mode config is true.
+     * This prevents the need to check isDebugMode() before every logger->debug() call.
+     * 
+     * @param string $message Debug message
+     * @param array  $context Context data for structured logging
+     * 
+     * @return void
+     */
+    protected function debugLog(string $message, array $context = []): void
+    {
+        if ($this->isDebugMode()) {
+            $this->logger->debug($message, $context);
+        }
+    }
 
 
     /**
@@ -82,7 +113,7 @@ abstract class Base
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         // Log that controller was successfully invoked with parameters
-        $this->logger->debug("CRUD6 [Base] Controller __invoke called", [
+        $this->debugLog("CRUD6 [Base] Controller __invoke called", [
             'controller_class' => get_class($this),
             'schema_model' => $crudSchema['model'] ?? 'UNKNOWN',
             'model_class' => get_class($crudModel),
@@ -97,7 +128,7 @@ abstract class Base
         $this->cachedSchema[$modelName] = $crudSchema;
         $this->validateAccess($modelName, 'read');
         
-        $this->logger->debug("CRUD6 [Base] Common initialization complete", [
+        $this->debugLog("CRUD6 [Base] Common initialization complete", [
             'model' => $modelName,
             'cached_schema_count' => count($this->cachedSchema),
         ]);

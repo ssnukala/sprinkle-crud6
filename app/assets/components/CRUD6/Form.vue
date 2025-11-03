@@ -4,6 +4,7 @@ import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -108,7 +109,7 @@ watch(
             if (schemaPromise && typeof schemaPromise.then === 'function') {
                 schemaPromise.then(() => {
                 }).catch((error) => {
-                    console.error('[Form] ❌ Failed to load schema via composable:', error)
+                    debugError('[Form] ❌ Failed to load schema via composable:', error)
                 })
             }
         } else if (props.schema) {
@@ -129,7 +130,7 @@ const emits = defineEmits(['success'])
  * Methods - Submit the form to the API and handle the response
  */
 const submitForm = async () => {
-    console.log('[Form] ===== FORM SUBMIT START =====', {
+    debugLog('[Form] ===== FORM SUBMIT START =====', {
         model: props.model,
         hasCrud6: !!props.crud6,
         formData: formData.value,
@@ -138,14 +139,14 @@ const submitForm = async () => {
     // Make sure validation is up to date
     const isValid = r$ ? await r$.$validate() : { valid: true }
     
-    console.log('[Form] Validation result', {
+    debugLog('[Form] Validation result', {
         model: props.model,
         isValid: isValid.valid,
         errors: r$ ? r$.$errors : null,
     })
 
     if (!isValid.valid) {
-        console.warn('[Form] Validation failed, form not submitted', {
+        debugWarn('[Form] Validation failed, form not submitted', {
             model: props.model,
             errors: r$ ? r$.$errors : null,
         })
@@ -156,7 +157,7 @@ const submitForm = async () => {
     const primaryKey = schema.value?.primary_key || 'id'
     const recordId = props.crud6 ? props.crud6[primaryKey] : null
 
-    console.log('[Form] Preparing API call', {
+    debugLog('[Form] Preparing API call', {
         model: props.model,
         primaryKey,
         recordId,
@@ -170,7 +171,7 @@ const submitForm = async () => {
     
     apiCall
         .then(() => {
-            console.log('[Form] ===== FORM SUBMIT SUCCESS =====', {
+            debugLog('[Form] ===== FORM SUBMIT SUCCESS =====', {
                 model: props.model,
                 operation: recordId ? 'UPDATE' : 'CREATE',
                 recordId,
@@ -179,7 +180,7 @@ const submitForm = async () => {
             resetForm()
         })
         .catch((error) => {
-            console.error('[Form] ===== FORM SUBMIT FAILED =====', {
+            debugError('[Form] ===== FORM SUBMIT FAILED =====', {
                 model: props.model,
                 operation: recordId ? 'UPDATE' : 'CREATE',
                 recordId,

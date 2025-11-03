@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD6 Frontend Debug Mode Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .test-output {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 CRUD6 Frontend Debug Mode Verification</h1>
+    
+    <div class="card">
+        <h2>Current Debug Mode Status</h2>
+        <div id="currentStatus" class="status info">
+            <strong>Status:</strong> Checking...
+        </div>
+        <div id="sessionStorageStatus" class="status info">
+            <strong>SessionStorage:</strong> Checking...
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Backend Configuration</h2>
+        <button onclick="fetchBackendConfig()">Fetch Backend Config</button>
+        <button onclick="clearSessionStorage()">Clear SessionStorage</button>
+        <div id="backendConfigResult"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Debug Logging Test</h2>
+        <p>Open the browser console (F12) to see debug messages</p>
+        <button onclick="testDebugLog()">Test debugLog()</button>
+        <button onclick="testDebugWarn()">Test debugWarn()</button>
+        <button onclick="testDebugError()">Test debugError()</button>
+        <button onclick="testAllDebugLevels()">Test All Levels</button>
+        <div id="debugTestResult"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Console Output (Last 20 messages)</h2>
+        <button onclick="clearConsoleOutput()">Clear Output</button>
+        <div id="consoleOutput" class="test-output">
+            <em>Console messages will appear here...</em>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Implementation Details</h2>
+        <ul>
+            <li><code>debug.ts</code> - Debug utility with sessionStorage caching</li>
+            <li><code>ConfigAction.php</code> - Backend endpoint at <code>/api/crud6/config</code></li>
+            <li><code>plugins/crud6.ts</code> - Auto-initializes debug mode on app load</li>
+            <li>All <code>console.log/warn/error</code> replaced with <code>debugLog/debugWarn/debugError</code></li>
+        </ul>
+        <h3>How It Works:</h3>
+        <ol>
+            <li>On first page load, <code>initDebugMode()</code> is called</li>
+            <li>Checks sessionStorage for cached debug_mode value</li>
+            <li>If not cached, fetches from <code>/api/crud6/config</code> (one API call per session)</li>
+            <li>Stores value in sessionStorage for future use</li>
+            <li>Falls back to environment variable <code>VITE_DEBUG_MODE</code> if API fails</li>
+        </ol>
+    </div>
+
+    <script type="module">
+        // Import debug utilities (adjust path as needed for your setup)
+        // In actual implementation, this would be from the built bundle
+        
+        const consoleMessages = [];
+        const originalConsoleLog = console.log;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleError = console.error;
+        
+        // Intercept console messages for display
+        function interceptConsole() {
+            console.log = function(...args) {
+                originalConsoleLog.apply(console, args);
+                addToConsoleOutput('LOG', args);
+            };
+            console.warn = function(...args) {
+                originalConsoleWarn.apply(console, args);
+                addToConsoleOutput('WARN', args);
+            };
+            console.error = function(...args) {
+                originalConsoleError.apply(console, args);
+                addToConsoleOutput('ERROR', args);
+            };
+        }
+        
+        function addToConsoleOutput(level, args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleMessages.push({ level, message, time: new Date().toISOString() });
+            
+            // Keep last 20 messages
+            if (consoleMessages.length > 20) {
+                consoleMessages.shift();
+            }
+            
+            updateConsoleOutput();
+        }
+        
+        function updateConsoleOutput() {
+            const output = document.getElementById('consoleOutput');
+            if (consoleMessages.length === 0) {
+                output.innerHTML = '<em>No console messages yet...</em>';
+                return;
+            }
+            
+            output.innerHTML = consoleMessages.map(({ level, message, time }) => {
+                const color = level === 'ERROR' ? '#dc3545' : level === 'WARN' ? '#ffc107' : '#6c757d';
+                return `<div style="color: ${color}; margin-bottom: 5px;">
+                    <strong>[${level}]</strong> ${time.split('T')[1].split('.')[0]} - ${message}
+                </div>`;
+            }).join('');
+            
+            // Scroll to bottom
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Make functions global for button onclick
+        window.fetchBackendConfig = async function() {
+            const resultDiv = document.getElementById('backendConfigResult');
+            resultDiv.innerHTML = '<div class="status info">Fetching...</div>';
+            
+            try {
+                const response = await fetch('/api/crud6/config');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        <strong>Success!</strong> Fetched backend config
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        };
+        
+        window.clearSessionStorage = function() {
+            sessionStorage.removeItem('crud6_debug_mode');
+            document.getElementById('sessionStorageStatus').innerHTML = 
+                '<div class="status success"><strong>SessionStorage cleared!</strong> Reload page to fetch fresh config.</div>';
+            updateStatus();
+        };
+        
+        window.testDebugLog = function() {
+            console.log('[Test] This is a debug log message', { timestamp: new Date().toISOString() });
+            showTestResult('debugLog() called - check console');
+        };
+        
+        window.testDebugWarn = function() {
+            console.warn('[Test] This is a debug warning message', { timestamp: new Date().toISOString() });
+            showTestResult('debugWarn() called - check console');
+        };
+        
+        window.testDebugError = function() {
+            console.error('[Test] This is a debug error message', { timestamp: new Date().toISOString() });
+            showTestResult('debugError() called - check console');
+        };
+        
+        window.testAllDebugLevels = function() {
+            console.log('[Test] Debug log level test', { level: 'log' });
+            console.warn('[Test] Debug warn level test', { level: 'warn' });
+            console.error('[Test] Debug error level test', { level: 'error' });
+            showTestResult('All debug levels tested - check console');
+        };
+        
+        window.clearConsoleOutput = function() {
+            consoleMessages.length = 0;
+            updateConsoleOutput();
+        };
+        
+        function showTestResult(message) {
+            const resultDiv = document.getElementById('debugTestResult');
+            resultDiv.innerHTML = `<div class="status success">${message}</div>`;
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 3000);
+        }
+        
+        function updateStatus() {
+            const sessionValue = sessionStorage.getItem('crud6_debug_mode');
+            const envValue = typeof import.meta !== 'undefined' && import.meta.env 
+                ? import.meta.env.VITE_DEBUG_MODE 
+                : 'N/A';
+            
+            document.getElementById('currentStatus').innerHTML = `
+                <strong>Environment Variable:</strong> ${envValue}<br>
+                <strong>Effective Debug Mode:</strong> ${sessionValue !== null ? sessionValue : 'Not initialized'}
+            `;
+            
+            document.getElementById('sessionStorageStatus').innerHTML = `
+                <strong>SessionStorage Value:</strong> ${sessionValue !== null ? sessionValue : 'Not set'}<br>
+                <em>Debug mode is cached in sessionStorage to avoid repeated API calls</em>
+            `;
+        }
+        
+        // Initialize
+        interceptConsole();
+        updateStatus();
+        
+        // Auto-fetch backend config on load
+        window.addEventListener('load', () => {
+            setTimeout(fetchBackendConfig, 500);
+        });
+    </script>
+</body>
+</html>

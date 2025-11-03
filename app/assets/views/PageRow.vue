@@ -8,6 +8,7 @@ import CRUD6Info from '../components/CRUD6/Info.vue'
 import CRUD6Details from '../components/CRUD6/Details.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Variables and composables
@@ -35,9 +36,9 @@ const {
 // Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
 // This ensures the schema is loaded/loading before useCRUD6Api tries to load it for validation
 if (model.value && loadSchema) {
-    console.log('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
+    debugLog('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
     loadSchema(model.value, false, 'detail,form').catch(err => {
-        console.error('[PageRow] Schema pre-load failed:', err)
+        debugError('[PageRow] Schema pre-load failed:', err)
     })
 }
 
@@ -127,7 +128,7 @@ const flattenedSchema = computed(() => {
     
     // If schema has contexts property (multi-context response from 'detail,form' request)
     if (schema.value.contexts) {
-        console.log('[PageRow] Multi-context schema detected, flattening...')
+        debugLog('[PageRow] Multi-context schema detected, flattening...')
         
         // Start with base schema properties
         const flattened = {
@@ -142,7 +143,7 @@ const flattenedSchema = computed(() => {
         // Merge 'detail' context data if present (for detail view display)
         if (schema.value.contexts.detail) {
             Object.assign(flattened, schema.value.contexts.detail)
-            console.log('[PageRow] Merged detail context - hasDetail:', !!flattened.detail, 'hasDetails:', !!flattened.details)
+            debugLog('[PageRow] Merged detail context - hasDetail:', !!flattened.detail, 'hasDetails:', !!flattened.details)
         }
         
         // If we're in edit/create mode, also check for 'form' context
@@ -210,7 +211,7 @@ function fetch() {
                     page.title = `${recordName} - ${modelLabel.value}`
                 }
             }).catch((error) => {
-                console.error('Failed to fetch CRUD6 row:', error)
+                debugError('Failed to fetch CRUD6 row:', error)
             })
         }
     }
@@ -245,7 +246,7 @@ async function saveRecord() {
             fetch()
         }
     } catch (error) {
-        console.error('Save failed:', error)
+        debugError('Save failed:', error)
     }
 }
 
@@ -311,7 +312,7 @@ watch(
 let currentModel = ''
 watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
-        console.log('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
+        debugLog('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
         // Set initial page title immediately for breadcrumbs
         const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
@@ -323,7 +324,7 @@ watch(model, async (newModel) => {
         const schemaPromise = loadSchema(newModel, false, 'detail,form')
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
-            console.log('[PageRow] Schema loaded successfully for model:', newModel)
+            debugLog('[PageRow] Schema loaded successfully for model:', newModel)
             
             // Update page title and description with translation support
             if (flattenedSchema.value) {

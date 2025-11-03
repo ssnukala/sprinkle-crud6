@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { Severity, type ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Interface for detail record in master-detail operations
@@ -67,7 +68,7 @@ export function useMasterDetail(
         masterData: Record<string, any>,
         detailRecords: DetailRecord[]
     ): Promise<MasterDetailSaveResponse> {
-        console.log('[useMasterDetail] ===== SAVE MASTER WITH DETAILS START =====', {
+        debugLog('[useMasterDetail] ===== SAVE MASTER WITH DETAILS START =====', {
             masterModel,
             detailModel,
             masterId,
@@ -85,7 +86,7 @@ export function useMasterDetail(
                 ? `/api/crud6/${masterModel}/${masterId}`
                 : `/api/crud6/${masterModel}`
             
-            console.log('[useMasterDetail] Saving master record', {
+            debugLog('[useMasterDetail] Saving master record', {
                 url: masterUrl,
                 method: masterId ? 'PUT' : 'POST',
                 data: masterData,
@@ -95,7 +96,7 @@ export function useMasterDetail(
                 ? await axios.put(masterUrl, masterData)
                 : await axios.post(masterUrl, masterData)
 
-            console.log('[useMasterDetail] Master record saved', {
+            debugLog('[useMasterDetail] Master record saved', {
                 status: masterResponse.status,
                 data: masterResponse.data,
             })
@@ -110,7 +111,7 @@ export function useMasterDetail(
                 }
             }
 
-            console.log('[useMasterDetail] Master record ID', { masterRecordId })
+            debugLog('[useMasterDetail] Master record ID', { masterRecordId })
 
             // Step 2: Process detail records
             let detailsCreated = 0
@@ -133,20 +134,20 @@ export function useMasterDetail(
                         // Delete existing detail record
                         await axios.delete(`/api/crud6/${detailModel}/${detail.id}`)
                         detailsDeleted++
-                        console.log('[useMasterDetail] Detail record deleted', { id: detail.id })
+                        debugLog('[useMasterDetail] Detail record deleted', { id: detail.id })
                     } else if (action === 'update' && detail.id) {
                         // Update existing detail record
                         await axios.put(`/api/crud6/${detailModel}/${detail.id}`, detailData)
                         detailsUpdated++
-                        console.log('[useMasterDetail] Detail record updated', { id: detail.id })
+                        debugLog('[useMasterDetail] Detail record updated', { id: detail.id })
                     } else if (action === 'create') {
                         // Create new detail record
                         await axios.post(`/api/crud6/${detailModel}`, detailData)
                         detailsCreated++
-                        console.log('[useMasterDetail] Detail record created', { data: detailData })
+                        debugLog('[useMasterDetail] Detail record created', { data: detailData })
                     }
                 } catch (detailError: any) {
-                    console.error('[useMasterDetail] Error processing detail record', {
+                    debugError('[useMasterDetail] Error processing detail record', {
                         action,
                         detail,
                         error: detailError,
@@ -155,7 +156,7 @@ export function useMasterDetail(
                 }
             }
 
-            console.log('[useMasterDetail] Details processing complete', {
+            debugLog('[useMasterDetail] Details processing complete', {
                 created: detailsCreated,
                 updated: detailsUpdated,
                 deleted: detailsDeleted,
@@ -184,11 +185,11 @@ export function useMasterDetail(
                 severity: Severity.SUCCESS,
             })
 
-            console.log('[useMasterDetail] ===== SAVE COMPLETE =====', response)
+            debugLog('[useMasterDetail] ===== SAVE COMPLETE =====', response)
             return response
 
         } catch (error: any) {
-            console.error('[useMasterDetail] ===== SAVE FAILED =====', {
+            debugError('[useMasterDetail] ===== SAVE FAILED =====', {
                 error,
                 response: error.response,
             })
@@ -218,7 +219,7 @@ export function useMasterDetail(
      * @returns Promise<DetailRecord[]>
      */
     async function loadDetails(masterId: string | number): Promise<DetailRecord[]> {
-        console.log('[useMasterDetail] Loading details', { masterId })
+        debugLog('[useMasterDetail] Loading details', { masterId })
 
         apiLoading.value = true
         apiError.value = null
@@ -227,7 +228,7 @@ export function useMasterDetail(
             const url = `/api/crud6/${masterModel}/${masterId}/${detailModel}`
             const response = await axios.get(url)
 
-            console.log('[useMasterDetail] Details loaded', {
+            debugLog('[useMasterDetail] Details loaded', {
                 count: response.data?.rows?.length || 0,
             })
 
@@ -235,7 +236,7 @@ export function useMasterDetail(
             return response.data?.rows || []
 
         } catch (error: any) {
-            console.error('[useMasterDetail] Failed to load details', { error })
+            debugError('[useMasterDetail] Failed to load details', { error })
             apiError.value = error.response?.data
             throw apiError.value
         } finally {

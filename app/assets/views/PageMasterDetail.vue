@@ -9,6 +9,7 @@ import CRUD6Info from '../components/CRUD6/Info.vue'
 import CRUD6Details from '../components/CRUD6/Details.vue'
 import CRUD6DetailGrid from '../components/CRUD6/DetailGrid.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * PageMasterDetail Component
@@ -193,7 +194,7 @@ async function fetch() {
                     page.title = `${recordName} - ${modelLabel.value}`
                 }
             }).catch((error) => {
-                console.error('Failed to fetch CRUD6 row:', error)
+                debugError('Failed to fetch CRUD6 row:', error)
             })
         }
     }
@@ -211,9 +212,9 @@ async function loadDetailRecords() {
             ...detail,
             _action: 'update' as const
         }))
-        console.log('[PageMasterDetail] Detail records loaded', { count: detailRecords.value.length })
+        debugLog('[PageMasterDetail] Detail records loaded', { count: detailRecords.value.length })
     } catch (error) {
-        console.error('[PageMasterDetail] Failed to load details:', error)
+        debugError('[PageMasterDetail] Failed to load details:', error)
     }
 }
 
@@ -241,7 +242,7 @@ async function saveRecord() {
     try {
         if (hasMasterDetail.value && masterDetailComposable) {
             // Save master and details together
-            console.log('[PageMasterDetail] Saving master with details', {
+            debugLog('[PageMasterDetail] Saving master with details', {
                 recordId: recordId.value,
                 record: record.value,
                 detailCount: detailRecords.value.length
@@ -270,7 +271,7 @@ async function saveRecord() {
             }
         }
     } catch (error) {
-        console.error('Save failed:', error)
+        debugError('Save failed:', error)
     }
 }
 
@@ -357,7 +358,7 @@ watch(
 let currentModel = ''
 watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
-        console.log('[PageMasterDetail] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
+        debugLog('[PageMasterDetail] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
         // Set initial page title immediately for breadcrumbs
         const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
@@ -368,7 +369,7 @@ watch(model, async (newModel) => {
         const schemaPromise = loadSchema(newModel, false, 'detail')
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
-            console.log('[PageMasterDetail] Schema loaded successfully for model:', newModel)
+            debugLog('[PageMasterDetail] Schema loaded successfully for model:', newModel)
             
             // Update page title and description
             if (schema.value) {

@@ -8,6 +8,7 @@ import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
 import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
 import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,7 +104,7 @@ function renderFieldTemplate(template: string, row: any): string {
     if (templateFiles[templatePath]) {
       templateContent = templateFiles[templatePath] as string
     } else {
-      console.error(`Template file not found: ${template}`)
+      debugError(`Template file not found: ${template}`)
       return '' // Return empty string if template file not found
     }
   }

@@ -5,6 +5,7 @@ import { useCRUD6Api } from './useCRUD6Api'
 import type { ActionConfig } from './useCRUD6Schema'
 import { Severity, type ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import { useAlertsStore, useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Vue composable for executing custom CRUD6 actions.
@@ -64,11 +65,11 @@ export function useCRUD6Actions(model?: string) {
                     return true
                 
                 default:
-                    console.error('Unknown action type:', action.type)
+                    debugError('Unknown action type:', action.type)
                     return false
             }
         } catch (err: any) {
-            console.error('Action execution failed:', err)
+            debugError('Action execution failed:', err)
             error.value = err.response?.data || {
                 title: 'Action Failed',
                 description: 'Failed to execute action: ' + action.label
@@ -93,7 +94,7 @@ export function useCRUD6Actions(model?: string) {
         currentRecord?: any
     ): Promise<boolean> {
         if (!action.field) {
-            console.error('Field update action requires a field property')
+            debugError('Field update action requires a field property')
             return false
         }
 
@@ -113,12 +114,12 @@ export function useCRUD6Actions(model?: string) {
             // Set specific value
             newValue = action.value
         } else {
-            console.error('Field update action requires either toggle or value property')
+            debugError('Field update action requires either toggle or value property')
             return false
         }
 
         if (!updateField) {
-            console.error('updateField function not available')
+            debugError('updateField function not available')
             return false
         }
 
@@ -137,7 +138,7 @@ export function useCRUD6Actions(model?: string) {
             
             return true
         } catch (err) {
-            console.error('Field update failed:', err)
+            debugError('Field update failed:', err)
             throw err
         }
     }
@@ -150,12 +151,12 @@ export function useCRUD6Actions(model?: string) {
         recordId: string | number
     ): boolean {
         if (!action.route) {
-            console.error('Route action requires a route property')
+            debugError('Route action requires a route property')
             return false
         }
 
         if (!model) {
-            console.error('Route action requires model to be specified in useCRUD6Actions')
+            debugError('Route action requires model to be specified in useCRUD6Actions')
             return false
         }
 
@@ -175,7 +176,7 @@ export function useCRUD6Actions(model?: string) {
         recordId: string | number
     ): Promise<boolean> {
         if (!action.endpoint) {
-            console.error('API call action requires an endpoint property')
+            debugError('API call action requires an endpoint property')
             return false
         }
 
@@ -203,7 +204,7 @@ export function useCRUD6Actions(model?: string) {
 
             return true
         } catch (err) {
-            console.error('API call failed:', err)
+            debugError('API call failed:', err)
             throw err
         }
     }

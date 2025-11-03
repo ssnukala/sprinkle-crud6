@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Api, useCRUD6Relationships } from '@ssnukala/sprinkle-crud6/composables'
+import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
  * Product Category Assignment Example
@@ -125,9 +126,9 @@ async function saveCategories() {
     // Update assigned categories
     assignedCategories.value = [...selectedCategories.value]
 
-    console.log('[ProductCategories] Categories updated successfully')
+    debugLog('[ProductCategories] Categories updated successfully')
   } catch (error) {
-    console.error('[ProductCategories] Failed to update categories', error)
+    debugError('[ProductCategories] Failed to update categories', error)
   }
 }
 

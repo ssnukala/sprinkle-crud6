@@ -42,3 +42,5 @@ temp/
 
 # Validation scripts
 validate-*.php
+validate-*.sh
+validate-*.mjs

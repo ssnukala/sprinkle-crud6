@@ -32,15 +32,17 @@ class ApiAction extends Base
      * @param AuthorizationManager $authorizer    Authorization manager
      * @param Authenticator        $authenticator Authenticator for access control
      * @param DebugLoggerInterface $logger        Debug logger
-     * @param Translator           $translator    Translator for i18n messages
      * @param SchemaService        $schemaService Schema service
+     * @param Config               $config        Configuration repository
+     * @param Translator           $translator    Translator for i18n messages
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
+        protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
-        protected SchemaService $schemaService
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }

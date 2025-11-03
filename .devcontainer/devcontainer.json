@@ -2,13 +2,11 @@
     "name": "UserFrosting CRUD6 Development (Full Stack)",
     "dockerComposeFile": "docker-compose.yml",
     "service": "sprinkle-crud6",
-    "workspaceFolder": "/workspace",
+    "workspaceFolder": "/workspace/userfrosting",
     "shutdownAction": "stopCompose",
     "containerEnv": {
         "NODE_ENV": "development",
-        "COMPOSER_ALLOW_SUPERUSER": "1",
-        "PACKAGE_DIR": "/workspace/userfrosting",
-        "SPRINKLE_DIR": "/workspace"
+        "COMPOSER_ALLOW_SUPERUSER": "1"
     },
     "customizations": {
         "vscode": {
@@ -78,8 +76,10 @@
     "postCreateCommand": "bash .devcontainer/setup-project.sh",
     "remoteUser": "vscode",
     "mounts": [
-        "source=sprinkle-crud6-node_modules,target=/workspace/node_modules,type=volume",
-        "source=sprinkle-crud6-vendor,target=/workspace/userfrosting/vendor,type=volume"
+        "source=sprinkle-crud6-userfrosting-node_modules,target=/workspace/userfrosting/node_modules,type=volume",
+        "source=sprinkle-crud6-userfrosting-vendor,target=/workspace/userfrosting/vendor,type=volume",
+        "source=sprinkle-crud6-source-node_modules,target=/ssnukala/sprinkle-crud6/node_modules,type=volume",
+        "source=sprinkle-crud6-source-vendor,target=/ssnukala/sprinkle-crud6/vendor,type=volume"
     ],
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},

@@ -7,8 +7,10 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspace:cached
-      - sprinkle-crud6-node_modules:/workspace/node_modules
-      - sprinkle-crud6-vendor:/workspace/userfrosting/vendor
+      - sprinkle-crud6-userfrosting-node_modules:/workspace/userfrosting/node_modules
+      - sprinkle-crud6-userfrosting-vendor:/workspace/userfrosting/vendor
+      - sprinkle-crud6-source-node_modules:/ssnukala/sprinkle-crud6/node_modules
+      - sprinkle-crud6-source-vendor:/ssnukala/sprinkle-crud6/vendor
     ports:
       - "8080:8080"
       - "5173:5173"
@@ -16,8 +18,6 @@ services:
     environment:
       - NODE_ENV=development
       - COMPOSER_ALLOW_SUPERUSER=1
-      - PACKAGE_DIR=/workspace/userfrosting
-      - SPRINKLE_DIR=/workspace
     depends_on:
       - mysql
     networks:
@@ -38,8 +38,10 @@ services:
       - sprinkle-crud6-network
 
 volumes:
-  sprinkle-crud6-node_modules:
-  sprinkle-crud6-vendor:
+  sprinkle-crud6-userfrosting-node_modules:
+  sprinkle-crud6-userfrosting-vendor:
+  sprinkle-crud6-source-node_modules:
+  sprinkle-crud6-source-vendor:
   mysql-data:
 
 networks:

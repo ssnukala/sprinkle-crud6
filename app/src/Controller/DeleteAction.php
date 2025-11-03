@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
@@ -40,11 +41,12 @@ class DeleteAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
         protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**

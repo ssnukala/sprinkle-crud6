@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
@@ -46,9 +47,10 @@ class SprunjeAction extends Base
         protected Translator $translator,
         protected CRUD6Sprunje $sprunje,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected UserSprunje $userSprunje,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**

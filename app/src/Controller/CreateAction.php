@@ -7,6 +7,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\Config\Config;
 use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
@@ -45,13 +46,14 @@ class CreateAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
         protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**

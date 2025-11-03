@@ -14,6 +14,7 @@ use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -49,11 +50,12 @@ class UpdateFieldAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
         protected UserActivityLogger $userActivityLogger,
         protected Connection $db,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**

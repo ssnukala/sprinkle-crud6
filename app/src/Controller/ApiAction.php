@@ -10,6 +10,7 @@ use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -31,17 +32,19 @@ class ApiAction extends Base
      * @param AuthorizationManager $authorizer    Authorization manager
      * @param Authenticator        $authenticator Authenticator for access control
      * @param DebugLoggerInterface $logger        Debug logger
-     * @param Translator           $translator    Translator for i18n messages
      * @param SchemaService        $schemaService Schema service
+     * @param Config               $config        Configuration repository
+     * @param Translator           $translator    Translator for i18n messages
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
+        protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
-        protected SchemaService $schemaService
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**
@@ -76,20 +79,20 @@ class ApiAction extends Base
         $queryParams = $request->getQueryParams();
         $context = $queryParams['context'] ?? null;
         
-        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
+        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
             'model' => $crudSchema['model'],
             'context' => $context ?? 'null/full',
             'uri' => (string) $request->getUri(),
         ]);
 
         // Filter schema based on context
-        $this->logger->debug("CRUD6 [ApiAction] Filtering schema for context", [
+        $this->debugLog("CRUD6 [ApiAction] Filtering schema for context", [
             'context' => $context ?? 'null/full',
         ]);
 
         $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
 
-        $this->logger->debug("CRUD6 [ApiAction] Schema filtered", [
+        $this->debugLog("CRUD6 [ApiAction] Schema filtered", [
             'field_count' => count($filteredSchema['fields'] ?? []),
             'has_contexts' => isset($filteredSchema['contexts']) ? 'yes' : 'no',
         ]);
@@ -104,7 +107,7 @@ class ApiAction extends Base
 
         // Log context filtering for debugging
         if ($context !== null) {
-            $this->logger->debug("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
+            $this->debugLog("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
         }
 
         $responseData = [
@@ -114,7 +117,7 @@ class ApiAction extends Base
             'schema' => $filteredSchema
         ];
 
-        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
+        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
             'model' => $filteredSchema['model'],
             'context' => $context ?? 'null/full',
             'response_size' => strlen(json_encode($responseData)) . ' bytes',

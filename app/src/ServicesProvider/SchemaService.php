@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
+use UserFrosting\Config\Config;
+use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
@@ -50,11 +52,51 @@ class SchemaService
     /**
      * Constructor for SchemaService.
      * 
-     * @param ResourceLocatorInterface $locator Resource locator for finding schema files
+     * @param ResourceLocatorInterface  $locator Resource locator for finding schema files
+     * @param Config                    $config  Configuration repository
+     * @param DebugLoggerInterface|null $logger  Debug logger for diagnostics (optional)
      */
     public function __construct(
-        protected ResourceLocatorInterface $locator
+        protected ResourceLocatorInterface $locator,
+        protected Config $config,
+        protected ?DebugLoggerInterface $logger = null
     ) {
+    }
+
+    /**
+     * Check if debug mode is enabled.
+     * 
+     * @return bool True if debug mode is enabled
+     */
+    protected function isDebugMode(): bool
+    {
+        return $this->config->get('crud6.debug_mode', false);
+    }
+
+    /**
+     * Log debug message if debug mode is enabled.
+     * 
+     * Uses DebugLoggerInterface if available, falls back to error_log() otherwise.
+     * Only logs when debug_mode config is true.
+     * 
+     * @param string $message Debug message
+     * @param array  $context Context data for structured logging
+     * 
+     * @return void
+     */
+    protected function debugLog(string $message, array $context = []): void
+    {
+        if (!$this->isDebugMode()) {
+            return;
+        }
+
+        if ($this->logger !== null) {
+            $this->logger->debug($message, $context);
+        } else {
+            // Fallback to error_log if logger not available
+            $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
+            error_log($message . $contextStr);
+        }
     }
 
     /**
@@ -173,25 +215,23 @@ class SchemaService
         
         // Check cache first
         if (isset($this->schemaCache[$cacheKey])) {
-            error_log(sprintf(
-                "[CRUD6 SchemaService] ✅ Using CACHED schema (in-memory) - model: %s, connection: %s, cache_key: %s, timestamp: %s",
-                $model,
-                $connection ?? 'null',
-                $cacheKey,
-                date('Y-m-d H:i:s.u')
-            ));
+            $this->debugLog("[CRUD6 SchemaService] ✅ Using CACHED schema (in-memory)", [
+                'model' => $model,
+                'connection' => $connection ?? 'null',
+                'cache_key' => $cacheKey,
+                'timestamp' => date('Y-m-d H:i:s.u'),
+            ]);
             return $this->schemaCache[$cacheKey];
         }
         
         // DEBUG: Log every schema load attempt to track duplicate calls
-        error_log(sprintf(
-            "[CRUD6 SchemaService] getSchema() called - model: %s, connection: %s, cache_key: %s, timestamp: %s, caller: %s",
-            $model,
-            $connection ?? 'null',
-            $cacheKey,
-            date('Y-m-d H:i:s.u'),
-            $this->getCallerInfo()
-        ));
+        $this->debugLog("[CRUD6 SchemaService] getSchema() called", [
+            'model' => $model,
+            'connection' => $connection ?? 'null',
+            'cache_key' => $cacheKey,
+            'timestamp' => date('Y-m-d H:i:s.u'),
+            'caller' => $this->getCallerInfo(),
+        ]);
         
         $schema = null;
         $schemaPath = null;
@@ -199,10 +239,9 @@ class SchemaService
         // If connection is specified, try connection-based path first
         if ($connection !== null) {
             $schemaPath = $this->getSchemaFilePath($model, $connection);
-            error_log(sprintf(
-                "[CRUD6 SchemaService] Trying connection-based path: %s",
-                $schemaPath
-            ));
+            $this->debugLog("[CRUD6 SchemaService] Trying connection-based path", [
+                'path' => $schemaPath,
+            ]);
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
@@ -210,19 +249,17 @@ class SchemaService
         // If not found in connection-based path, try default path
         if ($schema === null) {
             $schemaPath = $this->getSchemaFilePath($model);
-            error_log(sprintf(
-                "[CRUD6 SchemaService] Trying default path: %s",
-                $schemaPath
-            ));
+            $this->debugLog("[CRUD6 SchemaService] Trying default path", [
+                'path' => $schemaPath,
+            ]);
             $loader = new YamlFileLoader($schemaPath);
             $schema = $loader->load(false);
         }
 
         if ($schema === null) {
-            error_log(sprintf(
-                "[CRUD6 SchemaService] Schema file not found for model: %s",
-                $model
-            ));
+            $this->debugLog("[CRUD6 SchemaService] Schema file not found for model", [
+                'model' => $model,
+            ]);
             throw new \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException("Schema file not found for model: {$model}");
         }
 
@@ -237,13 +274,12 @@ class SchemaService
             $schema['connection'] = $connection;
         }
 
-        error_log(sprintf(
-            "[CRUD6 SchemaService] Schema loaded successfully and CACHED - model: %s, table: %s, field_count: %d, cache_key: %s",
-            $model,
-            $schema['table'] ?? 'unknown',
-            count($schema['fields'] ?? []),
-            $cacheKey
-        ));
+        $this->debugLog("[CRUD6 SchemaService] Schema loaded successfully and CACHED", [
+            'model' => $model,
+            'table' => $schema['table'] ?? 'unknown',
+            'field_count' => count($schema['fields'] ?? []),
+            'cache_key' => $cacheKey,
+        ]);
 
         // Store in cache for future requests during this request lifecycle
         $this->schemaCache[$cacheKey] = $schema;
@@ -303,12 +339,11 @@ class SchemaService
         $cacheKey = $this->getCacheKey($model, $connection);
         unset($this->schemaCache[$cacheKey]);
         
-        error_log(sprintf(
-            "[CRUD6 SchemaService] Cache cleared for model: %s, connection: %s, cache_key: %s",
-            $model,
-            $connection ?? 'null',
-            $cacheKey
-        ));
+        $this->debugLog("[CRUD6 SchemaService] Cache cleared for model", [
+            'model' => $model,
+            'connection' => $connection ?? 'null',
+            'cache_key' => $cacheKey,
+        ]);
     }
     
     /**
@@ -323,10 +358,9 @@ class SchemaService
         $count = count($this->schemaCache);
         $this->schemaCache = [];
         
-        error_log(sprintf(
-            "[CRUD6 SchemaService] All schema cache cleared - %d entries removed",
-            $count
-        ));
+        $this->debugLog("[CRUD6 SchemaService] All schema cache cleared", [
+            'entries_removed' => $count,
+        ]);
     }
 
     /**
@@ -375,34 +409,31 @@ class SchemaService
     public function filterSchemaForContext(array $schema, ?string $context = null): array
     {
         // DEBUG: Log context filtering to track which contexts are being requested
-        error_log(sprintf(
-            "[CRUD6 SchemaService] filterSchemaForContext() called - model: %s, context: %s, timestamp: %s",
-            $schema['model'] ?? 'unknown',
-            $context ?? 'null/full',
-            date('Y-m-d H:i:s.u')
-        ));
+        $this->debugLog("[CRUD6 SchemaService] filterSchemaForContext() called", [
+            'model' => $schema['model'] ?? 'unknown',
+            'context' => $context ?? 'null/full',
+            'timestamp' => date('Y-m-d H:i:s.u'),
+        ]);
         
         // If no context or 'full', return complete schema (backward compatible)
         if ($context === null || $context === 'full') {
-            error_log("[CRUD6 SchemaService] Returning full schema (no filtering)");
+            $this->debugLog("[CRUD6 SchemaService] Returning full schema (no filtering)");
             return $schema;
         }
 
         // Check if multiple contexts are requested (comma-separated)
         if (strpos($context, ',') !== false) {
             $contexts = array_map('trim', explode(',', $context));
-            error_log(sprintf(
-                "[CRUD6 SchemaService] Multiple contexts requested: %s",
-                implode(', ', $contexts)
-            ));
+            $this->debugLog("[CRUD6 SchemaService] Multiple contexts requested", [
+                'contexts' => implode(', ', $contexts),
+            ]);
             return $this->filterSchemaForMultipleContexts($schema, $contexts);
         }
 
         // Single context - use existing logic
-        error_log(sprintf(
-            "[CRUD6 SchemaService] Single context filtering: %s",
-            $context
-        ));
+        $this->debugLog("[CRUD6 SchemaService] Single context filtering", [
+            'context' => $context,
+        ]);
         return $this->filterSchemaForSingleContext($schema, $context);
     }
 

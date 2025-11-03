@@ -14,6 +14,7 @@ use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -48,13 +49,14 @@ class EditAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
         protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**
@@ -71,7 +73,7 @@ class EditAction extends Base
         
         $method = $request->getMethod();
         
-        $this->logger->debug("CRUD6 [EditAction] ===== REQUEST START =====", [
+        $this->debugLog("CRUD6 [EditAction] ===== REQUEST START =====", [
             'model' => $crudSchema['model'],
             'method' => $method,
             'uri' => (string) $request->getUri(),
@@ -81,7 +83,7 @@ class EditAction extends Base
         try {
             // Handle GET request (read operation)
             if ($method === 'GET') {
-                $this->logger->debug("CRUD6 [EditAction] Processing GET request (read)", [
+                $this->debugLog("CRUD6 [EditAction] Processing GET request (read)", [
                     'model' => $crudSchema['model'],
                 ]);
                 return $this->handleRead($crudSchema, $crudModel, $request, $response);
@@ -89,7 +91,7 @@ class EditAction extends Base
             
             // Handle PUT request (update operation)
             if ($method === 'PUT') {
-                $this->logger->debug("CRUD6 [EditAction] Processing PUT request (update)", [
+                $this->debugLog("CRUD6 [EditAction] Processing PUT request (update)", [
                     'model' => $crudSchema['model'],
                 ]);
                 return $this->handleUpdate($crudSchema, $crudModel, $request, $response);
@@ -133,7 +135,7 @@ class EditAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6 [EditAction] Read request for record", [
+        $this->debugLog("CRUD6 [EditAction] Read request for record", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'primary_key' => $primaryKey,
@@ -145,7 +147,7 @@ class EditAction extends Base
             
             $recordData = $crudModel->toArray();
             
-            $this->logger->debug("CRUD6 [EditAction] Record data retrieved", [
+            $this->debugLog("CRUD6 [EditAction] Record data retrieved", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'data_keys' => array_keys($recordData),
@@ -161,7 +163,7 @@ class EditAction extends Base
                 'data' => $recordData
             ];
 
-            $this->logger->debug("CRUD6 [EditAction] Read response prepared", [
+            $this->debugLog("CRUD6 [EditAction] Read response prepared", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'response_keys' => array_keys($responseData),
@@ -204,14 +206,14 @@ class EditAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6 [EditAction] Update request starting", [
+        $this->debugLog("CRUD6 [EditAction] Update request starting", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);
 
         $this->validateAccess($crudSchema, 'edit');
         
-        $this->logger->debug("CRUD6 [EditAction] Access validated for update", [
+        $this->debugLog("CRUD6 [EditAction] Access validated for update", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);
@@ -226,7 +228,7 @@ class EditAction extends Base
         $description = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $modelDisplayName]);
         $payload = new ApiResponse($title, $description);
         
-        $this->logger->debug("CRUD6 [EditAction] Update response prepared", [
+        $this->debugLog("CRUD6 [EditAction] Update response prepared", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'title' => $title,
@@ -252,7 +254,7 @@ class EditAction extends Base
         // Get PUT parameters
         $params = (array) $request->getParsedBody();
         
-        $this->logger->debug("CRUD6 [EditAction] Update parameters received", [
+        $this->debugLog("CRUD6 [EditAction] Update parameters received", [
             'model' => $crudSchema['model'],
             'params' => $params,
             'param_count' => count($params),
@@ -264,7 +266,7 @@ class EditAction extends Base
         // Whitelist and set parameter defaults
         $data = $this->transformer->transform($requestSchema, $params);
         
-        $this->logger->debug("CRUD6 [EditAction] Data transformed", [
+        $this->debugLog("CRUD6 [EditAction] Data transformed", [
             'model' => $crudSchema['model'],
             'transformed_data' => $data,
         ]);
@@ -272,7 +274,7 @@ class EditAction extends Base
         // Validate request data
         $this->validateData($requestSchema, $data);
         
-        $this->logger->debug("CRUD6 [EditAction] Data validation passed", [
+        $this->debugLog("CRUD6 [EditAction] Data validation passed", [
             'model' => $crudSchema['model'],
         ]);
 
@@ -283,7 +285,7 @@ class EditAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6 [EditAction] Starting database update", [
+        $this->debugLog("CRUD6 [EditAction] Starting database update", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'user' => $currentUser->user_name,
@@ -295,7 +297,7 @@ class EditAction extends Base
             // Prepare update data
             $updateData = $this->prepareUpdateData($crudSchema, $data);
             
-            $this->logger->debug("CRUD6 [EditAction] Update data prepared", [
+            $this->debugLog("CRUD6 [EditAction] Update data prepared", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'update_data' => $updateData,
@@ -307,7 +309,7 @@ class EditAction extends Base
             $primaryKey = $crudSchema['primary_key'] ?? 'id';
             $affected = $this->db->table($table)->where($primaryKey, $recordId)->update($updateData);
             
-            $this->logger->debug("CRUD6 [EditAction] Database update executed", [
+            $this->debugLog("CRUD6 [EditAction] Database update executed", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'table' => $table,
@@ -317,7 +319,7 @@ class EditAction extends Base
             // Reload the model to get updated data
             $crudModel->refresh();
             
-            $this->logger->debug("CRUD6 [EditAction] Model refreshed after update", [
+            $this->debugLog("CRUD6 [EditAction] Model refreshed after update", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'updated_data' => $crudModel->toArray(),
@@ -331,7 +333,7 @@ class EditAction extends Base
             ]);
         });
         
-        $this->logger->debug("CRUD6 [EditAction] Transaction completed successfully", [
+        $this->debugLog("CRUD6 [EditAction] Transaction completed successfully", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);
@@ -362,7 +364,7 @@ class EditAction extends Base
      */
     protected function validateData(RequestSchemaInterface $schema, array $data): void
     {
-        $this->logger->debug("CRUD6 [EditAction] Starting validation", [
+        $this->debugLog("CRUD6 [EditAction] Starting validation", [
             'data' => $data,
         ]);
 
@@ -379,7 +381,7 @@ class EditAction extends Base
             throw $e;
         }
 
-        $this->logger->debug("CRUD6 [EditAction] Validation successful", [
+        $this->debugLog("CRUD6 [EditAction] Validation successful", [
             'data_validated' => true,
         ]);
     }

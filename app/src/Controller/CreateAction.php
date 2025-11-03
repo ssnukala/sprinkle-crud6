@@ -7,6 +7,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use UserFrosting\Config\Config;
 use UserFrosting\Fortress\RequestSchema;
 use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
@@ -45,13 +46,14 @@ class CreateAction extends Base
         protected Authenticator $authenticator,
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
+        protected Config $config,
         protected Translator $translator,
         protected Connection $db,
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
     ) {
-        parent::__construct($authorizer, $authenticator, $logger, $schemaService);
+        parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
 
     /**
@@ -66,7 +68,7 @@ class CreateAction extends Base
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
         
-        $this->logger->debug("CRUD6 [CreateAction] ===== CREATE REQUEST START =====", [
+        $this->debugLog("CRUD6 [CreateAction] ===== CREATE REQUEST START =====", [
             'model' => $crudSchema['model'],
             'method' => $request->getMethod(),
             'uri' => (string) $request->getUri(),
@@ -74,7 +76,7 @@ class CreateAction extends Base
 
         try {
             $this->validateAccess($crudSchema, 'create');
-            $this->logger->debug("CRUD6 [CreateAction] Access validated for create operation", [
+            $this->debugLog("CRUD6 [CreateAction] Access validated for create operation", [
                 'model' => $crudSchema['model'],
             ]);
 
@@ -88,7 +90,7 @@ class CreateAction extends Base
             $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
             $payload = new ApiResponse($title, $description);
             
-            $this->logger->debug("CRUD6 [CreateAction] Response prepared successfully", [
+            $this->debugLog("CRUD6 [CreateAction] Response prepared successfully", [
                 'model' => $crudSchema['model'],
                 'title' => $title,
                 'description' => $description,
@@ -125,7 +127,7 @@ class CreateAction extends Base
         // Get POST parameters.
         $params = (array) $request->getParsedBody();
         
-        $this->logger->debug("CRUD6 [CreateAction] Request parameters received", [
+        $this->debugLog("CRUD6 [CreateAction] Request parameters received", [
             'model' => $schema['model'],
             'params' => $params,
             'param_count' => count($params),
@@ -137,7 +139,7 @@ class CreateAction extends Base
         // Whitelist and set parameter defaults
         $data = $this->transformer->transform($requestSchema, $params);
         
-        $this->logger->debug("CRUD6 [CreateAction] Data transformed", [
+        $this->debugLog("CRUD6 [CreateAction] Data transformed", [
             'model' => $schema['model'],
             'transformed_data' => $data,
         ]);
@@ -145,7 +147,7 @@ class CreateAction extends Base
         // Validate request data
         $this->validateData($requestSchema, $data);
         
-        $this->logger->debug("CRUD6 [CreateAction] Data validation passed", [
+        $this->debugLog("CRUD6 [CreateAction] Data validation passed", [
             'model' => $schema['model'],
         ]);
 
@@ -153,7 +155,7 @@ class CreateAction extends Base
         /** @var UserInterface */
         $currentUser = $this->authenticator->user();
 
-        $this->logger->debug("CRUD6 [CreateAction] Creating new record for model", [
+        $this->debugLog("CRUD6 [CreateAction] Creating new record for model", [
             'model' => $schema['model'],
             'user' => $currentUser->user_name,
             'user_id' => $currentUser->id,
@@ -165,7 +167,7 @@ class CreateAction extends Base
             // Prepare insert data
             $insertData = $this->prepareInsertData($schema, $data);
             
-            $this->logger->debug("CRUD6 [CreateAction] Insert data prepared", [
+            $this->debugLog("CRUD6 [CreateAction] Insert data prepared", [
                 'model' => $schema['model'],
                 'insert_data' => $insertData,
                 'table' => $crudModel->getTable(),
@@ -176,7 +178,7 @@ class CreateAction extends Base
             $primaryKey = $schema['primary_key'] ?? 'id';
             $insertId = $this->db->table($table)->insertGetId($insertData, $primaryKey);
             
-            $this->logger->debug("CRUD6 [CreateAction] Record inserted into database", [
+            $this->debugLog("CRUD6 [CreateAction] Record inserted into database", [
                 'model' => $schema['model'],
                 'table' => $table,
                 'insert_id' => $insertId,
@@ -186,7 +188,7 @@ class CreateAction extends Base
             // Load the created record into the model
             $crudModel = $crudModel->newQuery()->find($insertId);
             
-            $this->logger->debug("CRUD6 [CreateAction] Created record loaded from database", [
+            $this->debugLog("CRUD6 [CreateAction] Created record loaded from database", [
                 'model' => $schema['model'],
                 'record_data' => $crudModel ? $crudModel->toArray() : null,
             ]);
@@ -201,7 +203,7 @@ class CreateAction extends Base
             return $crudModel;
         });
         
-        $this->logger->debug("CRUD6 [CreateAction] Transaction completed successfully", [
+        $this->debugLog("CRUD6 [CreateAction] Transaction completed successfully", [
             'model' => $schema['model'],
         ]);
 
@@ -231,7 +233,7 @@ class CreateAction extends Base
      */
     protected function validateData(RequestSchemaInterface $schema, array $data): void
     {
-        $this->logger->debug("CRUD6 [CreateAction] Starting validation", [
+        $this->debugLog("CRUD6 [CreateAction] Starting validation", [
             'data' => $data,
         ]);
 
@@ -248,7 +250,7 @@ class CreateAction extends Base
             throw $e;
         }
 
-        $this->logger->debug("CRUD6 [CreateAction] Validation successful", [
+        $this->debugLog("CRUD6 [CreateAction] Validation successful", [
             'data_validated' => true,
         ]);
     }

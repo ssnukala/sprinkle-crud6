@@ -18,16 +18,16 @@ return [
         1 => 'CRUD6',
         2 => 'CRUD6 All Rows',
 
-        'CREATE'              => 'Create {{model}}',
         'CREATE' => [
+            0 => 'Create {{model}}',
             'SUCCESS'       => 'Successfully created {{model}}',
             'SUCCESS_TITLE' => 'Created!',
             'ERROR'         => 'Failed to create {{model}}',
             'ERROR_TITLE'   => 'Error Creating',
         ],
         'CREATION_SUCCESSFUL' => 'Successfully created {{model}} <strong>{{name}}</strong>',
-        'DELETE'              => 'Delete {{model}}',
         'DELETE' => [
+            0 => 'Delete {{model}}',
             'SUCCESS'       => 'Successfully deleted {{model}}',
             'SUCCESS_TITLE' => 'Deleted!',
             'ERROR'         => 'Failed to delete {{model}}',
@@ -37,8 +37,8 @@ return [
         'DELETE_DEFAULT'      => "You can't delete the {{model}} <strong>{{name}}</strong> because it is the default {{model}} for newly registered users.",
         'DELETE_YES'          => 'Yes, delete {{model}}',
         'DELETION_SUCCESSFUL' => 'Successfully deleted {{model}} <strong>{{name}}</strong>',
-        'EDIT'                => 'Edit {{model}}',
         'EDIT' => [
+            0 => 'Edit {{model}}',
             'SUCCESS' => 'Retrieved {{model}} for editing',
             'ERROR'   => 'Failed to retrieve {{model}}',
         ],
@@ -54,8 +54,8 @@ return [
         'NOT_FOUND'           => '{{model}} not found',
         'PAGE'                => '{{model}}',
         'PAGE_DESCRIPTION'    => 'A listing of the {{model}} for your site.  Provides management tools for editing and deleting {{model}}.',
-        'UPDATE'              => 'Details updated for {{model}} <strong>{{name}}</strong>',
         'UPDATE' => [
+            0 => 'Details updated for {{model}} <strong>{{name}}</strong>',
             'SUCCESS'       => 'Successfully updated {{model}}',
             'SUCCESS_TITLE' => 'Updated!',
             'ERROR'         => 'Failed to update {{model}}',

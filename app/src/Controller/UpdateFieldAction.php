@@ -74,7 +74,7 @@ class UpdateFieldAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST START =====", [
+        $this->debugLog("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST START =====", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'field' => $fieldName,
@@ -118,7 +118,7 @@ class UpdateFieldAction extends Base
             // Access control check
             $this->validateAccess($crudSchema, 'update');
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Access validated", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Access validated", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
             ]);
@@ -128,7 +128,7 @@ class UpdateFieldAction extends Base
             // Get PUT parameters
             $params = (array) $request->getParsedBody();
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Request parameters received", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Request parameters received", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
                 'params' => $params,
@@ -154,7 +154,7 @@ class UpdateFieldAction extends Base
                 throw $e;
             }
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Validation passed", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Validation passed", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
             ]);
@@ -163,7 +163,7 @@ class UpdateFieldAction extends Base
             $transformer = new RequestDataTransformer($validationSchema);
             $data = $transformer->transform($params);
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Data transformed", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Data transformed", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
                 'transformed_data' => $data,
@@ -178,7 +178,7 @@ class UpdateFieldAction extends Base
                     $oldValue = $crudModel->{$fieldName};
                     $crudModel->{$fieldName} = $data[$fieldName];
                     
-                    $this->logger->debug("CRUD6 [UpdateFieldAction] Field value updated", [
+                    $this->debugLog("CRUD6 [UpdateFieldAction] Field value updated", [
                         'model' => $crudSchema['model'],
                         'record_id' => $recordId,
                         'field' => $fieldName,
@@ -189,7 +189,7 @@ class UpdateFieldAction extends Base
 
                 $crudModel->save();
                 
-                $this->logger->debug("CRUD6 [UpdateFieldAction] Model saved to database", [
+                $this->debugLog("CRUD6 [UpdateFieldAction] Model saved to database", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,
@@ -212,7 +212,7 @@ class UpdateFieldAction extends Base
 
                 $this->db->commit();
                 
-                $this->logger->debug("CRUD6 [UpdateFieldAction] Transaction committed", [
+                $this->debugLog("CRUD6 [UpdateFieldAction] Transaction committed", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,
@@ -234,7 +234,7 @@ class UpdateFieldAction extends Base
             // Get updated record data
             $recordData = $crudModel->toArray();
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Record data retrieved", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Record data retrieved", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'field' => $fieldName,
@@ -247,7 +247,7 @@ class UpdateFieldAction extends Base
                 'field' => $fieldConfig['label'] ?? $fieldName,
             ]);
             
-            $this->logger->debug("CRUD6 [UpdateFieldAction] Update field response prepared", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Update field response prepared", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'field' => $fieldName,

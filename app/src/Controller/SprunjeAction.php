@@ -69,7 +69,7 @@ class SprunjeAction extends Base
         
         parent::__invoke($crudSchema, $crudModel, $request, $response);
         
-        $this->logger->debug("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
+        $this->debugLog("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
             'model' => $crudSchema['model'],
             'uri' => (string) $request->getUri(),
             'query_params' => $request->getQueryParams(),
@@ -79,7 +79,7 @@ class SprunjeAction extends Base
             // Get the relation parameter if it exists
             $relation = $this->getParameter($request, 'relation', 'NONE');
             
-            $this->logger->debug("CRUD6 [SprunjeAction] Relation parameter parsed", [
+            $this->debugLog("CRUD6 [SprunjeAction] Relation parameter parsed", [
                 'relation' => $relation,
                 'has_detail' => isset($crudSchema['detail']) ? 'yes' : 'no',
                 'has_details' => isset($crudSchema['details']) ? 'yes' : 'no',
@@ -91,7 +91,7 @@ class SprunjeAction extends Base
             $detailConfig = null;
             if (isset($crudSchema['details']) && is_array($crudSchema['details'])) {
                 // Search through details array for matching model
-                $this->logger->debug("CRUD6 [SprunjeAction] Searching details array for relation", [
+                $this->debugLog("CRUD6 [SprunjeAction] Searching details array for relation", [
                     'relation' => $relation,
                     'details_count' => count($crudSchema['details']),
                 ]);
@@ -100,7 +100,7 @@ class SprunjeAction extends Base
                     $configModel = $config['model'] ?? 'null';
                     $matches = (isset($config['model']) && $config['model'] === $relation);
                     
-                    $this->logger->debug("CRUD6 [SprunjeAction] Checking detail config", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Checking detail config", [
                         'config_model' => $configModel,
                         'matches' => $matches ? 'YES' : 'no',
                     ]);
@@ -112,7 +112,7 @@ class SprunjeAction extends Base
                 }
             } elseif (isset($crudSchema['detail']) && is_array($crudSchema['detail'])) {
                 // Backward compatibility: support singular 'detail' object
-                $this->logger->debug("CRUD6 [SprunjeAction] Checking singular detail config", [
+                $this->debugLog("CRUD6 [SprunjeAction] Checking singular detail config", [
                     'model' => $crudSchema['detail']['model'] ?? 'null',
                 ]);
                 
@@ -121,14 +121,14 @@ class SprunjeAction extends Base
                 }
             }
             
-            $this->logger->debug("CRUD6 [SprunjeAction] Detail config search result", [
+            $this->debugLog("CRUD6 [SprunjeAction] Detail config search result", [
                 'found' => $detailConfig !== null ? 'YES' : 'NO',
                 'relation' => $relation,
             ]);
             
             if ($relation !== 'NONE' && $detailConfig !== null) {
                 // Handle dynamic relation based on schema detail configuration
-                $this->logger->debug("CRUD6 [SprunjeAction] Handling detail relation", [
+                $this->debugLog("CRUD6 [SprunjeAction] Handling detail relation", [
                     'model' => $crudSchema['model'],
                     'relation' => $relation,
                     'detail_config' => $detailConfig,
@@ -137,7 +137,7 @@ class SprunjeAction extends Base
                 // Load the related model's schema to get its configuration
                 $relatedSchema = $this->schemaService->getSchema($relation);
                 
-                $this->logger->debug("CRUD6 [SprunjeAction] Related schema loaded", [
+                $this->debugLog("CRUD6 [SprunjeAction] Related schema loaded", [
                     'relation' => $relation,
                     'related_table' => $relatedSchema['table'] ?? null,
                 ]);
@@ -151,7 +151,7 @@ class SprunjeAction extends Base
                 // Check if there's a matching relationship definition (for many-to-many)
                 $relationshipConfig = $this->findRelationshipConfig($crudSchema, $relation);
                 
-                $this->logger->debug("CRUD6 [SprunjeAction] Setting up relation sprunje", [
+                $this->debugLog("CRUD6 [SprunjeAction] Setting up relation sprunje", [
                     'relation' => $relation,
                     'foreign_key' => $foreignKey,
                     'parent_id' => $crudModel->id,
@@ -161,7 +161,7 @@ class SprunjeAction extends Base
                 
                 // For 'users' relation, use UserSprunje for compatibility
                 if ($relation === 'users') {
-                    $this->logger->debug("CRUD6 [SprunjeAction] Using UserSprunje for users relation");
+                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation");
                     
                     $this->userSprunje->setOptions($params);
                     $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
@@ -177,7 +177,7 @@ class SprunjeAction extends Base
                 $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
                 $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
                 
-                $this->logger->debug("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
+                $this->debugLog("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
                     'relation' => $relation,
                     'table' => $relatedModel->getTable(),
                     'sortable_fields' => $sortableFields,
@@ -198,7 +198,7 @@ class SprunjeAction extends Base
                 // Build the query based on relationship type
                 if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
                     // Handle many-to-many relationship via pivot table
-                    $this->logger->debug("CRUD6 [SprunjeAction] Using many-to-many relationship with pivot table", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many relationship with pivot table", [
                         'relation' => $relation,
                         'pivot_table' => $relationshipConfig['pivot_table'] ?? null,
                         'foreign_key' => $relationshipConfig['foreign_key'] ?? null,
@@ -222,7 +222,7 @@ class SprunjeAction extends Base
                     // We build the JOIN manually using the configured model's actual table names
                     $logger = $this->logger; // Capture logger for use in closure
                     
-                    $this->logger->debug("CRUD6 [SprunjeAction] Building manual belongsToMany JOIN", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Building manual belongsToMany JOIN", [
                         'related_model_table' => $relatedModel->getTable(),
                         'parent_model_table' => $crudModel->getTable(),
                     ]);
@@ -261,7 +261,7 @@ class SprunjeAction extends Base
                     // This is completely generic - works for any through relationship defined in the schema
                     $throughModelName = $relationshipConfig['through'] ?? null;
                     
-                    $this->logger->debug("CRUD6 [SprunjeAction] Using belongs-to-many-through relationship", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Using belongs-to-many-through relationship", [
                         'relation' => $relation,
                         'through' => $throughModelName,
                         'config' => $relationshipConfig,
@@ -275,7 +275,7 @@ class SprunjeAction extends Base
                     // This ensures the through model has its table name properly set
                     $throughModel = $this->schemaService->getModelInstance($throughModelName);
                     
-                    $this->logger->debug("CRUD6 [SprunjeAction] Through model instantiated", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Through model instantiated", [
                         'through_model' => $throughModelName,
                         'through_table' => $throughModel->getTable(),
                     ]);
@@ -326,7 +326,7 @@ class SprunjeAction extends Base
                 } else {
                     // Default: filter by foreign key (one-to-many relationship)
                     // This is the fallback for simple relationships not defined in the relationships array
-                    $this->logger->debug("CRUD6 [SprunjeAction] Using direct foreign key relationship (one-to-many)", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Using direct foreign key relationship (one-to-many)", [
                         'relation' => $relation,
                         'foreign_key' => $foreignKey,
                         'parent_id' => $crudModel->id,
@@ -337,7 +337,7 @@ class SprunjeAction extends Base
                     });
                 }
                 
-                $this->logger->debug("CRUD6 [SprunjeAction] Relation sprunje configured, returning response", [
+                $this->debugLog("CRUD6 [SprunjeAction] Relation sprunje configured, returning response", [
                     'relation' => $relation,
                     'parent_id' => $crudModel->id,
                 ]);
@@ -353,7 +353,7 @@ class SprunjeAction extends Base
             $filterableFields = $this->getFilterableFields($modelName);
             $listFields = $this->getListableFields($modelName);
 
-            $this->logger->debug("CRUD6 [SprunjeAction] Setting up main model sprunje", [
+            $this->debugLog("CRUD6 [SprunjeAction] Setting up main model sprunje", [
                 'model' => $modelName,
                 'table' => $crudModel->getTable(),
                 'sortable_fields' => $sortableFields,
@@ -371,7 +371,7 @@ class SprunjeAction extends Base
 
             $this->sprunje->setOptions($params);
             
-            $this->logger->debug("CRUD6 [SprunjeAction] Main sprunje configured, returning response", [
+            $this->debugLog("CRUD6 [SprunjeAction] Main sprunje configured, returning response", [
                 'model' => $modelName,
             ]);
 

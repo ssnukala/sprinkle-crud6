@@ -62,7 +62,7 @@ class DeleteAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->logger->debug("CRUD6 [DeleteAction] ===== DELETE REQUEST START =====", [
+        $this->debugLog("CRUD6 [DeleteAction] ===== DELETE REQUEST START =====", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);
@@ -76,7 +76,7 @@ class DeleteAction extends Base
             $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
             $payload = new ApiResponse($title, $description);
             
-            $this->logger->debug("CRUD6 [DeleteAction] Delete response prepared", [
+            $this->debugLog("CRUD6 [DeleteAction] Delete response prepared", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'title' => $title,
@@ -118,7 +118,7 @@ class DeleteAction extends Base
         /** @var UserInterface $currentUser */
         $currentUser = $this->authenticator->user();
 
-        $this->logger->debug("CRUD6 [DeleteAction] Starting delete operation", [
+        $this->debugLog("CRUD6 [DeleteAction] Starting delete operation", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'user' => $currentUser->user_name,
@@ -131,13 +131,13 @@ class DeleteAction extends Base
             // Delete the record (supports soft delete if configured)
             if ($crudSchema['soft_delete'] ?? false) {
                 $crudModel->softDelete();
-                $this->logger->debug("CRUD6 [DeleteAction] Soft deleted record", [
+                $this->debugLog("CRUD6 [DeleteAction] Soft deleted record", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                 ]);
             } else {
                 $crudModel->delete();
-                $this->logger->debug("CRUD6 [DeleteAction] Hard deleted record", [
+                $this->debugLog("CRUD6 [DeleteAction] Hard deleted record", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                 ]);
@@ -151,7 +151,7 @@ class DeleteAction extends Base
             ]);
         });
 
-        $this->logger->debug("CRUD6 [DeleteAction] Transaction completed successfully", [
+        $this->debugLog("CRUD6 [DeleteAction] Transaction completed successfully", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);

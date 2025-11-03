@@ -76,20 +76,20 @@ class ApiAction extends Base
         $queryParams = $request->getQueryParams();
         $context = $queryParams['context'] ?? null;
         
-        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
+        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
             'model' => $crudSchema['model'],
             'context' => $context ?? 'null/full',
             'uri' => (string) $request->getUri(),
         ]);
 
         // Filter schema based on context
-        $this->logger->debug("CRUD6 [ApiAction] Filtering schema for context", [
+        $this->debugLog("CRUD6 [ApiAction] Filtering schema for context", [
             'context' => $context ?? 'null/full',
         ]);
 
         $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
 
-        $this->logger->debug("CRUD6 [ApiAction] Schema filtered", [
+        $this->debugLog("CRUD6 [ApiAction] Schema filtered", [
             'field_count' => count($filteredSchema['fields'] ?? []),
             'has_contexts' => isset($filteredSchema['contexts']) ? 'yes' : 'no',
         ]);
@@ -104,7 +104,7 @@ class ApiAction extends Base
 
         // Log context filtering for debugging
         if ($context !== null) {
-            $this->logger->debug("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
+            $this->debugLog("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
         }
 
         $responseData = [
@@ -114,7 +114,7 @@ class ApiAction extends Base
             'schema' => $filteredSchema
         ];
 
-        $this->logger->debug("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
+        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
             'model' => $filteredSchema['model'],
             'context' => $context ?? 'null/full',
             'response_size' => strlen(json_encode($responseData)) . ' bytes',

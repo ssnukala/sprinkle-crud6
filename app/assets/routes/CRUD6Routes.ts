@@ -3,17 +3,19 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            // Don't set title here - let child components set it dynamically based on schema
+            title: '',        // Empty string allows breadcrumb initialization; components update dynamically
+            description: ''   // Empty string allows breadcrumb initialization; components update dynamically
         },
         children: [
             {
                 path: '',
                 name: 'crud6.list',
                 meta: {
-                    // Title will be set by PageList.vue based on schema
                     permission: {
                         slug: 'uri_crud6'
-                    }
+                    },
+                    title: '',        // Empty string allows breadcrumb initialization; PageList.vue updates dynamically
+                    description: ''   // Empty string allows breadcrumb initialization; PageList.vue updates dynamically
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -21,7 +23,7 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    // Title will be set by PageRow/PageMasterDetail based on schema and record data
+                    title: '',        // Empty string allows breadcrumb initialization; PageRow/PageMasterDetail update dynamically
                     description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'

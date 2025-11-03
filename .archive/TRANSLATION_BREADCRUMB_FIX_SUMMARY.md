@@ -68,9 +68,9 @@ This pattern allows:
 
 Applied same fix to: `CREATE`, `DELETE`, and `UPDATE` keys.
 
-### Fix 2: Remove Static Titles from Route Meta
+### Fix 2: Use Empty Strings for Route Meta Titles
 
-Removed static titles from route configuration and added explanatory comments:
+Changed static title placeholders to empty strings to allow breadcrumb initialization:
 
 ```typescript
 // AFTER (FIXED)
@@ -78,7 +78,7 @@ Removed static titles from route configuration and added explanatory comments:
     path: ':id',
     name: 'crud6.view',
     meta: {
-        // Title will be set by PageRow/PageMasterDetail based on schema and record data
+        title: '',        // Empty string allows breadcrumb initialization; component updates dynamically
         description: 'CRUD6.INFO_PAGE',
         permission: {
             slug: 'uri_crud6'
@@ -88,7 +88,13 @@ Removed static titles from route configuration and added explanatory comments:
 }
 ```
 
-Components already handle dynamic title setting:
+**Why Empty Strings Instead of Removing the Field:**
+- UserFrosting's breadcrumb component requires `title` and `description` fields to exist in route meta
+- Empty strings (`''`) allow breadcrumb component to initialize properly
+- Vue components can then dynamically update these values after loading schema/data
+- Completely removing the fields prevents breadcrumb component from rendering
+
+Components handle dynamic title updates:
 - **PageList.vue**: Sets title from `schema.title` or capitalized model name
 - **PageRow.vue**: Sets initial title, updates with schema title and record name
 - **PageMasterDetail.vue**: Sets initial title, updates with schema title and record name

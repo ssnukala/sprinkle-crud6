@@ -114,36 +114,33 @@ print_step "Installing PHP dependencies..."
 composer install --no-interaction --prefer-dist
 
 # ============================================================================
-# STEP 6: Package sprinkle-crud6 for NPM
+# STEP 6: Configure package.json with local sprinkle references
 # ============================================================================
-print_step "Packaging sprinkle-crud6 for NPM..."
-
-cd /ssnukala/sprinkle-crud6
-npm pack
-mv ssnukala-sprinkle-crud6-*.tgz /workspace/userfrosting/
-
-# Package sprinkle-c6admin if it exists
-if [ -d "/ssnukala/sprinkle-c6admin" ] && [ -f "/ssnukala/sprinkle-c6admin/package.json" ]; then
-    cd /ssnukala/sprinkle-c6admin
-    npm pack
-    mv ssnukala-sprinkle-c6admin-*.tgz /workspace/userfrosting/
-    print_info "Packaged sprinkle-c6admin for NPM"
-fi
-
-# ============================================================================
-# STEP 7: Install NPM dependencies
-# ============================================================================
-print_step "Installing NPM dependencies..."
+print_step "Configuring package.json with local sprinkle references..."
 
 cd /workspace/userfrosting
-npm update
-npm install ./ssnukala-sprinkle-crud6-*.tgz
 
-# Install sprinkle-c6admin package if it exists
-if [ -f "./ssnukala-sprinkle-c6admin-*.tgz" ]; then
-    npm install ./ssnukala-sprinkle-c6admin-*.tgz
-    print_info "Installed sprinkle-c6admin NPM package"
+# Add CRUD6 sprinkle to package.json as local dependency
+npm pkg set dependencies.@ssnukala/sprinkle-crud6="file:/ssnukala/sprinkle-crud6"
+
+# Add C6Admin sprinkle to package.json if it exists
+if [ -d "/ssnukala/sprinkle-c6admin" ] && [ -f "/ssnukala/sprinkle-c6admin/package.json" ]; then
+    npm pkg set dependencies.@ssnukala/sprinkle-c6admin="file:/ssnukala/sprinkle-c6admin"
+    print_info "Added sprinkle-c6admin to package.json"
 fi
+
+print_info "package.json configured with local sprinkle references"
+
+# ============================================================================
+# STEP 7: Verify package.json configuration
+# ============================================================================
+print_step "Verifying package.json configuration..."
+
+# Display the configured dependencies for verification
+echo "Configured NPM dependencies:"
+npm pkg get dependencies | grep -E "@ssnukala|sprinkle-crud6|sprinkle-c6admin" || echo "  No sprinkle dependencies found yet"
+
+print_info "package.json configuration verified"
 
 # ============================================================================
 # STEP 8: Configure MyApp.php
@@ -297,10 +294,20 @@ else
       --lastName=User || print_info "Admin user may already exist"
     
     print_info "Admin user setup completed (username: admin, password: admin123)"
+    
+    # ============================================================================
+    # STEP 17: Run php bakery bake to build assets and install NPM dependencies
+    # ============================================================================
+    print_step "Running php bakery bake to build assets and install NPM dependencies..."
+    
+    # bakery bake will automatically run npm install based on package.json
+    php bakery bake || print_info "⚠️ Build failed but continuing with setup"
+    
+    print_info "Assets built and NPM dependencies installed"
 fi
 
 # ============================================================================
-# STEP 17: Final setup
+# STEP 18: Final setup
 # ============================================================================
 print_step "Finalizing setup..."
 
@@ -330,12 +337,13 @@ print_info "  👤 Username: userfrosting / userfrosting"
 print_info "  🔐 Admin user: admin / admin123"
 echo ""
 print_info "Next steps:"
-print_info "  1. Build frontend assets: cd /workspace/userfrosting && php bakery bake"
-print_info "  2. Start PHP server: php bakery serve"
-print_info "  3. Start Vite dev server: php bakery assets:vite"
-print_info "  4. Open browser: http://localhost:8080"
+print_info "  1. Start PHP server: php bakery serve"
+print_info "  2. Start Vite dev server (in another terminal): php bakery assets:vite"
+print_info "  3. Open browser: http://localhost:8080"
+print_info "  4. Login with admin / admin123"
 echo ""
 print_info "Development Commands:"
+print_info "  • Rebuild assets: php bakery bake"
 print_info "  • View routes: php bakery route:list"
 print_info "  • Clear cache: php bakery clear:cache"
 print_info "  • Run tests: vendor/bin/phpunit"

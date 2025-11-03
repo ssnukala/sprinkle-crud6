@@ -42,17 +42,13 @@ abstract class Base
      * @var array<string, array> Cache of loaded schemas by model name
      */
     protected array $cachedSchema = [];
-    
+
     /**
      * @var array<string, mixed> Route parameters extracted from request
      */
     protected array $routeParams = [];
 
-    /**
-    * @var bool debugMode set using the config setting
-    */
     protected bool $debugMode = false;
-    
     /**
      * Constructor for base CRUD6 controller.
      * 
@@ -69,7 +65,8 @@ abstract class Base
         protected SchemaService $schemaService,
         protected Config $config
     ) {
-        $this->debugMode = $this->config->get('crud6.debug_mode', false);        
+        //$this->logger->debug("[CRUD6 Base Constructor] Initialized - Config Array", $this->config->get('crud6'));
+        $this->debugMode = (bool) $this->config->get('crud6.debug_mode', false);
     }
 
     /**
@@ -87,6 +84,8 @@ abstract class Base
     {
         if ($this->debugMode) {
             $this->logger->debug($message, $context);
+        } else {
+            //$this->logger->debug("[CRUD6 Base DebugLog] Debug mode disabled, skipping log for message: {$message}");
         }
     }
 
@@ -119,17 +118,17 @@ abstract class Base
             'request_method' => $request->getMethod(),
             'schema_keys' => array_keys($crudSchema),
         ]);
-        
+
         // Common logic here, e.g. logging, validation, etc.
         $modelName = $this->getModelNameFromRequest($request);
         $this->cachedSchema[$modelName] = $crudSchema;
         $this->validateAccess($modelName, 'read');
-        
+
         $this->debugLog("CRUD6 [Base] Common initialization complete", [
             'model' => $modelName,
             'cached_schema_count' => count($this->cachedSchema),
         ]);
-        
+
         // You can set up other shared state here
         return $response;
     }
@@ -153,7 +152,7 @@ abstract class Base
         $schema = is_string($modelNameOrSchema)
             ? $this->getSchema($modelNameOrSchema)
             : $modelNameOrSchema;
-            
+
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
 
         if (!$this->authenticator->checkAccess($permission)) {
@@ -270,10 +269,10 @@ abstract class Base
      */
     protected function getEditableFields(string|array $modelNameOrSchema): array
     {
-        $schema = is_string($modelNameOrSchema) 
+        $schema = is_string($modelNameOrSchema)
             ? $this->schemaService->getSchema($modelNameOrSchema)
             : $modelNameOrSchema;
-            
+
         $editable = [];
         foreach ($schema['fields'] ?? [] as $name => $field) {
             // Check if field is explicitly marked as editable
@@ -283,7 +282,7 @@ abstract class Base
                 }
                 continue;
             }
-            
+
             // If no explicit editable attribute, check for non-editable flags
             if ($field['readonly'] ?? false) {
                 continue;
@@ -294,11 +293,11 @@ abstract class Base
             if ($field['computed'] ?? false) {
                 continue;
             }
-            
+
             // Field is editable by default
             $editable[] = $name;
         }
-        
+
         return $editable;
     }
 
@@ -315,12 +314,12 @@ abstract class Base
      */
     protected function getValidationRules(string|array $modelNameOrSchema): array
     {
-        $schema = is_string($modelNameOrSchema) 
+        $schema = is_string($modelNameOrSchema)
             ? $this->schemaService->getSchema($modelNameOrSchema)
             : $modelNameOrSchema;
-            
+
         $editableFields = $this->getEditableFields($schema);
-        
+
         $rules = [];
         foreach ($schema['fields'] ?? [] as $name => $field) {
             // Only include validation rules for editable fields
@@ -432,18 +431,18 @@ abstract class Base
         $updateData = [];
         $editableFields = $this->getEditableFields($schema);
         $fields = $schema['fields'] ?? [];
-        
+
         foreach ($editableFields as $fieldName) {
             if (isset($data[$fieldName]) && isset($fields[$fieldName])) {
                 $updateData[$fieldName] = $this->transformFieldValue($fields[$fieldName], $data[$fieldName]);
             }
         }
-        
+
         // Update timestamp if configured
         if ($schema['timestamps'] ?? false) {
             $updateData['updated_at'] = date('Y-m-d H:i:s');
         }
-        
+
         return $updateData;
     }
 

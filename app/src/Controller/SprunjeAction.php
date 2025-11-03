@@ -68,9 +68,9 @@ class SprunjeAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        
+
         parent::__invoke($crudSchema, $crudModel, $request, $response);
-        
+
         $this->debugLog("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
             'model' => $crudSchema['model'],
             'uri' => (string) $request->getUri(),
@@ -80,14 +80,14 @@ class SprunjeAction extends Base
         try {
             // Get the relation parameter if it exists
             $relation = $this->getParameter($request, 'relation', 'NONE');
-            
+
             $this->debugLog("CRUD6 [SprunjeAction] Relation parameter parsed", [
                 'relation' => $relation,
                 'has_detail' => isset($crudSchema['detail']) ? 'yes' : 'no',
                 'has_details' => isset($crudSchema['details']) ? 'yes' : 'no',
                 'has_relationships' => isset($crudSchema['relationships']) ? 'yes' : 'no',
             ]);
-            
+
             // Check if this relation is configured in the schema's detail/details section
             // Support both singular 'detail' (legacy) and plural 'details' array
             $detailConfig = null;
@@ -97,16 +97,16 @@ class SprunjeAction extends Base
                     'relation' => $relation,
                     'details_count' => count($crudSchema['details']),
                 ]);
-                
+
                 foreach ($crudSchema['details'] as $config) {
                     $configModel = $config['model'] ?? 'null';
                     $matches = (isset($config['model']) && $config['model'] === $relation);
-                    
+
                     $this->debugLog("CRUD6 [SprunjeAction] Checking detail config", [
                         'config_model' => $configModel,
                         'matches' => $matches ? 'YES' : 'no',
                     ]);
-                    
+
                     if ($matches) {
                         $detailConfig = $config;
                         break;
@@ -117,17 +117,17 @@ class SprunjeAction extends Base
                 $this->debugLog("CRUD6 [SprunjeAction] Checking singular detail config", [
                     'model' => $crudSchema['detail']['model'] ?? 'null',
                 ]);
-                
+
                 if (isset($crudSchema['detail']['model']) && $crudSchema['detail']['model'] === $relation) {
                     $detailConfig = $crudSchema['detail'];
                 }
             }
-            
+
             $this->debugLog("CRUD6 [SprunjeAction] Detail config search result", [
                 'found' => $detailConfig !== null ? 'YES' : 'NO',
                 'relation' => $relation,
             ]);
-            
+
             if ($relation !== 'NONE' && $detailConfig !== null) {
                 // Handle dynamic relation based on schema detail configuration
                 $this->debugLog("CRUD6 [SprunjeAction] Handling detail relation", [
@@ -135,24 +135,24 @@ class SprunjeAction extends Base
                     'relation' => $relation,
                     'detail_config' => $detailConfig,
                 ]);
-                
+
                 // Load the related model's schema to get its configuration
                 $relatedSchema = $this->schemaService->getSchema($relation);
-                
+
                 $this->debugLog("CRUD6 [SprunjeAction] Related schema loaded", [
                     'relation' => $relation,
                     'related_table' => $relatedSchema['table'] ?? null,
                 ]);
-                
+
                 // Get the foreign key from detail config
                 $foreignKey = $detailConfig['foreign_key'] ?? 'id';
-                
+
                 // Get query parameters
                 $params = $request->getQueryParams();
-                
+
                 // Check if there's a matching relationship definition (for many-to-many)
                 $relationshipConfig = $this->findRelationshipConfig($crudSchema, $relation);
-                
+
                 $this->debugLog("CRUD6 [SprunjeAction] Setting up relation sprunje", [
                     'relation' => $relation,
                     'foreign_key' => $foreignKey,
@@ -160,25 +160,25 @@ class SprunjeAction extends Base
                     'has_relationship_config' => $relationshipConfig !== null,
                     'query_params' => $params,
                 ]);
-                
+
                 // For 'users' relation, use UserSprunje for compatibility
                 if ($relation === 'users') {
                     $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation");
-                    
+
                     $this->userSprunje->setOptions($params);
                     $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
                         return $query->where($foreignKey, $crudModel->id);
                     });
                     return $this->userSprunje->toResponse($response);
                 }
-                
+
                 // For other relations, use CRUD6Sprunje with dynamic configuration
                 $relatedModel = $this->schemaService->getModelInstance($relation);
-                
+
                 $sortableFields = $this->getSortableFieldsFromSchema($relatedSchema);
                 $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
                 $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
-                
+
                 $this->debugLog("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
                     'relation' => $relation,
                     'table' => $relatedModel->getTable(),
@@ -186,7 +186,7 @@ class SprunjeAction extends Base
                     'filterable_fields' => $filterableFields,
                     'list_fields' => $listFields,
                 ]);
-                
+
                 // Setup sprunje with related model configuration
                 $this->sprunje->setupSprunje(
                     $relatedModel->getTable(),
@@ -194,9 +194,11 @@ class SprunjeAction extends Base
                     $filterableFields,
                     $listFields
                 );
-                
+
                 $this->sprunje->setOptions($params);
-                
+
+                $debugMode = $this->debugMode; // Capture debug mode for use in closure
+
                 // Build the query based on relationship type
                 if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
                     // Handle many-to-many relationship via pivot table
@@ -207,7 +209,7 @@ class SprunjeAction extends Base
                         'related_key' => $relationshipConfig['related_key'] ?? null,
                         'parent_id' => $crudModel->id,
                     ]);
-                    
+
                     // Validate required relationship configuration
                     if (empty($relationshipConfig['pivot_table'])) {
                         throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'pivot_table' configuration");
@@ -218,38 +220,42 @@ class SprunjeAction extends Base
                     if (empty($relationshipConfig['related_key'])) {
                         throw new \RuntimeException("Many-to-many relationship '{$relation}' missing required 'related_key' configuration");
                     }
-                    
+
                     // Build manual JOIN query to avoid Eloquent's relationship methods
                     // Eloquent's belongsToMany creates fresh CRUD6Model instances with default table 'CRUD6_NOT_SET'
                     // We build the JOIN manually using the configured model's actual table names
                     $logger = $this->logger; // Capture logger for use in closure
-                    
+
                     $this->debugLog("CRUD6 [SprunjeAction] Building manual belongsToMany JOIN", [
                         'related_model_table' => $relatedModel->getTable(),
                         'parent_model_table' => $crudModel->getTable(),
                     ]);
-                    
+
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
-                        $logger
+                        $logger,
+                        $debugMode
                     ) {
-                        $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToMany query", [
-                            'related_table' => $relatedModel->getTable(),
-                            'pivot_table' => $relationshipConfig['pivot_table'],
-                            'foreign_key' => $relationshipConfig['foreign_key'],
-                            'related_key' => $relationshipConfig['related_key'],
-                            'parent_id' => $crudModel->id,
-                        ]);
-                        
+                        if ($debugMode) {
+                            $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToMany query", [
+                                'related_table' => $relatedModel->getTable(),
+                                'pivot_table' => $relationshipConfig['pivot_table'],
+                                'foreign_key' => $relationshipConfig['foreign_key'],
+                                'related_key' => $relationshipConfig['related_key'],
+                                'parent_id' => $crudModel->id,
+                            ]);
+                        } else {
+                            //$logger->debug("CRUD6 [SprunjeAction] Debug mode is DISABLED inside belongsToMany closure");
+                        }
                         // Build the query manually to avoid Eloquent creating unconfigured CRUD6Model instances
                         // Start with the related model's table
                         $relatedTable = $relatedModel->getTable();
                         $pivotTable = $relationshipConfig['pivot_table'];
                         $foreignKey = $relationshipConfig['foreign_key'];
                         $relatedKey = $relationshipConfig['related_key'];
-                        
+
                         // Join the pivot table with the related table
                         return $query->join(
                             $pivotTable,
@@ -262,43 +268,47 @@ class SprunjeAction extends Base
                     // Handle belongs-to-many-through relationship (e.g., users -> roles -> permissions)
                     // This is completely generic - works for any through relationship defined in the schema
                     $throughModelName = $relationshipConfig['through'] ?? null;
-                    
+
                     $this->debugLog("CRUD6 [SprunjeAction] Using belongs-to-many-through relationship", [
                         'relation' => $relation,
                         'through' => $throughModelName,
                         'config' => $relationshipConfig,
                     ]);
-                    
+
                     if (empty($throughModelName)) {
                         throw new \RuntimeException("belongs_to_many_through relationship '{$relation}' missing required 'through' configuration");
                     }
-                    
+
                     // Instantiate and configure the through model (e.g., "roles")
                     // This ensures the through model has its table name properly set
                     $throughModel = $this->schemaService->getModelInstance($throughModelName);
-                    
+
                     $this->debugLog("CRUD6 [SprunjeAction] Through model instantiated", [
                         'through_model' => $throughModelName,
                         'through_table' => $throughModel->getTable(),
                     ]);
-                    
+
                     $logger = $this->logger; // Capture logger for use in closure
-                    
+
                     $this->sprunje->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
                         $throughModel,
-                        $logger
+                        $logger,
+                        $debugMode
                     ) {
-                        $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToManyThrough query", [
-                            'related_table' => $relatedModel->getTable(),
-                            'through_table' => $throughModel->getTable(),
-                            'first_pivot_table' => $relationshipConfig['first_pivot_table'],
-                            'second_pivot_table' => $relationshipConfig['second_pivot_table'],
-                            'parent_id' => $crudModel->id,
-                        ]);
-                        
+                        if ($debugMode) {
+                            $logger->debug("CRUD6 [SprunjeAction] Building manual belongsToManyThrough query", [
+                                'related_table' => $relatedModel->getTable(),
+                                'through_table' => $throughModel->getTable(),
+                                'first_pivot_table' => $relationshipConfig['first_pivot_table'],
+                                'second_pivot_table' => $relationshipConfig['second_pivot_table'],
+                                'parent_id' => $crudModel->id,
+                            ]);
+                        } else {
+                            //$logger->debug("CRUD6 [SprunjeAction] Debug mode is DISABLED inside belongsToManyThrough closure");
+                        }
                         // Build the query manually to avoid Eloquent creating unconfigured CRUD6Model instances
                         // This handles the double many-to-many relationship (e.g., users -> roles -> permissions)
                         $relatedTable = $relatedModel->getTable();
@@ -308,7 +318,7 @@ class SprunjeAction extends Base
                         $firstPivotTable = $relationshipConfig['first_pivot_table'];
                         $firstForeignKey = $relationshipConfig['first_foreign_key'];
                         $firstRelatedKey = $relationshipConfig['first_related_key'];
-                        
+
                         // Join chain: related_table -> second_pivot -> first_pivot
                         return $query
                             ->join(
@@ -333,24 +343,24 @@ class SprunjeAction extends Base
                         'foreign_key' => $foreignKey,
                         'parent_id' => $crudModel->id,
                     ]);
-                    
+
                     $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
                         return $query->where($foreignKey, $crudModel->id);
                     });
                 }
-                
+
                 $this->debugLog("CRUD6 [SprunjeAction] Relation sprunje configured, returning response", [
                     'relation' => $relation,
                     'parent_id' => $crudModel->id,
                 ]);
-                
+
                 return $this->sprunje->toResponse($response);
             }
-            
+
             // Default sprunje for main model listing
             $modelName = $this->getModelNameFromRequest($request);
             $params = $request->getQueryParams();
-            
+
             $sortableFields = $this->getSortableFields($modelName);
             $filterableFields = $this->getFilterableFields($modelName);
             $listFields = $this->getListableFields($modelName);
@@ -372,7 +382,7 @@ class SprunjeAction extends Base
             );
 
             $this->sprunje->setOptions($params);
-            
+
             $this->debugLog("CRUD6 [SprunjeAction] Main sprunje configured, returning response", [
                 'model' => $modelName,
             ]);
@@ -390,7 +400,7 @@ class SprunjeAction extends Base
             throw $e;
         }
     }
-    
+
     /**
      * Find a relationship configuration by name in the schema.
      * 
@@ -402,16 +412,16 @@ class SprunjeAction extends Base
     protected function findRelationshipConfig(array $schema, string $relationName): ?array
     {
         $relationships = $schema['relationships'] ?? [];
-        
+
         foreach ($relationships as $config) {
             if (isset($config['name']) && $config['name'] === $relationName) {
                 return $config;
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Get sortable fields from a schema array.
      * 
@@ -422,7 +432,7 @@ class SprunjeAction extends Base
     protected function getSortableFieldsFromSchema(array $schema): array
     {
         $sortable = [];
-        
+
         if (isset($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
                 if (isset($fieldConfig['sortable']) && $fieldConfig['sortable'] === true) {
@@ -430,10 +440,10 @@ class SprunjeAction extends Base
                 }
             }
         }
-        
+
         return $sortable;
     }
-    
+
     /**
      * Get filterable fields from a schema array.
      * 
@@ -444,7 +454,7 @@ class SprunjeAction extends Base
     protected function getFilterableFieldsFromSchema(array $schema): array
     {
         $filterable = [];
-        
+
         if (isset($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
                 if (isset($fieldConfig['filterable']) && $fieldConfig['filterable'] === true) {
@@ -452,10 +462,10 @@ class SprunjeAction extends Base
                 }
             }
         }
-        
+
         return $filterable;
     }
-    
+
     /**
      * Get listable fields from a schema array.
      * 
@@ -469,7 +479,7 @@ class SprunjeAction extends Base
     protected function getListableFieldsFromSchema(array $schema): array
     {
         $listable = [];
-        
+
         if (isset($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
                 // Only include fields explicitly marked as listable: true
@@ -478,7 +488,7 @@ class SprunjeAction extends Base
                 }
             }
         }
-        
+
         return $listable;
     }
 }

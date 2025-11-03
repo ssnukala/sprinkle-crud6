@@ -22,6 +22,7 @@ use UserFrosting\Sprinkle\CRUD6\Exceptions\CRUD6NotFoundException;
 use UserFrosting\Sprinkle\Core\Middlewares\Injector\AbstractInjector;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+use UserFrosting\Config\Config;
 
 /**
  * CRUD6 Injector Middleware.
@@ -49,26 +50,29 @@ class CRUD6Injector extends AbstractInjector
      * This is the model instance that will be automatically injected into controller parameters
      */
     protected string $attribute = 'crudModel';
-    
+
     /**
      * @var string Placeholder name for record ID in route
      */
     protected string $placeholder = 'id';
-    
+
     /**
      * @var string Route parameter name for model
      */
     protected string $crud_slug = 'model';
-    
+
     /**
      * @var string Request attribute name for injected model
      */
     protected string $model_attribute = 'crudModel';
-    
+
     /**
      * @var string Request attribute name for injected schema
      */
     protected string $schema_attribute = 'crudSchema';
+
+
+    protected bool $debugMode = false;
 
     /**
      * Constructor for CRUD6Injector.
@@ -81,7 +85,32 @@ class CRUD6Injector extends AbstractInjector
         protected CRUD6ModelInterface $crudModel,
         protected DebugLoggerInterface $debugLogger,
         protected SchemaService $schemaService,
-    ) {}
+        protected Config $config
+    ) {
+        $this->debugMode = (bool) $this->config->get('crud6.debug_mode', false);
+    }
+
+
+    /**
+     * Log debug message if debug mode is enabled.
+     * 
+     * Wrapper around DebugLoggerInterface that only logs when debug_mode config is true.
+     * This prevents the need to check isDebugMode() before every logger->debug() call.
+     * 
+     * @param string $message Debug message
+     * @param array  $context Context data for structured logging
+     * 
+     * @return void
+     */
+    protected function debugLog(string $message, array $context = []): void
+    {
+        if ($this->debugMode) {
+            $this->debugLogger->debug($message, $context);
+        } else {
+            //$this->debugLogger->debug("[CRUD6 Base DebugLog] Debug mode disabled, skipping log for message: {$message}");
+        }
+    }
+
 
     /**
      * Returns the configured CRUD6 model instance for the specific record, or a configured empty model.
@@ -100,15 +129,7 @@ class CRUD6Injector extends AbstractInjector
         $modelName = $this->currentModelName;
 
         // DEBUG: Log model instance creation
-        error_log(sprintf(
-            "[CRUD6 CRUD6Injector] getInstance() called - model: %s, connection: %s, id: %s, timestamp: %s",
-            $modelName,
-            $this->currentConnectionName ?? 'null',
-            $id ?? 'null',
-            date('Y-m-d H:i:s.u')
-        ));
-
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Getting model instance", [
+        $this->debugLog("CRUD6 [CRUD6Injector] Getting model instance", [
             'model' => $modelName,
             'connection' => $this->currentConnectionName,
             'id' => $id,
@@ -123,21 +144,21 @@ class CRUD6Injector extends AbstractInjector
 
         // Load schema and configure model - pass connection for path-based lookup
         $schema = $this->schemaService->getSchema($modelName, $this->currentConnectionName);
-        
+
         // Store schema for reuse in process() to avoid duplicate loading
         $this->currentSchema = $schema;
-        
+
         // DEBUG: Log after schema load
         error_log(sprintf(
             "[CRUD6 CRUD6Injector] Schema loaded in getInstance() and CACHED for reuse - model: %s, table: %s",
             $modelName,
             $schema['table'] ?? 'unknown'
         ));
-        
+
         $modelInstance = clone $this->crudModel;
         $modelInstance->configureFromSchema($schema);
 
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Schema loaded and model configured", [
+        $this->debugLog("CRUD6 [CRUD6Injector] Schema loaded and model configured", [
             'model' => $modelName,
             'table' => $modelInstance->getTable(),
             'connection' => $modelInstance->getConnectionName(),
@@ -148,7 +169,7 @@ class CRUD6Injector extends AbstractInjector
         // Note: schema may already have connection set from path-based lookup
         if ($this->currentConnectionName !== null) {
             $modelInstance->setConnection($this->currentConnectionName);
-            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Connection overridden", [
+            $this->debugLog("CRUD6 [CRUD6Injector] Connection overridden", [
                 'model' => $modelName,
                 'connection' => $this->currentConnectionName,
             ]);
@@ -160,7 +181,7 @@ class CRUD6Injector extends AbstractInjector
                 "[CRUD6 CRUD6Injector] Returning configured empty model (no ID) - model: %s",
                 $modelName
             ));
-            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Returning configured empty model (no ID)", [
+            $this->debugLog("CRUD6 [CRUD6Injector] Returning configured empty model (no ID)", [
                 'model' => $modelName,
             ]);
             return $modelInstance;
@@ -168,7 +189,7 @@ class CRUD6Injector extends AbstractInjector
 
         // Find the specific record
         $primaryKey = $schema['primary_key'] ?? 'id';
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Looking up record by ID", [
+        $this->debugLog("CRUD6 [CRUD6Injector] Looking up record by ID", [
             'model' => $modelName,
             'id' => $id,
             'primary_key' => $primaryKey,
@@ -198,8 +219,8 @@ class CRUD6Injector extends AbstractInjector
             $modelName,
             $id
         ));
-        
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Record found and loaded", [
+
+        $this->debugLog("CRUD6 [CRUD6Injector] Record found and loaded", [
             'model' => $modelName,
             'id' => $id,
             'record_data' => $record->toArray(),
@@ -221,7 +242,7 @@ class CRUD6Injector extends AbstractInjector
      * @var string|null
      */
     private ?string $currentConnectionName = null;
-    
+
     /**
      * Store the loaded schema to avoid duplicate loading.
      * 
@@ -258,7 +279,7 @@ class CRUD6Injector extends AbstractInjector
             date('Y-m-d H:i:s.u')
         ));
 
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS START =====", [
+        $this->debugLog("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS START =====", [
             'uri' => (string) $request->getUri(),
             'method' => $request->getMethod(),
         ]);
@@ -298,7 +319,7 @@ class CRUD6Injector extends AbstractInjector
             $id ?? 'null'
         ));
 
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Route parsed", [
+        $this->debugLog("CRUD6 [CRUD6Injector] Route parsed", [
             'model' => $this->currentModelName,
             'connection' => $this->currentConnectionName,
             'id' => $id,
@@ -321,7 +342,7 @@ class CRUD6Injector extends AbstractInjector
         // Reuse schema that was loaded in getInstance() instead of loading again
         // This eliminates the duplicate schema load that was happening on every request
         $schema = $this->currentSchema;
-        
+
         if ($schema === null) {
             // This should never happen, but log if it does
             error_log(sprintf(
@@ -330,14 +351,14 @@ class CRUD6Injector extends AbstractInjector
             ));
             $schema = $this->schemaService->getSchema($this->currentModelName, $this->currentConnectionName);
         }
-        
+
         error_log(sprintf(
             "[CRUD6 CRUD6Injector] Schema ready for injection - model: %s, table: %s",
             $this->currentModelName,
             $schema['table'] ?? 'unknown'
         ));
-        
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Injecting model and schema into request", [
+
+        $this->debugLog("CRUD6 [CRUD6Injector] Injecting model and schema into request", [
             'model' => $this->currentModelName,
             'id' => $id,
             'schema_keys' => array_keys($schema),
@@ -354,7 +375,7 @@ class CRUD6Injector extends AbstractInjector
             $this->schema_attribute
         ));
 
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] Request attributes set", [
+        $this->debugLog("CRUD6 [CRUD6Injector] Request attributes set", [
             'model' => $this->currentModelName,
             'model_attribute_name' => $this->model_attribute,
             'schema_attribute_name' => $this->schema_attribute,
@@ -369,23 +390,23 @@ class CRUD6Injector extends AbstractInjector
             $this->currentModelName
         ));
 
-        $this->debugLogger->debug("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS COMPLETE =====", [
+        $this->debugLog("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS COMPLETE =====", [
             'model' => $this->currentModelName,
         ]);
 
         try {
             $response = $handler->handle($request);
-            
+
             error_log(sprintf(
                 "[CRUD6 CRUD6Injector] Controller completed - status: %d",
                 $response->getStatusCode()
             ));
-            
-            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Controller invocation successful", [
+
+            $this->debugLog("CRUD6 [CRUD6Injector] Controller invocation successful", [
                 'model' => $this->currentModelName,
                 'response_status' => $response->getStatusCode(),
             ]);
-            
+
             return $response;
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -395,7 +416,7 @@ class CRUD6Injector extends AbstractInjector
                 $e->getFile(),
                 $e->getLine()
             ));
-            
+
             $this->debugLogger->error("CRUD6 [CRUD6Injector] Controller invocation failed", [
                 'model' => $this->currentModelName,
                 'error_type' => get_class($e),
@@ -424,14 +445,14 @@ class CRUD6Injector extends AbstractInjector
             [$modelName, $connectionName] = explode('@', $modelParam, 2);
             $this->currentModelName = $modelName;
             $this->currentConnectionName = $connectionName;
-            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Parsed model with connection", [
+            $this->debugLog("CRUD6 [CRUD6Injector] Parsed model with connection", [
                 'model' => $modelName,
                 'connection' => $connectionName,
             ]);
         } else {
             $this->currentModelName = $modelParam;
             $this->currentConnectionName = null;
-            $this->debugLogger->debug("CRUD6 [CRUD6Injector] Parsed model (no connection override)", [
+            $this->debugLog("CRUD6 [CRUD6Injector] Parsed model (no connection override)", [
                 'model' => $modelParam,
             ]);
         }

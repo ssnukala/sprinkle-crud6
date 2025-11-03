@@ -49,6 +49,11 @@ abstract class Base
     protected array $routeParams = [];
 
     /**
+    * @var bool debugMode set using the config setting
+    */
+    protected bool $debugMode = false;
+    
+    /**
      * Constructor for base CRUD6 controller.
      * 
      * @param AuthorizationManager $authorizer    Authorization manager for permission checks
@@ -63,16 +68,8 @@ abstract class Base
         protected DebugLoggerInterface $logger,
         protected SchemaService $schemaService,
         protected Config $config
-    ) {}
-
-    /**
-     * Check if debug mode is enabled.
-     * 
-     * @return bool True if debug mode is enabled
-     */
-    protected function isDebugMode(): bool
-    {
-        return $this->config->get('crud6.debug_mode', false);
+    ) {
+        $this->debugMode = $this->config->get('crud6.debug_mode', false);        
     }
 
     /**
@@ -88,7 +85,7 @@ abstract class Base
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if ($this->isDebugMode()) {
+        if ($this->debugMode) {
             $this->logger->debug($message, $context);
         }
     }

@@ -127,6 +127,71 @@ watch(
 const emits = defineEmits(['success'])
 
 /**
+ * Helper function to parse textarea type format (e.g., "textarea-r5c60")
+ * Returns { rows, cols } or defaults if not specified
+ */
+const parseTextareaConfig = (type: string): { rows: number; cols: number | undefined } => {
+    if (!type || type === 'text' || type === 'textarea') {
+        return { rows: 6, cols: undefined }
+    }
+    
+    // Match patterns like "textarea-r5c60", "textarea-r5", "text-r3c40"
+    const match = type.match(/^(?:text|textarea)(?:-r(\d+))?(?:c(\d+))?$/)
+    if (match) {
+        const rows = match[1] ? parseInt(match[1]) : 6
+        const cols = match[2] ? parseInt(match[2]) : undefined
+        return { rows, cols }
+    }
+    
+    return { rows: 6, cols: undefined }
+}
+
+/**
+ * Helper function to get HTML input type for a field
+ * Maps CRUD6 field types to HTML5 input types
+ */
+const getInputType = (fieldType: string): string => {
+    const typeMap: Record<string, string> = {
+        'email': 'email',
+        'url': 'url',
+        'phone': 'tel',
+        'zip': 'text',
+        'password': 'password',
+        'date': 'date',
+        'datetime': 'datetime-local',
+        'number': 'number',
+        'integer': 'number',
+        'decimal': 'number',
+        'float': 'number'
+    }
+    
+    return typeMap[fieldType] || 'text'
+}
+
+/**
+ * Helper function to get pattern attribute for validation
+ */
+const getInputPattern = (fieldType: string, validation?: any): string | undefined => {
+    // If validation has regex, use that
+    if (validation?.regex) {
+        if (typeof validation.regex === 'string') {
+            return validation.regex
+        }
+        if (validation.regex.pattern) {
+            return validation.regex.pattern
+        }
+    }
+    
+    // Default patterns for field types
+    const patternMap: Record<string, string> = {
+        'zip': '\\d{5}(-\\d{4})?',  // US ZIP: 5 digits or 9 digits with dash
+        'phone': '\\d{3}-\\d{3}-\\d{4}',  // US phone: XXX-XXX-XXXX
+    }
+    
+    return patternMap[fieldType]
+}
+
+/**
  * Methods - Submit the form to the API and handle the response
  */
 const submitForm = async () => {
@@ -276,13 +341,14 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         v-model="formData[fieldKey]"
                     />
                     
-                    <!-- Text input -->
+                    <!-- Text input (including email, url, phone, zip) -->
                     <input
-                        v-else-if="['string', 'email', 'url'].includes(field.type) || !field.type"
+                        v-else-if="['string', 'email', 'url', 'phone', 'zip'].includes(field.type) || !field.type"
                         :id="fieldKey"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
-                        :type="field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : 'text'"
+                        :type="getInputType(field.type || 'string')"
+                        :pattern="getInputPattern(field.type, field.validation)"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
@@ -345,16 +411,17 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />
                     
-                    <!-- Textarea for text fields -->
+                    <!-- Textarea for text fields (supports text, textarea, textarea-rXcY formats) -->
                     <textarea
-                        v-else-if="field.type === 'text'"
+                        v-else-if="field.type === 'text' || field.type === 'textarea' || field.type?.startsWith('textarea-') || field.type?.startsWith('text-')"
                         :id="fieldKey"
                         class="uk-textarea"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
-                        :rows="field.rows || 6"
+                        :rows="parseTextareaConfig(field.type).rows"
+                        :cols="parseTextareaConfig(field.type).cols"
                         :required="field.required"
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />

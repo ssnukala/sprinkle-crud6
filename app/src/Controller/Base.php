@@ -365,6 +365,12 @@ abstract class Base
     protected function transformFieldValue(array $fieldConfig, mixed $value): mixed
     {
         $type = $fieldConfig['type'] ?? 'string';
+        
+        // Handle textarea with row/column specification (e.g., "textarea-r5c60")
+        if (preg_match('/^(?:text|textarea)(?:-r\d+)?(?:c\d+)?$/', $type)) {
+            return (string) $value;
+        }
+        
         switch ($type) {
             case 'integer':
                 return (int) $value;
@@ -381,6 +387,12 @@ abstract class Base
             case 'password':
                 // Password fields should be hashed by the controller before calling this method
                 // Return the value as-is here (should already be hashed)
+                return (string) $value;
+            case 'phone':
+            case 'zip':
+            case 'email':
+            case 'url':
+                // These are string types with specific formatting/validation
                 return (string) $value;
             default:
                 return (string) $value;

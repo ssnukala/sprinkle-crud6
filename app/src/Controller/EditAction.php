@@ -13,6 +13,7 @@ use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
@@ -55,6 +56,7 @@ class EditAction extends Base
         protected UserActivityLogger $userActivityLogger,
         protected RequestDataTransformer $transformer,
         protected ServerSideValidator $validator,
+        protected Hasher $hasher,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -384,5 +386,36 @@ class EditAction extends Base
         $this->debugLog("CRUD6 [EditAction] Validation successful", [
             'data_validated' => true,
         ]);
+    }
+
+    /**
+     * Hash password fields in the data.
+     * 
+     * Iterates through schema fields and hashes any field with type 'password'
+     * using UserFrosting's Hasher service before storing to database.
+     * Only hashes non-empty password values to support optional password updates.
+     * 
+     * @param array $schema The schema configuration
+     * @param array $data   The input data
+     * 
+     * @return array The data with password fields hashed
+     */
+    protected function hashPasswordFields(array $schema, array $data): array
+    {
+        $fields = $schema['fields'] ?? [];
+        
+        foreach ($fields as $fieldName => $fieldConfig) {
+            // Check if field is a password type and has a value in the data
+            if (($fieldConfig['type'] ?? '') === 'password' && isset($data[$fieldName]) && !empty($data[$fieldName])) {
+                // Hash the password using UserFrosting's Hasher service
+                $data[$fieldName] = $this->hasher->hash($data[$fieldName]);
+                
+                $this->debugLog("CRUD6 [EditAction] Password field hashed", [
+                    'field' => $fieldName,
+                ]);
+            }
+        }
+        
+        return $data;
     }
 }

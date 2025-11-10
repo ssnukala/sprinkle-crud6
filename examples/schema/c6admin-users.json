@@ -254,12 +254,18 @@
             "listable": true
         },
         "password": {
-            "type": "string",
+            "type": "password",
             "label": "Password",
             "required": false,
             "listable": false,
             "viewable": false,
-            "editable": false
+            "editable": true,
+            "validation": {
+                "length": {
+                    "min": 8,
+                    "max": 255
+                }
+            }
         },
         "deleted_at": {
             "type": "datetime",

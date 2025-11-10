@@ -354,6 +354,8 @@ abstract class Base
      * Transform field value based on its type.
      * 
      * Converts values to appropriate PHP/database types based on field configuration.
+     * Password fields are NOT hashed here - they must be hashed by child controllers
+     * that have access to the Hasher service (CreateAction, EditAction).
      * 
      * @param array $fieldConfig Field configuration from schema
      * @param mixed $value       The value to transform
@@ -376,9 +378,32 @@ abstract class Base
             case 'date':
             case 'datetime':
                 return $value;
+            case 'password':
+                // Password fields should be hashed by the controller before calling this method
+                // Return the value as-is here (should already be hashed)
+                return (string) $value;
             default:
                 return (string) $value;
         }
+    }
+
+    /**
+     * Hash password fields in data.
+     * 
+     * This method should be overridden by child controllers that have access
+     * to the Hasher service (CreateAction, EditAction) to hash password fields
+     * before they are stored in the database.
+     * 
+     * @param array $schema The schema configuration
+     * @param array $data   The input data
+     * 
+     * @return array The data with password fields hashed
+     */
+    protected function hashPasswordFields(array $schema, array $data): array
+    {
+        // Base implementation does nothing - child controllers with Hasher service
+        // should override this method to hash password fields
+        return $data;
     }
 
     /**
@@ -386,6 +411,7 @@ abstract class Base
      * 
      * Transforms field values according to their types and applies defaults.
      * Handles timestamps if configured in schema.
+     * Password fields are hashed via hashPasswordFields() hook method.
      * 
      * @param array $schema The schema configuration
      * @param array $data   The input data
@@ -394,6 +420,9 @@ abstract class Base
      */
     protected function prepareInsertData(array $schema, array $data): array
     {
+        // Hash password fields first (if child controller has Hasher service)
+        $data = $this->hashPasswordFields($schema, $data);
+        
         $insertData = [];
         $fields = $schema['fields'] ?? [];
         foreach ($fields as $fieldName => $fieldConfig) {
@@ -420,6 +449,7 @@ abstract class Base
      * Transforms field values according to their types and filters out non-editable fields.
      * Uses getEditableFields() to determine which fields can be updated.
      * Handles timestamps if configured in schema.
+     * Password fields are hashed via hashPasswordFields() hook method.
      * 
      * @param array $schema The schema configuration
      * @param array $data   The input data
@@ -428,6 +458,9 @@ abstract class Base
      */
     protected function prepareUpdateData(array $schema, array $data): array
     {
+        // Hash password fields first (if child controller has Hasher service)
+        $data = $this->hashPasswordFields($schema, $data);
+        
         $updateData = [];
         $editableFields = $this->getEditableFields($schema);
         $fields = $schema['fields'] ?? [];

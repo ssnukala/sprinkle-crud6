@@ -81,14 +81,14 @@
       }
     },
     "password": {
-      "type": "string",
+      "type": "password",
       "label": "Password",
       "required": false,
       "sortable": false,
       "filterable": false,
       "listable": false,
-      "viewable": true,
-      "editable": false,
+      "viewable": false,
+      "editable": true,
       "validation": {
         "length": {
           "min": 8,

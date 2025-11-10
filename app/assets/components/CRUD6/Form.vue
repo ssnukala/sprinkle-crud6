@@ -5,6 +5,7 @@ import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType } from '../../utils/fieldTypes'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -125,71 +126,6 @@ watch(
  * Emits
  */
 const emits = defineEmits(['success'])
-
-/**
- * Helper function to parse textarea type format (e.g., "textarea-r5c60")
- * Returns { rows, cols } or defaults if not specified
- */
-const parseTextareaConfig = (type: string): { rows: number; cols: number | undefined } => {
-    if (!type || type === 'text' || type === 'textarea') {
-        return { rows: 6, cols: undefined }
-    }
-    
-    // Match patterns like "textarea-r5c60", "textarea-r5", "text-r3c40"
-    const match = type.match(/^(?:text|textarea)(?:-r(\d+))?(?:c(\d+))?$/)
-    if (match) {
-        const rows = match[1] ? parseInt(match[1]) : 6
-        const cols = match[2] ? parseInt(match[2]) : undefined
-        return { rows, cols }
-    }
-    
-    return { rows: 6, cols: undefined }
-}
-
-/**
- * Helper function to get HTML input type for a field
- * Maps CRUD6 field types to HTML5 input types
- */
-const getInputType = (fieldType: string): string => {
-    const typeMap: Record<string, string> = {
-        'email': 'email',
-        'url': 'url',
-        'phone': 'tel',
-        'zip': 'text',
-        'password': 'password',
-        'date': 'date',
-        'datetime': 'datetime-local',
-        'number': 'number',
-        'integer': 'number',
-        'decimal': 'number',
-        'float': 'number'
-    }
-    
-    return typeMap[fieldType] || 'text'
-}
-
-/**
- * Helper function to get pattern attribute for validation
- */
-const getInputPattern = (fieldType: string, validation?: any): string | undefined => {
-    // If validation has regex, use that
-    if (validation?.regex) {
-        if (typeof validation.regex === 'string') {
-            return validation.regex
-        }
-        if (validation.regex.pattern) {
-            return validation.regex.pattern
-        }
-    }
-    
-    // Default patterns for field types
-    const patternMap: Record<string, string> = {
-        'zip': '\\d{5}(-\\d{4})?',  // US ZIP: 5 digits or 9 digits with dash
-        'phone': '\\d{3}-\\d{3}-\\d{4}',  // US phone: XXX-XXX-XXXX
-    }
-    
-    return patternMap[fieldType]
-}
 
 /**
  * Methods - Submit the form to the API and handle the response
@@ -426,17 +362,34 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />
                     
-                    <!-- Checkbox for boolean fields -->
-                    <label v-else-if="field.type === 'boolean'" class="uk-form-label">
-                        <input
+                    <!-- Boolean fields - Toggle (checkbox) or Yes/No select -->
+                    <template v-else-if="isBooleanType(field.type)">
+                        <!-- Yes/No Select Dropdown (boolean-yn) -->
+                        <select
+                            v-if="getBooleanUIType(field.type) === 'select'"
                             :id="fieldKey"
-                            class="uk-checkbox"
-                            type="checkbox"
+                            class="uk-select"
+                            :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                             :data-test="fieldKey"
                             :disabled="field.readonly"
-                            v-model="formData[fieldKey]" />
-                        {{ field.label || fieldKey }}
-                    </label>
+                            :required="field.required"
+                            v-model="formData[fieldKey]">
+                            <option :value="true">Yes</option>
+                            <option :value="false">No</option>
+                        </select>
+                        
+                        <!-- Toggle/Checkbox (boolean, boolean-toggle) -->
+                        <label v-else class="uk-form-label">
+                            <input
+                                :id="fieldKey"
+                                class="uk-checkbox"
+                                type="checkbox"
+                                :data-test="fieldKey"
+                                :disabled="field.readonly"
+                                v-model="formData[fieldKey]" />
+                            {{ field.label || fieldKey }}
+                        </label>
+                    </template>
                     
                     <!-- Default text input for unknown types -->
                     <input

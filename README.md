@@ -115,7 +115,7 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
 
 Each field in the schema can have the following properties:
 
-- **type**: Field data type (`string`, `integer`, `boolean`, `date`, `datetime`, `text`, `json`, `float`, `decimal`, `password`, `email`, `url`, `phone`, `zip`, `textarea-rXcY`)
+- **type**: Field data type (`string`, `integer`, `boolean`, `boolean-yn`, `date`, `datetime`, `text`, `json`, `float`, `decimal`, `password`, `email`, `url`, `phone`, `zip`, `textarea-rXcY`)
 - **label**: Human-readable field name
 - **required**: Whether the field is required for creation
 - **sortable**: Whether the field can be sorted in lists

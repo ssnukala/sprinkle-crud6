@@ -378,6 +378,9 @@ abstract class Base
             case 'decimal':
                 return (float) $value;
             case 'boolean':
+            case 'boolean-yn':
+            case 'boolean-toggle':
+                // All boolean variants are stored as boolean in database
                 return (bool) $value;
             case 'json':
                 return is_string($value) ? $value : json_encode($value);

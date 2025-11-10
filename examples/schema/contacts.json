@@ -212,6 +212,16 @@
       "filterable": true,
       "listable": true
     },
+    "newsletter_opt_in": {
+      "type": "boolean-yn",
+      "label": "Subscribe to Newsletter",
+      "default": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false,
+      "viewable": true,
+      "editable": true
+    },
     "created_at": {
       "type": "datetime",
       "label": "Created At",

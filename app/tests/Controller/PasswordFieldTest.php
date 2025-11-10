@@ -27,6 +27,7 @@ use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\UpdateFieldAction;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
@@ -266,4 +267,39 @@ class PasswordFieldTest extends TestCase
         // Assert that data was not modified
         $this->assertEquals($data, $hashedData);
     }
+
+    /**
+     * Test that password fields are properly hashed in UpdateFieldAction
+     * 
+     * Note: UpdateFieldAction doesn't use hashPasswordFields() method.
+     * It directly hashes password fields inline during field update.
+     * This test verifies that the Hasher is injected and available for use.
+     */
+    public function testUpdateFieldActionHasHasher(): void
+    {
+        // Create a mock Hasher
+        $hasher = Mockery::mock(Hasher::class);
+
+        // Create the controller with mocked dependencies
+        $controller = new UpdateFieldAction(
+            Mockery::mock(AuthorizationManager::class),
+            Mockery::mock(Authenticator::class),
+            Mockery::mock(DebugLoggerInterface::class),
+            Mockery::mock(SchemaService::class),
+            Mockery::mock(Config::class),
+            Mockery::mock(Translator::class),
+            Mockery::mock(UserActivityLogger::class),
+            Mockery::mock(Connection::class),
+            $hasher
+        );
+
+        // Use reflection to verify the hasher property exists and is set
+        $reflection = new \ReflectionClass($controller);
+        $property = $reflection->getProperty('hasher');
+        $property->setAccessible(true);
+        
+        // Assert that the hasher is the same instance we injected
+        $this->assertSame($hasher, $property->getValue($controller));
+    }
 }
+

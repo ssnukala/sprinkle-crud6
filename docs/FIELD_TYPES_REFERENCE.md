@@ -253,6 +253,36 @@ Website URL with validation.
 
 ### Geographic Types
 
+#### address
+Google Places autocomplete address field with automatic geocoding.
+
+**Backend:** Stored as string (full formatted address)
+**Frontend:** Google Places Autocomplete input
+**Validation:** Text validation
+**Special:** Auto-populates related address fields (addr_line1, addr_line2, city, state, zip, lat, lng)
+
+```json
+{
+  "full_address": {
+    "type": "address",
+    "label": "Address",
+    "placeholder": "Start typing to search...",
+    "required": true,
+    "address_fields": {
+      "addr_line1": "address_line_1",
+      "addr_line2": "address_line_2",
+      "city": "city",
+      "state": "state",
+      "zip": "postal_code",
+      "latitude": "lat",
+      "longitude": "lng"
+    }
+  }
+}
+```
+
+**See:** [GOOGLE_ADDRESS_FIELD.md](GOOGLE_ADDRESS_FIELD.md) for setup and configuration.
+
 #### zip
 US ZIP code (5 or 9 digit).
 

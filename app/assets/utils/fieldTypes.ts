@@ -26,6 +26,7 @@ export const FIELD_TYPE_MAP: Record<string, string> = {
     'boolean': 'checkbox',
     'boolean-yn': 'select',
     'boolean-toggle': 'checkbox',
+    'address': 'text',
 }
 
 /**
@@ -184,6 +185,16 @@ export function isBooleanType(fieldType: string): boolean {
     return fieldType === 'boolean' || 
            fieldType === 'boolean-yn' || 
            fieldType === 'boolean-toggle'
+}
+
+/**
+ * Check if a field type is an address type
+ * 
+ * @param fieldType - CRUD6 field type
+ * @returns True if field type is address
+ */
+export function isAddressType(fieldType: string): boolean {
+    return fieldType === 'address'
 }
 
 /**

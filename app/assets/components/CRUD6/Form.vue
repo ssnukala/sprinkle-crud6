@@ -4,8 +4,9 @@ import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
+import GoogleAddress from './GoogleAddress.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
-import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType } from '../../utils/fieldTypes'
+import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType } from '../../utils/fieldTypes'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -126,6 +127,29 @@ watch(
  * Emits
  */
 const emits = defineEmits(['success'])
+
+/**
+ * Handle address selection from Google Places
+ * Automatically populate related address fields
+ */
+const handleAddressSelected = (addressData: any) => {
+    debugLog('[Form] Address selected from Google Places', addressData)
+    
+    const { mappedData } = addressData
+    
+    // Update formData with geocoded address components
+    if (mappedData) {
+        Object.keys(mappedData).forEach((fieldKey) => {
+            if (formData.value) {
+                formData.value[fieldKey] = mappedData[fieldKey]
+                debugLog('[Form] Updated address field', {
+                    field: fieldKey,
+                    value: mappedData[fieldKey]
+                })
+            }
+        })
+    }
+}
 
 /**
  * Methods - Submit the form to the API and handle the response
@@ -275,6 +299,18 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         :required="field.required"
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]"
+                    />
+                    
+                    <!-- Google Address field with autocomplete and geocoding -->
+                    <GoogleAddress
+                        v-else-if="isAddressType(field.type)"
+                        :field-key="fieldKey"
+                        :placeholder="field.placeholder || field.label || 'Enter address'"
+                        :required="field.required"
+                        :disabled="field.readonly"
+                        :address-fields="field.address_fields"
+                        v-model="formData[fieldKey]"
+                        @address-selected="handleAddressSelected"
                     />
                     
                     <!-- Text input (including email, url, phone, zip) -->

@@ -1,0 +1,246 @@
+{
+  "model": "contacts",
+  "title": "Contact Management",
+  "singular_title": "Contact",
+  "description": "Manage customer contacts with enhanced field types",
+  "table": "contacts",
+  "primary_key": "id",
+  "timestamps": true,
+  "permissions": {
+    "read": "uri_contacts",
+    "create": "create_contact",
+    "update": "update_contact",
+    "delete": "delete_contact"
+  },
+  "default_sort": {
+    "last_name": "asc",
+    "first_name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "listable": true,
+      "viewable": true,
+      "editable": false
+    },
+    "first_name": {
+      "type": "string",
+      "label": "First Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 1,
+          "max": 50
+        }
+      }
+    },
+    "last_name": {
+      "type": "string",
+      "label": "Last Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 1,
+          "max": 50
+        }
+      }
+    },
+    "email": {
+      "type": "email",
+      "label": "Email Address",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "email": true,
+        "unique": true,
+        "length": {
+          "max": 254
+        }
+      }
+    },
+    "phone": {
+      "type": "phone",
+      "label": "Phone Number",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": true,
+      "placeholder": "XXX-XXX-XXXX",
+      "validation": {
+        "regex": {
+          "pattern": "\\d{3}-\\d{3}-\\d{4}",
+          "message": "Phone must be in format XXX-XXX-XXXX"
+        }
+      }
+    },
+    "mobile": {
+      "type": "phone",
+      "label": "Mobile Phone",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false,
+      "placeholder": "XXX-XXX-XXXX"
+    },
+    "website": {
+      "type": "url",
+      "label": "Website",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false,
+      "placeholder": "https://example.com"
+    },
+    "address": {
+      "type": "string",
+      "label": "Street Address",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "validation": {
+        "length": {
+          "max": 200
+        }
+      }
+    },
+    "city": {
+      "type": "string",
+      "label": "City",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "listable": false,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "state": {
+      "type": "string",
+      "label": "State",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "validation": {
+        "length": {
+          "max": 2
+        }
+      }
+    },
+    "zip": {
+      "type": "zip",
+      "label": "ZIP Code",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "placeholder": "12345 or 12345-6789",
+      "validation": {
+        "regex": {
+          "pattern": "\\d{5}(-\\d{4})?",
+          "message": "ZIP must be 5 digits or 9 digits (12345 or 12345-6789)"
+        }
+      }
+    },
+    "notes": {
+      "type": "textarea-r3c60",
+      "label": "Contact Notes",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "viewable": true,
+      "editable": true
+    },
+    "bio": {
+      "type": "textarea-r5",
+      "label": "Biography",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false,
+      "viewable": true,
+      "editable": true
+    },
+    "company": {
+      "type": "string",
+      "label": "Company",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "position": {
+      "type": "string",
+      "label": "Position/Title",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "validation": {
+        "length": {
+          "max": 100
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true
+    },
+    "newsletter_opt_in": {
+      "type": "boolean-yn",
+      "label": "Subscribe to Newsletter",
+      "default": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false,
+      "viewable": true,
+      "editable": true
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "sortable": true,
+      "filterable": false,
+      "listable": false,
+      "viewable": true,
+      "editable": false,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "sortable": true,
+      "filterable": false,
+      "listable": false,
+      "viewable": true,
+      "editable": false,
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

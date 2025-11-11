@@ -13,6 +13,7 @@ use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
+use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
@@ -54,6 +55,7 @@ class UpdateFieldAction extends Base
         protected Translator $translator,
         protected UserActivityLogger $userActivityLogger,
         protected Connection $db,
+        protected Hasher $hasher,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -178,14 +180,25 @@ class UpdateFieldAction extends Base
                 // Only update the specific field
                 if (array_key_exists($fieldName, $data)) {
                     $oldValue = $crudModel->{$fieldName};
-                    $crudModel->{$fieldName} = $data[$fieldName];
+                    $newValue = $data[$fieldName];
+                    
+                    // Hash password fields before saving
+                    $fieldConfig = $crudSchema['fields'][$fieldName] ?? [];
+                    if (($fieldConfig['type'] ?? '') === 'password' && !empty($newValue)) {
+                        $newValue = $this->hasher->hash($newValue);
+                        $this->debugLog("CRUD6 [UpdateFieldAction] Password field hashed", [
+                            'field' => $fieldName,
+                        ]);
+                    }
+                    
+                    $crudModel->{$fieldName} = $newValue;
                     
                     $this->debugLog("CRUD6 [UpdateFieldAction] Field value updated", [
                         'model' => $crudSchema['model'],
                         'record_id' => $recordId,
                         'field' => $fieldName,
                         'old_value' => $oldValue,
-                        'new_value' => $data[$fieldName],
+                        'new_value' => ($fieldConfig['type'] ?? '') === 'password' ? '[REDACTED]' : $newValue,
                     ]);
                 }
 

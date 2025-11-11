@@ -4,7 +4,9 @@ import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
+import GoogleAddress from './GoogleAddress.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType } from '../../utils/fieldTypes'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -125,6 +127,29 @@ watch(
  * Emits
  */
 const emits = defineEmits(['success'])
+
+/**
+ * Handle address selection from Google Places
+ * Automatically populate related address fields
+ */
+const handleAddressSelected = (addressData: any) => {
+    debugLog('[Form] Address selected from Google Places', addressData)
+    
+    const { mappedData } = addressData
+    
+    // Update formData with geocoded address components
+    if (mappedData) {
+        Object.keys(mappedData).forEach((fieldKey) => {
+            if (formData.value) {
+                formData.value[fieldKey] = mappedData[fieldKey]
+                debugLog('[Form] Updated address field', {
+                    field: fieldKey,
+                    value: mappedData[fieldKey]
+                })
+            }
+        })
+    }
+}
 
 /**
  * Methods - Submit the form to the API and handle the response
@@ -276,13 +301,26 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         v-model="formData[fieldKey]"
                     />
                     
-                    <!-- Text input -->
+                    <!-- Google Address field with autocomplete and geocoding -->
+                    <GoogleAddress
+                        v-else-if="isAddressType(field.type)"
+                        :field-key="fieldKey"
+                        :placeholder="field.placeholder || field.label || 'Enter address'"
+                        :required="field.required"
+                        :disabled="field.readonly"
+                        :address-fields="field.address_fields"
+                        v-model="formData[fieldKey]"
+                        @address-selected="handleAddressSelected"
+                    />
+                    
+                    <!-- Text input (including email, url, phone, zip) -->
                     <input
-                        v-else-if="['string', 'email', 'url'].includes(field.type) || !field.type"
+                        v-else-if="['string', 'email', 'url', 'phone', 'zip'].includes(field.type) || !field.type"
                         :id="fieldKey"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
-                        :type="field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : 'text'"
+                        :type="getInputType(field.type || 'string')"
+                        :pattern="getInputPattern(field.type, field.validation)"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
@@ -345,31 +383,49 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />
                     
-                    <!-- Textarea for text fields -->
+                    <!-- Textarea for text fields (supports text, textarea, textarea-rXcY formats) -->
                     <textarea
-                        v-else-if="field.type === 'text'"
+                        v-else-if="field.type === 'text' || field.type === 'textarea' || field.type?.startsWith('textarea-') || field.type?.startsWith('text-')"
                         :id="fieldKey"
                         class="uk-textarea"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
-                        :rows="field.rows || 6"
+                        :rows="parseTextareaConfig(field.type).rows"
+                        :cols="parseTextareaConfig(field.type).cols"
                         :required="field.required"
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />
                     
-                    <!-- Checkbox for boolean fields -->
-                    <label v-else-if="field.type === 'boolean'" class="uk-form-label">
-                        <input
+                    <!-- Boolean fields - Toggle (checkbox) or Yes/No select -->
+                    <template v-else-if="isBooleanType(field.type)">
+                        <!-- Yes/No Select Dropdown (boolean-yn) -->
+                        <select
+                            v-if="getBooleanUIType(field.type) === 'select'"
                             :id="fieldKey"
-                            class="uk-checkbox"
-                            type="checkbox"
+                            class="uk-select"
+                            :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                             :data-test="fieldKey"
                             :disabled="field.readonly"
-                            v-model="formData[fieldKey]" />
-                        {{ field.label || fieldKey }}
-                    </label>
+                            :required="field.required"
+                            v-model="formData[fieldKey]">
+                            <option :value="true">Yes</option>
+                            <option :value="false">No</option>
+                        </select>
+                        
+                        <!-- Toggle/Checkbox (boolean, boolean-toggle) -->
+                        <label v-else class="uk-form-label">
+                            <input
+                                :id="fieldKey"
+                                class="uk-checkbox"
+                                type="checkbox"
+                                :data-test="fieldKey"
+                                :disabled="field.readonly"
+                                v-model="formData[fieldKey]" />
+                            {{ field.label || fieldKey }}
+                        </label>
+                    </template>
                     
                     <!-- Default text input for unknown types -->
                     <input

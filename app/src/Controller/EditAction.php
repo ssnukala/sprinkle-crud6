@@ -22,6 +22,7 @@ use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Core\Util\ApiResponse;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -42,6 +43,7 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 class EditAction extends Base
 {
+    use ProcessesRelationshipActions;
     /**
      * Inject dependencies.
      */
@@ -326,6 +328,9 @@ class EditAction extends Base
                 'record_id' => $recordId,
                 'updated_data' => $crudModel->toArray(),
             ]);
+
+            // Process relationship actions for on_update event
+            $this->processRelationshipActions($crudModel, $crudSchema, $data, 'on_update');
 
             // Create activity record
             $modelDisplayName = $this->getModelDisplayName($crudSchema);

@@ -15,6 +15,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Core\Util\ApiResponse;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -33,6 +34,7 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 class DeleteAction extends Base
 {
+    use ProcessesRelationshipActions;
     /**
      * Inject dependencies.
      */
@@ -130,6 +132,9 @@ class DeleteAction extends Base
 
         // Begin transaction - DB will be rolled back if an exception occurs
         $this->db->transaction(function () use ($crudSchema, $crudModel, $currentUser, $recordId) {
+            // Process relationship actions for on_delete event (before deleting the record)
+            $this->processRelationshipActions($crudModel, $crudSchema, [], 'on_delete');
+
             // Delete the record (supports soft delete if configured)
             if ($crudSchema['soft_delete'] ?? false) {
                 $crudModel->softDelete();

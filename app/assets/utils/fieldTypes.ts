@@ -25,6 +25,7 @@ export const FIELD_TYPE_MAP: Record<string, string> = {
     'float': 'number',
     'boolean': 'checkbox',
     'boolean-yn': 'select',
+    'boolean-tgl': 'checkbox',
     'boolean-toggle': 'checkbox',
     'address': 'text',
 }
@@ -184,6 +185,7 @@ export function isNumericType(fieldType: string): boolean {
 export function isBooleanType(fieldType: string): boolean {
     return fieldType === 'boolean' || 
            fieldType === 'boolean-yn' || 
+           fieldType === 'boolean-tgl' ||
            fieldType === 'boolean-toggle'
 }
 
@@ -201,14 +203,17 @@ export function isAddressType(fieldType: string): boolean {
  * Get boolean field UI type
  * 
  * @param fieldType - CRUD6 field type
- * @returns 'toggle' | 'select' | null
+ * @returns 'toggle' | 'checkbox' | 'select' | null
  */
-export function getBooleanUIType(fieldType: string): 'toggle' | 'select' | null {
+export function getBooleanUIType(fieldType: string): 'toggle' | 'checkbox' | 'select' | null {
     if (fieldType === 'boolean-yn') {
         return 'select'
     }
-    if (fieldType === 'boolean' || fieldType === 'boolean-toggle') {
+    if (fieldType === 'boolean-tgl' || fieldType === 'boolean-toggle') {
         return 'toggle'
+    }
+    if (fieldType === 'boolean') {
+        return 'checkbox'
     }
     return null
 }

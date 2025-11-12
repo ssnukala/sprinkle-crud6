@@ -1123,4 +1123,124 @@ class SchemaService
         
         return $data;
     }
+
+    /**
+     * Load related model schemas and include them in the response.
+     * 
+     * This method loads schemas for all models referenced in the 'details' 
+     * and 'relationships' sections of the main schema, consolidating multiple
+     * schema requests into a single response.
+     * 
+     * @param array       $schema     The main model schema
+     * @param string|null $context    The context for related schemas (default: 'list')
+     * @param string|null $connection The database connection (optional)
+     * 
+     * @return array Array of related schemas keyed by model name
+     */
+    public function loadRelatedSchemas(array $schema, ?string $context = 'list', ?string $connection = null): array
+    {
+        $relatedSchemas = [];
+        
+        $this->debugLog("[CRUD6 SchemaService] Loading related schemas", [
+            'model' => $schema['model'] ?? 'unknown',
+            'context' => $context ?? 'list',
+        ]);
+
+        // Collect unique model names from details and relationships
+        $relatedModels = [];
+
+        // Get models from 'details' array
+        if (isset($schema['details']) && is_array($schema['details'])) {
+            foreach ($schema['details'] as $detail) {
+                if (isset($detail['model'])) {
+                    $relatedModels[$detail['model']] = true;
+                }
+            }
+        }
+
+        // Get models from 'relationships' array  
+        if (isset($schema['relationships']) && is_array($schema['relationships'])) {
+            foreach ($schema['relationships'] as $relationship) {
+                if (isset($relationship['name'])) {
+                    $relatedModels[$relationship['name']] = true;
+                }
+            }
+        }
+
+        $this->debugLog("[CRUD6 SchemaService] Found related models", [
+            'count' => count($relatedModels),
+            'models' => array_keys($relatedModels),
+        ]);
+
+        // Load schema for each related model
+        foreach (array_keys($relatedModels) as $modelName) {
+            try {
+                $relatedSchema = $this->getSchema($modelName, $connection);
+                
+                // Filter the related schema for the specified context
+                $filteredRelatedSchema = $this->filterSchemaForContext($relatedSchema, $context);
+                
+                $relatedSchemas[$modelName] = $filteredRelatedSchema;
+                
+                $this->debugLog("[CRUD6 SchemaService] Loaded related schema", [
+                    'model' => $modelName,
+                    'fieldCount' => count($filteredRelatedSchema['fields'] ?? []),
+                ]);
+            } catch (\Exception $e) {
+                // Log error but continue loading other schemas
+                $this->debugLog("[CRUD6 SchemaService] Failed to load related schema", [
+                    'model' => $modelName,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $relatedSchemas;
+    }
+
+    /**
+     * Filter schema and optionally include related model schemas.
+     * 
+     * Enhanced version of filterSchemaForContext that can also include
+     * related model schemas in a single consolidated response.
+     * 
+     * @param array       $schema              The main model schema
+     * @param string|null $context             The context for filtering
+     * @param bool        $includeRelated      Whether to include related model schemas
+     * @param string|null $relatedContext      Context for related schemas (default: 'list')
+     * @param string|null $connection          Database connection (optional)
+     * 
+     * @return array Filtered schema with optional related_schemas section
+     */
+    public function filterSchemaWithRelated(
+        array $schema,
+        ?string $context = null,
+        bool $includeRelated = false,
+        ?string $relatedContext = 'list',
+        ?string $connection = null
+    ): array {
+        // Get the filtered main schema
+        $filtered = $this->filterSchemaForContext($schema, $context);
+
+        // If requested, include related model schemas
+        if ($includeRelated) {
+            $this->debugLog("[CRUD6 SchemaService] Including related schemas in response", [
+                'model' => $schema['model'] ?? 'unknown',
+                'relatedContext' => $relatedContext ?? 'list',
+            ]);
+            
+            $relatedSchemas = $this->loadRelatedSchemas($schema, $relatedContext, $connection);
+            
+            if (!empty($relatedSchemas)) {
+                $filtered['related_schemas'] = $relatedSchemas;
+                
+                $this->debugLog("[CRUD6 SchemaService] Added related schemas to response", [
+                    'count' => count($relatedSchemas),
+                    'models' => array_keys($relatedSchemas),
+                ]);
+            }
+        }
+
+        return $filtered;
+    }
 }

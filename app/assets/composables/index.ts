@@ -6,6 +6,7 @@ export { useCRUD6Relationships } from './useCRUD6Relationships'
 export { useMasterDetail } from './useMasterDetail'
 export { useCRUD6Actions } from './useCRUD6Actions'
 export { useCRUD6FieldRenderer } from './useCRUD6FieldRenderer'
+export { useCRUD6ToUFSchemaConverter, convertCRUD6ToUFValidatorFormat } from './useCRUD6ValidationAdapter'
 
 // Export schema types for external use
 export type { CRUD6Schema, SchemaField, DetailConfig, DetailEditableConfig, ActionConfig } from './useCRUD6Schema'

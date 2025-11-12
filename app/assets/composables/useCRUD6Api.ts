@@ -13,6 +13,7 @@ import type {
 } from '../interfaces'
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
 import { useRuleSchemaAdapter } from '@userfrosting/sprinkle-core/composables'
+import { useCRUD6ToUFSchemaConverter } from './useCRUD6ValidationAdapter'
 import { useRoute } from 'vue-router'
 import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
@@ -58,7 +59,7 @@ export function useCRUD6Api(modelName?: string) {
 
     // Dynamically load the schema file for the current model
     // Uses the global store cache to prevent duplicate API calls
-    // The store will wait if a broader context (like 'detail,form') is already loading
+    // The store will wait if a broader context (like 'list,detail,form') is already loading
     async function loadSchema() {
         debugLog('[useCRUD6Api] ===== LOAD SCHEMA FOR VALIDATION =====', {
             model,
@@ -70,7 +71,7 @@ export function useCRUD6Api(modelName?: string) {
         try {
             // Use the store's loadSchema which has caching and waits for related contexts
             // Request 'form' context to get only editable fields with validation
-            // If 'detail,form' is already loading, this will wait and use cached result
+            // If 'list,detail,form' is already loading, this will wait and use cached result
             const schema = await schemaStore.loadSchema(model, false, 'form')
             
             debugLog('[useCRUD6Api] ✅ Schema loaded for validation', {
@@ -87,7 +88,11 @@ export function useCRUD6Api(modelName?: string) {
     }
 
     // Load the schema and set up the validator
-    const { r$ } = useRegle(formData, useRuleSchemaAdapter().adapt(loadSchema()))
+    // Convert CRUD6 JSON schema to UserFrosting validator format, then use UF's adapter
+    // This allows us to use UserFrosting's validation infrastructure while preventing YAML imports
+    const converter = useCRUD6ToUFSchemaConverter()
+    const adapter = useRuleSchemaAdapter()
+    const { r$ } = useRegle(formData, adapter.adapt(converter.convert(loadSchema())))
 
     async function fetchRow(id: string) {
         const url = `/api/crud6/${model}/${toValue(id)}`

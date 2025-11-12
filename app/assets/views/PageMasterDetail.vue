@@ -10,6 +10,7 @@ import CRUD6Details from '../components/CRUD6/Details.vue'
 import CRUD6DetailGrid from '../components/CRUD6/DetailGrid.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { getLookupConfig } from '../composables/useCRUD6FieldRenderer'
 
 /**
  * PageMasterDetail Component
@@ -395,6 +396,21 @@ watch(recordId, (newId) => {
         }
     }
 }, { immediate: true })
+
+/**
+ * Helper function to get lookup attributes for AutoLookup component
+ * Uses centralized getLookupConfig from composable
+ */
+function getLookupAttributes(field: any) {
+    const lookupConfig = getLookupConfig(field)
+    return {
+        model: lookupConfig.model,
+        'id-field': lookupConfig.idField,
+        'display-field': lookupConfig.displayField,
+        placeholder: field.placeholder,
+        required: field.required
+    }
+}
 </script>
 
 <template>
@@ -461,11 +477,9 @@ watch(recordId, (newId) => {
                                 <!-- SmartLookup field -->
                                 <CRUD6AutoLookup
                                     v-if="field.type === 'smartlookup'"
-                                    :model="field.lookup_model || field.model"
+                                    v-bind="getLookupAttributes(field)"
                                     :id-field="field.lookup_id || field.id || 'id'"
                                     :display-field="field.lookup_desc || field.desc || 'name'"
-                                    :placeholder="field.placeholder"
-                                    :required="field.required"
                                     v-model="record[fieldKey]"
                                 />
                                 
@@ -476,8 +490,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="text"
                                     class="uk-input"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
                                 />
                                 
                                 <!-- Number input -->
@@ -487,7 +499,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="number"
                                     class="uk-input"
-                                    :required="field.required"
                                     :step="field.type === 'integer' ? '1' : 'any'"
                                 />
                                 
@@ -509,7 +520,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="date"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <!-- DateTime input -->
@@ -519,7 +529,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="datetime-local"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <!-- Text area -->
@@ -529,8 +538,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     class="uk-textarea"
                                     :rows="field.rows || 3"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
                                 ></textarea>
                                 
                                 <!-- JSON field -->
@@ -550,7 +557,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="text"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <small v-if="field.description" class="uk-text-muted">
@@ -630,11 +636,9 @@ watch(recordId, (newId) => {
                                 <!-- SmartLookup field -->
                                 <CRUD6AutoLookup
                                     v-if="field.type === 'smartlookup'"
-                                    :model="field.lookup_model || field.model"
+                                    v-bind="getLookupAttributes(field)"
                                     :id-field="field.lookup_id || field.id || 'id'"
                                     :display-field="field.lookup_desc || field.desc || 'name'"
-                                    :placeholder="field.placeholder"
-                                    :required="field.required"
                                     v-model="record[fieldKey]"
                                 />
                                 
@@ -645,8 +649,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="text"
                                     class="uk-input"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
                                 />
                                 
                                 <!-- Number input -->
@@ -656,7 +658,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="number"
                                     class="uk-input"
-                                    :required="field.required"
                                     :step="field.type === 'integer' ? '1' : 'any'"
                                 />
                                 
@@ -678,7 +679,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="date"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <!-- DateTime input -->
@@ -688,7 +688,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="datetime-local"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <!-- Text area -->
@@ -698,8 +697,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     class="uk-textarea"
                                     :rows="field.rows || 3"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
                                 ></textarea>
                                 
                                 <!-- JSON field -->
@@ -719,7 +716,6 @@ watch(recordId, (newId) => {
                                     v-model="record[fieldKey]"
                                     type="text"
                                     class="uk-input"
-                                    :required="field.required"
                                 />
                                 
                                 <small v-if="field.description" class="uk-text-muted">

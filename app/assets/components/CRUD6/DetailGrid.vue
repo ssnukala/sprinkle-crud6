@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import type { DetailRecord } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6AutoLookup from './AutoLookup.vue'
+import { getLookupConfig } from '../../composables/useCRUD6FieldRenderer'
 
 /**
  * DetailGrid Component
@@ -145,6 +146,20 @@ const calculateLineTotal = (row: DetailRecord): number => {
     const unitPrice = Number(row.unit_price) || 0
     return quantity * unitPrice
 }
+
+/**
+ * Helper function to get lookup attributes for AutoLookup component
+ * Uses centralized getLookupConfig from composable
+ */
+function getLookupAttributes(field: any) {
+    const lookupConfig = getLookupConfig(field)
+    return {
+        model: lookupConfig.model,
+        'id-field': lookupConfig.idField,
+        'display-field': lookupConfig.displayField,
+        disabled: field.disabled || field.readonly
+    }
+}
 </script>
 
 <template>
@@ -225,12 +240,9 @@ const calculateLineTotal = (row: DetailRecord): number => {
                                 <!-- SmartLookup field -->
                                 <CRUD6AutoLookup
                                     v-else-if="getFieldType(fieldKey) === 'smartlookup'"
-                                    :model="getFieldConfig(fieldKey).lookup_model || getFieldConfig(fieldKey).model"
-                                    :id-field="getFieldConfig(fieldKey).lookup_id || getFieldConfig(fieldKey).id || 'id'"
-                                    :display-field="getFieldConfig(fieldKey).lookup_desc || getFieldConfig(fieldKey).desc || 'name'"
+                                    v-bind="{ ...getLookupAttributes(getFieldConfig(fieldKey)), disabled: disabled || allowEdit === false }"
                                     :model-value="row[fieldKey]"
                                     @update:model-value="onFieldChange(index, fieldKey, $event)"
-                                    :disabled="disabled || allowEdit === false"
                                 />
 
                                 <!-- Date input for date fields -->

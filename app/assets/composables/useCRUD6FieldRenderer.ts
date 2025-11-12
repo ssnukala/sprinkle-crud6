@@ -6,6 +6,11 @@
  * 
  * This eliminates the need for components to have extensive conditional
  * logic for different field types.
+ * 
+ * CENTRALIZED PROCESSING:
+ * - All field type detection and attribute extraction happens here
+ * - Components just pass field config and get back what to render
+ * - Special types (smartlookup, address, boolean) handled centrally
  */
 
 import type { Component } from 'vue'
@@ -35,7 +40,67 @@ export interface FieldConfig {
     rows?: number
     cols?: number
     address_fields?: any
+    lookup?: {
+        model?: string
+        id?: string
+        desc?: string
+    }
+    lookup_model?: string
+    lookup_id?: string
+    lookup_desc?: string
+    model?: string
+    id?: string
+    desc?: string
+    ui?: string | {
+        widget?: string
+        label?: string
+        show_in?: string[]
+        sortable?: boolean
+        filterable?: boolean
+    }
     [key: string]: any
+}
+
+/**
+ * Lookup configuration extracted from field
+ */
+export interface LookupConfig {
+    model: string
+    idField: string
+    displayField: string
+}
+
+/**
+ * Extract lookup configuration from field (centralized)
+ * 
+ * Supports multiple formats:
+ * 1. Nested: lookup: {model, id, desc}
+ * 2. Flat with prefix: lookup_model, lookup_id, lookup_desc
+ * 3. Shorthand: model, id, desc
+ * 
+ * Priority: flat > nested > shorthand > defaults
+ */
+export function getLookupConfig(field: FieldConfig): LookupConfig {
+    const model = field.lookup_model 
+        || field.lookup?.model 
+        || field.model 
+        || 'unknown'
+    
+    const idField = field.lookup_id 
+        || field.lookup?.id 
+        || field.id 
+        || 'id'
+    
+    const displayField = field.lookup_desc 
+        || field.lookup?.desc 
+        || field.desc 
+        || 'name'
+    
+    return {
+        model,
+        idField,
+        displayField
+    }
 }
 
 /**
@@ -212,11 +277,13 @@ export function getFieldRenderConfig(
     switch (rendererType) {
         case 'smartlookup':
             if (components?.AutoLookup) {
+                // Use centralized lookup config extraction
+                const lookupConfig = getLookupConfig(field)
                 config.component = components.AutoLookup
                 config.attributes = {
-                    model: field.lookup_model || field.model,
-                    'id-field': field.lookup_id || field.id || 'id',
-                    'display-field': field.lookup_desc || field.desc || 'name',
+                    model: lookupConfig.model,
+                    'id-field': lookupConfig.idField,
+                    'display-field': lookupConfig.displayField,
                     placeholder: field.placeholder,
                     required: field.required,
                     disabled: field.readonly

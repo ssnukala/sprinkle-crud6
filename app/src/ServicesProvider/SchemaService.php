@@ -261,6 +261,234 @@ class SchemaService
         return $schema;
     }
 
+    /**
+     * Normalize visibility flags to show_in array.
+     * 
+     * Supports both new show_in array and legacy flags (editable, viewable, listable).
+     * Converts legacy flags to show_in for internal consistency.
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with normalized visibility flags
+     */
+    protected function normalizeVisibilityFlags(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            // If show_in already exists, normalize legacy flags to match
+            if (isset($field['show_in']) && is_array($field['show_in'])) {
+                // Derive legacy flags from show_in for backward compatibility
+                $field['listable'] = in_array('list', $field['show_in']);
+                $field['editable'] = in_array('form', $field['show_in']);
+                $field['viewable'] = in_array('detail', $field['show_in']);
+                continue;
+            }
+
+            // Otherwise, create show_in from legacy flags (or defaults)
+            $showIn = [];
+            
+            // Default visibility based on legacy flags or sensible defaults
+            $listable = $field['listable'] ?? true;
+            $editable = $field['editable'] ?? true;
+            $viewable = $field['viewable'] ?? true;
+            $readonly = $field['readonly'] ?? false;
+
+            // Build show_in array
+            if ($listable) {
+                $showIn[] = 'list';
+            }
+            
+            // Only show in form if editable and not readonly
+            if ($editable && !$readonly) {
+                $showIn[] = 'form';
+            }
+            
+            if ($viewable) {
+                $showIn[] = 'detail';
+            }
+
+            // Set the show_in array
+            $field['show_in'] = $showIn;
+
+            // Keep legacy flags for backward compatibility
+            $field['listable'] = $listable;
+            $field['editable'] = $editable;
+            $field['viewable'] = $viewable;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Normalize boolean field types with UI specification.
+     * 
+     * Supports both new format (type: boolean, ui: toggle) and legacy format (type: boolean-tgl).
+     * Converts legacy type suffixes to ui property for internal consistency.
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with normalized boolean types
+     */
+    protected function normalizeBooleanTypes(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            $type = $field['type'] ?? 'string';
+
+            // Check if it's a legacy boolean type with UI suffix
+            if (preg_match('/^boolean-(tgl|chk|sel)$/', $type, $matches)) {
+                $uiType = $matches[1];
+                
+                // Normalize to standard boolean type
+                $field['type'] = 'boolean';
+                
+                // Set UI type if not already specified
+                if (!isset($field['ui'])) {
+                    $uiMap = [
+                        'tgl' => 'toggle',
+                        'chk' => 'checkbox',
+                        'sel' => 'select',
+                    ];
+                    $field['ui'] = $uiMap[$uiType] ?? 'checkbox';
+                }
+            } elseif ($type === 'boolean' && !isset($field['ui'])) {
+                // Set default UI for boolean fields without explicit UI
+                $field['ui'] = 'checkbox';
+            }
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Normalize ORM-style attributes to CRUD6 format.
+     * 
+     * Supports attributes from popular ORMs (Laravel, Sequelize, TypeORM, Django, Prisma):
+     * - nullable → required (inverted)
+     * - autoIncrement → auto_increment
+     * - references → lookup configuration
+     * - validate → validation
+     * - ui → extract UI-specific attributes
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with normalized ORM attributes
+     */
+    protected function normalizeORMAttributes(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            // 1. Normalize nullable → required (Laravel/Sequelize/TypeORM/Prisma pattern)
+            if (isset($field['nullable']) && !isset($field['required'])) {
+                $field['required'] = !$field['nullable'];
+            }
+            // Also support the reverse: required → nullable
+            if (isset($field['required']) && !isset($field['nullable'])) {
+                $field['nullable'] = !$field['required'];
+            }
+
+            // 2. Normalize autoIncrement → auto_increment (Sequelize/TypeORM/Prisma pattern)
+            if (isset($field['autoIncrement']) && !isset($field['auto_increment'])) {
+                $field['auto_increment'] = $field['autoIncrement'];
+            }
+
+            // 3. Normalize primaryKey → primary (TypeORM pattern)
+            if (isset($field['primaryKey']) && !isset($field['primary'])) {
+                $field['primary'] = $field['primaryKey'];
+            }
+
+            // 4. Normalize unique constraint (all ORMs support this)
+            if (isset($field['unique']) && !isset($field['validation']['unique'])) {
+                $field['validation'] = $field['validation'] ?? [];
+                $field['validation']['unique'] = $field['unique'];
+            }
+
+            // 5. Normalize length to validation (Sequelize/Django pattern)
+            if (isset($field['length']) && !isset($field['validation']['length'])) {
+                $field['validation'] = $field['validation'] ?? [];
+                $field['validation']['length'] = [
+                    'max' => $field['length']
+                ];
+            }
+
+            // 6. Normalize validate → validation (Sequelize pattern)
+            if (isset($field['validate']) && !isset($field['validation'])) {
+                $field['validation'] = $field['validate'];
+            }
+
+            // 7. Normalize references → lookup (Prisma/TypeORM pattern)
+            if (isset($field['references']) && is_array($field['references'])) {
+                // Convert references to lookup format
+                if (!isset($field['lookup'])) {
+                    $field['lookup'] = [
+                        'model' => $field['references']['model'] ?? $field['references']['table'] ?? null,
+                        'id' => $field['references']['key'] ?? $field['references']['id'] ?? 'id',
+                        'desc' => $field['references']['display'] ?? $field['references']['desc'] ?? 'name',
+                    ];
+                }
+                
+                // If type not set and references exists, assume smartlookup
+                if (!isset($field['type']) || $field['type'] === 'integer') {
+                    // Only change to smartlookup if explicitly requested or references.display is set
+                    if (isset($field['references']['display']) || isset($field['references']['desc'])) {
+                        $field['type'] = 'smartlookup';
+                    }
+                }
+            }
+
+            // 8. Extract UI configuration from nested ui object
+            if (isset($field['ui']) && is_array($field['ui'])) {
+                $uiConfig = $field['ui'];
+                
+                // Extract label
+                if (isset($uiConfig['label']) && !isset($field['label'])) {
+                    $field['label'] = $uiConfig['label'];
+                }
+                
+                // Extract show_in
+                if (isset($uiConfig['show_in']) && !isset($field['show_in'])) {
+                    $field['show_in'] = $uiConfig['show_in'];
+                }
+                
+                // Extract sortable
+                if (isset($uiConfig['sortable']) && !isset($field['sortable'])) {
+                    $field['sortable'] = $uiConfig['sortable'];
+                }
+                
+                // Extract filterable
+                if (isset($uiConfig['filterable']) && !isset($field['filterable'])) {
+                    $field['filterable'] = $uiConfig['filterable'];
+                }
+                
+                // Extract widget/type as UI hint (for booleans, etc.)
+                if (isset($uiConfig['widget']) && $field['type'] === 'boolean') {
+                    $field['ui'] = $uiConfig['widget'];  // Override with widget name
+                } elseif (isset($uiConfig['type']) && $uiConfig['type'] === 'lookup') {
+                    // UI type hint for lookup fields
+                    if ($field['type'] === 'integer' || !isset($field['type'])) {
+                        $field['type'] = 'smartlookup';
+                    }
+                }
+            }
+
+            // 9. Normalize default/defaultValue (all ORMs support default)
+            if (isset($field['defaultValue']) && !isset($field['default'])) {
+                $field['default'] = $field['defaultValue'];
+            }
+        }
+
+        return $schema;
+    }
+
 
     /**
      * Get schema configuration for a model
@@ -331,8 +559,17 @@ class SchemaService
         // Apply default values
         $schema = $this->applyDefaults($schema);
 
+        // Normalize ORM-style attributes first (before other normalizations)
+        $schema = $this->normalizeORMAttributes($schema);
+
         // Normalize lookup attributes for smartlookup fields
         $schema = $this->normalizeLookupAttributes($schema);
+
+        // Normalize visibility flags to show_in array
+        $schema = $this->normalizeVisibilityFlags($schema);
+
+        // Normalize boolean field types with UI specification
+        $schema = $this->normalizeBooleanTypes($schema);
 
         // If schema was loaded from connection-based path and doesn't have explicit connection, set it
         if ($connection !== null && !isset($schema['connection'])) {

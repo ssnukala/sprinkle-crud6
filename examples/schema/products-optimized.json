@@ -1,0 +1,122 @@
+{
+  "model": "products_optimized",
+  "title": "Product Management (Optimized Schema)",
+  "singular_title": "Product",
+  "description": "Example demonstrating all schema optimizations",
+  "table": "products",
+  "permissions": {
+    "read": "view_products",
+    "create": "create_product",
+    "update": "edit_product",
+    "delete": "delete_product"
+  },
+  "default_sort": {
+    "name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "show_in": ["list", "detail"]
+    },
+    "name": {
+      "type": "string",
+      "label": "Product Name",
+      "required": true,
+      "show_in": ["list", "form", "detail"],
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 255
+        }
+      }
+    },
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
+      "show_in": ["list", "form", "detail"],
+      "validation": {
+        "required": true,
+        "unique": true
+      }
+    },
+    "category_id": {
+      "type": "smartlookup",
+      "label": "Category",
+      "required": true,
+      "show_in": ["list", "form", "detail"],
+      "lookup": {
+        "model": "categories",
+        "id": "id",
+        "desc": "name"
+      }
+    },
+    "price": {
+      "type": "decimal",
+      "label": "Price",
+      "required": true,
+      "show_in": ["list", "form", "detail"],
+      "validation": {
+        "required": true,
+        "numeric": true,
+        "min": 0
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "show_in": ["form", "detail"],
+      "rows": 4
+    },
+    "is_active": {
+      "type": "boolean",
+      "ui": "toggle",
+      "label": "Active",
+      "default": true,
+      "show_in": ["list", "form", "detail"]
+    },
+    "is_featured": {
+      "type": "boolean",
+      "ui": "checkbox",
+      "label": "Featured Product",
+      "default": false,
+      "show_in": ["form", "detail"]
+    },
+    "stock_status": {
+      "type": "boolean",
+      "ui": "select",
+      "label": "In Stock",
+      "default": true,
+      "show_in": ["list", "detail"]
+    },
+    "launch_date": {
+      "type": "date",
+      "label": "Launch Date",
+      "show_in": ["form", "detail"],
+      "date_format": "Y-m-d"
+    },
+    "metadata": {
+      "type": "json",
+      "label": "Metadata",
+      "show_in": ["detail"]
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "readonly": true,
+      "show_in": ["detail"],
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "readonly": true,
+      "show_in": ["detail"],
+      "date_format": "Y-m-d H:i:s"
+    }
+  }
+}

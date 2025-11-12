@@ -8,6 +8,7 @@ import GoogleAddress from './GoogleAddress.vue'
 import CRUD6ToggleSwitch from './ToggleSwitch.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType } from '../../utils/fieldTypes'
+import { getLookupConfig } from '../../composables/useCRUD6FieldRenderer'
 
 /**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
@@ -242,6 +243,22 @@ function getFieldIcon(field: any, fieldKey: string): string {
             return 'pen-to-square'
     }
 }
+
+/**
+ * Helper function to get lookup attributes for AutoLookup component
+ * Uses centralized getLookupConfig from composable
+ */
+function getLookupAttributes(field: any) {
+    const lookupConfig = getLookupConfig(field)
+    return {
+        model: lookupConfig.model,
+        'id-field': lookupConfig.idField,
+        'display-field': lookupConfig.displayField,
+        placeholder: field.placeholder,
+        required: field.required,
+        disabled: field.readonly
+    }
+}
 </script>
 
 <template>
@@ -293,12 +310,7 @@ function getFieldIcon(field: any, fieldKey: string): string {
                     <!-- SmartLookup field -->
                     <CRUD6AutoLookup
                         v-if="field.type === 'smartlookup'"
-                        :model="field.lookup_model || field.lookup?.model || field.model"
-                        :id-field="field.lookup_id || field.lookup?.id || field.id || 'id'"
-                        :display-field="field.lookup_desc || field.lookup?.desc || field.desc || 'name'"
-                        :placeholder="field.placeholder"
-                        :required="field.required"
-                        :disabled="field.readonly"
+                        v-bind="getLookupAttributes(field)"
                         v-model="formData[fieldKey]"
                     />
                     

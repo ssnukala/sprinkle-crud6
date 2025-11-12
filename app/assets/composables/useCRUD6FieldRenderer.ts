@@ -72,7 +72,10 @@ export function getFieldRendererType(fieldType: string): string {
     if (fieldType === 'datetime') return 'datetime-input'
     if (isTextareaType(fieldType)) return 'textarea'
     if (isBooleanType(fieldType)) {
-        return getBooleanUIType(fieldType) === 'select' ? 'boolean-select' : 'boolean-checkbox'
+        const uiType = getBooleanUIType(fieldType)
+        if (uiType === 'select') return 'boolean-select'
+        if (uiType === 'toggle') return 'boolean-toggle'
+        return 'boolean-checkbox'
     }
     
     // Default
@@ -161,6 +164,15 @@ export function getFieldAttributes(
                 disabled: field.readonly || field.disabled
             }
             
+        case 'boolean-toggle':
+            return {
+                id: fieldKey,
+                class: 'uk-checkbox',
+                type: 'checkbox',
+                'data-test': fieldKey,
+                disabled: field.readonly || field.disabled
+            }
+            
         default:
             return baseAttrs
     }
@@ -240,6 +252,12 @@ export function getFieldRenderConfig(
         case 'boolean-checkbox':
             config.element = 'input'
             config.wrapInLabel = true
+            config.labelText = field.label || fieldKey
+            break
+            
+        case 'boolean-toggle':
+            config.element = 'input'
+            config.wrapInLabel = false
             config.labelText = field.label || fieldKey
             break
     }

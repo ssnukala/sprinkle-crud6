@@ -5,6 +5,7 @@ import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6AutoLookup from './AutoLookup.vue'
 import GoogleAddress from './GoogleAddress.vue'
+import CRUD6ToggleSwitch from './ToggleSwitch.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType } from '../../utils/fieldTypes'
 
@@ -398,7 +399,7 @@ function getFieldIcon(field: any, fieldKey: string): string {
                         :disabled="field.readonly"
                         v-model="formData[fieldKey]" />
                     
-                    <!-- Boolean fields - Toggle (checkbox) or Yes/No select -->
+                    <!-- Boolean fields - Toggle switch, Checkbox, or Yes/No select -->
                     <template v-else-if="isBooleanType(field.type)">
                         <!-- Yes/No Select Dropdown (boolean-yn) -->
                         <select
@@ -414,7 +415,15 @@ function getFieldIcon(field: any, fieldKey: string): string {
                             <option :value="false">No</option>
                         </select>
                         
-                        <!-- Toggle/Checkbox (boolean, boolean-toggle) -->
+                        <!-- Toggle Switch (boolean-tgl, boolean-toggle) -->
+                        <CRUD6ToggleSwitch
+                            v-else-if="getBooleanUIType(field.type) === 'toggle'"
+                            :id="fieldKey"
+                            :data-test="fieldKey"
+                            :disabled="field.readonly"
+                            v-model="formData[fieldKey]" />
+                        
+                        <!-- Standard Checkbox (boolean) -->
                         <label v-else class="uk-form-label">
                             <input
                                 :id="fieldKey"

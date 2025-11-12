@@ -81,7 +81,7 @@ const getFieldType = (fieldKey: string): string => {
 
             <template #body="{ row }">
                 <UFSprunjeColumn v-for="fieldKey in detailConfig.list_fields" :key="fieldKey">
-                    <template v-if="getFieldType(fieldKey) === 'boolean'">
+                    <template v-if="['boolean', 'boolean-tgl', 'boolean-toggle', 'boolean-yn'].includes(getFieldType(fieldKey))">
                         <UFLabel :severity="row[fieldKey] ? 'success' : 'danger'">
                             {{ row[fieldKey] ? $t('ENABLED') : $t('DISABLED') }}
                         </UFLabel>

@@ -100,6 +100,10 @@ function formatFieldValue(value: any, field: any): string {
     
     switch (field.type) {
         case 'boolean':
+        case 'boolean-tgl':
+        case 'boolean-toggle':
+            return value ? 'Yes' : 'No'
+        case 'boolean-yn':
             return value ? 'Yes' : 'No'
         case 'date':
             return new Date(value).toLocaleDateString()
@@ -183,7 +187,7 @@ const customActions = computed(() => {
                         </span>
                         <!-- Special handling for boolean fields -->
                         <span 
-                            v-else-if="field.type === 'boolean'"
+                            v-else-if="field.type === 'boolean' || field.type === 'boolean-tgl' || field.type === 'boolean-toggle' || field.type === 'boolean-yn'"
                             :class="crud6[fieldKey] ? 'uk-text-success' : 'uk-text-danger'">
                             {{ formatFieldValue(crud6[fieldKey], field) }}
                         </span>

@@ -22,6 +22,7 @@ use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Core\Util\ApiResponse;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -39,6 +40,7 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 class CreateAction extends Base
 {
+    use ProcessesRelationshipActions;
     /**
      * Inject dependencies.
      */
@@ -194,6 +196,9 @@ class CreateAction extends Base
                 'model' => $schema['model'],
                 'record_data' => $crudModel ? $crudModel->toArray() : null,
             ]);
+
+            // Process relationship actions for on_create event
+            $this->processRelationshipActions($crudModel, $schema, $data, 'on_create');
 
             // Create activity record
             $modelDisplayName = $this->getModelDisplayName($schema);

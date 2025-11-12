@@ -225,9 +225,9 @@ const calculateLineTotal = (row: DetailRecord): number => {
                                 <!-- SmartLookup field -->
                                 <CRUD6AutoLookup
                                     v-else-if="getFieldType(fieldKey) === 'smartlookup'"
-                                    :model="getFieldConfig(fieldKey).lookup_model || getFieldConfig(fieldKey).model"
-                                    :id-field="getFieldConfig(fieldKey).lookup_id || getFieldConfig(fieldKey).id || 'id'"
-                                    :display-field="getFieldConfig(fieldKey).lookup_desc || getFieldConfig(fieldKey).desc || 'name'"
+                                    :model="getFieldConfig(fieldKey).lookup_model || getFieldConfig(fieldKey).lookup?.model || getFieldConfig(fieldKey).model"
+                                    :id-field="getFieldConfig(fieldKey).lookup_id || getFieldConfig(fieldKey).lookup?.id || getFieldConfig(fieldKey).id || 'id'"
+                                    :display-field="getFieldConfig(fieldKey).lookup_desc || getFieldConfig(fieldKey).lookup?.desc || getFieldConfig(fieldKey).desc || 'name'"
                                     :model-value="row[fieldKey]"
                                     @update:model-value="onFieldChange(index, fieldKey, $event)"
                                     :disabled="disabled || allowEdit === false"

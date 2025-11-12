@@ -214,9 +214,9 @@ export function getFieldRenderConfig(
             if (components?.AutoLookup) {
                 config.component = components.AutoLookup
                 config.attributes = {
-                    model: field.lookup_model || field.model,
-                    'id-field': field.lookup_id || field.id || 'id',
-                    'display-field': field.lookup_desc || field.desc || 'name',
+                    model: field.lookup_model || field.lookup?.model || field.model,
+                    'id-field': field.lookup_id || field.lookup?.id || field.id || 'id',
+                    'display-field': field.lookup_desc || field.lookup?.desc || field.desc || 'name',
                     placeholder: field.placeholder,
                     required: field.required,
                     disabled: field.readonly

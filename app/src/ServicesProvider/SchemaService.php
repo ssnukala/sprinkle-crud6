@@ -199,6 +199,68 @@ class SchemaService
         return $schema;
     }
 
+    /**
+     * Normalize lookup attributes for smartlookup fields.
+     * 
+     * Supports both nested and flat lookup structures:
+     * - Nested: lookup: {model, id, desc}
+     * - Flat: lookup_model, lookup_id, lookup_desc (legacy)
+     * 
+     * Converts nested structure to flat for backward compatibility.
+     * Also supports shorthand attributes: model, id, desc as fallbacks.
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with normalized lookup attributes
+     */
+    protected function normalizeLookupAttributes(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            // Only process smartlookup fields
+            if (($field['type'] ?? '') !== 'smartlookup') {
+                continue;
+            }
+
+            // If nested 'lookup' object exists, expand it to flat attributes
+            if (isset($field['lookup']) && is_array($field['lookup'])) {
+                // Map nested lookup.model to lookup_model (if not already set)
+                if (isset($field['lookup']['model']) && !isset($field['lookup_model'])) {
+                    $field['lookup_model'] = $field['lookup']['model'];
+                }
+                
+                // Map nested lookup.id to lookup_id (if not already set)
+                if (isset($field['lookup']['id']) && !isset($field['lookup_id'])) {
+                    $field['lookup_id'] = $field['lookup']['id'];
+                }
+                
+                // Map nested lookup.desc to lookup_desc (if not already set)
+                if (isset($field['lookup']['desc']) && !isset($field['lookup_desc'])) {
+                    $field['lookup_desc'] = $field['lookup']['desc'];
+                }
+            }
+
+            // Provide fallbacks to shorthand attributes if lookup_* not set
+            // This supports both old shorthand format and ensures consistency
+            if (!isset($field['lookup_model']) && isset($field['model'])) {
+                $field['lookup_model'] = $field['model'];
+            }
+            
+            if (!isset($field['lookup_id']) && isset($field['id'])) {
+                $field['lookup_id'] = $field['id'];
+            }
+            
+            if (!isset($field['lookup_desc']) && isset($field['desc'])) {
+                $field['lookup_desc'] = $field['desc'];
+            }
+        }
+
+        return $schema;
+    }
+
 
     /**
      * Get schema configuration for a model
@@ -268,6 +330,9 @@ class SchemaService
 
         // Apply default values
         $schema = $this->applyDefaults($schema);
+
+        // Normalize lookup attributes for smartlookup fields
+        $schema = $this->normalizeLookupAttributes($schema);
 
         // If schema was loaded from connection-based path and doesn't have explicit connection, set it
         if ($connection !== null && !isset($schema['connection'])) {

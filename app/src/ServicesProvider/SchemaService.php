@@ -267,6 +267,18 @@ class SchemaService
      * Supports both new show_in array and legacy flags (editable, viewable, listable).
      * Converts legacy flags to show_in for internal consistency.
      * 
+     * Supported contexts:
+     * - 'list': Field appears in list/table view
+     * - 'create': Field appears in create form
+     * - 'edit': Field appears in edit form
+     * - 'form': Shorthand for both create and edit (expanded to both)
+     * - 'detail': Field appears in detail/view page
+     * 
+     * Special handling:
+     * - Password fields: Default to ['create', 'edit'] (not viewable)
+     * - Readonly fields: Added to 'detail' but removed from 'create'/'edit'
+     * - 'form' is expanded to ['create', 'edit'] for granular control
+     * 
      * @param array $schema The schema array
      * 
      * @return array The schema with normalized visibility flags
@@ -278,11 +290,25 @@ class SchemaService
         }
 
         foreach ($schema['fields'] as $fieldKey => &$field) {
-            // If show_in already exists, normalize legacy flags to match
+            $fieldType = $field['type'] ?? 'string';
+            
+            // If show_in already exists, normalize it
             if (isset($field['show_in']) && is_array($field['show_in'])) {
+                // Expand 'form' to 'create' and 'edit' for granular control
+                $normalizedShowIn = [];
+                foreach ($field['show_in'] as $context) {
+                    if ($context === 'form') {
+                        $normalizedShowIn[] = 'create';
+                        $normalizedShowIn[] = 'edit';
+                    } else {
+                        $normalizedShowIn[] = $context;
+                    }
+                }
+                $field['show_in'] = array_unique($normalizedShowIn);
+                
                 // Derive legacy flags from show_in for backward compatibility
                 $field['listable'] = in_array('list', $field['show_in']);
-                $field['editable'] = in_array('form', $field['show_in']);
+                $field['editable'] = in_array('create', $field['show_in']) || in_array('edit', $field['show_in']);
                 $field['viewable'] = in_array('detail', $field['show_in']);
                 continue;
             }
@@ -301,13 +327,25 @@ class SchemaService
                 $showIn[] = 'list';
             }
             
-            // Only show in form if editable and not readonly
-            if ($editable && !$readonly) {
-                $showIn[] = 'form';
-            }
-            
-            if ($viewable) {
-                $showIn[] = 'detail';
+            // Special handling for password fields
+            if ($fieldType === 'password') {
+                // Password fields default to create and edit only (not viewable)
+                if ($editable && !$readonly) {
+                    $showIn[] = 'create';
+                    $showIn[] = 'edit';
+                }
+                // Never show password in detail view (security)
+            } else {
+                // Regular fields: add create/edit if editable
+                if ($editable && !$readonly) {
+                    $showIn[] = 'create';
+                    $showIn[] = 'edit';
+                }
+                
+                // Add detail view if viewable
+                if ($viewable) {
+                    $showIn[] = 'detail';
+                }
             }
 
             // Set the show_in array
@@ -846,8 +884,12 @@ class SchemaService
                 ];
                 
                 foreach ($schema['fields'] as $fieldKey => $field) {
-                    // Include field if it's explicitly listable or listable is not set (default true)
-                    if (($field['listable'] ?? true) === true) {
+                    // Check show_in array for 'list' context
+                    $showInList = isset($field['show_in']) 
+                        ? in_array('list', $field['show_in']) 
+                        : ($field['listable'] ?? true);
+                    
+                    if ($showInList) {
                         $data['fields'][$fieldKey] = [
                             'type' => $field['type'] ?? 'string',
                             'label' => $field['label'] ?? $fieldKey,
@@ -873,87 +915,44 @@ class SchemaService
                 }
                 return $data;
 
+            case 'create':
+                // For create forms: fields visible during creation
+                return $this->getFormContextData($schema, 'create');
+
+            case 'edit':
+                // For edit forms: fields visible during editing
+                return $this->getFormContextData($schema, 'edit');
+
             case 'form':
-                // For create/edit forms: editable fields with validation
-                $data = ['fields' => []];
+                // For create/edit forms (backward compatible): fields visible in both
+                // This merges fields from both create and edit contexts
+                $createData = $this->getFormContextData($schema, 'create');
+                $editData = $this->getFormContextData($schema, 'edit');
                 
-                foreach ($schema['fields'] as $fieldKey => $field) {
-                    // Include field if it's explicitly editable or editable is not set (default true)
-                    if (($field['editable'] ?? true) !== false) {
-                        $data['fields'][$fieldKey] = [
-                            'type' => $field['type'] ?? 'string',
-                            'label' => $field['label'] ?? $fieldKey,
-                            'required' => $field['required'] ?? false,
-                            'readonly' => $field['readonly'] ?? false,
-                        ];
-
-                        // Include validation rules if present
-                        if (isset($field['validation'])) {
-                            $data['fields'][$fieldKey]['validation'] = $field['validation'];
-                        }
-
-                        // Include placeholder if present
-                        if (isset($field['placeholder'])) {
-                            $data['fields'][$fieldKey]['placeholder'] = $field['placeholder'];
-                        }
-
-                        // Include description if present (helpful hint text)
-                        if (isset($field['description'])) {
-                            $data['fields'][$fieldKey]['description'] = $field['description'];
-                        }
-
-                        // Include default value if present
-                        if (isset($field['default'])) {
-                            $data['fields'][$fieldKey]['default'] = $field['default'];
-                        }
-
-                        // Include icon if present
-                        if (isset($field['icon'])) {
-                            $data['fields'][$fieldKey]['icon'] = $field['icon'];
-                        }
-
-                        // Include rows for textarea fields
-                        if (isset($field['rows'])) {
-                            $data['fields'][$fieldKey]['rows'] = $field['rows'];
-                        }
-
-                        // Include editable flag (may differ from parent default)
-                        if (isset($field['editable'])) {
-                            $data['fields'][$fieldKey]['editable'] = $field['editable'];
-                        }
-
-                        // Include smartlookup configuration if present
-                        if ($field['type'] === 'smartlookup') {
-                            if (isset($field['lookup_model'])) {
-                                $data['fields'][$fieldKey]['lookup_model'] = $field['lookup_model'];
-                            }
-                            if (isset($field['lookup_id'])) {
-                                $data['fields'][$fieldKey]['lookup_id'] = $field['lookup_id'];
-                            }
-                            if (isset($field['lookup_desc'])) {
-                                $data['fields'][$fieldKey]['lookup_desc'] = $field['lookup_desc'];
-                            }
-                            if (isset($field['model'])) {
-                                $data['fields'][$fieldKey]['model'] = $field['model'];
-                            }
-                            if (isset($field['id'])) {
-                                $data['fields'][$fieldKey]['id'] = $field['id'];
-                            }
-                            if (isset($field['desc'])) {
-                                $data['fields'][$fieldKey]['desc'] = $field['desc'];
-                            }
-                        }
+                // Merge fields from both contexts
+                $mergedFields = [];
+                foreach ($createData['fields'] as $key => $field) {
+                    $mergedFields[$key] = $field;
+                }
+                foreach ($editData['fields'] as $key => $field) {
+                    if (!isset($mergedFields[$key])) {
+                        $mergedFields[$key] = $field;
                     }
                 }
-                return $data;
+                
+                return ['fields' => $mergedFields];
 
             case 'detail':
                 // For detail/view pages: only viewable fields with full display properties
                 $data = ['fields' => []];
                 
                 foreach ($schema['fields'] as $fieldKey => $field) {
-                    // Include field if it's explicitly viewable or viewable is not set (default true)
-                    if (($field['viewable'] ?? true) === true) {
+                    // Check show_in array for 'detail' context
+                    $showInDetail = isset($field['show_in']) 
+                        ? in_array('detail', $field['show_in']) 
+                        : ($field['viewable'] ?? true);
+                    
+                    if ($showInDetail) {
                         $data['fields'][$fieldKey] = [
                             'type' => $field['type'] ?? 'string',
                             'label' => $field['label'] ?? $fieldKey,
@@ -1023,5 +1022,105 @@ class SchemaService
                 // Unknown context - return null to signal fallback to full schema
                 return null;
         }
+    }
+
+    /**
+     * Get form context data for create or edit context.
+     * 
+     * Helper method to extract fields visible in create or edit forms.
+     * 
+     * @param array  $schema  The complete schema array
+     * @param string $context Either 'create' or 'edit'
+     * 
+     * @return array Form data with fields for the specified context
+     */
+    protected function getFormContextData(array $schema, string $context): array
+    {
+        $data = ['fields' => []];
+        
+        foreach ($schema['fields'] as $fieldKey => $field) {
+            // Check show_in array for the specific context (create or edit)
+            $showInContext = false;
+            
+            if (isset($field['show_in']) && is_array($field['show_in'])) {
+                $showInContext = in_array($context, $field['show_in']);
+            } else {
+                // Fallback to legacy flags if show_in not set
+                $showInContext = ($field['editable'] ?? true) !== false && !($field['readonly'] ?? false);
+            }
+            
+            if ($showInContext) {
+                $data['fields'][$fieldKey] = [
+                    'type' => $field['type'] ?? 'string',
+                    'label' => $field['label'] ?? $fieldKey,
+                    'required' => $field['required'] ?? false,
+                    'readonly' => $field['readonly'] ?? false,
+                ];
+
+                // Include validation rules if present
+                if (isset($field['validation'])) {
+                    $data['fields'][$fieldKey]['validation'] = $field['validation'];
+                }
+
+                // Include placeholder if present
+                if (isset($field['placeholder'])) {
+                    $data['fields'][$fieldKey]['placeholder'] = $field['placeholder'];
+                }
+
+                // Include description if present (helpful hint text)
+                if (isset($field['description'])) {
+                    $data['fields'][$fieldKey]['description'] = $field['description'];
+                }
+
+                // Include default value if present
+                if (isset($field['default'])) {
+                    $data['fields'][$fieldKey]['default'] = $field['default'];
+                }
+
+                // Include icon if present
+                if (isset($field['icon'])) {
+                    $data['fields'][$fieldKey]['icon'] = $field['icon'];
+                }
+
+                // Include rows for textarea fields
+                if (isset($field['rows'])) {
+                    $data['fields'][$fieldKey]['rows'] = $field['rows'];
+                }
+
+                // Include editable flag (may differ from parent default)
+                if (isset($field['editable'])) {
+                    $data['fields'][$fieldKey]['editable'] = $field['editable'];
+                }
+                
+                // Include show_in for reference
+                if (isset($field['show_in'])) {
+                    $data['fields'][$fieldKey]['show_in'] = $field['show_in'];
+                }
+
+                // Include smartlookup configuration if present
+                if (($field['type'] ?? '') === 'smartlookup') {
+                    if (isset($field['lookup_model'])) {
+                        $data['fields'][$fieldKey]['lookup_model'] = $field['lookup_model'];
+                    }
+                    if (isset($field['lookup_id'])) {
+                        $data['fields'][$fieldKey]['lookup_id'] = $field['lookup_id'];
+                    }
+                    if (isset($field['lookup_desc'])) {
+                        $data['fields'][$fieldKey]['lookup_desc'] = $field['lookup_desc'];
+                    }
+                    if (isset($field['model'])) {
+                        $data['fields'][$fieldKey]['model'] = $field['model'];
+                    }
+                    if (isset($field['id'])) {
+                        $data['fields'][$fieldKey]['id'] = $field['id'];
+                    }
+                    if (isset($field['desc'])) {
+                        $data['fields'][$fieldKey]['desc'] = $field['desc'];
+                    }
+                }
+            }
+        }
+        
+        return $data;
     }
 }

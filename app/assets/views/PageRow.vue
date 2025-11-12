@@ -9,6 +9,7 @@ import CRUD6Details from '../components/CRUD6/Details.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { getLookupConfig } from '../composables/useCRUD6FieldRenderer'
 
 /**
  * Variables and composables
@@ -354,6 +355,21 @@ watch(recordId, (newId) => {
         fetch()
     }
 }, { immediate: true })
+
+/**
+ * Helper function to get lookup attributes for AutoLookup component
+ * Uses centralized getLookupConfig from composable
+ */
+function getLookupAttributes(field: any) {
+    const lookupConfig = getLookupConfig(field)
+    return {
+        model: lookupConfig.model,
+        'id-field': lookupConfig.idField,
+        'display-field': lookupConfig.displayField,
+        placeholder: field.placeholder,
+        required: field.required
+    }
+}
 </script>
 
 <template>
@@ -420,11 +436,7 @@ watch(recordId, (newId) => {
                                 <!-- SmartLookup field -->
                                 <CRUD6AutoLookup
                                     v-if="field.type === 'smartlookup'"
-                                    :model="field.lookup_model || field.lookup?.model || field.model"
-                                    :id-field="field.lookup_id || field.lookup?.id || field.id || 'id'"
-                                    :display-field="field.lookup_desc || field.lookup?.desc || field.desc || 'name'"
-                                    :placeholder="field.placeholder"
-                                    :required="field.required"
+                                    v-bind="getLookupAttributes(field)"
                                     v-model="record[fieldKey]"
                                 />
                                 

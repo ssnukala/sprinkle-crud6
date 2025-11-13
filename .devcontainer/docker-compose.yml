@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   sprinkle-crud6:
     build:
@@ -21,6 +19,8 @@ services:
       - mysql
     networks:
       - sprinkle-crud6-network
+    # Keep container running for devcontainer
+    command: sleep infinity
 
   mysql:
     image: mysql:8.0

@@ -124,7 +124,7 @@ This approach allows you to:
 
 ### Working with Sprinkle Source Code
 
-**Important:** The workspace folder is set to `/workspace/userfrosting` in the devcontainer, so VS Code opens directly to the UserFrosting project.
+**Important:** The workspace folder is set to `/workspace` in the devcontainer, which is the root of the mounted repository. After the setup script runs, the UserFrosting project will be available at `/workspace/userfrosting`.
 
 To edit sprinkle source code:
 1. **sprinkle-crud6**: Edit files in `/ssnukala/sprinkle-crud6` (cloned from main branch)
@@ -136,7 +136,7 @@ To edit sprinkle source code:
 
 ### Available Commands
 
-#### In UserFrosting project (`/workspace/userfrosting` - default workspace):
+#### In UserFrosting project (`/workspace/userfrosting` - created during setup):
 ```bash
 php bakery serve               # Start development server (port 8080)
 php bakery assets:vite        # Start Vite dev server (port 5173)

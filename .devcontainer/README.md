@@ -8,8 +8,18 @@ This repository includes a complete development container setup that mirrors the
 - **PHP 8.2** with UserFrosting 6 beta
 - **Node.js 20** for frontend development
 - **MySQL 8.0** database
-- **XDebug** for PHP debugging
 - **VS Code extensions** for PHP, Vue.js, and TypeScript development
+
+> **Note on XDebug**: XDebug has been removed from the default build due to PECL connectivity issues in certain network environments (e.g., GitHub Codespaces). If you need XDebug for debugging, you can install it manually after the container is built:
+> ```bash
+> sudo pecl install xdebug
+> sudo docker-php-ext-enable xdebug
+> # Configure XDebug
+> echo "xdebug.mode=debug,develop,coverage" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+> echo "xdebug.start_with_request=yes" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+> echo "xdebug.client_host=host.docker.internal" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+> echo "xdebug.client_port=9003" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+> ```
 
 ### Development Configuration
 ```bash
@@ -161,14 +171,17 @@ vendor/bin/phpstan analyse    # Static analysis
 | UserFrosting | 8080 | Main application server (http://localhost:8080) |
 | Vite Dev Server | 5173 | Frontend development assets |
 | MySQL | 3306 | Database server |
-| XDebug | 9003 | PHP debugging |
+
+> **Note**: Port 9003 (XDebug) is not forwarded by default since XDebug is not pre-installed. If you install XDebug manually, you can add port forwarding in your local devcontainer configuration.
 
 ### VS Code Integration
 
 The devcontainer includes these VS Code extensions:
-- **PHP**: Intelephense, XDebug, PHP CS Fixer, PHPStan
+- **PHP**: Intelephense, PHP CS Fixer, PHPStan
 - **Vue.js**: Volar, TypeScript Vue Plugin
 - **General**: Prettier, Tailwind CSS, Twig, GitHub Copilot
+
+> **Note**: The XDebug extension has been removed from the default setup. If you install XDebug manually, you can add the `xdebug.php-debug` extension to your local VS Code settings.
 
 ### Database Configuration
 
@@ -343,10 +356,29 @@ php bakery route:list
 - Frontend changes auto-reload via Vite dev server
 - Schema changes may require cache clear: `php bakery clear:cache`
 
-### Debugging with XDebug
-1. Set breakpoints in VS Code
-2. Start listening for XDebug (F5 or Debug panel)
-3. XDebug will connect on port 9003 automatically
+### Debugging with XDebug (Optional)
+
+XDebug is not pre-installed but can be added manually if needed:
+
+1. Install XDebug in the container:
+   ```bash
+   sudo pecl install xdebug
+   sudo docker-php-ext-enable xdebug
+   ```
+
+2. Configure XDebug:
+   ```bash
+   echo "xdebug.mode=debug,develop,coverage" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+   echo "xdebug.start_with_request=yes" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+   echo "xdebug.client_host=host.docker.internal" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+   echo "xdebug.client_port=9003" | sudo tee -a /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+   ```
+
+3. Install the XDebug VS Code extension: `xdebug.php-debug`
+
+4. Set breakpoints in VS Code and start listening for XDebug (F5 or Debug panel)
+
+5. Add port 9003 forwarding if needed
 
 ### Running Tests
 ```bash

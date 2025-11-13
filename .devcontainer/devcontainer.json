@@ -34,7 +34,6 @@
             },
             "extensions": [
                 "bmewburn.vscode-intelephense-client",
-                "xdebug.php-debug",
                 "junstyle.php-cs-fixer",
                 "phpstan.phpstan-vscode",
                 "vue.volar",
@@ -54,8 +53,7 @@
     "forwardPorts": [
         8080,
         5173,
-        3306,
-        9003
+        3306
     ],
     "portsAttributes": {
         "8080": {
@@ -68,9 +66,6 @@
         },
         "3306": {
             "label": "MySQL Database"
-        },
-        "9003": {
-            "label": "XDebug"
         }
     },
     "postCreateCommand": "bash .devcontainer/setup-project.sh",

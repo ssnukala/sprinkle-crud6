@@ -6,6 +6,10 @@ export { useCRUD6Relationships } from './useCRUD6Relationships'
 export { useMasterDetail } from './useMasterDetail'
 export { useCRUD6Actions } from './useCRUD6Actions'
 export { useCRUD6FieldRenderer } from './useCRUD6FieldRenderer'
+
+// CRUD6 Validation Adapters
+export { useCRUD6RegleAdapter, convertCRUD6ToRegleRules } from './useCRUD6ValidationAdapter'
+// Deprecated: Use useCRUD6RegleAdapter instead to avoid YAML imports
 export { useCRUD6ToUFSchemaConverter, convertCRUD6ToUFValidatorFormat } from './useCRUD6ValidationAdapter'
 
 // Export schema types for external use

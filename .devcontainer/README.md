@@ -6,9 +6,11 @@ This repository includes a complete development container setup that mirrors the
 
 ### Full Stack Development Environment
 - **PHP 8.2** with UserFrosting 6 beta
-- **Node.js 20** for frontend development
+- **Node.js 20** for frontend development (installed via multi-stage Docker build from official Node.js image)
 - **MySQL 8.0** database
 - **VS Code extensions** for PHP, Vue.js, and TypeScript development
+
+> **Note on Node.js Installation**: The container uses a multi-stage Docker build to copy Node.js from the official `node:20-bookworm-slim` image. This approach is more reliable than repository-based installation, especially in GitHub Codespaces and restricted network environments.
 
 > **Note on XDebug**: XDebug has been removed from the default build due to PECL connectivity issues in certain network environments (e.g., GitHub Codespaces). If you need XDebug for debugging, you can install it manually after the container is built:
 > ```bash

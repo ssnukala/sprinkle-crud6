@@ -377,7 +377,7 @@ function getLookupAttributes(field: any) {
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="password"
-                        autocomplete="current-password"
+                        autocomplete="new-password"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"

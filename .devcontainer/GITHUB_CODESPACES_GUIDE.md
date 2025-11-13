@@ -37,6 +37,8 @@ GitHub Codespaces provides cloud-hosted development environments that work seaml
 - **Docker Compose in DevContainers**: https://containers.dev/guide/dockerfile#using-docker-compose
 - **Docker Compose File Reference**: https://docs.docker.com/compose/compose-file/
 
+> **Note**: This repository uses `compose.yml` (the modern Docker Compose v2 naming convention) instead of the legacy `docker-compose.yml` name. Both work with Docker Compose v2, but `compose.yml` is the recommended naming for new projects.
+
 ## Quick Start for This Repository
 
 ### 1. Create a Codespace
@@ -103,7 +105,7 @@ Then open the forwarded port 8080 in your browser to access the application.
 
 **Solution**: This was fixed in our devcontainer configuration by:
 1. Setting `workspaceFolder` to `/workspace` (not a non-existent subdirectory)
-2. Removing obsolete `version` attribute from `docker-compose.yml`
+2. Removing obsolete `version` attribute from `compose.yml`
 3. Adding `command: sleep infinity` to keep container running
 
 See `.archive/DEVCONTAINER_STARTUP_FIX.md` for details.

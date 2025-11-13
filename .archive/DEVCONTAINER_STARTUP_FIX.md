@@ -1,5 +1,7 @@
 # DevContainer Startup Fix
 
+> **Update**: The file `docker-compose.yml` was renamed to `compose.yml` to align with Docker Compose v2 naming conventions. All references in this document have been updated accordingly.
+
 ## Issue
 DevContainer was failing to start in GitHub Codespaces with the following error:
 ```
@@ -11,9 +13,9 @@ Error response from daemon: Container <id> is not running
 ## Root Causes
 
 ### 1. Obsolete `version` Attribute
-The `docker-compose.yml` file included `version: '3.8'` which is now obsolete in newer versions of Docker Compose. This caused warnings:
+The `compose.yml` file included `version: '3.8'` which is now obsolete in newer versions of Docker Compose. This caused warnings:
 ```
-WARN[0000] /var/lib/docker/codespacemount/workspace/sprinkle-crud6/.devcontainer/docker-compose.yml: 
+WARN[0000] /var/lib/docker/codespacemount/workspace/sprinkle-crud6/.devcontainer/compose.yml: 
 the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
 ```
 
@@ -26,7 +28,7 @@ The container had no long-running command to keep it alive. While the Dockerfile
 ## Solutions
 
 ### 1. Remove Obsolete `version` Attribute
-**File**: `.devcontainer/docker-compose.yml`
+**File**: `.devcontainer/compose.yml`
 ```diff
 -version: '3.8'
 -
@@ -43,10 +45,10 @@ The container had no long-running command to keep it alive. While the Dockerfile
 +    "workspaceFolder": "/workspace",
 ```
 
-**Reason**: The devcontainer mounts the repository at `/workspace` (see `volumes: - ..:/workspace:cached` in docker-compose.yml). The workspaceFolder must point to an existing directory when the container starts. The UserFrosting project at `/workspace/userfrosting` is created later by the setup script.
+**Reason**: The devcontainer mounts the repository at `/workspace` (see `volumes: - ..:/workspace:cached` in compose.yml). The workspaceFolder must point to an existing directory when the container starts. The UserFrosting project at `/workspace/userfrosting` is created later by the setup script.
 
 ### 3. Add `sleep infinity` Command
-**File**: `.devcontainer/docker-compose.yml`
+**File**: `.devcontainer/compose.yml`
 ```diff
      networks:
        - sprinkle-crud6-network
@@ -73,9 +75,9 @@ Updated documentation to reflect that:
 cat .devcontainer/devcontainer.json | jq . > /dev/null
 ✓ devcontainer.json is valid JSON
 
-# Validate docker-compose.yml
+# Validate compose.yml
 docker compose config
-✓ docker-compose.yml is valid
+✓ compose.yml is valid
 ```
 
 ### Expected Behavior After Fix

@@ -1,6 +1,6 @@
 {
-    "name": "UserFrosting CRUD6 Development (Full Stack)",
-    "dockerComposeFile": "docker-compose.yml",
+    "name": "UserFrosting CRUD6 Development (Full Stack) - Docker Compose v2",
+    "dockerComposeFile": "compose.yml",
     "service": "sprinkle-crud6",
     "workspaceFolder": "/workspace",
     "shutdownAction": "stopCompose",

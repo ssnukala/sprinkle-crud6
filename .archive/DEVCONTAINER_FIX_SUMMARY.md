@@ -1,5 +1,7 @@
 # DevContainer Startup Issue - Fix Summary
 
+> **Update**: The file `docker-compose.yml` was renamed to `compose.yml` to align with Docker Compose v2 naming conventions. This is the recommended naming for Docker Compose v2 projects.
+
 ## Problem Statement
 
 The GitHub Codespaces devcontainer was failing to start with the following error:
@@ -13,7 +15,7 @@ Error response from daemon: Container <id> is not running
 
 Three issues were identified that prevented the devcontainer from starting:
 
-1. **Obsolete Docker Compose Version Attribute**: The `version: '3.8'` attribute in `docker-compose.yml` is obsolete in Docker Compose v2 and caused warnings.
+1. **Obsolete Docker Compose Version Attribute**: The `version: '3.8'` attribute in `compose.yml` is obsolete in Docker Compose v2 and caused warnings.
 
 2. **Invalid Workspace Folder Path**: The `workspaceFolder` was set to `/workspace/userfrosting`, which doesn't exist when the container starts (it's created later by the setup script).
 
@@ -22,7 +24,7 @@ Three issues were identified that prevented the devcontainer from starting:
 ## Solutions Implemented
 
 ### 1. Removed Obsolete `version` Attribute
-**File**: `.devcontainer/docker-compose.yml`
+**File**: `.devcontainer/compose.yml`
 - Removed `version: '3.8'` from the top of the file
 - Docker Compose v2 no longer requires or uses the version field
 - Eliminates warnings during container startup
@@ -35,7 +37,7 @@ Three issues were identified that prevented the devcontainer from starting:
 - Workspace folder must exist when the container starts
 
 ### 3. Added Sleep Infinity Command
-**File**: `.devcontainer/docker-compose.yml`
+**File**: `.devcontainer/compose.yml`
 - Added `command: sleep infinity` to the sprinkle-crud6 service
 - Keeps the container running indefinitely
 - Standard pattern for development containers without persistent services
@@ -70,10 +72,10 @@ Key sections:
 
 All changes have been validated:
 - ✅ `devcontainer.json` is valid JSON (tested with `jq`)
-- ✅ `docker-compose.yml` is valid (tested with `docker compose config`)
+- ✅ `compose.yml` is valid (tested with `docker compose config`)
 - ✅ Workspace folder points to existing directory (`/workspace`)
 - ✅ Container has long-running command (`sleep infinity`)
-- ✅ No obsolete attributes in docker-compose.yml
+- ✅ No obsolete attributes in compose.yml
 - ✅ Documentation includes official GitHub resources
 
 ## Expected Behavior
@@ -89,7 +91,7 @@ After these fixes, the devcontainer should:
 ## Files Changed
 
 ### Configuration Files
-- `.devcontainer/docker-compose.yml` - Removed `version`, added `command: sleep infinity`
+- `.devcontainer/compose.yml` - Removed `version`, added `command: sleep infinity`
 - `.devcontainer/devcontainer.json` - Fixed `workspaceFolder` path
 
 ### Documentation Files

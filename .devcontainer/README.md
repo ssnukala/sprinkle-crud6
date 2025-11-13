@@ -29,11 +29,13 @@ This repository includes a complete development container setup that mirrors the
 ```bash
 .devcontainer/
 ├── devcontainer.json          # Main devcontainer config
-├── docker-compose.yml         # Multi-container setup with MySQL
+├── compose.yml                # Multi-container setup with MySQL (Docker Compose v2)
 ├── Dockerfile                 # Combined PHP + Node.js container
 ├── setup-project.sh          # Mirrors integration-test.yml workflow
 └── README.md                 # This file
 ```
+
+> **Note**: This repository uses `compose.yml` (Docker Compose v2 naming convention) instead of the legacy `docker-compose.yml`. Both file names work with Docker Compose v2, but `compose.yml` is the recommended standard for new projects.
 
 ## Architecture Overview
 

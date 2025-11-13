@@ -1,3 +1,8 @@
+# Docker Compose Configuration for DevContainer
+# Uses Docker Compose v2 specification (compose.yml naming convention)
+# Note: The 'version' field is no longer used in Compose v2
+# See: https://docs.docker.com/compose/compose-file/
+
 services:
   sprinkle-crud6:
     build:

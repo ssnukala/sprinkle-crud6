@@ -1,24 +1,17 @@
 import type { App } from 'vue'
 import axios from 'axios'
 import { debugLog, debugError, initDebugMode } from '../utils/debug'
-import {
-    CRUD6RowPage,
-    CRUD6ListPage,
-} from '../views'
-import {
-    CRUD6CreateModal,
-    CRUD6DeleteModal,
-    CRUD6EditModal,
-    CRUD6Form,
-    CRUD6Info,
-    CRUD6Details,
-    CRUD6DetailGrid,
-    CRUD6MasterDetailForm
-} from '../components/CRUD6'
 
 /**
- * Register CRUD6 components & views globally
- * See : https://vuejs.org/guide/components/registration
+ * CRUD6 Sprinkle Plugin
+ * 
+ * Provides global initialization for CRUD6:
+ * - Axios interceptors for CRUD6 API debugging
+ * - Debug mode initialization from backend config
+ * 
+ * Note: Components and views are NOT registered globally to avoid eager loading.
+ * Views are lazy-loaded via router, and components are imported locally where needed.
+ * This prevents unnecessary module loading and YAML imports from other sprinkles.
  */
 export default {
     install: (app: App) => {
@@ -84,36 +77,5 @@ export default {
                 return Promise.reject(error)
             }
         )
-        
-        // Register views from '../views'
-        app.component('UFCRUD6RowPage', CRUD6RowPage)
-            .component('UFCRUD6ListPage', CRUD6ListPage)
-            // Register components from '../components/CRUD6'
-            .component('UFCRUD6CreateModal', CRUD6CreateModal)
-            .component('UFCRUD6DeleteModal', CRUD6DeleteModal)
-            .component('UFCRUD6EditModal', CRUD6EditModal)
-            .component('UFCRUD6Form', CRUD6Form)
-            .component('UFCRUD6Info', CRUD6Info)
-            .component('UFCRUD6Details', CRUD6Details)
-            .component('UFCRUD6DetailGrid', CRUD6DetailGrid)
-            .component('UFCRUD6MasterDetailForm', CRUD6MasterDetailForm)
-    }
-}
-
-declare module 'vue' {
-    export interface GlobalComponents {
-        // Views from '../views'
-        UFCRUD6RowPage: typeof CRUD6RowPage
-        UFCRUD6ListPage: typeof CRUD6ListPage
-
-        // Components from '../components/CRUD6'
-        UFCRUD6CreateModal: typeof CRUD6CreateModal
-        UFCRUD6DeleteModal: typeof CRUD6DeleteModal
-        UFCRUD6EditModal: typeof CRUD6EditModal
-        UFCRUD6Form: typeof CRUD6Form
-        UFCRUD6Info: typeof CRUD6Info
-        UFCRUD6Details: typeof CRUD6Details
-        UFCRUD6DetailGrid: typeof CRUD6DetailGrid
-        UFCRUD6MasterDetailForm: typeof CRUD6MasterDetailForm
     }
 }

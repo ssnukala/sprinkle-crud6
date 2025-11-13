@@ -4,8 +4,19 @@ import CRUD6Sprinkle from './plugins/crud6'
 /**
  * CRUD6 Sprinkle initialization recipe.
  * 
- * This recipe is responsible for loading the CRUD6 sprinkle plugin
- * which registers all Vue components and views globally.
+ * This is the main entry point for plugin installation ONLY.
+ * Use this only for: app.use(CRUD6)
+ * 
+ * For imports, use the specific subpath exports to avoid eager loading:
+ * - Composables: import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
+ * - Components: import { CRUD6Form } from '@ssnukala/sprinkle-crud6/components'
+ * - Interfaces: import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+ * - Stores: import { useCRUD6SchemaStore } from '@ssnukala/sprinkle-crud6/stores'
+ * - Routes: import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'
+ * - Views: Lazy-loaded via router
+ * 
+ * Components and views are NOT registered globally to prevent eager module loading
+ * and unnecessary YAML imports from other sprinkles.
  */
 export default {
     install: (app: App) => {
@@ -13,20 +24,5 @@ export default {
     }
 }
 
-// Export components
-export * from './components'
-
-// Export composables  
-export * from './composables'
-
-// Export interfaces
-export * from './interfaces'
-
-// Export views
-export * from './views'
-
-// Export routes
-export * from './routes'
-
-// Export plugins
-export * from './plugins'
+// Re-exports removed to prevent eager loading.
+// Use subpath imports instead (e.g., '@ssnukala/sprinkle-crud6/composables')

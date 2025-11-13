@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import type { DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
+import CRUD6MasterDetailForm from '../components/CRUD6/MasterDetailForm.vue'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
@@ -69,7 +70,7 @@ function handleCancelled() {
       </div>
 
       <!-- Master-Detail Form -->
-      <UFCRUD6MasterDetailForm
+      <CRUD6MasterDetailForm
         model="orders"
         :record-id="orderId"
         :detail-config="detailConfig"

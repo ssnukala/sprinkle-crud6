@@ -2,6 +2,8 @@
 
 This repository includes a complete development container setup that mirrors the `integration-test.yml` workflow to provide a full UserFrosting 6 development environment with the CRUD6 sprinkle.
 
+> **📚 New to GitHub Codespaces?** See [GITHUB_CODESPACES_GUIDE.md](GITHUB_CODESPACES_GUIDE.md) for official GitHub documentation links and a comprehensive guide to using DevContainers with GitHub Codespaces.
+
 ## What's Included
 
 ### Full Stack Development Environment
@@ -51,6 +53,8 @@ This approach allows you to:
 - Make changes to sprinkle code and see them immediately in the running application
 
 ## Quick Start
+
+> **💡 Tip**: For detailed GitHub Codespaces instructions and troubleshooting, see [GITHUB_CODESPACES_GUIDE.md](GITHUB_CODESPACES_GUIDE.md).
 
 ### Prerequisites
 - **VS Code** with "Dev Containers" extension

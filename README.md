@@ -28,6 +28,8 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 
 ## Installation
 
+> **🚀 Quick Start with GitHub Codespaces**: Want to try CRUD6 instantly in a fully configured development environment? Click the "Code" button above, select "Codespaces", and create a new codespace. Everything will be automatically set up for you! See [.devcontainer/GITHUB_CODESPACES_GUIDE.md](.devcontainer/GITHUB_CODESPACES_GUIDE.md) for details.
+
 > **Note**: This sprinkle requires UserFrosting 6.0.4 beta or later. Since UserFrosting 6 is still in beta, you'll need to configure your project to accept beta packages.
 
 1. First, ensure your project accepts beta packages by setting minimum-stability in your `composer.json`:

@@ -39,37 +39,54 @@ php --version
 composer --version
 
 # ============================================================================
-# STEP 1: Copy sprinkle-crud6 to /ssnukala/sprinkle-crud6
+# STEP 1: Setup /ssnukala directory and clone sprinkle-crud6 from main branch
 # ============================================================================
-print_step "Copying sprinkle-crud6 to /ssnukala/sprinkle-crud6..."
+print_step "Setting up /ssnukala directory and cloning sprinkle-crud6..."
 
 sudo mkdir -p /ssnukala
 sudo chown -R vscode:vscode /ssnukala
 
-# Copy the sprinkle-crud6 source from /workspace to /ssnukala
+# Clone sprinkle-crud6 from main branch
 if [ ! -d "/ssnukala/sprinkle-crud6" ]; then
-    cp -r /workspace /ssnukala/sprinkle-crud6
-    print_info "Copied sprinkle-crud6 to /ssnukala/sprinkle-crud6"
+    print_info "Cloning sprinkle-crud6 from GitHub main branch..."
+    git clone --branch main https://github.com/ssnukala/sprinkle-crud6.git /ssnukala/sprinkle-crud6
+    print_info "Cloned sprinkle-crud6 to /ssnukala/sprinkle-crud6"
 else
-    print_info "Directory /ssnukala/sprinkle-crud6 already exists"
+    print_info "Directory /ssnukala/sprinkle-crud6 already exists, pulling latest changes..."
+    cd /ssnukala/sprinkle-crud6
+    git fetch origin
+    git checkout main
+    git pull origin main
+    cd /workspace
+    print_info "Updated sprinkle-crud6 to latest main branch"
 fi
 
 # ============================================================================
-# STEP 2: Clone sprinkle-c6admin to /ssnukala/sprinkle-c6admin (if repository exists)
+# STEP 2: Clone sprinkle-c6admin from main branch
 # ============================================================================
-print_step "Checking for sprinkle-c6admin repository..."
+print_step "Cloning sprinkle-c6admin from main branch..."
 
 if [ ! -d "/ssnukala/sprinkle-c6admin" ]; then
     # Try to clone sprinkle-c6admin if it exists
     if git ls-remote https://github.com/ssnukala/sprinkle-c6admin.git &>/dev/null; then
-        print_info "Cloning sprinkle-c6admin from GitHub..."
-        git clone https://github.com/ssnukala/sprinkle-c6admin.git /ssnukala/sprinkle-c6admin
+        print_info "Cloning sprinkle-c6admin from GitHub main branch..."
+        git clone --branch main https://github.com/ssnukala/sprinkle-c6admin.git /ssnukala/sprinkle-c6admin
         print_info "Cloned sprinkle-c6admin to /ssnukala/sprinkle-c6admin"
     else
         print_info "Repository ssnukala/sprinkle-c6admin not found, skipping..."
     fi
 else
-    print_info "Directory /ssnukala/sprinkle-c6admin already exists"
+    print_info "Directory /ssnukala/sprinkle-c6admin already exists, pulling latest changes..."
+    if git ls-remote https://github.com/ssnukala/sprinkle-c6admin.git &>/dev/null; then
+        cd /ssnukala/sprinkle-c6admin
+        git fetch origin
+        git checkout main
+        git pull origin main
+        cd /workspace
+        print_info "Updated sprinkle-c6admin to latest main branch"
+    else
+        print_info "Repository ssnukala/sprinkle-c6admin not found, skipping update..."
+    fi
 fi
 
 # ============================================================================
@@ -145,20 +162,30 @@ print_info "package.json configuration verified"
 # ============================================================================
 # STEP 8: Configure MyApp.php
 # ============================================================================
-print_step "Configuring MyApp.php to include CRUD6 sprinkle..."
+print_step "Configuring MyApp.php to include sprinkles..."
 
 # Add CRUD6 import after existing imports
 sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;' app/src/MyApp.php
 
-# Add CRUD6::class to getSprinkles() array before the closing bracket
+# Add CRUD6::class to getSprinkles() array after Admin::class
 sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
+
+# Add C6Admin if it exists
+if [ -d "/ssnukala/sprinkle-c6admin" ]; then
+    print_info "Adding C6Admin to MyApp.php..."
+    # Add C6Admin import after CRUD6 import
+    sed -i '/use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;/a use UserFrosting\\Sprinkle\\C6Admin\\C6Admin;' app/src/MyApp.php
+    # Add C6Admin::class to getSprinkles() array after CRUD6::class
+    sed -i '/CRUD6::class,/a \            C6Admin::class,' app/src/MyApp.php
+    print_info "C6Admin added to MyApp.php"
+fi
 
 print_info "MyApp.php configured"
 
 # ============================================================================
 # STEP 9: Configure router/index.ts
 # ============================================================================
-print_step "Configuring router/index.ts to include CRUD6 routes..."
+print_step "Configuring router/index.ts to include sprinkle routes..."
 
 # Add CRUD6Routes import after AdminRoutes import
 sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import CRUD6Routes from '@ssnukala\/sprinkle-crud6\/routes'" app/assets/router/index.ts
@@ -166,18 +193,38 @@ sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a impor
 # Add ...CRUD6Routes after ...AccountRoutes
 sed -i '/\.\.\.AccountRoutes,/a \            ...CRUD6Routes,' app/assets/router/index.ts
 
+# Add C6Admin routes if it exists
+if [ -d "/ssnukala/sprinkle-c6admin" ] && [ -f "/ssnukala/sprinkle-c6admin/package.json" ]; then
+    print_info "Adding C6Admin routes to router/index.ts..."
+    # Add C6AdminRoutes import after CRUD6Routes import
+    sed -i "/import CRUD6Routes from '@ssnukala\/sprinkle-crud6\/routes'/a import C6AdminRoutes from '@ssnukala\/sprinkle-c6admin\/routes'" app/assets/router/index.ts
+    # Add ...C6AdminRoutes after ...CRUD6Routes
+    sed -i '/\.\.\.CRUD6Routes,/a \            ...C6AdminRoutes,' app/assets/router/index.ts
+    print_info "C6Admin routes added to router/index.ts"
+fi
+
 print_info "router/index.ts configured"
 
 # ============================================================================
 # STEP 10: Configure main.ts
 # ============================================================================
-print_step "Configuring main.ts to include CRUD6 sprinkle..."
+print_step "Configuring main.ts to include sprinkles..."
 
 # Add CRUD6Sprinkle import after AdminSprinkle import
 sed -i "/import AdminSprinkle from '@userfrosting\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\/sprinkle-crud6'" app/assets/main.ts
 
 # Add app.use(CRUD6Sprinkle) after app.use(AdminSprinkle)
 sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
+
+# Add C6Admin if it exists
+if [ -d "/ssnukala/sprinkle-c6admin" ] && [ -f "/ssnukala/sprinkle-c6admin/package.json" ]; then
+    print_info "Adding C6Admin to main.ts..."
+    # Add C6AdminSprinkle import after CRUD6Sprinkle import
+    sed -i "/import CRUD6Sprinkle from '@ssnukala\/sprinkle-crud6'/a import C6AdminSprinkle from '@ssnukala\/sprinkle-c6admin'" app/assets/main.ts
+    # Add app.use(C6AdminSprinkle) after app.use(CRUD6Sprinkle)
+    sed -i "/app.use(CRUD6Sprinkle)/a app.use(C6AdminSprinkle)" app/assets/main.ts
+    print_info "C6Admin added to main.ts"
+fi
 
 print_info "main.ts configured"
 

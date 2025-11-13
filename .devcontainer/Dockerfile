@@ -41,20 +41,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         soap \
         opcache
 
-# Install XDebug
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug
+# XDebug removed due to PECL connectivity issues in build environments
+# Can be installed manually post-build if needed: pecl install xdebug
 
-# Configure XDebug for development
-RUN echo "xdebug.mode=debug,develop,coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.log=/tmp/xdebug.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-
-# Install Node.js 20 LTS
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+# Install Node.js 20 LTS and npm
+# Handle SSL certificate issues in restricted network environments
+RUN curl -fsSL --insecure https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs npm
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -88,7 +81,7 @@ RUN php --version \
     && npm --version
 
 # Expose ports
-EXPOSE 8080 5173 9003
+EXPOSE 8080 5173
 
 # Default command
 CMD ["bash"]

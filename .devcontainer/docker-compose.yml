@@ -14,7 +14,6 @@ services:
     ports:
       - "8080:8080"
       - "5173:5173"
-      - "9003:9003"
     environment:
       - NODE_ENV=development
       - COMPOSER_ALLOW_SUPERUSER=1

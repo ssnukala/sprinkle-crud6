@@ -1,5 +1,10 @@
 # UserFrosting CRUD6 Full Stack Development Container
 # Combines PHP (UserFrosting/CRUD6 Sprinkle) + Node.js (Theme Development)
+
+# Multi-stage build: Get Node.js from official image
+FROM node:20-bookworm-slim AS node-stage
+
+# Main PHP image with Node.js copied from node-stage
 FROM php:8.2-fpm
 
 # Install system dependencies
@@ -44,10 +49,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # XDebug removed due to PECL connectivity issues in build environments
 # Can be installed manually post-build if needed: pecl install xdebug
 
-# Install Node.js 20 LTS and npm
-# Handle SSL certificate issues in restricted network environments
-RUN curl -fsSL --insecure https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs npm
+# Copy Node.js and npm from the official Node.js image
+COPY --from=node-stage /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-stage /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+# Create symlinks for npm and npx
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

@@ -187,9 +187,9 @@ This will return:
 5. GET @userfrosting/sprinkle-account/.../profile-settings.yaml
 6. GET @userfrosting/sprinkle-account/.../account-settings.yaml
 7. GET @userfrosting/sprinkle-admin/.../user/create.yaml
-8+ GET /api/crud6/users/1/activities/schema (for each detail model)
-9+ GET /api/crud6/users/1/roles/schema
-10+ GET /api/crud6/users/1/permissions/schema
+8. GET /api/crud6/activities/schema (for each detail model)
+9. GET /api/crud6/roles/schema
+10. GET /api/crud6/permissions/schema
 ```
 
 **Total: 10+ requests**
@@ -197,19 +197,19 @@ This will return:
 ### Network Requests - After Phase 1 & 2
 ```
 1. GET /api/crud6/users/schema?context=list,detail,form
-2. GET /api/crud6/users/1/activities/schema (for each detail model)
-3. GET /api/crud6/users/1/roles/schema
-4. GET /api/crud6/users/1/permissions/schema
+2. GET /api/crud6/activities/schema (for each detail model)
+3. GET /api/crud6/roles/schema
+4. GET /api/crud6/permissions/schema
 ```
 
 **Total: 4 requests** (60% reduction)
 
-### Network Requests - After Phase 3 (Future)
+### Network Requests - After Phase 3 ✅ CURRENT
 ```
 1. GET /api/crud6/users/schema?context=list,detail,form&include_related=true
 ```
 
-**Total: 1 request** (90% reduction)
+**Total: 1 request** (90% reduction from original 10+)
 
 ## Performance Impact
 
@@ -244,13 +244,76 @@ This will return:
 - No dependency on YAML files
 - Consistent with CRUD6's design philosophy
 
-## Future Enhancements
+## Phase 3: Complete Related Schema Consolidation ✅ IMPLEMENTED
 
-### Phase 3: Complete Related Schema Consolidation
-1. Update `ApiAction.php` to support `include_related` query parameter
-2. Update `Details.vue` to accept related schemas from parent
-3. Remove individual schema loads from `Details` component
-4. Achieve single-request goal
+**Completed on**: 2025-11-13
+
+### Changes Made
+
+#### Backend (PHP)
+1. **ApiAction.php**: Added support for `include_related` query parameter
+   - Checks `$queryParams['include_related']` boolean flag
+   - Calls `filterSchemaWithRelated()` when true
+   - Logs related schema count in debug output
+
+#### Frontend (TypeScript/Vue)
+2. **useCRUD6SchemaStore.ts**: Enhanced to handle related schemas
+   - Added `includeRelated` parameter to `loadSchema()` method
+   - Builds URL with `include_related=true` parameter when requested
+   - Caches related schemas separately for efficient retrieval
+   - Related schemas stored with 'list' context by default
+
+3. **useCRUD6Schema.ts**: Pass-through for `includeRelated` parameter
+   - Updated method signature to accept `includeRelated` parameter
+   - Delegates to store with all parameters
+
+4. **PageRow.vue & PageMasterDetail.vue**: Request related schemas
+   - Updated to call `loadSchema(model, false, 'list,detail,form', true)`
+   - Single consolidated request on page load
+
+5. **Details.vue**: Use cached schemas
+   - Now uses `useCRUD6SchemaStore` directly
+   - Checks cache first using `getSchema()`
+   - Only loads if not in cache (fallback for edge cases)
+   - Eliminates redundant API calls
+
+### Results
+
+**Network Requests - After Phase 3**:
+```
+1. GET /api/crud6/users/schema?context=list,detail,form&include_related=true
+```
+
+**Total: 1 request** (90% reduction from original 10+)
+
+**Response Structure**:
+```json
+{
+  "schema": {
+    "model": "users",
+    "title": "Users",
+    "contexts": {
+      "list": { "fields": {...} },
+      "detail": { "fields": {...}, "details": [...] },
+      "form": { "fields": {...} }
+    },
+    "related_schemas": {
+      "activities": { "model": "activities", "fields": {...} },
+      "roles": { "model": "roles", "fields": {...} },
+      "permissions": { "model": "permissions", "fields": {...} }
+    }
+  }
+}
+```
+
+### Performance Impact
+
+- **Network Requests**: 10+ → 1 (90% reduction)
+- **API Calls**: Single consolidated request
+- **Page Load Time**: Significantly improved
+- **Cache Efficiency**: All schemas cached on first request
+
+## Future Enhancements
 
 ### Additional Optimizations
 1. Add schema version/ETag for cache invalidation

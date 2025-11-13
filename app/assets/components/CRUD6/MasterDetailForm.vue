@@ -18,6 +18,20 @@ import { debugLog, debugWarn, debugError } from '../../utils/debug'
  * 2. Product + Categories via pivot table (many-to-many)
  */
 
+/**
+ * Generate a unique ID for this form instance to avoid duplicate IDs when multiple forms exist on the same page
+ */
+let instanceCounter = 0
+const formInstanceId = `master-detail-form-${++instanceCounter}-${Date.now()}`
+
+/**
+ * Helper function to generate unique field ID
+ * Prevents duplicate IDs when multiple forms exist on the same page
+ */
+function getFieldId(fieldKey: string): string {
+    return `${formInstanceId}-${fieldKey}`
+}
+
 const props = defineProps<{
     model: string
     recordId?: string | number
@@ -215,7 +229,7 @@ function getFieldLabel(field: any): string {
                         v-for="field in editableMasterFields" 
                         :key="field.key"
                         :class="field.type === 'text' ? 'uk-width-1-1' : 'uk-width-1-2@s'">
-                        <label class="uk-form-label" :for="field.key">
+                        <label class="uk-form-label" :for="getFieldId(field.key)">
                             {{ getFieldLabel(field) }}
                             <span v-if="field.required" class="uk-text-danger">*</span>
                         </label>
@@ -223,7 +237,7 @@ function getFieldLabel(field: any): string {
                             <!-- Text input -->
                             <input
                                 v-if="getFieldType(field) === 'string'"
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model="masterFormData[field.key]"
                                 type="text"
                                 class="uk-input"
@@ -234,7 +248,7 @@ function getFieldLabel(field: any): string {
                             <!-- Textarea -->
                             <textarea
                                 v-else-if="getFieldType(field) === 'text'"
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model="masterFormData[field.key]"
                                 class="uk-textarea"
                                 rows="3"
@@ -245,7 +259,7 @@ function getFieldLabel(field: any): string {
                             <!-- Number input -->
                             <input
                                 v-else-if="getFieldType(field) === 'integer' || getFieldType(field) === 'decimal' || getFieldType(field) === 'float'"
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model.number="masterFormData[field.key]"
                                 type="number"
                                 class="uk-input"
@@ -257,7 +271,7 @@ function getFieldLabel(field: any): string {
                             <!-- Checkbox -->
                             <label v-else-if="getFieldType(field) === 'boolean'" class="uk-form-label">
                                 <input
-                                    :id="field.key"
+                                    :id="getFieldId(field.key)"
                                     v-model="masterFormData[field.key]"
                                     type="checkbox"
                                     class="uk-checkbox"
@@ -269,7 +283,7 @@ function getFieldLabel(field: any): string {
                             <!-- Date input -->
                             <input
                                 v-else-if="getFieldType(field) === 'date'"
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model="masterFormData[field.key]"
                                 type="date"
                                 class="uk-input"
@@ -280,7 +294,7 @@ function getFieldLabel(field: any): string {
                             <!-- Datetime input -->
                             <input
                                 v-else-if="getFieldType(field) === 'datetime'"
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model="masterFormData[field.key]"
                                 type="datetime-local"
                                 class="uk-input"
@@ -291,7 +305,7 @@ function getFieldLabel(field: any): string {
                             <!-- Default text input -->
                             <input
                                 v-else
-                                :id="field.key"
+                                :id="getFieldId(field.key)"
                                 v-model="masterFormData[field.key]"
                                 type="text"
                                 class="uk-input"

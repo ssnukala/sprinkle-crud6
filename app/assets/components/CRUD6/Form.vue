@@ -11,6 +11,12 @@ import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getB
 import { getLookupConfig } from '../../composables/useCRUD6FieldRenderer'
 
 /**
+ * Generate a unique ID for this form instance to avoid duplicate IDs when multiple forms exist on the same page
+ */
+let instanceCounter = 0
+const formInstanceId = `form-${++instanceCounter}-${Date.now()}`
+
+/**
  * Props - Optional CRUD6 object for editing, model for schema loading, and optional schema to avoid duplicate loads
  */
 const props = defineProps<{ 
@@ -218,6 +224,14 @@ const submitForm = async () => {
 }
 
 /**
+ * Helper function to generate unique field ID
+ * Prevents duplicate IDs when multiple forms exist on the same page
+ */
+function getFieldId(fieldKey: string): string {
+    return `${formInstanceId}-${fieldKey}`
+}
+
+/**
  * Helper function to get field icon
  */
 function getFieldIcon(field: any, fieldKey: string): string {
@@ -283,7 +297,7 @@ function getLookupAttributes(field: any) {
                 :key="fieldKey"
                 class="uk-margin">
                 
-                <label class="uk-form-label" :for="fieldKey">
+                <label class="uk-form-label" :for="getFieldId(fieldKey)">
                     {{ field.label || fieldKey }}
                     <span v-if="field.required" class="uk-text-danger">*</span>
                 </label>
@@ -329,7 +343,7 @@ function getLookupAttributes(field: any) {
                     <!-- Text input (including email, url, phone, zip) -->
                     <input
                         v-else-if="['string', 'email', 'url', 'phone', 'zip'].includes(field.type) || !field.type"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         :type="getInputType(field.type || 'string')"
@@ -344,7 +358,7 @@ function getLookupAttributes(field: any) {
                     <!-- Number input -->
                     <input
                         v-else-if="['number', 'integer', 'decimal', 'float'].includes(field.type)"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="number"
@@ -359,10 +373,11 @@ function getLookupAttributes(field: any) {
                     <!-- Password input -->
                     <input
                         v-else-if="field.type === 'password'"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="password"
+                        autocomplete="current-password"
                         :placeholder="field.placeholder || field.label || fieldKey"
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
@@ -373,7 +388,7 @@ function getLookupAttributes(field: any) {
                     <!-- Date input -->
                     <input
                         v-else-if="field.type === 'date'"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="date"
@@ -386,7 +401,7 @@ function getLookupAttributes(field: any) {
                     <!-- DateTime input -->
                     <input
                         v-else-if="field.type === 'datetime'"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="datetime-local"
@@ -399,7 +414,7 @@ function getLookupAttributes(field: any) {
                     <!-- Textarea for text fields (supports text, textarea, textarea-rXcY formats) -->
                     <textarea
                         v-else-if="field.type === 'text' || field.type === 'textarea' || field.type?.startsWith('textarea-') || field.type?.startsWith('text-')"
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-textarea"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         :placeholder="field.placeholder || field.label || fieldKey"
@@ -416,7 +431,7 @@ function getLookupAttributes(field: any) {
                         <!-- Yes/No Select Dropdown (boolean-yn) -->
                         <select
                             v-if="getBooleanUIType(field.type) === 'select'"
-                            :id="fieldKey"
+                            :id="getFieldId(fieldKey)"
                             class="uk-select"
                             :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                             :data-test="fieldKey"
@@ -430,7 +445,7 @@ function getLookupAttributes(field: any) {
                         <!-- Toggle Switch (boolean-tgl, boolean-toggle) -->
                         <CRUD6ToggleSwitch
                             v-else-if="getBooleanUIType(field.type) === 'toggle'"
-                            :id="fieldKey"
+                            :id="getFieldId(fieldKey)"
                             :data-test="fieldKey"
                             :disabled="field.readonly"
                             v-model="formData[fieldKey]" />
@@ -438,7 +453,7 @@ function getLookupAttributes(field: any) {
                         <!-- Standard Checkbox (boolean) -->
                         <label v-else class="uk-form-label">
                             <input
-                                :id="fieldKey"
+                                :id="getFieldId(fieldKey)"
                                 class="uk-checkbox"
                                 type="checkbox"
                                 :data-test="fieldKey"
@@ -451,7 +466,7 @@ function getLookupAttributes(field: any) {
                     <!-- Default text input for unknown types -->
                     <input
                         v-else
-                        :id="fieldKey"
+                        :id="getFieldId(fieldKey)"
                         class="uk-input"
                         :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                         type="text"

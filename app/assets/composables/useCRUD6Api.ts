@@ -12,8 +12,7 @@ import type {
     CRUD6Response
 } from '../interfaces'
 import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
-import { useRuleSchemaAdapter } from '@userfrosting/sprinkle-core/composables'
-import { useCRUD6ToUFSchemaConverter } from './useCRUD6ValidationAdapter'
+import { useCRUD6RegleAdapter } from './useCRUD6ValidationAdapter'
 import { useRoute } from 'vue-router'
 import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
@@ -88,11 +87,11 @@ export function useCRUD6Api(modelName?: string) {
     }
 
     // Load the schema and set up the validator
-    // Convert CRUD6 JSON schema to UserFrosting validator format, then use UF's adapter
-    // This allows us to use UserFrosting's validation infrastructure while preventing YAML imports
-    const converter = useCRUD6ToUFSchemaConverter()
-    const adapter = useRuleSchemaAdapter()
-    const { r$ } = useRegle(formData, adapter.adapt(converter.convert(loadSchema())))
+    // Convert CRUD6 JSON schema directly to Regle format, bypassing UserFrosting's
+    // YAML-based adapter to prevent unnecessary YAML imports (register.yaml, login.yaml, etc.)
+    // Backend validation in PHP remains unchanged and continues to use ServerSideValidator
+    const adapter = useCRUD6RegleAdapter()
+    const { r$ } = useRegle(formData, adapter.adapt(loadSchema()))
 
     async function fetchRow(id: string) {
         const url = `/api/crud6/${model}/${toValue(id)}`

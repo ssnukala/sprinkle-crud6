@@ -78,23 +78,40 @@ class ApiAction extends Base
         // Get context parameter from query string
         $queryParams = $request->getQueryParams();
         $context = $queryParams['context'] ?? null;
+        $includeRelated = filter_var($queryParams['include_related'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $relatedContext = $queryParams['related_context'] ?? 'list';
         
         $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
             'model' => $crudSchema['model'],
             'context' => $context ?? 'null/full',
+            'include_related' => $includeRelated ? 'true' : 'false',
+            'related_context' => $includeRelated ? $relatedContext : 'n/a',
             'uri' => (string) $request->getUri(),
         ]);
 
-        // Filter schema based on context
+        // Filter schema based on context, optionally including related schemas
         $this->debugLog("CRUD6 [ApiAction] Filtering schema for context", [
             'context' => $context ?? 'null/full',
+            'include_related' => $includeRelated ? 'true' : 'false',
         ]);
 
-        $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
+        // Use filterSchemaWithRelated if include_related is requested
+        if ($includeRelated) {
+            $filteredSchema = $this->schemaService->filterSchemaWithRelated(
+                $crudSchema,
+                $context,
+                true,
+                $relatedContext
+            );
+        } else {
+            $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
+        }
 
         $this->debugLog("CRUD6 [ApiAction] Schema filtered", [
             'field_count' => count($filteredSchema['fields'] ?? []),
             'has_contexts' => isset($filteredSchema['contexts']) ? 'yes' : 'no',
+            'has_related_schemas' => isset($filteredSchema['related_schemas']) ? 'yes' : 'no',
+            'related_count' => isset($filteredSchema['related_schemas']) ? count($filteredSchema['related_schemas']) : 0,
         ]);
 
         // Get a display name for the model (title or capitalized model name)

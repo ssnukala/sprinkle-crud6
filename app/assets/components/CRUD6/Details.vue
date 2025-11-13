@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6SchemaStore } from '@ssnukala/sprinkle-crud6/stores'
 import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'
+import { debugLog } from '../../utils/debug'
 
 const props = defineProps<{
     recordId: string
@@ -9,15 +10,29 @@ const props = defineProps<{
     detailConfig: DetailConfig
 }>()
 
-// Load schema for the detail model to get field information
-const { schema: detailSchema, loading: schemaLoading, loadSchema } = useCRUD6Schema()
+// Use the global schema store to check cache first
+const schemaStore = useCRUD6SchemaStore()
+
+// Check if schema is already cached (from parent's include_related request)
+const detailSchema = computed(() => {
+    // Try to get from cache with 'list' context (default for related schemas)
+    return schemaStore.getSchema(props.detailConfig.model, 'list')
+})
 
 // Track whether schema has been loaded
 const schemaLoaded = ref(false)
+const schemaLoading = ref(false)
 
-// Load the detail model schema when component mounts
+// Load the detail model schema if not already cached
 onMounted(async () => {
-    await loadSchema(props.detailConfig.model)
+    if (!detailSchema.value) {
+        debugLog('[Details] Schema not in cache, loading for model:', props.detailConfig.model)
+        schemaLoading.value = true
+        await schemaStore.loadSchema(props.detailConfig.model, false, 'list')
+        schemaLoading.value = false
+    } else {
+        debugLog('[Details] Using cached schema for model:', props.detailConfig.model)
+    }
     schemaLoaded.value = true
 })
 

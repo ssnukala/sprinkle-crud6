@@ -36,9 +36,11 @@ const {
 
 // Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
 // This ensures the schema is loaded/loading before useCRUD6Api tries to load it for validation
+// Request all contexts needed by detail page in one consolidated API call
+// Include related schemas to eliminate separate requests for detail models
 if (model.value && loadSchema) {
     debugLog('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
-    loadSchema(model.value, false, 'detail,form').catch(err => {
+    loadSchema(model.value, false, 'list,detail,form', true).catch(err => {
         debugError('[PageRow] Schema pre-load failed:', err)
     })
 }
@@ -127,7 +129,7 @@ const error = computed(() => schemaError.value || apiError.value)
 const flattenedSchema = computed(() => {
     if (!schema.value) return null
     
-    // If schema has contexts property (multi-context response from 'detail,form' request)
+    // If schema has contexts property (multi-context response from 'list,detail,form' request)
     if (schema.value.contexts) {
         debugLog('[PageRow] Multi-context schema detected, flattening...')
         
@@ -320,9 +322,10 @@ watch(model, async (newModel) => {
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
         
         currentModel = newModel
-        // Request 'detail,form' contexts to get both in one API call for efficiency
+        // Request all contexts needed by detail page in one consolidated API call
         // This prevents child components (Info, EditModal) from making separate schema calls
-        const schemaPromise = loadSchema(newModel, false, 'detail,form')
+        // Include related schemas to eliminate separate requests for detail models (activities, roles, permissions)
+        const schemaPromise = loadSchema(newModel, false, 'list,detail,form', true)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             debugLog('[PageRow] Schema loaded successfully for model:', newModel)

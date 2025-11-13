@@ -37,9 +37,10 @@ const {
 // Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
 // This ensures the schema is loaded/loading before useCRUD6Api tries to load it for validation
 // Request all contexts needed by detail page in one consolidated API call
+// Include related schemas to eliminate separate requests for detail models
 if (model.value && loadSchema) {
     debugLog('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
-    loadSchema(model.value, false, 'list,detail,form').catch(err => {
+    loadSchema(model.value, false, 'list,detail,form', true).catch(err => {
         debugError('[PageRow] Schema pre-load failed:', err)
     })
 }
@@ -323,8 +324,8 @@ watch(model, async (newModel) => {
         currentModel = newModel
         // Request all contexts needed by detail page in one consolidated API call
         // This prevents child components (Info, EditModal) from making separate schema calls
-        // and consolidates list,detail,form into a single request
-        const schemaPromise = loadSchema(newModel, false, 'list,detail,form')
+        // Include related schemas to eliminate separate requests for detail models (activities, roles, permissions)
+        const schemaPromise = loadSchema(newModel, false, 'list,detail,form', true)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             debugLog('[PageRow] Schema loaded successfully for model:', newModel)

@@ -113,14 +113,16 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
      * @param model Model name to load schema for
      * @param force Force reload even if cached
      * @param context Optional context for filtering ('list', 'form', 'detail', 'meta', or comma-separated for multiple)
+     * @param includeRelated Whether to include related model schemas in the response (default: false)
      */
-    async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
         const cacheKey = getCacheKey(model, context)
         
         debugLog('[useCRUD6SchemaStore] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
+            includeRelated,
             cacheKey,
             hasCache: hasSchema(model, context),
             isCurrentlyLoading: isLoading(model, context),
@@ -171,10 +173,20 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         errorStates.value[cacheKey] = null
 
         try {
-            // Build URL with optional context parameter
+            // Build URL with optional context and include_related parameters
             let url = `/api/crud6/${model}/schema`
+            const params = new URLSearchParams()
+            
             if (context) {
-                url += `?context=${encodeURIComponent(context)}`
+                params.append('context', context)
+            }
+            
+            if (includeRelated) {
+                params.append('include_related', 'true')
+            }
+            
+            if (params.toString()) {
+                url += `?${params.toString()}`
             }
             
             debugLog('[useCRUD6SchemaStore] 📤 HTTP GET REQUEST', {
@@ -224,6 +236,24 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                             context: ctxName,
                             cacheKey: ctxCacheKey,
                             fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
+                        })
+                    }
+                }
+                
+                // If schema has related_schemas, cache each related model separately
+                if (schemaData.related_schemas) {
+                    debugLog('[useCRUD6SchemaStore] 📦 Related schemas detected, caching separately', {
+                        relatedModels: Object.keys(schemaData.related_schemas)
+                    })
+                    
+                    for (const [relatedModel, relatedSchemaData] of Object.entries(schemaData.related_schemas)) {
+                        // Cache the related schema with 'list' context by default
+                        const relatedCacheKey = getCacheKey(relatedModel, 'list')
+                        schemas.value[relatedCacheKey] = relatedSchemaData as CRUD6Schema
+                        debugLog('[useCRUD6SchemaStore] ✅ Cached related schema', {
+                            model: relatedModel,
+                            cacheKey: relatedCacheKey,
+                            fieldCount: relatedSchemaData.fields ? Object.keys(relatedSchemaData.fields).length : 0
                         })
                     }
                 }

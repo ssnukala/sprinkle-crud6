@@ -162,12 +162,14 @@ export function useCRUD6Schema(modelName?: string) {
      * @param model Model name to load
      * @param force Force reload even if cached
      * @param context Optional context for filtering ('list', 'form', 'detail', 'meta')
+     * @param includeRelated Whether to include related model schemas (default: false)
      */
-    async function loadSchema(model: string, force: boolean = false, context?: string): Promise<CRUD6Schema | null> {
+    async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
         debugLog('[useCRUD6Schema] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
+            includeRelated,
             hasLocalCache: !!(currentModel.value === model && schema.value),
             currentModel: currentModel.value,
             timestamp: new Date().toISOString(),
@@ -180,13 +182,13 @@ export function useCRUD6Schema(modelName?: string) {
             return schema.value
         }
 
-        debugLog('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full')
+        debugLog('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full', 'includeRelated:', includeRelated)
         loading.value = true
         error.value = null
 
         try {
-            // Delegate to global store with context parameter
-            const schemaData = await schemaStore.loadSchema(model, force, context)
+            // Delegate to global store with context and includeRelated parameters
+            const schemaData = await schemaStore.loadSchema(model, force, context, includeRelated)
             
             if (schemaData) {
                 schema.value = schemaData

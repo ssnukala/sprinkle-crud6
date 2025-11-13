@@ -368,8 +368,8 @@ watch(model, async (newModel) => {
         currentModel = newModel
         // Request all contexts needed by master-detail page in one consolidated API call
         // This prevents child components from making separate schema calls
-        // and consolidates list,detail,form into a single request
-        const schemaPromise = loadSchema(newModel, false, 'list,detail,form')
+        // Include related schemas to eliminate separate requests for detail models
+        const schemaPromise = loadSchema(newModel, false, 'list,detail,form', true)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             debugLog('[PageMasterDetail] Schema loaded successfully for model:', newModel)

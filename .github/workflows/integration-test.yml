@@ -343,31 +343,15 @@ jobs:
             echo "⚠️ Expected 200 but got $HTTP_CODE"
           fi
 
-      - name: Take screenshots of frontend pages
+      - name: Take screenshots of frontend pages (with authentication)
         run: |
           cd userfrosting
           
-          echo "========================================="
-          echo "Taking screenshots of pages"
-          echo "========================================="
+          # Copy the authenticated screenshot script from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/take-authenticated-screenshots.js .
           
-          # Screenshot of groups list page
-          echo "📸 Taking screenshot: /crud6/groups"
-          npx playwright screenshot --browser chromium \
-            --viewport-size=1280,720 \
-            --full-page \
-            --timeout 10000 \
-            http://localhost:8080/crud6/groups /tmp/screenshot_groups_list.png \
-            2>&1 || echo "⚠️ Failed to screenshot groups list page"
-          
-          # Screenshot of single group page
-          echo "📸 Taking screenshot: /crud6/groups/1"
-          npx playwright screenshot --browser chromium \
-            --viewport-size=1280,720 \
-            --full-page \
-            --timeout 10000 \
-            http://localhost:8080/crud6/groups/1 /tmp/screenshot_group_detail.png \
-            2>&1 || echo "⚠️ Failed to screenshot group detail page"
+          # Run the script with admin credentials
+          node take-authenticated-screenshots.js http://localhost:8080 admin admin123
           
           echo ""
           echo "========================================="
@@ -422,10 +406,10 @@ jobs:
           echo "✅ Frontend route tests completed:"
           echo "   - /crud6/groups (list page)"
           echo "   - /crud6/groups/1 (detail page)"
-          echo "✅ Screenshots captured and uploaded as artifacts"
+          echo "✅ Screenshots captured with authentication and uploaded as artifacts"
           echo ""
           echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
-          echo "ℹ️  Screenshots may show login page if not authenticated"
+          echo "ℹ️  Screenshots are taken after logging in with admin user credentials"
           echo "ℹ️  Both PHP and Vite servers were running during tests"
           echo ""
           echo "📸 **View Screenshots:**"
@@ -480,5 +464,6 @@ jobs:
           - Both servers were running during tests
           
           ### Authentication Note
-          Screenshots may show login page as tests verify 401 responses for unauthenticated requests.
+          Screenshots are taken after authenticating with the admin user (username: admin).
+          This ensures the CRUD6 pages are fully rendered and accessible.
           EOF

@@ -12,8 +12,7 @@
  * Example: node take-authenticated-screenshots.js http://localhost:8080 admin admin123
  */
 
-const { chromium } = require('playwright');
-const path = require('path');
+import { chromium } from 'playwright';
 
 async function takeAuthenticatedScreenshots(baseUrl, username, password) {
     console.log('========================================');

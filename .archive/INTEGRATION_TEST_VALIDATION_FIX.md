@@ -8,72 +8,65 @@ PHP Warning:  require(app/app.php): Failed to open stream: No such file or direc
 PHP Fatal error:  Uncaught Error: Failed opening required 'app/app.php'
 ```
 
-The validation scripts were trying to bootstrap a UserFrosting application using:
-```php
-require 'vendor/autoload.php';
-$app = require 'app/app.php';
-```
-
-This doesn't work because:
-1. In UserFrosting 6, there is no `app/app.php` file in the standard location
-2. The integration test runs from the `userfrosting` directory (the UF6 project root)
-3. UserFrosting 6 uses a different bootstrapping mechanism
+The validation scripts were using inline PHP code that tried to load `app/app.php` but were running from the wrong directory context.
 
 ## Root Cause
-The validation scripts were using inline PHP code (`php -r "..."`) that assumed a specific application structure that doesn't exist in UserFrosting 6. The scripts needed to:
-- Bootstrap the database connection properly
-- Load Eloquent models
-- Query the database to validate seed data
+The validation scripts were using inline PHP code (`php -r "..."`) that assumed they were running from the UserFrosting 6 project root directory with proper access to `app/app.php`. However:
+1. The inline code ran in the `userfrosting` directory
+2. It incorrectly tried to manually bootstrap the database instead of using UserFrosting 6's standard app bootstrapping
+3. The scripts needed to properly bootstrap the UF6 application container to access database models
 
 ## Solution
-Created dedicated PHP scripts that properly bootstrap UserFrosting 6 database access:
+Created dedicated PHP scripts that properly bootstrap UserFrosting 6 using its standard application structure:
 
 ### 1. `.github/scripts/check-seeds.php`
 - Validates that CRUD6 seeds have been run successfully
 - Checks for crud6-admin role
 - Checks for all 6 CRUD6 permissions
 - Verifies permission assignments to roles
-- Uses `Illuminate\Database\Capsule\Manager` for database connection
-- Reads database configuration from environment variables
+- **Uses UserFrosting 6's standard app bootstrapping via `app/app.php`**
+- Loads environment configuration via Dotenv
 
 ### 2. `.github/scripts/test-seed-idempotency.php`
 - Tests that seeds can be run multiple times without creating duplicates
 - Counts records before and after re-seeding
 - Compares counts to ensure they're identical
+- **Uses UserFrosting 6's standard app bootstrapping via `app/app.php`**
 - Provides clear pass/fail messages
 
 ### 3. Updated `.github/workflows/integration-test.yml`
-- Copies scripts from sprinkle repository to UserFrosting project
-- Executes scripts using `php script-name.php` instead of inline code
-- Maintains all validation checks but with proper bootstrapping
+- Copies scripts from sprinkle repository to UserFrosting project root
+- Executes scripts using `php script-name.php` from the correct directory
+- Maintains all validation checks but with proper UF6 bootstrapping
 
 ## Technical Implementation
 
-### Database Connection Pattern
+### UserFrosting 6 Bootstrap Pattern
 ```php
-use Illuminate\Database\Capsule\Manager as Capsule;
+// Load composer autoloader
+require 'vendor/autoload.php';
 
-$capsule = new Capsule();
-$capsule->addConnection([
-    'driver' => getenv('DB_CONNECTION') ?: 'mysql',
-    'host' => getenv('DB_HOST') ?: '127.0.0.1',
-    'port' => getenv('DB_PORT') ?: '3306',
-    'database' => getenv('DB_NAME') ?: 'userfrosting_test',
-    'username' => getenv('DB_USER') ?: 'root',
-    'password' => getenv('DB_PASSWORD') ?: 'root',
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-]);
-$capsule->setAsGlobal();
-$capsule->bootEloquent();
+// Load .env file
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+// Bootstrap the UserFrosting 6 application
+// app/app.php returns the bootstrapped DI container
+$app = require 'app/app.php';
+
+// Now Eloquent models work via the bootstrapped app
+use UserFrosting\Sprinkle\Account\Database\Models\Role;
+use UserFrosting\Sprinkle\Account\Database\Models\Permission;
+
+$role = Role::where('slug', 'crud6-admin')->first();
 ```
 
 This approach:
-- Uses Illuminate's Capsule Manager (same as UserFrosting uses)
-- Connects directly to the database without full app bootstrap
-- Reads configuration from environment variables
-- Enables Eloquent ORM for model access
+- Uses UserFrosting 6's standard application bootstrapping
+- Loads configuration from .env file (database connection, etc.)
+- Properly initializes the DI container and all services
+- Enables Eloquent ORM for model access through the framework
+- Follows UserFrosting 6 best practices for application initialization
 
 ### Workflow Integration
 ```yaml

@@ -200,7 +200,7 @@ fi
 # ============================================================================
 print_step "Waiting for MySQL database to be ready..."
 
-max_attempts=30
+max_attempts=60
 attempt=0
 until mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT 1" &>/dev/null || [ $attempt -eq $max_attempts ]; do
     attempt=$((attempt + 1))
@@ -210,16 +210,34 @@ done
 
 if [ $attempt -eq $max_attempts ]; then
     print_error "MySQL not available after $max_attempts attempts"
-    print_info "Skipping database setup - run migrations manually when MySQL is ready"
+    print_error "Database initialization skipped!"
+    print_info ""
+    print_info "To complete setup manually, run these commands:"
+    print_info "  cd /workspace"
+    print_info "  php bakery migrate --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultGroups --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultPermissions --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultRoles --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\UpdatePermissions --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\CRUD6\\\\Database\\\\Seeds\\\\DefaultRoles --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\CRUD6\\\\Database\\\\Seeds\\\\DefaultPermissions --force"
+    print_info "  php bakery create:admin-user --username=admin --password=admin123 --email=admin@example.com --firstName=Admin --lastName=User"
+    print_info ""
 else
-    print_info "MySQL is ready"
+    print_info "✅ MySQL is ready"
     
     # ============================================================================
     # STEP 12: Run migrations
     # ============================================================================
     print_step "Running database migrations..."
-    php bakery migrate --force
-    print_info "Migrations completed"
+    
+    if php bakery migrate --force; then
+        print_info "✅ Migrations completed successfully"
+    else
+        print_error "❌ Migrations failed"
+        print_info "You may need to run migrations manually: php bakery migrate --force"
+        exit 1
+    fi
     
     # ============================================================================
     # STEP 13: Seed database
@@ -227,19 +245,62 @@ else
     print_step "Seeding database..."
     
     # Seed Account sprinkle data first (required base data)
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+    print_info "Seeding Account sprinkle data..."
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force || print_error "DefaultGroups seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force || print_error "DefaultPermissions seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force || print_error "DefaultRoles seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force || print_error "UpdatePermissions seed failed"
     
     # Then seed CRUD6 sprinkle data
-    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
-    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+    print_info "Seeding CRUD6 sprinkle data..."
+    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force || print_error "CRUD6 DefaultRoles seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force || print_error "CRUD6 DefaultPermissions seed failed"
     
-    print_info "Database seeding completed"
+    print_info "✅ Database seeding completed"
     
     # ============================================================================
-    # STEP 14: Create admin user
+    # STEP 14: Verify database seeding
+    # ============================================================================
+    print_step "Verifying database seeding..."
+    
+    # Check if tables exist
+    TABLES=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SHOW TABLES;" -s)
+    TABLE_COUNT=$(echo "$TABLES" | wc -l)
+    
+    if [ $TABLE_COUNT -gt 0 ]; then
+        print_info "✅ Found $TABLE_COUNT database tables"
+    else
+        print_error "❌ No database tables found"
+    fi
+    
+    # Check if groups exist
+    GROUP_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM groups;" -s 2>/dev/null || echo "0")
+    if [ "$GROUP_COUNT" -gt 0 ]; then
+        print_info "✅ Found $GROUP_COUNT groups in database"
+    else
+        print_error "❌ No groups found in database"
+    fi
+    
+    # Check if permissions exist
+    PERMISSION_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM permissions;" -s 2>/dev/null || echo "0")
+    if [ "$PERMISSION_COUNT" -gt 0 ]; then
+        print_info "✅ Found $PERMISSION_COUNT permissions in database"
+    else
+        print_error "❌ No permissions found in database"
+    fi
+    
+    # Check if roles exist
+    ROLE_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM roles;" -s 2>/dev/null || echo "0")
+    if [ "$ROLE_COUNT" -gt 0 ]; then
+        print_info "✅ Found $ROLE_COUNT roles in database"
+    else
+        print_error "❌ No roles found in database"
+    fi
+    
+    print_info "Database verification completed"
+    
+    # ============================================================================
+    # STEP 15: Create admin user
     # ============================================================================
     print_step "Creating admin user..."
     
@@ -250,10 +311,16 @@ else
       --firstName=Admin \
       --lastName=User || print_info "Admin user may already exist"
     
-    print_info "Admin user setup completed (username: admin, password: admin123)"
+    # Verify admin user was created
+    USER_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM users WHERE user_name='admin';" -s 2>/dev/null || echo "0")
+    if [ "$USER_COUNT" -gt 0 ]; then
+        print_info "✅ Admin user created successfully (username: admin, password: admin123)"
+    else
+        print_error "❌ Admin user not found in database"
+    fi
     
     # ============================================================================
-    # STEP 15: Run php bakery bake to build assets and install NPM dependencies
+    # STEP 16: Run php bakery bake to build assets
     # ============================================================================
     print_step "Running php bakery bake to build assets..."
     
@@ -264,7 +331,7 @@ else
 fi
 
 # ============================================================================
-# STEP 16: Final setup
+# STEP 17: Final setup
 # ============================================================================
 print_step "Finalizing setup..."
 
@@ -287,8 +354,25 @@ print_info "  📦 npm version: $(npm --version)"
 echo ""
 print_info "Database Configuration:"
 print_info "  🗄️  Database: userfrosting (MySQL 8.0)"
-print_info "  👤 Username: userfrosting / userfrosting"
+print_info "  👤 Database user: userfrosting / userfrosting"
+print_info "  ✅ Migrations: Completed"
+print_info "  ✅ Seeding: Completed (Account + CRUD6 sprinkles)"
 print_info "  🔐 Admin user: admin / admin123"
+echo ""
+print_info "Database Contents:"
+# Only show these if MySQL connection was successful
+if mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT 1" &>/dev/null; then
+    GROUP_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM groups;" -s 2>/dev/null || echo "0")
+    PERMISSION_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM permissions;" -s 2>/dev/null || echo "0")
+    ROLE_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM roles;" -s 2>/dev/null || echo "0")
+    USER_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM users;" -s 2>/dev/null || echo "0")
+    print_info "  📊 Groups: $GROUP_COUNT"
+    print_info "  📊 Permissions: $PERMISSION_COUNT"
+    print_info "  📊 Roles: $ROLE_COUNT"
+    print_info "  📊 Users: $USER_COUNT"
+else
+    print_info "  ⚠️  Database not accessible (may need manual initialization)"
+fi
 echo ""
 print_info "Next steps:"
 print_info "  1. Start PHP server: php bakery serve"
@@ -301,5 +385,7 @@ print_info "  • Rebuild assets: php bakery bake"
 print_info "  • View routes: php bakery route:list"
 print_info "  • Clear cache: php bakery clear:cache"
 print_info "  • Run tests: vendor/bin/phpunit"
+print_info "  • Re-run migrations: php bakery migrate --force"
+print_info "  • Re-seed database: php bakery seed <SeedClass> --force"
 echo ""
 print_info "Happy coding! 🚀"

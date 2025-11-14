@@ -82,9 +82,20 @@ This approach allows you to:
    - Modifies main.ts to include CRUD6 sprinkle
    - Creates groups.json schema
    - Sets up .env file
-   - Runs database migrations
-   - Seeds database (Account + CRUD6 sprinkles)
-   - Creates admin user (username: admin, password: admin123)
+   - **Waits for MySQL to be ready (up to 120 seconds)**
+   - **Runs database migrations**
+   - **Seeds database with Account sprinkle data:**
+     - DefaultGroups
+     - DefaultPermissions
+     - DefaultRoles
+     - UpdatePermissions
+   - **Seeds database with CRUD6 sprinkle data:**
+     - DefaultRoles (crud6-admin role)
+     - DefaultPermissions (6 CRUD6 permissions)
+   - **Verifies database seeding (counts tables, groups, permissions, roles)**
+   - **Creates admin user (username: admin, password: admin123)**
+   - **Verifies admin user creation**
+   - Builds frontend assets
 
 3. **Start Development**
    ```bash
@@ -202,6 +213,16 @@ Admin user created during setup:
 - Password: `admin123`
 - Email: `admin@example.com`
 
+**Database Initialization:**
+- Migrations run automatically during setup
+- Database seeded with default data:
+  - Groups (from Account sprinkle)
+  - Permissions (from Account + CRUD6 sprinkles)
+  - Roles (from Account + CRUD6 sprinkles, including `crud6-admin`)
+  - Admin user created
+- Setup script verifies seeding was successful
+- If MySQL is not ready, setup provides manual commands to run
+
 ## Integration Test Mirroring
 
 The `setup-project.sh` script mirrors the steps from `.github/workflows/integration-test.yml`:
@@ -220,9 +241,11 @@ The `setup-project.sh` script mirrors the steps from `.github/workflows/integrat
 | Configure main.ts | `sed` commands to add CRUD6Sprinkle |
 | Create groups schema | Schema file created in setup script |
 | Setup environment | .env file created with database config |
-| Run migrations | `php bakery migrate --force` |
-| Seed database | Account + CRUD6 seeds run automatically |
-| Create admin user | `php bakery create:admin-user` |
+| Run migrations | `php bakery migrate --force` with error handling |
+| Seed database | Account + CRUD6 seeds with error logging |
+| Verify seeding | Check table counts, verify data exists |
+| Create admin user | `php bakery create:admin-user` with verification |
+| Build assets | `php bakery bake` |
 
 ## Testing CRUD6 Features
 
@@ -285,8 +308,19 @@ Create JSON schemas in `/workspace/app/schema/crud6/`:
 ### Common Issues
 
 1. **MySQL Not Ready During Setup**
-   - The setup script waits up to 60 seconds for MySQL
-   - If migrations fail, manually run: `php bakery migrate --force`
+   - The setup script waits up to 120 seconds for MySQL
+   - If migrations fail, the script will show manual commands to run
+   - To complete setup manually:
+     ```bash
+     php bakery migrate --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+     php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+     php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+     php bakery create:admin-user --username=admin --password=admin123 --email=admin@example.com --firstName=Admin --lastName=User
+     ```
 
 2. **Changes to Sprinkle Not Reflected**
    - Edit files in `/repos/sprinkle-crud6/app/src/`

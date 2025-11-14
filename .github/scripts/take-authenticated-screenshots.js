@@ -44,18 +44,19 @@ async function takeAuthenticatedScreenshots(baseUrl, username, password) {
         console.log('🔐 Logging in...');
         
         // Wait for the login form to be visible (UserFrosting 6 uses data-test attributes)
-        await page.waitForSelector('input[data-test="username"]', { timeout: 10000 });
+        // Use .uk-card to target the main body login form, not the header dropdown
+        await page.waitForSelector('.uk-card input[data-test="username"]', { timeout: 10000 });
         
-        // Fill in credentials using data-test selectors
-        await page.fill('input[data-test="username"]', username);
-        await page.fill('input[data-test="password"]', password);
+        // Fill in credentials using data-test selectors (qualified with .uk-card)
+        await page.fill('.uk-card input[data-test="username"]', username);
+        await page.fill('.uk-card input[data-test="password"]', password);
         
         // Click the login button using data-test selector and wait for navigation
         await Promise.all([
             page.waitForNavigation({ timeout: 15000 }).catch(() => {
                 console.log('⚠️  No navigation detected after login, but continuing...');
             }),
-            page.click('button[data-test="submit"]')
+            page.click('.uk-card button[data-test="submit"]')
         ]);
         
         console.log('✅ Logged in successfully');

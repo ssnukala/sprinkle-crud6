@@ -51,13 +51,13 @@ async function takeAuthenticatedScreenshots(baseUrl, username, password) {
         await page.fill('input[name="user_name"]', username);
         await page.fill('input[name="password"]', password);
         
-        // Click the login button
-        await page.click('button[type="submit"]');
-        
-        // Wait for navigation after login
-        await page.waitForURL('**/dashboard', { timeout: 15000 }).catch(() => {
-            console.log('⚠️  Did not redirect to dashboard, but continuing...');
-        });
+        // Click the login button and wait for navigation
+        await Promise.all([
+            page.waitForNavigation({ timeout: 15000 }).catch(() => {
+                console.log('⚠️  No navigation detected after login, but continuing...');
+            }),
+            page.click('button[type="submit"]')
+        ]);
         
         console.log('✅ Logged in successfully');
         
@@ -71,6 +71,14 @@ async function takeAuthenticatedScreenshots(baseUrl, username, password) {
         
         // Wait for page content to load
         await page.waitForTimeout(2000);
+        
+        // Check if we're still on login page (would indicate auth failure)
+        const currentUrl = page.url();
+        if (currentUrl.includes('/account/sign-in')) {
+            console.warn('⚠️  Warning: Still on login page - authentication may have failed');
+        } else {
+            console.log(`✅ Page loaded: ${currentUrl}`);
+        }
         
         const listScreenshotPath = '/tmp/screenshot_groups_list.png';
         await page.screenshot({ 
@@ -86,6 +94,14 @@ async function takeAuthenticatedScreenshots(baseUrl, username, password) {
         
         // Wait for page content to load
         await page.waitForTimeout(2000);
+        
+        // Check if we're still on login page
+        const currentUrl2 = page.url();
+        if (currentUrl2.includes('/account/sign-in')) {
+            console.warn('⚠️  Warning: Still on login page - authentication may have failed');
+        } else {
+            console.log(`✅ Page loaded: ${currentUrl2}`);
+        }
         
         const detailScreenshotPath = '/tmp/screenshot_group_detail.png';
         await page.screenshot({ 

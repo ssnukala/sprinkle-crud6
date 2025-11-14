@@ -1,5 +1,5 @@
 {
-    "name": "UserFrosting CRUD6 Development (Full Stack) - Docker Compose v2",
+    "name": "UserFrosting 6 with CRUD6 Sprinkle Development",
     "dockerComposeFile": "compose.yml",
     "service": "sprinkle-crud6",
     "workspaceFolder": "/workspace",
@@ -68,14 +68,8 @@
             "label": "MySQL Database"
         }
     },
-    "postCreateCommand": "bash .devcontainer/setup-project.sh",
+    "postCreateCommand": "bash /repos/sprinkle-crud6/.devcontainer/setup-project.sh",
     "remoteUser": "vscode",
-    "mounts": [
-        "source=sprinkle-crud6-userfrosting-node_modules,target=/workspace/userfrosting/node_modules,type=volume",
-        "source=sprinkle-crud6-userfrosting-vendor,target=/workspace/userfrosting/vendor,type=volume",
-        "source=sprinkle-crud6-source-node_modules,target=/ssnukala/sprinkle-crud6/node_modules,type=volume",
-        "source=sprinkle-crud6-source-vendor,target=/ssnukala/sprinkle-crud6/vendor,type=volume"
-    ],
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}

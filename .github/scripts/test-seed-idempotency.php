@@ -21,13 +21,13 @@ if (!file_exists('vendor/autoload.php')) {
 // Bootstrap UserFrosting 6 application
 require 'vendor/autoload.php';
 
-// Load .env file
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
+// Bootstrap the UserFrosting application using Bakery (CLI bootstrap method)
+// This follows the same pattern as the bakery CLI tool in UserFrosting 6
+use UserFrosting\App\MyApp;
+use UserFrosting\Bakery\Bakery;
 
-// Bootstrap the UserFrosting application
-// In UF6, app/app.php returns the bootstrapped DI container
-$app = require 'app/app.php';
+$bakery = new Bakery(MyApp::class);
+$container = $bakery->getContainer();
 
 use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Account\Database\Models\Permission;

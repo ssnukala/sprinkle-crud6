@@ -44,12 +44,12 @@ const formSuccess = () => {
 </script>
 
 <template>
-    <a v-bind="$attrs" :uk-toggle="'target: #modal-crud6-create'">
+    <a v-bind="$attrs" :uk-toggle="'target: #modal-crud6-create'" data-test="btn-create-modal">
         <slot><font-awesome-icon icon="plus" fixed-width /> {{ $t('CRUD6.CREATE', { model: modelLabel }) }}</slot>
     </a>
 
     <!-- This is the modal -->
-    <UFModal id="modal-crud6-create" closable>
+    <UFModal id="modal-crud6-create" closable data-test="modal-create">
         <template #header>{{ $t('CRUD6.CREATE', { model: modelLabel }) }}</template>
         <template #default>
             <CRUD6Form :model="props.model" :schema="props.schema" @success="formSuccess()" />

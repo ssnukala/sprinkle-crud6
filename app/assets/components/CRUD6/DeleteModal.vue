@@ -63,7 +63,7 @@ const deleteConfirmed = () => {
 </script>
 
 <template>
-    <a :href="'#confirm-crud6-delete-' + recordId" v-bind="$attrs" uk-toggle>
+    <a :href="'#confirm-crud6-delete-' + recordId" v-bind="$attrs" uk-toggle data-test="btn-delete-modal">
         <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}</slot>
     </a>
 
@@ -75,7 +75,8 @@ const deleteConfirmed = () => {
         :acceptLabel="$t('CRUD6.DELETE_YES', { model: modelLabel })"
         acceptIcon="trash"
         :rejectIcon="null"
-        :acceptSeverity="Severity.Danger">
+        :acceptSeverity="Severity.Danger"
+        data-test="modal-delete">
         <template #prompt>
             <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
         </template>

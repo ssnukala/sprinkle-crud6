@@ -441,12 +441,14 @@ function getLookupAttributes(field: any) {
                             <button
                                 type="button"
                                 class="uk-button uk-button-default"
+                                data-test="btn-back"
                                 @click="goBack">
                                 <font-awesome-icon icon="arrow-left" /> Back
                             </button>
                             <button
                                 type="button"
                                 class="uk-button uk-button-primary"
+                                data-test="btn-save"
                                 @click="saveRecord"
                                 :disabled="loading">
                                 <font-awesome-icon icon="save" /> Save
@@ -455,6 +457,7 @@ function getLookupAttributes(field: any) {
                                 v-if="!isCreateMode"
                                 type="button"
                                 class="uk-button uk-button-secondary"
+                                data-test="btn-cancel"
                                 @click="cancelEdit">
                                 <font-awesome-icon icon="times" /> Cancel
                             </button>
@@ -600,12 +603,14 @@ function getLookupAttributes(field: any) {
                             <button
                                 type="button"
                                 class="uk-button uk-button-default"
+                                data-test="btn-back"
                                 @click="goBack">
                                 <font-awesome-icon icon="arrow-left" /> Back
                             </button>
                             <button
                                 type="button"
                                 class="uk-button uk-button-primary"
+                                data-test="btn-save"
                                 @click="saveRecord"
                                 :disabled="loading">
                                 <font-awesome-icon icon="save" /> Save
@@ -614,6 +619,7 @@ function getLookupAttributes(field: any) {
                                 v-if="!isCreateMode"
                                 type="button"
                                 class="uk-button uk-button-secondary"
+                                data-test="btn-cancel"
                                 @click="cancelEdit">
                                 <font-awesome-icon icon="times" /> Cancel
                             </button>

@@ -51,12 +51,12 @@ const formSuccess = () => {
 </script>
 
 <template>
-    <a :href="'#modal-crud6-edit-' + recordId" v-bind="$attrs" uk-toggle>
+    <a :href="'#modal-crud6-edit-' + recordId" v-bind="$attrs" uk-toggle data-test="btn-edit-modal">
         <slot> <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }} </slot>
     </a>
 
     <!-- This is the modal -->
-    <UFModal :id="'modal-crud6-edit-' + recordId" closable>
+    <UFModal :id="'modal-crud6-edit-' + recordId" closable data-test="modal-edit">
         <template #header> {{ $t('CRUD6.EDIT', { model: modelLabel }) }} </template>
         <template #default>
             <CRUD6Form :crud6="props.crud6" :model="props.model" :schema="props.schema" @success="formSuccess()" />

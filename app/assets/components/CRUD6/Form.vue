@@ -316,6 +316,7 @@ function getLookupAttributes(field: any) {
                         v-if="fieldKey === 'slug'"
                         class="uk-button uk-button-default uk-form-button"
                         type="button"
+                        data-test="btn-toggle-slug-lock"
                         :uk-tooltip="$t('OVERRIDE')"
                         @click="slugLocked = !slugLocked">
                         <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
@@ -484,13 +485,14 @@ function getLookupAttributes(field: any) {
 
             <!-- Form actions -->
             <div class="uk-text-right" uk-margin>
-                <button class="uk-button uk-button-default uk-modal-close" type="button">
+                <button class="uk-button uk-button-default uk-modal-close" type="button" data-test="btn-cancel">
                     {{ $t('CANCEL') }}
                 </button>
                 <button
                     class="uk-button uk-button-primary"
                     :disabled="(r$ && r$.$error) || isLoading"
-                    type="submit">
+                    type="submit"
+                    data-test="btn-submit">
                     <div v-if="isLoading" uk-spinner="ratio: 0.5"></div>
                     {{ $t('SAVE') }}
                 </button>

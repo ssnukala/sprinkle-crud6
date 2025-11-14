@@ -275,6 +275,7 @@ watch(() => props.modelValue, async (newValue) => {
           v-if="selectedItem && !disabled"
           type="button"
           class="uk-form-icon uk-form-icon-flip"
+          data-test="btn-clear-lookup"
           @click="clearSelection"
           style="pointer-events: auto; cursor: pointer; background: none; border: none;"
         >

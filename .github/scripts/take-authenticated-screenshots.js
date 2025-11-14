@@ -43,19 +43,19 @@ async function takeAuthenticatedScreenshots(baseUrl, username, password) {
         // Step 2: Fill in login form
         console.log('🔐 Logging in...');
         
-        // Wait for the login form to be visible
-        await page.waitForSelector('input[name="user_name"]', { timeout: 10000 });
+        // Wait for the login form to be visible (UserFrosting 6 uses data-test attributes)
+        await page.waitForSelector('input[data-test="username"]', { timeout: 10000 });
         
-        // Fill in credentials
-        await page.fill('input[name="user_name"]', username);
-        await page.fill('input[name="password"]', password);
+        // Fill in credentials using data-test selectors
+        await page.fill('input[data-test="username"]', username);
+        await page.fill('input[data-test="password"]', password);
         
-        // Click the login button and wait for navigation
+        // Click the login button using data-test selector and wait for navigation
         await Promise.all([
             page.waitForNavigation({ timeout: 15000 }).catch(() => {
                 console.log('⚠️  No navigation detected after login, but continuing...');
             }),
-            page.click('button[type="submit"]')
+            page.click('button[data-test="submit"]')
         ]);
         
         console.log('✅ Logged in successfully');

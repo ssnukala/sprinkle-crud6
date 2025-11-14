@@ -230,7 +230,7 @@ onMounted(() => {
 
         <!-- Action column -->
         <UFSprunjeColumn v-if="hasEditPermission || hasDeletePermission">
-          <button class="uk-button uk-button-primary uk-text-nowrap" type="button">
+          <button class="uk-button uk-button-primary uk-text-nowrap" type="button" data-test="btn-actions">
             {{ $t('ACTIONS') }} <span uk-drop-parent-icon></span>
           </button>
           <div class="uk-padding-small" uk-dropdown="pos: bottom-right; mode: click; offset: 2">

@@ -280,6 +280,7 @@ function getLookupAttributes(field: any) {
                             <button
                                 type="button"
                                 class="uk-button uk-button-danger uk-button-small"
+                                data-test="btn-delete-row"
                                 @click="deleteRow(index)"
                                 :disabled="disabled || allowDelete === false"
                                 title="Delete row">
@@ -296,6 +297,7 @@ function getLookupAttributes(field: any) {
             <button
                 type="button"
                 class="uk-button uk-button-primary uk-button-small"
+                data-test="btn-add-row"
                 @click="addRow"
                 :disabled="disabled">
                 <span uk-icon="plus"></span> Add Row

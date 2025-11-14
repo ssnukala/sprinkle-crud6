@@ -180,6 +180,7 @@ function cancelChanges() {
           <button 
             type="button"
             class="uk-button uk-button-default uk-margin-small-right"
+            data-test="btn-cancel"
             @click="cancelChanges"
             :disabled="isLoading">
             Cancel
@@ -187,6 +188,7 @@ function cancelChanges() {
           <button 
             type="button"
             class="uk-button uk-button-primary"
+            data-test="btn-save"
             @click="saveCategories"
             :disabled="isLoading || !hasChanges">
             <span v-if="isLoading" uk-spinner="ratio: 0.5"></span>

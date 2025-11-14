@@ -209,6 +209,7 @@ const customActions = computed(() => {
                 :key="action.key"
                 @click="handleActionClick(action)"
                 :disabled="actionLoading"
+                :data-test="`btn-action-${action.key}`"
                 :class="[
                     'uk-width-1-1',
                     'uk-margin-small-bottom',
@@ -224,6 +225,7 @@ const customActions = computed(() => {
             <button
                 v-if="hasUpdatePermission && !showEditModal"
                 @click="requestEditModal()"
+                data-test="btn-edit"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small">
                 <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
             </button>
@@ -241,6 +243,7 @@ const customActions = computed(() => {
             <button
                 v-if="hasDeletePermission && !showDeleteModal"
                 @click="requestDeleteModal()"
+                data-test="btn-delete"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small">
                 <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
             </button>

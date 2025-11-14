@@ -338,6 +338,7 @@ function getFieldLabel(field: any): string {
                 <button 
                     type="button" 
                     class="uk-button uk-button-default uk-margin-small-right"
+                    data-test="btn-cancel"
                     @click="cancelForm"
                     :disabled="isLoading">
                     Cancel
@@ -345,6 +346,7 @@ function getFieldLabel(field: any): string {
                 <button 
                     type="submit" 
                     class="uk-button uk-button-primary"
+                    data-test="btn-submit"
                     :disabled="isLoading">
                     <span v-if="isLoading" uk-spinner="ratio: 0.5"></span>
                     {{ isEditMode ? 'Update' : 'Create' }}

@@ -172,9 +172,9 @@ jobs:
         run: |
           cd userfrosting
           # Copy validation script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/validate-seeds.php .
+          cp ../sprinkle-crud6/.github/scripts/check-seeds.php .
           # Run validation using the script
-          php validate-seeds.php
+          php check-seeds.php
 
       - name: Test seed idempotency
         run: |

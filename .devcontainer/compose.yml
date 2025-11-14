@@ -9,11 +9,15 @@ services:
       context: ..
       dockerfile: .devcontainer/Dockerfile
     volumes:
-      - ..:/workspace:cached
-      - sprinkle-crud6-userfrosting-node_modules:/workspace/userfrosting/node_modules
-      - sprinkle-crud6-userfrosting-vendor:/workspace/userfrosting/vendor
-      - sprinkle-crud6-source-node_modules:/ssnukala/sprinkle-crud6/node_modules
-      - sprinkle-crud6-source-vendor:/ssnukala/sprinkle-crud6/vendor
+      # Mount the sprinkle repository at /repos/sprinkle-crud6 (read-only reference)
+      - ..:/repos/sprinkle-crud6:cached
+      # /workspace will be created as the UserFrosting project directory
+      # Use named volumes for node_modules and vendor to improve performance
+      - userfrosting-workspace:/workspace:cached
+      - userfrosting-node_modules:/workspace/node_modules
+      - userfrosting-vendor:/workspace/vendor
+      # Mount /ssnukala for cloned sprinkle development
+      - ssnukala-sprinkles:/ssnukala:cached
     ports:
       - "8080:8080"
       - "5173:5173"
@@ -42,10 +46,10 @@ services:
       - sprinkle-crud6-network
 
 volumes:
-  sprinkle-crud6-userfrosting-node_modules:
-  sprinkle-crud6-userfrosting-vendor:
-  sprinkle-crud6-source-node_modules:
-  sprinkle-crud6-source-vendor:
+  userfrosting-workspace:
+  userfrosting-node_modules:
+  userfrosting-vendor:
+  ssnukala-sprinkles:
   mysql-data:
 
 networks:

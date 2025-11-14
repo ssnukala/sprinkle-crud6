@@ -39,20 +39,26 @@ This repository includes a complete development container setup that mirrors the
 
 ## Architecture Overview
 
-The devcontainer setup mirrors the integration test workflow by:
+The devcontainer setup mirrors the integration test workflow with enhanced flexibility for sprinkle development:
 
-1. **Cloning sprinkle-crud6 from main branch to `/ssnukala/sprinkle-crud6`** - Main CRUD6 sprinkle source from GitHub
-2. **Cloning sprinkle-c6admin from main branch to `/ssnukala/sprinkle-c6admin`** - C6Admin sprinkle source from GitHub (if repository exists)
-3. **Creating UserFrosting 6 project at `/workspace/userfrosting`**
-4. **Configuring both as local path repositories** in composer.json and package.json
-5. **Setting up the complete UserFrosting application** with all configurations (MyApp.php, main.ts, router/index.ts)
+1. **Creating UserFrosting 6 project at `/workspace`** - The main working directory
+2. **Cloning sprinkle-crud6 from GitHub to `/ssnukala/sprinkle-crud6`** - Editable clone for development
+3. **Cloning sprinkle-c6admin from GitHub to `/ssnukala/sprinkle-c6admin`** - Editable clone for development (if available)
+4. **Mounting sprinkle repository at `/repos/sprinkle-crud6`** - Read-only reference to current branch
+5. **Configuring as local path repositories** in composer.json and package.json pointing to `/ssnukala/`
+6. **Setting up the complete UserFrosting application** with all configurations (MyApp.php, main.ts, router/index.ts)
 
 This approach allows you to:
-- Work on CRUD6 sprinkle source code cloned from the main branch at `/ssnukala/sprinkle-crud6`
-- Work on C6Admin sprinkle source code cloned from the main branch at `/ssnukala/sprinkle-c6admin` (if available)
-- Have the sprinkle available at `/ssnukala/sprinkle-crud6` for UserFrosting integration
-- Develop and test in a fully configured UserFrosting 6 instance
-- Make changes to sprinkle code and see them immediately in the running application
+- Work in a fully configured UserFrosting 6 instance at `/workspace`
+- Edit sprinkle source code at `/ssnukala/sprinkle-crud6` and `/ssnukala/sprinkle-c6admin`
+- Test changes immediately without rebuilding (local path dependencies)
+- Pull latest changes from GitHub or make local modifications
+- Have a reference copy at `/repos/sprinkle-crud6` (current branch you're working on)
+
+**Key Difference from Previous Setup:**
+- **OLD**: Workspace was the sprinkle repo, UserFrosting was created inside at `/workspace/userfrosting`
+- **NEW**: Workspace IS the UserFrosting project at `/workspace`, sprinkle repo is mounted at `/repos/sprinkle-crud6`
+- This matches the integration-test.yml workflow where UserFrosting is created first, then the sprinkle is added
 
 ## Quick Start
 
@@ -69,25 +75,36 @@ This approach allows you to:
    - When prompted, click "Reopen in Container"
    - Or use Command Palette: "Dev Containers: Reopen in Container"
 
-2. **Automatic Setup** (mirrors integration-test.yml)
+2. **Automatic Setup** (mirrors integration-test.yml with development enhancements)
    - The container will automatically run `setup-project.sh`
-   - Clones sprinkle-crud6 from main branch to `/ssnukala/sprinkle-crud6`
-   - Clones sprinkle-c6admin from main branch to `/ssnukala/sprinkle-c6admin` (if available)
-   - Creates UserFrosting 6 project at `/workspace/userfrosting`
-   - Configures composer.json with local repositories
-   - Configures package.json with local sprinkle references
-   - Modifies MyApp.php to include CRUD6 (and C6Admin if available)
+   - **Clones sprinkle-crud6 from GitHub main branch to `/ssnukala/sprinkle-crud6`**
+   - **Clones sprinkle-c6admin from GitHub main branch to `/ssnukala/sprinkle-c6admin` (if available)**
+   - Creates UserFrosting 6 project at `/workspace`
+   - Configures composer.json with local repositories pointing to `/ssnukala/`
+   - Packages sprinkles from `/ssnukala/` as NPM packages and installs them
+   - Modifies MyApp.php to include CRUD6 and C6Admin (if available)
    - Modifies router/index.ts to include routes from both sprinkles
    - Modifies main.ts to include both sprinkles
    - Creates groups.json schema
    - Sets up .env file
-   - Runs database migrations
-   - Seeds database (Account + CRUD6 + C6Admin sprinkles)
-   - Creates admin user (username: admin, password: admin123)
+   - **Waits for MySQL to be ready (up to 120 seconds)**
+   - **Runs database migrations**
+   - **Seeds database with Account sprinkle data:**
+     - DefaultGroups
+     - DefaultPermissions
+     - DefaultRoles
+     - UpdatePermissions
+   - **Seeds database with CRUD6 sprinkle data:**
+     - DefaultRoles (crud6-admin role)
+     - DefaultPermissions (6 CRUD6 permissions)
+   - **Verifies database seeding (counts tables, groups, permissions, roles)**
+   - **Creates admin user (username: admin, password: admin123)**
+   - **Verifies admin user creation**
+   - Builds frontend assets
 
 3. **Start Development**
    ```bash
-   # In container terminal - workspace opens to /workspace/userfrosting
+   # In container terminal - workspace is /workspace (UserFrosting project)
    php bakery serve                # Start UserFrosting server (port 8080)
    # In a new terminal
    php bakery assets:vite         # Start Vite dev server (port 5173)
@@ -98,51 +115,64 @@ This approach allows you to:
 ### File Structure After Setup
 
 ```
-/workspace/                          # Repository mounted here
-├── app/                            # CRUD6 Sprinkle source (from this repo)
-├── composer.json
-├── package.json
-└── .devcontainer/
-
-/ssnukala/                          # Local sprinkle clones from GitHub main branches
-├── sprinkle-crud6/                 # Clone of CRUD6 sprinkle from main branch
-└── sprinkle-c6admin/              # Clone of C6Admin sprinkle from main branch (if exists)
-
-/workspace/userfrosting/            # Full UserFrosting 6 installation
+/workspace/                          # UserFrosting 6 project (main working directory)
 ├── app/
-│   ├── src/MyApp.php              # Configured with CRUD6::class and C6Admin::class
+│   ├── src/MyApp.php               # Configured with CRUD6::class and C6Admin::class
 │   ├── assets/
-│   │   ├── router/index.ts        # Configured with CRUD6Routes and C6AdminRoutes
-│   │   └── main.ts                # Configured with CRUD6Sprinkle and C6AdminSprinkle
+│   │   ├── router/index.ts         # Configured with CRUD6Routes and C6AdminRoutes
+│   │   └── main.ts                 # Configured with CRUD6Sprinkle and C6AdminSprinkle
 │   ├── schema/crud6/
-│   │   └── groups.json            # Example schema
-│   └── .env                       # Database configuration
+│   │   └── groups.json             # Example schema
+│   └── .env                        # Database configuration
 ├── vendor/
 │   └── ssnukala/
-│       ├── sprinkle-crud6/        # Path dependency → /ssnukala/sprinkle-crud6
-│       └── sprinkle-c6admin/      # Path dependency → /ssnukala/sprinkle-c6admin
+│       ├── sprinkle-crud6/         # Path dependency → /ssnukala/sprinkle-crud6
+│       └── sprinkle-c6admin/       # Path dependency → /ssnukala/sprinkle-c6admin
 ├── node_modules/
 │   └── @ssnukala/
-│       ├── sprinkle-crud6/        # NPM package from local path
-│       └── sprinkle-c6admin/      # NPM package from local path
-└── composer.json                  # Configured with local repositories
+│       ├── sprinkle-crud6/         # NPM package from /ssnukala/sprinkle-crud6
+│       └── sprinkle-c6admin/       # NPM package from /ssnukala/sprinkle-c6admin
+└── composer.json                   # Configured with local repositories
+
+/ssnukala/                          # Cloned sprinkles for development
+├── sprinkle-crud6/                 # Clone from GitHub main branch (editable)
+│   ├── app/src/                    # Edit source code here
+│   ├── composer.json
+│   └── package.json
+└── sprinkle-c6admin/               # Clone from GitHub main branch (editable, if available)
+    ├── app/src/                    # Edit source code here
+    ├── composer.json
+    └── package.json
+
+/repos/sprinkle-crud6/              # This repository (mounted as reference)
+├── app/                            # CRUD6 Sprinkle source
+├── .devcontainer/                  # DevContainer configuration
+├── composer.json
+└── package.json
 ```
 
 ### Working with Sprinkle Source Code
 
-**Important:** The workspace folder is set to `/workspace` in the devcontainer, which is the root of the mounted repository. After the setup script runs, the UserFrosting project will be available at `/workspace/userfrosting`.
+**Important:** The workspace folder is set to `/workspace` in the devcontainer, which is the UserFrosting 6 project.
 
-To edit sprinkle source code:
-1. **sprinkle-crud6**: Edit files in `/ssnukala/sprinkle-crud6` (cloned from main branch)
-2. **sprinkle-c6admin**: Edit files in `/ssnukala/sprinkle-c6admin` (cloned from main branch)
-3. Both are automatically linked to UserFrosting via composer and npm local path dependencies
-4. Changes are immediately available in the UserFrosting application
+The sprinkles are cloned from GitHub to `/ssnukala/` for development. Changes to files in `/ssnukala/sprinkle-crud6` or `/ssnukala/sprinkle-c6admin` are immediately available in the UserFrosting application via the local path dependencies.
 
-**Note:** The repositories are cloned fresh from GitHub main branches during setup, ensuring you have the latest versions.
+**Development Workflow:**
+1. **Edit sprinkle source**: Modify files in `/ssnukala/sprinkle-crud6/app/src/` or `/ssnukala/sprinkle-c6admin/app/src/`
+2. **Changes are live**: The local path dependencies mean changes are immediately available
+3. **Test in UserFrosting**: The running application at `/workspace` uses the updated code
+4. **Git operations**: Work in `/ssnukala/sprinkle-crud6` or `/ssnukala/sprinkle-c6admin` to commit, push, pull changes
+5. **Reference copy**: `/repos/sprinkle-crud6` contains the current branch you're working on (read-only)
+
+**Note:** This structure gives you flexibility to:
+- Pull latest changes from GitHub main branches
+- Make and test local modifications
+- Commit and push changes to GitHub
+- Work on both sprinkles simultaneously in the same environment
 
 ### Available Commands
 
-#### In UserFrosting project (`/workspace/userfrosting` - created during setup):
+#### In UserFrosting project (`/workspace` - default working directory):
 ```bash
 php bakery serve               # Start development server (port 8080)
 php bakery assets:vite        # Start Vite dev server (port 5173)
@@ -171,6 +201,12 @@ find app/src -name "*.php" -exec php -l {} \;  # Validate PHP syntax
 vendor/bin/phpunit            # Run tests
 vendor/bin/php-cs-fixer fix   # Format code
 vendor/bin/phpstan analyse    # Static analysis
+
+# Git operations
+git status
+git add .
+git commit -m "Your message"
+git push origin main
 
 # For sprinkle-c6admin (if available)
 cd /ssnukala/sprinkle-c6admin
@@ -210,28 +246,39 @@ Admin user created during setup:
 - Password: `admin123`
 - Email: `admin@example.com`
 
+**Database Initialization:**
+- Migrations run automatically during setup
+- Database seeded with default data:
+  - Groups (from Account sprinkle)
+  - Permissions (from Account + CRUD6 sprinkles)
+  - Roles (from Account + CRUD6 sprinkles, including `crud6-admin`)
+  - Admin user created
+- Setup script verifies seeding was successful
+- If MySQL is not ready, setup provides manual commands to run
+
 ## Integration Test Mirroring
 
 The `setup-project.sh` script mirrors the steps from `.github/workflows/integration-test.yml`:
 
 | Integration Test Step | DevContainer Implementation |
 |----------------------|---------------------------|
-| Checkout sprinkle-crud6 | Clone from main branch to `/ssnukala/sprinkle-crud6` |
-| Checkout sprinkle-c6admin | Clone from main branch to `/ssnukala/sprinkle-c6admin` |
+| Checkout sprinkle-crud6 | Mounted at `/repos/sprinkle-crud6` |
 | Setup PHP/Node | Included in Dockerfile |
-| Create UserFrosting project | `composer create-project` in setup script |
-| Configure Composer | Local path repositories in `/ssnukala` |
+| Create UserFrosting project | `composer create-project` at `/workspace` |
+| Configure Composer | Local path repository to `/repos/sprinkle-crud6` |
 | Install PHP dependencies | `composer install` in setup script |
-| Configure package.json | Local path references to both sprinkles |
-| Install NPM dependencies | `npm install` with local packages |
-| Configure MyApp.php | `sed` commands to add CRUD6::class and C6Admin::class |
-| Configure router/index.ts | `sed` commands to add routes from both sprinkles |
-| Configure main.ts | `sed` commands to add both sprinkles |
+| Package sprinkle-crud6 for NPM | `npm pack` from `/repos/sprinkle-crud6` |
+| Install NPM dependencies | `npm install` with packaged sprinkle |
+| Configure MyApp.php | `sed` commands to add CRUD6::class |
+| Configure router/index.ts | `sed` commands to add CRUD6Routes |
+| Configure main.ts | `sed` commands to add CRUD6Sprinkle |
 | Create groups schema | Schema file created in setup script |
 | Setup environment | .env file created with database config |
-| Run migrations | `php bakery migrate --force` |
-| Seed database | Account + CRUD6 seeds run automatically |
-| Create admin user | `php bakery create:admin-user` |
+| Run migrations | `php bakery migrate --force` with error handling |
+| Seed database | Account + CRUD6 seeds with error logging |
+| Verify seeding | Check table counts, verify data exists |
+| Create admin user | `php bakery create:admin-user` with verification |
+| Build assets | `php bakery bake` |
 
 ## Testing CRUD6 Features
 
@@ -266,7 +313,7 @@ curl -c cookies.txt -b cookies.txt http://localhost:8080/api/crud6/groups
 
 ## Schema Development
 
-Create JSON schemas in `/workspace/userfrosting/app/schema/crud6/`:
+Create JSON schemas in `/workspace/app/schema/crud6/`:
 
 ```json
 {
@@ -294,23 +341,35 @@ Create JSON schemas in `/workspace/userfrosting/app/schema/crud6/`:
 ### Common Issues
 
 1. **MySQL Not Ready During Setup**
-   - The setup script waits up to 60 seconds for MySQL
-   - If migrations fail, manually run: `cd /workspace/userfrosting && php bakery migrate --force`
+   - The setup script waits up to 120 seconds for MySQL
+   - If migrations fail, the script will show manual commands to run
+   - To complete setup manually:
+     ```bash
+     php bakery migrate --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
+     php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+     php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+     php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+     php bakery create:admin-user --username=admin --password=admin123 --email=admin@example.com --firstName=Admin --lastName=User
+     ```
 
-2. **Changes Not Reflected**
-   - Changes in `/workspace` need to be copied to `/ssnukala/sprinkle-crud6`
-   - Or edit directly in `/ssnukala/sprinkle-crud6` during development
-   - Run `composer dump-autoload` in UserFrosting project
+2. **Changes to Sprinkle Not Reflected**
+   - Edit files in `/ssnukala/sprinkle-crud6/app/src/` or `/ssnukala/sprinkle-c6admin/app/src/`
+   - Changes are automatically available via local path dependency
+   - Run `composer dump-autoload` in `/workspace` if needed
+   - For frontend changes, restart Vite: `php bakery assets:vite`
 
 3. **Permission Issues**
    ```bash
-   sudo chown -R vscode:vscode /workspace /ssnukala
+   sudo chown -R vscode:vscode /workspace /ssnukala /repos/sprinkle-crud6
    ```
 
 4. **Rebuild Setup**
    ```bash
    # Re-run setup script manually
-   bash /workspace/.devcontainer/setup-project.sh
+   bash /repos/sprinkle-crud6/.devcontainer/setup-project.sh
    ```
 
 ### Rebuilding Container
@@ -332,10 +391,7 @@ docker-compose logs sprinkle-crud6
 docker-compose logs mysql
 
 # View UserFrosting logs
-tail -f /workspace/userfrosting/app/logs/userfrosting.log
-
-# View XDebug logs
-tail -f /tmp/xdebug.log
+tail -f /workspace/app/logs/userfrosting.log
 
 # Test database connection
 mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SHOW TABLES;"
@@ -346,25 +402,20 @@ mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SHOW TABLES;"
 ```bash
 # Validate PHP syntax
 find /ssnukala/sprinkle-crud6/app/src -name "*.php" -exec php -l {} \;
+find /ssnukala/sprinkle-c6admin/app/src -name "*.php" -exec php -l {} \; 2>/dev/null || true
 
 # Validate JSON schemas
-for file in /workspace/userfrosting/app/schema/crud6/*.json; do
+for file in /workspace/app/schema/crud6/*.json; do
   php -r "echo json_decode(file_get_contents('$file')) ? '$file valid' : '$file invalid'; echo PHP_EOL;"
 done
 
 # Test UserFrosting
-cd /workspace/userfrosting
+cd /workspace
 php bakery debug:container
 php bakery route:list
 ```
 
 ## Development Tips
-
-### Working with Multiple Sprinkles
-- Edit CRUD6 sprinkle: `/ssnukala/sprinkle-crud6` (cloned from main branch)
-- Edit C6Admin sprinkle: `/ssnukala/sprinkle-c6admin` (cloned from main branch, if available)
-- Both are installed as local path dependencies in UserFrosting via composer and npm
-- Changes to sprinkle source files are immediately available in the UserFrosting application
 
 ### Hot Reload During Development
 - PHP changes require server restart: `Ctrl+C` then `php bakery serve`
@@ -406,28 +457,28 @@ cd /ssnukala/sprinkle-c6admin
 vendor/bin/phpunit
 
 # UserFrosting tests
-cd /workspace/userfrosting
+cd /workspace
 vendor/bin/phpunit
 ```
 
-## Integration with sprinkle-c6admin
-
-If the `ssnukala/sprinkle-c6admin` repository exists and is cloned during setup:
-- It will be cloned from the main branch to `/ssnukala/sprinkle-c6admin`
-- It will be added to composer.json and package.json as a local path dependency
-- MyApp.php, main.ts, and router/index.ts will be automatically configured to include C6Admin
-- You can develop both sprinkles simultaneously in the same environment
+### Working with Multiple Sprinkles
+- Edit CRUD6 sprinkle: `/ssnukala/sprinkle-crud6` (cloned from GitHub main)
+- Edit C6Admin sprinkle: `/ssnukala/sprinkle-c6admin` (cloned from GitHub main, if available)
+- Both are installed as local path dependencies in UserFrosting via composer and npm
+- Changes to sprinkle source files are immediately available in the UserFrosting application
+- You can pull latest changes, make modifications, and push to GitHub
+- Reference copy: `/repos/sprinkle-crud6` (current working branch)
 
 ## Contributing
 
 When working on sprinkle development:
 
-1. Make changes to source files in `/ssnukala/sprinkle-crud6/app/src/` (or `/ssnukala/sprinkle-c6admin/`)
-2. Changes are immediately available in the UserFrosting application (local path dependencies)
-3. Add/update tests in the respective sprinkle's `app/tests/` directory
-4. Update schemas in the respective sprinkle's `app/schema/` directory
-5. Test changes in UserFrosting project at `/workspace/userfrosting/`
+1. Make changes to source files in `/repos/sprinkle-crud6/app/src/`
+2. Changes are immediately available in the UserFrosting application (local path dependency)
+3. Add/update tests in `/repos/sprinkle-crud6/app/tests/`
+4. Update schemas in `/repos/sprinkle-crud6/app/schema/`
+5. Test changes in UserFrosting project at `/workspace`
 6. Run validation commands before committing
-7. Commit and push changes from the respective sprinkle directories
+7. Commit and push changes from `/repos/sprinkle-crud6`
 
-The development container provides a complete environment that mirrors the integration test workflow, ensuring your local development matches the CI/CD pipeline. Both sprinkles are cloned fresh from their main branches, ensuring you're always working with the latest code.
+The development container provides a complete environment that mirrors the integration test workflow, ensuring your local development matches the CI/CD pipeline.

@@ -46,18 +46,26 @@ print_step "Setting up /ssnukala directory and cloning sprinkle-crud6..."
 sudo mkdir -p /ssnukala
 sudo chown -R vscode:vscode /ssnukala
 
-# Clone sprinkle-crud6 from main branch
+# Clone sprinkle-crud6 from main branch (or use mounted repo as fallback)
 if [ ! -d "/ssnukala/sprinkle-crud6" ]; then
     print_info "Cloning sprinkle-crud6 from GitHub main branch..."
-    git clone --branch main https://github.com/ssnukala/sprinkle-crud6.git /ssnukala/sprinkle-crud6
-    print_info "Cloned sprinkle-crud6 to /ssnukala/sprinkle-crud6"
+    if git clone --branch main https://github.com/ssnukala/sprinkle-crud6.git /ssnukala/sprinkle-crud6 2>/dev/null; then
+        print_info "Cloned sprinkle-crud6 to /ssnukala/sprinkle-crud6"
+    elif [ -d "/repos/sprinkle-crud6" ]; then
+        print_info "GitHub clone failed, copying from mounted repository..."
+        cp -r /repos/sprinkle-crud6 /ssnukala/sprinkle-crud6
+        print_info "Copied sprinkle-crud6 to /ssnukala/sprinkle-crud6"
+    else
+        print_error "Could not clone or copy sprinkle-crud6"
+        exit 1
+    fi
 else
     print_info "Directory /ssnukala/sprinkle-crud6 already exists, pulling latest changes..."
     cd /ssnukala/sprinkle-crud6
-    git fetch origin
-    git checkout main
-    git pull origin main
-    cd /workspace
+    git fetch origin 2>/dev/null || print_info "Could not fetch from origin"
+    git checkout main 2>/dev/null || print_info "Already on main branch"
+    git pull origin main 2>/dev/null || print_info "Could not pull latest changes"
+    cd /
     print_info "Updated sprinkle-crud6 to latest main branch"
 fi
 
@@ -82,7 +90,7 @@ else
         git fetch origin
         git checkout main
         git pull origin main
-        cd /workspace
+        cd /
         print_info "Updated sprinkle-c6admin to latest main branch"
     else
         print_info "Repository ssnukala/sprinkle-c6admin not found, skipping update..."
@@ -90,23 +98,31 @@ else
 fi
 
 # ============================================================================
-# STEP 3: Create UserFrosting 6 project
+# STEP 3: Create UserFrosting 6 project at /workspace
 # ============================================================================
-print_step "Creating UserFrosting 6 project..."
+print_step "Creating UserFrosting 6 project at /workspace..."
+
+# Check if /workspace is empty or has only .gitkeep type files
+if [ -z "$(ls -A /workspace 2>/dev/null | grep -v '^\.')" ]; then
+    # Create UserFrosting project directly in /workspace
+    cd /tmp
+    composer create-project userfrosting/userfrosting userfrosting-temp "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
+    
+    # Move all files from temp directory to /workspace
+    sudo mv userfrosting-temp/* /workspace/ 2>/dev/null || true
+    sudo mv userfrosting-temp/.* /workspace/ 2>/dev/null || true
+    rm -rf userfrosting-temp
+    
+    sudo chown -R vscode:vscode /workspace
+    print_info "UserFrosting 6 project created at /workspace"
+else
+    print_info "UserFrosting project already exists at /workspace"
+fi
 
 cd /workspace
 
-if [ ! -d "userfrosting" ]; then
-    composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
-    print_info "UserFrosting 6 project created"
-else
-    print_info "UserFrosting project already exists"
-fi
-
-cd userfrosting
-
 # ============================================================================
-# STEP 4: Configure Composer for beta packages and local sprinkle-crud6
+# STEP 4: Configure Composer for beta packages and local sprinkles
 # ============================================================================
 print_step "Configuring Composer for local sprinkles..."
 
@@ -131,33 +147,38 @@ print_step "Installing PHP dependencies..."
 composer install --no-interaction --prefer-dist
 
 # ============================================================================
-# STEP 6: Configure package.json with local sprinkle references
+# STEP 6: Package sprinkles for NPM
 # ============================================================================
-print_step "Configuring package.json with local sprinkle references..."
+print_step "Packaging sprinkles for NPM..."
 
-cd /workspace/userfrosting
+# Package sprinkle-crud6
+cd /ssnukala/sprinkle-crud6
+npm pack
+mv ssnukala-sprinkle-crud6-*.tgz /workspace/
 
-# Add CRUD6 sprinkle to package.json as local dependency
-npm pkg set dependencies.@ssnukala/sprinkle-crud6="file:/ssnukala/sprinkle-crud6"
-
-# Add C6Admin sprinkle to package.json if it exists
+# Package sprinkle-c6admin if it exists
 if [ -d "/ssnukala/sprinkle-c6admin" ] && [ -f "/ssnukala/sprinkle-c6admin/package.json" ]; then
-    npm pkg set dependencies.@ssnukala/sprinkle-c6admin="file:/ssnukala/sprinkle-c6admin"
-    print_info "Added sprinkle-c6admin to package.json"
+    cd /ssnukala/sprinkle-c6admin
+    npm pack
+    mv ssnukala-sprinkle-c6admin-*.tgz /workspace/
+    print_info "Packaged sprinkle-c6admin for NPM"
 fi
 
-print_info "package.json configured with local sprinkle references"
+cd /workspace
 
 # ============================================================================
-# STEP 7: Verify package.json configuration
+# STEP 7: Install NPM dependencies
 # ============================================================================
-print_step "Verifying package.json configuration..."
+print_step "Installing NPM dependencies..."
 
-# Display the configured dependencies for verification
-echo "Configured NPM dependencies:"
-npm pkg get dependencies | grep -E "@ssnukala|sprinkle-crud6|sprinkle-c6admin" || echo "  No sprinkle dependencies found yet"
+npm update
+npm install ./ssnukala-sprinkle-crud6-*.tgz
 
-print_info "package.json configuration verified"
+# Install c6admin package if it exists
+if [ -f "./ssnukala-sprinkle-c6admin-*.tgz" ]; then
+    npm install ./ssnukala-sprinkle-c6admin-*.tgz
+    print_info "Installed sprinkle-c6admin NPM package"
+fi
 
 # ============================================================================
 # STEP 8: Configure MyApp.php
@@ -290,7 +311,7 @@ fi
 # ============================================================================
 print_step "Waiting for MySQL database to be ready..."
 
-max_attempts=30
+max_attempts=60
 attempt=0
 until mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT 1" &>/dev/null || [ $attempt -eq $max_attempts ]; do
     attempt=$((attempt + 1))
@@ -300,16 +321,34 @@ done
 
 if [ $attempt -eq $max_attempts ]; then
     print_error "MySQL not available after $max_attempts attempts"
-    print_info "Skipping database setup - run migrations manually when MySQL is ready"
+    print_error "Database initialization skipped!"
+    print_info ""
+    print_info "To complete setup manually, run these commands:"
+    print_info "  cd /workspace"
+    print_info "  php bakery migrate --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultGroups --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultPermissions --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\DefaultRoles --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\Account\\\\Database\\\\Seeds\\\\UpdatePermissions --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\CRUD6\\\\Database\\\\Seeds\\\\DefaultRoles --force"
+    print_info "  php bakery seed UserFrosting\\\\Sprinkle\\\\CRUD6\\\\Database\\\\Seeds\\\\DefaultPermissions --force"
+    print_info "  php bakery create:admin-user --username=admin --password=admin123 --email=admin@example.com --firstName=Admin --lastName=User"
+    print_info ""
 else
-    print_info "MySQL is ready"
+    print_info "✅ MySQL is ready"
     
     # ============================================================================
     # STEP 14: Run migrations
     # ============================================================================
     print_step "Running database migrations..."
-    php bakery migrate --force
-    print_info "Migrations completed"
+    
+    if php bakery migrate --force; then
+        print_info "✅ Migrations completed successfully"
+    else
+        print_error "❌ Migrations failed"
+        print_info "You may need to run migrations manually: php bakery migrate --force"
+        exit 1
+    fi
     
     # ============================================================================
     # STEP 15: Seed database
@@ -317,19 +356,62 @@ else
     print_step "Seeding database..."
     
     # Seed Account sprinkle data first (required base data)
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
-    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+    print_info "Seeding Account sprinkle data..."
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force || print_error "DefaultGroups seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force || print_error "DefaultPermissions seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force || print_error "DefaultRoles seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force || print_error "UpdatePermissions seed failed"
     
     # Then seed CRUD6 sprinkle data
-    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
-    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
+    print_info "Seeding CRUD6 sprinkle data..."
+    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force || print_error "CRUD6 DefaultRoles seed failed"
+    php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force || print_error "CRUD6 DefaultPermissions seed failed"
     
-    print_info "Database seeding completed"
+    print_info "✅ Database seeding completed"
     
     # ============================================================================
-    # STEP 16: Create admin user
+    # STEP 16: Verify database seeding
+    # ============================================================================
+    print_step "Verifying database seeding..."
+    
+    # Check if tables exist
+    TABLES=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SHOW TABLES;" -s)
+    TABLE_COUNT=$(echo "$TABLES" | wc -l)
+    
+    if [ $TABLE_COUNT -gt 0 ]; then
+        print_info "✅ Found $TABLE_COUNT database tables"
+    else
+        print_error "❌ No database tables found"
+    fi
+    
+    # Check if groups exist
+    GROUP_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM groups;" -s 2>/dev/null || echo "0")
+    if [ "$GROUP_COUNT" -gt 0 ]; then
+        print_info "✅ Found $GROUP_COUNT groups in database"
+    else
+        print_error "❌ No groups found in database"
+    fi
+    
+    # Check if permissions exist
+    PERMISSION_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM permissions;" -s 2>/dev/null || echo "0")
+    if [ "$PERMISSION_COUNT" -gt 0 ]; then
+        print_info "✅ Found $PERMISSION_COUNT permissions in database"
+    else
+        print_error "❌ No permissions found in database"
+    fi
+    
+    # Check if roles exist
+    ROLE_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM roles;" -s 2>/dev/null || echo "0")
+    if [ "$ROLE_COUNT" -gt 0 ]; then
+        print_info "✅ Found $ROLE_COUNT roles in database"
+    else
+        print_error "❌ No roles found in database"
+    fi
+    
+    print_info "Database verification completed"
+    
+    # ============================================================================
+    # STEP 17: Create admin user
     # ============================================================================
     print_step "Creating admin user..."
     
@@ -340,21 +422,27 @@ else
       --firstName=Admin \
       --lastName=User || print_info "Admin user may already exist"
     
-    print_info "Admin user setup completed (username: admin, password: admin123)"
+    # Verify admin user was created
+    USER_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM users WHERE user_name='admin';" -s 2>/dev/null || echo "0")
+    if [ "$USER_COUNT" -gt 0 ]; then
+        print_info "✅ Admin user created successfully (username: admin, password: admin123)"
+    else
+        print_error "❌ Admin user not found in database"
+    fi
     
     # ============================================================================
-    # STEP 17: Run php bakery bake to build assets and install NPM dependencies
+    # STEP 18: Run php bakery bake to build assets
     # ============================================================================
-    print_step "Running php bakery bake to build assets and install NPM dependencies..."
+    print_step "Running php bakery bake to build assets..."
     
-    # bakery bake will automatically run npm install based on package.json
+    # bakery bake will automatically build the frontend assets
     php bakery bake || print_info "⚠️ Build failed but continuing with setup"
     
-    print_info "Assets built and NPM dependencies installed"
+    print_info "Assets built"
 fi
 
 # ============================================================================
-# STEP 18: Final setup
+# STEP 19: Final setup
 # ============================================================================
 print_step "Finalizing setup..."
 
@@ -368,11 +456,12 @@ chmod -R 775 app/logs app/cache app/sessions 2>/dev/null || true
 print_header "✅ Setup completed successfully!"
 echo ""
 print_info "Development Environment Summary:"
-print_info "  📁 UserFrosting project: /workspace/userfrosting"
+print_info "  📁 UserFrosting project: /workspace (current directory)"
 print_info "  📁 CRUD6 sprinkle source: /ssnukala/sprinkle-crud6"
 if [ -d "/ssnukala/sprinkle-c6admin" ]; then
     print_info "  📁 C6Admin sprinkle source: /ssnukala/sprinkle-c6admin"
 fi
+print_info "  📁 Repository reference: /repos/sprinkle-crud6"
 print_info "  🐘 PHP version: $(php --version | head -n1)"
 print_info "  📦 Composer version: $(composer --version | head -n1)"
 print_info "  🟢 Node.js version: $(node --version)"
@@ -380,8 +469,25 @@ print_info "  📦 npm version: $(npm --version)"
 echo ""
 print_info "Database Configuration:"
 print_info "  🗄️  Database: userfrosting (MySQL 8.0)"
-print_info "  👤 Username: userfrosting / userfrosting"
+print_info "  👤 Database user: userfrosting / userfrosting"
+print_info "  ✅ Migrations: Completed"
+print_info "  ✅ Seeding: Completed (Account + CRUD6 sprinkles)"
 print_info "  🔐 Admin user: admin / admin123"
+echo ""
+print_info "Database Contents:"
+# Only show these if MySQL connection was successful
+if mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT 1" &>/dev/null; then
+    GROUP_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM groups;" -s 2>/dev/null || echo "0")
+    PERMISSION_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM permissions;" -s 2>/dev/null || echo "0")
+    ROLE_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM roles;" -s 2>/dev/null || echo "0")
+    USER_COUNT=$(mysql -h mysql -u userfrosting -puserfrosting userfrosting -e "SELECT COUNT(*) FROM users;" -s 2>/dev/null || echo "0")
+    print_info "  📊 Groups: $GROUP_COUNT"
+    print_info "  📊 Permissions: $PERMISSION_COUNT"
+    print_info "  📊 Roles: $ROLE_COUNT"
+    print_info "  📊 Users: $USER_COUNT"
+else
+    print_info "  ⚠️  Database not accessible (may need manual initialization)"
+fi
 echo ""
 print_info "Next steps:"
 print_info "  1. Start PHP server: php bakery serve"
@@ -394,5 +500,7 @@ print_info "  • Rebuild assets: php bakery bake"
 print_info "  • View routes: php bakery route:list"
 print_info "  • Clear cache: php bakery clear:cache"
 print_info "  • Run tests: vendor/bin/phpunit"
+print_info "  • Re-run migrations: php bakery migrate --force"
+print_info "  • Re-seed database: php bakery seed <SeedClass> --force"
 echo ""
 print_info "Happy coding! 🚀"

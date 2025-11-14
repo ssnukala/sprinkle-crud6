@@ -73,10 +73,9 @@ Subsequent starts use cached builds and are much faster (~30 seconds).
 ### 3. Automatic Setup
 
 After the container starts, the `postCreateCommand` automatically runs:
-- Executes `.devcontainer/setup-project.sh`
-- Clones CRUD6 and C6Admin sprinkles from GitHub
-- Creates UserFrosting 6 project at `/workspace/userfrosting`
-- Configures Composer and NPM dependencies
+- Executes `/repos/sprinkle-crud6/.devcontainer/setup-project.sh`
+- Creates UserFrosting 6 project at `/workspace`
+- Configures Composer and NPM dependencies with local repository
 - Runs database migrations and seeds
 - Creates admin user (username: `admin`, password: `admin123`)
 - Setup time: ~5-10 minutes
@@ -86,12 +85,10 @@ After the container starts, the `postCreateCommand` automatically runs:
 Once setup completes, you can start the development servers:
 
 ```bash
-# Terminal 1: Start UserFrosting server
-cd /workspace/userfrosting
+# Terminal 1: Start UserFrosting server (workspace is /workspace)
 php bakery serve
 
 # Terminal 2: Start Vite dev server
-cd /workspace/userfrosting
 php bakery assets:vite
 ```
 
@@ -121,7 +118,7 @@ See `.archive/DEVCONTAINER_STARTUP_FIX.md` for details.
 
 **Solution**: Re-run the setup script manually:
 ```bash
-bash /workspace/.devcontainer/setup-project.sh
+bash /repos/sprinkle-crud6/.devcontainer/setup-project.sh
 ```
 
 ### Issue: Port Forwarding Not Working
@@ -227,9 +224,10 @@ Automatically configure your environment across all codespaces:
 Our `.devcontainer/` configuration:
 - **Base Image**: PHP 8.2-FPM with Node.js 20 (multi-stage build)
 - **Services**: App container + MySQL 8.0
-- **Workspace Folder**: `/workspace` (repository root)
-- **Setup Script**: `.devcontainer/setup-project.sh`
-- **UserFrosting Project**: Created at `/workspace/userfrosting` during setup
+- **Workspace Folder**: `/workspace` (UserFrosting 6 project)
+- **Sprinkle Repository**: Mounted at `/repos/sprinkle-crud6`
+- **Setup Script**: `/repos/sprinkle-crud6/.devcontainer/setup-project.sh`
+- **Architecture**: Mirrors integration-test.yml workflow
 
 For detailed setup information, see `.devcontainer/README.md`.
 

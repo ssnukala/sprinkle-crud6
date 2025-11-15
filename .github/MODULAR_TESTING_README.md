@@ -201,6 +201,46 @@ php test-paths.php integration-test-paths.json unauth
 - Supports skip flags for destructive operations
 - Provides detailed pass/fail reporting
 
+### take-screenshots-modular.js
+
+Takes screenshots of frontend pages based on configuration.
+
+**Usage:**
+```bash
+node take-screenshots-modular.js <config_file> [base_url] [username] [password]
+
+# Use credentials from config file
+node take-screenshots-modular.js integration-test-paths.json
+
+# Override with custom credentials
+node take-screenshots-modular.js integration-test-paths.json http://localhost:8080 admin admin123
+```
+
+**Features:**
+- Reads paths from JSON configuration
+- Automatically logs in with configured credentials
+- Takes screenshots for all paths with `"screenshot": true`
+- Uses `screenshot_name` from config for file naming
+- Saves screenshots to `/tmp/screenshot_*.png`
+- Full page screenshots by default
+- Respects skip flags
+
+**Screenshot Configuration Example:**
+```json
+{
+  "authenticated": {
+    "frontend": {
+      "groups_list": {
+        "path": "/crud6/groups",
+        "description": "Groups list page",
+        "screenshot": true,
+        "screenshot_name": "groups_list"
+      }
+    }
+  }
+}
+```
+
 ## Adapting for Your Sprinkle
 
 ### Step 1: Create Your Paths Configuration
@@ -362,9 +402,10 @@ Validates that page redirects to login (for unauthenticated access).
 │   ├── check-seeds-modular.php        # Validate seeds
 │   ├── test-seed-idempotency-modular.php  # Test idempotency
 │   ├── test-paths.php                 # Test API/frontend paths
+│   ├── take-screenshots-modular.js    # Take screenshots from config
 │   ├── check-seeds.php                # Original seed checker (kept for compatibility)
 │   ├── test-seed-idempotency.php      # Original idempotency test
-│   └── take-authenticated-screenshots.js  # Screenshot script
+│   └── take-authenticated-screenshots.js  # Original screenshot script (kept for compatibility)
 └── workflows/
     ├── integration-test.yml           # Main workflow
     └── integration-test.yml.backup    # Backup of original

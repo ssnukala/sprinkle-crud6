@@ -31,7 +31,7 @@ cp path/to/crud6/.github/scripts/run-seeds.php .github/scripts/
 cp path/to/crud6/.github/scripts/check-seeds-modular.php .github/scripts/
 cp path/to/crud6/.github/scripts/test-seed-idempotency-modular.php .github/scripts/
 cp path/to/crud6/.github/scripts/test-paths.php .github/scripts/
-cp path/to/crud6/.github/scripts/take-authenticated-screenshots.js .github/scripts/
+cp path/to/crud6/.github/scripts/take-screenshots-modular.js .github/scripts/
 
 # Make scripts executable
 chmod +x .github/scripts/*.php
@@ -46,6 +46,16 @@ Edit `.github/config/integration-test-paths.json`:
 Find and replace:
 - `yoursprinkle` → your sprinkle's route prefix (e.g., `myapp`)
 - `yourmodel` → your model name (e.g., `products`, `customers`)
+
+### Enable Screenshots
+
+For frontend paths where you want screenshots, add:
+```json
+{
+  "screenshot": true,
+  "screenshot_name": "unique_name_for_file"
+}
+```
 
 ### Example Customization
 
@@ -192,6 +202,13 @@ jobs:
         cp ../my-sprinkle/.github/config/integration-test-paths.json .
         cp ../my-sprinkle/.github/scripts/test-paths.php .
         php test-paths.php integration-test-paths.json unauth
+
+    - name: Take screenshots (Modular)
+      run: |
+        cd userfrosting
+        cp ../my-sprinkle/.github/scripts/take-screenshots-modular.js .
+        # Screenshots read from integration-test-paths.json (already copied)
+        node take-screenshots-modular.js integration-test-paths.json
 ```
 
 ## Step 6: Test Locally (Optional)
@@ -208,6 +225,10 @@ php run-seeds.php path/to/integration-test-seeds.json
 php check-seeds-modular.php path/to/integration-test-seeds.json
 
 # Test paths (requires running servers)
+php test-paths.php path/to/integration-test-paths.json unauth api
+
+# Take screenshots (requires running servers and Playwright)
+node take-screenshots-modular.js path/to/integration-test-paths.json
 php test-paths.php path/to/integration-test-paths.json unauth api
 ```
 

@@ -296,15 +296,16 @@ jobs:
           echo "Using Playwright for authenticated tests instead"
           echo "========================================="
 
-      - name: Take screenshots of frontend pages (with authentication)
+      - name: Take screenshots of frontend pages (Modular)
         run: |
           cd userfrosting
           
-          # Copy the authenticated screenshot script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/take-authenticated-screenshots.js .
+          # Copy the modular screenshot script from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/take-screenshots-modular.js .
           
-          # Run the script with admin credentials
-          node take-authenticated-screenshots.js http://localhost:8080 admin admin123
+          # Run the script using configuration file (already copied earlier)
+          # The script will read base_url and credentials from integration-test-paths.json
+          node take-screenshots-modular.js integration-test-paths.json
           
           echo ""
           echo "========================================="

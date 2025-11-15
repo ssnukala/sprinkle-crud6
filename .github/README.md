@@ -30,9 +30,10 @@ Start here based on what you need:
 │   ├── check-seeds-modular.php          # Validate seeds
 │   ├── test-seed-idempotency-modular.php # Test seed idempotency
 │   ├── test-paths.php                   # Test API/frontend paths
+│   ├── take-screenshots-modular.js      # Take screenshots from config
 │   ├── check-seeds.php                  # Original (for compatibility)
 │   ├── test-seed-idempotency.php        # Original (for compatibility)
-│   └── take-authenticated-screenshots.js # Screenshot utility
+│   └── take-authenticated-screenshots.js # Original screenshot script
 │
 ├── workflows/                       # GitHub Actions workflows
 │   ├── integration-test.yml             # Main integration test workflow
@@ -104,6 +105,7 @@ Defines database seeds and validation:
 | `check-seeds-modular.php` | Validate seeds | `php check-seeds-modular.php config.json` |
 | `test-seed-idempotency-modular.php` | Test idempotency | `php test-seed-idempotency-modular.php config.json` |
 | `test-paths.php` | Test paths | `php test-paths.php config.json [auth] [type]` |
+| `take-screenshots-modular.js` | Take screenshots | `node take-screenshots-modular.js config.json` |
 
 All scripts are reusable across sprinkles - just provide different configuration files!
 

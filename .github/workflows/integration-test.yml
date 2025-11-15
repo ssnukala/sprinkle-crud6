@@ -194,7 +194,7 @@ jobs:
           echo "Counting records before re-seeding..."
           BEFORE_OUTPUT=$(php test-seed-idempotency-modular.php integration-test-seeds.json)
           echo "$BEFORE_OUTPUT"
-          BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2)
+          BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2-)
           
           # Re-run seeds using modular script
           echo ""

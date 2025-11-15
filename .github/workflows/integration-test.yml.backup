@@ -162,61 +162,64 @@ jobs:
           cd userfrosting
           php bakery migrate --force
 
-      - name: Seed database (Modular)
+      - name: Seed database
         run: |
           cd userfrosting
-          # Copy seed configuration from sprinkle
-          cp ../sprinkle-crud6/.github/config/integration-test-seeds.json .
-          # Copy seed runner script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/run-seeds.php .
-          # Run seeds using modular script
-          php run-seeds.php integration-test-seeds.json
+          # Seed Account sprinkle data first (required base data)
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions --force
+          # Then seed CRUD6 sprinkle data
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
 
-      - name: Validate CRUD6 seed data (Modular)
+      - name: Validate CRUD6 seed data
         run: |
           cd userfrosting
           # Copy validation script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/check-seeds-modular.php .
-          # Run validation using the modular script
-          php check-seeds-modular.php integration-test-seeds.json
+          cp ../sprinkle-crud6/.github/scripts/check-seeds.php .
+          # Run validation using the script
+          php check-seeds.php
 
-      - name: Test seed idempotency (Modular)
+      - name: Test seed idempotency
         run: |
           cd userfrosting
           # Copy idempotency test script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/test-seed-idempotency-modular.php .
+          cp ../sprinkle-crud6/.github/scripts/test-seed-idempotency.php .
           
           echo "========================================="
-          echo "Testing Seed Idempotency (Modular)"
+          echo "Testing Seed Idempotency"
           echo "========================================="
           
           # Count records before re-seeding
           echo "Counting records before re-seeding..."
-          BEFORE_OUTPUT=$(php test-seed-idempotency-modular.php integration-test-seeds.json)
+          BEFORE_OUTPUT=$(php test-seed-idempotency.php)
           echo "$BEFORE_OUTPUT"
           BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2)
           
-          # Re-run seeds using modular script
+          # Re-run seeds
           echo ""
           echo "Re-running CRUD6 seeds..."
-          php run-seeds.php integration-test-seeds.json crud6
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles --force
+          php bakery seed UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions --force
           
           # Count records after re-seeding and verify they're the same
           echo ""
           echo "Counting records after re-seeding..."
-          php test-seed-idempotency-modular.php integration-test-seeds.json after "$BEFORE_COUNTS"
+          php test-seed-idempotency.php after "$BEFORE_COUNTS"
 
-      - name: Create admin user (from configuration)
+      - name: Create admin user
         run: |
           cd userfrosting
-          # Admin user details from integration-test-seeds.json config
+          # Create admin user for testing
           php bakery create:admin-user \
             --username=admin \
             --password=admin123 \
             --email=admin@example.com \
             --firstName=Admin \
             --lastName=User
-          echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
+          echo "✅ Admin user created successfully"
 
       - name: Test schema loading
         run: |
@@ -276,36 +279,79 @@ jobs:
           sleep 10
           echo "✅ Vite server started"
 
-      - name: Test API and Frontend paths (Modular)
+      - name: Test API endpoint - Groups List (GET /api/crud6/groups)
         run: |
           cd userfrosting
-          # Copy path configuration from sprinkle
-          cp ../sprinkle-crud6/.github/config/integration-test-paths.json .
-          # Copy path testing script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/test-paths.php .
+          echo "Testing GET /api/crud6/groups"
           
-          echo "========================================="
-          echo "Testing Unauthenticated Paths"
-          echo "========================================="
-          # Test unauthenticated paths
-          php test-paths.php integration-test-paths.json unauth
+          # Test without authentication (should fail with 401)
+          HTTP_CODE=$(curl -s -o /tmp/api_response.json -w "%{http_code}" http://localhost:8080/api/crud6/groups)
+          echo "Response code (no auth): $HTTP_CODE"
           
-          echo ""
-          echo "========================================="
-          echo "Note: Authenticated path tests require session management"
-          echo "Using Playwright for authenticated tests instead"
-          echo "========================================="
+          if [ "$HTTP_CODE" = "401" ]; then
+            echo "✅ Correctly requires authentication"
+          else
+            echo "⚠️ Expected 401 but got $HTTP_CODE"
+            cat /tmp/api_response.json
+          fi
 
-      - name: Take screenshots of frontend pages (Modular)
+      - name: Test API endpoint - Single Group (GET /api/crud6/groups/1)
+        run: |
+          cd userfrosting
+          echo "Testing GET /api/crud6/groups/1"
+          
+          # Test without authentication (should fail with 401)
+          HTTP_CODE=$(curl -s -o /tmp/api_response_single.json -w "%{http_code}" http://localhost:8080/api/crud6/groups/1)
+          echo "Response code (no auth): $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "401" ]; then
+            echo "✅ Correctly requires authentication"
+          else
+            echo "⚠️ Expected 401 but got $HTTP_CODE"
+            cat /tmp/api_response_single.json
+          fi
+
+      - name: Test Frontend route - Groups List Page
+        run: |
+          cd userfrosting
+          echo "Testing frontend route /crud6/groups"
+          
+          # Test that the page loads (may redirect to login)
+          HTTP_CODE=$(curl -s -o /tmp/frontend_list.html -w "%{http_code}" -L http://localhost:8080/crud6/groups)
+          echo "Response code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Frontend list page loads successfully"
+            echo "Page size: $(wc -c < /tmp/frontend_list.html) bytes"
+          else
+            echo "⚠️ Expected 200 but got $HTTP_CODE"
+          fi
+
+      - name: Test Frontend route - Single Group Page
+        run: |
+          cd userfrosting
+          echo "Testing frontend route /crud6/groups/1"
+          
+          # Test that the page loads (may redirect to login)
+          HTTP_CODE=$(curl -s -o /tmp/frontend_detail.html -w "%{http_code}" -L http://localhost:8080/crud6/groups/1)
+          echo "Response code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Frontend detail page loads successfully"
+            echo "Page size: $(wc -c < /tmp/frontend_detail.html) bytes"
+          else
+            echo "⚠️ Expected 200 but got $HTTP_CODE"
+          fi
+
+      - name: Take screenshots of frontend pages (with authentication)
         run: |
           cd userfrosting
           
-          # Copy the modular screenshot script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/take-screenshots-modular.js .
+          # Copy the authenticated screenshot script from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/take-authenticated-screenshots.js .
           
-          # Run the script using configuration file (already copied earlier)
-          # The script will read base_url and credentials from integration-test-paths.json
-          node take-screenshots-modular.js integration-test-paths.json
+          # Run the script with admin credentials
+          node take-authenticated-screenshots.js http://localhost:8080 admin admin123
           
           echo ""
           echo "========================================="
@@ -339,33 +385,28 @@ jobs:
           echo "✅ Integration test completed for PHP 8.1 with UserFrosting ^6.0-beta"
           echo "✅ sprinkle-crud6 installed successfully"
           echo "✅ Database migrations ran successfully"
-          echo "✅ Database seeding completed using modular configuration:"
-          echo "   - Seeds run from integration-test-seeds.json"
+          echo "✅ Database seeding completed:"
           echo "   - Account sprinkle seeds (DefaultGroups, DefaultPermissions, DefaultRoles, UpdatePermissions)"
           echo "   - CRUD6 sprinkle seeds (DefaultRoles, DefaultPermissions)"
-          echo "✅ Seed validation passed using modular configuration:"
-          echo "   - Validation rules from integration-test-seeds.json"
+          echo "✅ Seed validation passed:"
           echo "   - crud6-admin role created"
           echo "   - 6 CRUD6 permissions created (create_crud6, delete_crud6, update_crud6_field, uri_crud6, uri_crud6_list, view_crud6_field)"
           echo "   - Permissions assigned to crud6-admin role"
           echo "   - Permissions assigned to site-admin role"
           echo "✅ Seed idempotency test passed (no duplicates created on re-run)"
-          echo "✅ Admin user created: admin / admin123 (from configuration)"
+          echo "✅ Admin user created: admin / admin123"
           echo "✅ NPM package verified"
           echo "✅ Schema file loaded successfully"
           echo "✅ Assets built with php bakery assets:vite"
           echo "✅ PHP server started with php bakery serve"
           echo "✅ Vite development server started"
-          echo "✅ Path tests completed using modular configuration:"
-          echo "   - Paths tested from integration-test-paths.json"
-          echo "   - Unauthenticated API endpoints (401 responses verified)"
-          echo "   - Unauthenticated frontend routes (redirect to login verified)"
+          echo "✅ API endpoint tests completed:"
+          echo "   - GET /api/crud6/groups (list)"
+          echo "   - GET /api/crud6/groups/1 (single record)"
+          echo "✅ Frontend route tests completed:"
+          echo "   - /crud6/groups (list page)"
+          echo "   - /crud6/groups/1 (detail page)"
           echo "✅ Screenshots captured with authentication and uploaded as artifacts"
-          echo ""
-          echo "ℹ️  MODULAR TESTING APPROACH:"
-          echo "   - Configuration files: .github/config/integration-test-*.json"
-          echo "   - Reusable scripts: .github/scripts/*-modular.php"
-          echo "   - Easy to adapt for other sprinkles - just modify JSON configs!"
           echo ""
           echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
           echo "ℹ️  Screenshots are taken after logging in with admin user credentials"
@@ -378,39 +419,26 @@ jobs:
           
           # Add to GitHub Actions Summary with direct link
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## Integration Test Results ✅ (Modular Testing Framework)
+          ## Integration Test Results ✅
           
           ### Test Coverage
           - ✅ Database migrations
-          - ✅ Database seeding (Account + CRUD6 sprinkles) - **using modular config**
-          - ✅ Seed data validation - **using modular config**
-          - ✅ Seed idempotency testing - **using modular config**
-          - ✅ Admin user creation - **from config**
+          - ✅ Database seeding (Account + CRUD6 sprinkles)
+          - ✅ Seed data validation
+          - ✅ Seed idempotency testing
+          - ✅ Admin user creation
           - ✅ Schema loading
-          - ✅ Path testing - **using modular config** (unauthenticated API and frontend)
-          - ✅ Screenshot capture (authenticated frontend pages)
-          
-          ### 🎯 Modular Testing Framework
-          **This workflow uses a modular, configuration-driven testing approach:**
-          - **Configuration files:** `.github/config/integration-test-*.json`
-          - **Reusable scripts:** `.github/scripts/*-modular.php`
-          - **Easy adaptation:** Just modify JSON configs for your sprinkle!
-          
-          See [.github/MODULAR_TESTING_README.md](../.github/MODULAR_TESTING_README.md) for details.
+          - ✅ API endpoints (GET /api/crud6/groups, GET /api/crud6/groups/1)
+          - ✅ Frontend routes (/crud6/groups, /crud6/groups/1)
+          - ✅ Screenshot capture
           
           ### Seed Testing Details
-          **CRUD6 Seeds Validated (from configuration):**
+          **CRUD6 Seeds Validated:**
           - DefaultRoles seed creates crud6-admin role
           - DefaultPermissions seed creates 6 CRUD6 permissions
           - Permissions correctly assigned to crud6-admin role
           - Permissions correctly assigned to site-admin role
           - Seeds are idempotent (can be run multiple times without duplicates)
-          
-          ### Path Testing Details
-          **Paths Tested (from configuration):**
-          - Unauthenticated API endpoints return 401
-          - Unauthenticated frontend routes redirect to login
-          - Authenticated tests use Playwright for session management
           
           ### 📸 View Screenshots
           Screenshots have been captured and uploaded as artifacts.

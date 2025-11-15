@@ -1,0 +1,128 @@
+{
+  "description": "Integration test paths configuration for CRUD6 sprinkle",
+  "paths": {
+    "authenticated": {
+      "api": {
+        "groups_list": {
+          "method": "GET",
+          "path": "/api/crud6/groups",
+          "description": "Get list of groups via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["rows"]
+          }
+        },
+        "groups_single": {
+          "method": "GET",
+          "path": "/api/crud6/groups/1",
+          "description": "Get single group by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["id", "slug", "name"]
+          }
+        },
+        "groups_create": {
+          "method": "POST",
+          "path": "/api/crud6/groups",
+          "description": "Create new group via CRUD6 API",
+          "expected_status": 200,
+          "skip": true,
+          "skip_reason": "Requires request body payload"
+        },
+        "groups_update": {
+          "method": "PUT",
+          "path": "/api/crud6/groups/1",
+          "description": "Update group via CRUD6 API",
+          "expected_status": 200,
+          "skip": true,
+          "skip_reason": "Requires request body payload"
+        },
+        "groups_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/groups/1",
+          "description": "Delete group via CRUD6 API",
+          "expected_status": 200,
+          "skip": true,
+          "skip_reason": "Would delete test data"
+        }
+      },
+      "frontend": {
+        "groups_list": {
+          "path": "/crud6/groups",
+          "description": "Groups list page",
+          "screenshot": true,
+          "screenshot_name": "groups_list"
+        },
+        "groups_detail": {
+          "path": "/crud6/groups/1",
+          "description": "Single group detail page",
+          "screenshot": true,
+          "screenshot_name": "group_detail"
+        },
+        "groups_create": {
+          "path": "/crud6/groups/create",
+          "description": "Create new group page",
+          "screenshot": true,
+          "screenshot_name": "group_create",
+          "skip": true,
+          "skip_reason": "Optional - may not exist in all implementations"
+        }
+      }
+    },
+    "unauthenticated": {
+      "api": {
+        "groups_list": {
+          "method": "GET",
+          "path": "/api/crud6/groups",
+          "description": "Attempt to access groups list without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "groups_single": {
+          "method": "GET",
+          "path": "/api/crud6/groups/1",
+          "description": "Attempt to access single group without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        }
+      },
+      "frontend": {
+        "groups_list": {
+          "path": "/crud6/groups",
+          "description": "Attempt to access groups list page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        },
+        "groups_detail": {
+          "path": "/crud6/groups/1",
+          "description": "Attempt to access group detail page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "base_url": "http://localhost:8080",
+    "auth": {
+      "username": "admin",
+      "password": "admin123"
+    },
+    "timeout": {
+      "api": 10,
+      "frontend": 30
+    }
+  }
+}

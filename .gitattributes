@@ -1,0 +1,15 @@
+# Exclude development and documentation files from composer package exports
+/.archive export-ignore
+/.devcontainer export-ignore
+/.github export-ignore
+/docs export-ignore
+/examples export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/tsconfig.json export-ignore
+/tsconfig.node.json export-ignore
+/vite.config.ts export-ignore
+/env.d.ts export-ignore
+/phpunit.xml export-ignore

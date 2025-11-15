@@ -43,5 +43,27 @@
         "psr-4": {
             "UserFrosting\\Sprinkle\\CRUD6\\Tests\\": "app/tests/"
         }
+    },
+    "archive": {
+        "exclude": [
+            ".archive",
+            ".devcontainer",
+            ".github",
+            ".git",
+            ".gitignore",
+            "docs",
+            "examples",
+            "node_modules",
+            "vendor",
+            "*.tgz",
+            "*.log",
+            "package.json",
+            "package-lock.json",
+            "tsconfig.json",
+            "tsconfig.node.json",
+            "vite.config.ts",
+            "env.d.ts",
+            "phpunit.xml"
+        ]
     }
 }

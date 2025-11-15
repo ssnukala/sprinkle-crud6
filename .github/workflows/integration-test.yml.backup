@@ -196,7 +196,7 @@ jobs:
           echo "Counting records before re-seeding..."
           BEFORE_OUTPUT=$(php test-seed-idempotency.php)
           echo "$BEFORE_OUTPUT"
-          BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2-)
+          BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2)
           
           # Re-run seeds
           echo ""

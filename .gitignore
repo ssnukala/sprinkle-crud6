@@ -39,8 +39,3 @@ yarn-error.log*
 # Temporary files
 tmp/
 temp/
-
-# Validation scripts
-validate-*.php
-validate-*.sh
-validate-*.mjs

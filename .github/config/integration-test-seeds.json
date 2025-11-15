@@ -1,0 +1,88 @@
+{
+  "description": "Integration test seeds configuration for CRUD6 sprinkle",
+  "seeds": {
+    "account": {
+      "description": "Account sprinkle base seeds (required)",
+      "order": 1,
+      "seeds": [
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups",
+          "description": "Create default user groups",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions",
+          "description": "Create default permissions",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles",
+          "description": "Create default roles",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions",
+          "description": "Update permissions for existing roles",
+          "required": true
+        }
+      ]
+    },
+    "crud6": {
+      "description": "CRUD6 sprinkle seeds",
+      "order": 2,
+      "seeds": [
+        {
+          "class": "UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultRoles",
+          "description": "Create CRUD6-specific roles (crud6-admin)",
+          "required": true,
+          "validation": {
+            "type": "role",
+            "slug": "crud6-admin",
+            "expected_count": 1
+          }
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\CRUD6\\Database\\Seeds\\DefaultPermissions",
+          "description": "Create CRUD6 permissions and assign to roles",
+          "required": true,
+          "validation": {
+            "type": "permissions",
+            "slugs": [
+              "create_crud6",
+              "delete_crud6",
+              "update_crud6_field",
+              "uri_crud6",
+              "uri_crud6_list",
+              "view_crud6_field"
+            ],
+            "expected_count": 6,
+            "role_assignments": {
+              "crud6-admin": 6,
+              "site-admin": 6
+            }
+          }
+        }
+      ]
+    }
+  },
+  "validation": {
+    "idempotency": {
+      "enabled": true,
+      "description": "Test that seeds can be run multiple times without duplicates",
+      "test_seeds": ["crud6"]
+    },
+    "relationships": {
+      "enabled": true,
+      "description": "Validate that permissions are assigned to correct roles"
+    }
+  },
+  "admin_user": {
+    "enabled": true,
+    "username": "admin",
+    "password": "admin123",
+    "email": "admin@example.com",
+    "firstName": "Admin",
+    "lastName": "User",
+    "description": "Create admin user for testing authenticated routes"
+  }
+}

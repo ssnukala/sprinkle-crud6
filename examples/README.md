@@ -36,6 +36,26 @@ See [Migrations/README.md](Migrations/README.md) for details.
 - `model-usage-examples.php` - PHP examples for using CRUD6Model
 - `schema-caching-examples.ts` - TypeScript schema caching examples
 
+### Test & Validation Scripts
+
+Development and validation scripts for testing CRUD6 functionality:
+
+**Test Scripts:**
+- `test-c6admin-relationships.php` - Test UserFrosting admin relationship integration
+- `test-c6admin-schema.php` - Test UserFrosting admin schema compatibility
+- `test-nested-lookup.php` - Test nested lookup functionality
+- `test-relationship-fix.php` - Test relationship fixes
+
+**Validation Scripts:**
+- `validate-autolookup.php` - Validate AutoLookup component functionality
+- `validate-changes.php` - Validate code changes
+- `validate-fix.php` - Validate bug fixes
+- `verify-debug-mode.php` - Verify debug mode configuration
+- `verify-api-calls.sh` - Verify API endpoint functionality
+- `verify-frontend-debug.html` - Frontend debug verification page
+
+> **Note:** These scripts are for development/testing purposes and are not included in production packages.
+
 ## Quick Start
 
 ### Using Schema Examples

@@ -2,6 +2,10 @@
 
 This directory contains comprehensive documentation for the CRUD6 sprinkle.
 
+## Main Documentation
+
+For primary documentation, see the [main README.md](../README.md) in the root directory and [CHANGELOG.md](../CHANGELOG.md) for version history.
+
 ## Schema Caching (Latest Updates)
 
 ### Quick Start
@@ -109,3 +113,25 @@ When updating the composable or adding features:
 2. Add examples to `../examples/`
 3. Ensure backward compatibility
 4. Update the [Implementation Summary](SCHEMA_CACHING_SUMMARY.md)
+
+## Implementation & Task Documentation
+
+This directory also contains implementation summaries and task completion reports:
+
+- [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Overall implementation summary
+- [IMPLEMENTATION_COMPLETE.md](./IMPLEMENTATION_COMPLETE.md) - Completion status
+- [DEBUG_MODE_IMPLEMENTATION_SUMMARY.md](./DEBUG_MODE_IMPLEMENTATION_SUMMARY.md) - Debug mode implementation
+- [DEBUG_MODE_CONFIG.md](./DEBUG_MODE_CONFIG.md) - Debug mode configuration guide
+- [SCHEMA_ANALYSIS_INDEX.md](./SCHEMA_ANALYSIS_INDEX.md) - Schema analysis documentation
+- [SCHEMA_RECOMMENDATION_SUMMARY.md](./SCHEMA_RECOMMENDATION_SUMMARY.md) - Schema recommendations
+- [TASK_COMPLETE_SUMMARY.md](./TASK_COMPLETE_SUMMARY.md) - General task completion
+- [TASK_COMPLETE_YAML_ELIMINATION.md](./TASK_COMPLETE_YAML_ELIMINATION.md) - YAML elimination task
+- [ANALYSIS_COMPLETE_SUMMARY.md](./ANALYSIS_COMPLETE_SUMMARY.md) - Analysis completion
+
+## Historical Documentation
+
+For historical fix summaries, visual comparisons, and issue-specific documentation, see the [.archive](../.archive) directory.
+
+## Examples & Test Scripts
+
+Example code, schemas, and test scripts can be found in the [examples](../examples) directory.

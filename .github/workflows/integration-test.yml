@@ -314,6 +314,21 @@ jobs:
           echo "========================================="
           # List screenshots if they exist
           ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"
+          
+          echo ""
+          echo "========================================="
+          echo "Network Request Summary"
+          echo "========================================="
+          # Check if network summary file exists and show basic info
+          if [ -f /tmp/network-requests-summary.txt ]; then
+            echo "✅ Network request summary generated"
+            ls -lh /tmp/network-requests-summary.txt
+            echo ""
+            echo "Preview of summary (first 30 lines):"
+            head -n 30 /tmp/network-requests-summary.txt
+          else
+            echo "⚠️  Network request summary not found"
+          fi
 
       - name: Upload screenshots as artifacts
         if: always()
@@ -321,6 +336,15 @@ jobs:
         with:
           name: integration-test-screenshots
           path: /tmp/screenshot_*.png
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload network request summary as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-requests-summary
+          path: /tmp/network-requests-summary.txt
           if-no-files-found: ignore
           retention-days: 30
 
@@ -366,6 +390,7 @@ jobs:
           echo "   - Tracks all network requests during page loads"
           echo "   - Detects redundant API calls"
           echo "   - Reports CRUD6 and schema API call statistics"
+          echo "   - Detailed network request summary saved to file"
           echo ""
           echo "ℹ️  MODULAR TESTING APPROACH:"
           echo "   - Configuration files: .github/config/integration-test-*.json"
@@ -381,6 +406,12 @@ jobs:
           echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "   Look for 'Artifacts' section at the bottom of the page"
           echo "   Download 'integration-test-screenshots' ZIP file"
+          echo ""
+          echo "📡 **View Network Request Summary:**"
+          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "   Look for 'Artifacts' section at the bottom of the page"
+          echo "   Download 'network-requests-summary' artifact"
+          echo "   Contains detailed information about all network requests made during tests"
           
           # Add to GitHub Actions Summary with direct link
           cat >> $GITHUB_STEP_SUMMARY << EOF
@@ -409,6 +440,7 @@ jobs:
           - Detects redundant API calls
           - Reports CRUD6 and schema API statistics per page
           - Helps identify performance issues
+          - **NEW:** Detailed network request summary saved as downloadable artifact
           
           See [.github/MODULAR_TESTING_README.md](../.github/MODULAR_TESTING_README.md) for details.
           
@@ -441,6 +473,22 @@ jobs:
              - \`screenshot_group_detail.png\` - Group detail page
           
           > **Note:** Screenshots are retained for 30 days
+          
+          ### 📡 View Network Request Summary
+          A detailed network request report has been generated and uploaded as an artifact.
+          
+          **To view the network request summary:**
+          1. Scroll to the bottom of the workflow run page (link above)
+          2. Look for the **Artifacts** section
+          3. Click on **network-requests-summary** to download
+          4. Open the \`network-requests-summary.txt\` file to view:
+             - Complete list of all network requests made during testing
+             - Per-page breakdown of requests
+             - CRUD6 and Schema API call identification
+             - Redundant call detection and analysis
+             - Chronological request timeline
+          
+          > **Note:** Network summary is retained for 30 days
           
           ---
           

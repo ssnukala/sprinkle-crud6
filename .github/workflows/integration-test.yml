@@ -309,6 +309,7 @@ jobs:
           # Run the script using configuration file (already copied earlier)
           # The script will read base_url and credentials from integration-test-paths.json
           # and track all network requests made during page loads
+          # NOTE: This script now detects error notifications and fails if found
           node take-screenshots-with-tracking.js integration-test-paths.json
           
           echo ""
@@ -332,6 +333,18 @@ jobs:
           else
             echo "⚠️  Network request summary not found"
           fi
+
+      - name: Capture and display PHP error logs
+        if: always()
+        run: |
+          cd userfrosting
+          
+          # Copy PHP error log capture script from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/capture-php-error-logs.sh .
+          chmod +x capture-php-error-logs.sh
+          
+          # Run the script to capture and display error logs
+          ./capture-php-error-logs.sh || echo "Error log capture script failed, but continuing..."
 
       - name: Upload screenshots as artifacts
         if: always()

@@ -17,6 +17,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
 use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**
@@ -29,12 +30,15 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * Also verifies that frontend routes are accessible:
  * - /crud6/groups (list page)
  * - /crud6/groups/1 (detail page)
+ * 
+ * Now includes API call tracking to detect redundant calls.
  */
 class CRUD6GroupsIntegrationTest extends AdminTestCase
 {
     use RefreshDatabase;
     use WithTestUser;
     use MockeryPHPUnitIntegration;
+    use TracksApiCalls;
 
     /**
      * Setup test database for controller tests
@@ -43,6 +47,50 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
     {
         parent::setUp();
         $this->refreshDatabase();
+        $this->startApiTracking();
+    }
+
+    /**
+     * Cleanup after each test and output API call tracking summary
+     */
+    public function tearDown(): void
+    {
+        // Output API call tracking summary if any calls were made
+        if ($this->getApiCallTracker() !== null) {
+            $summary = $this->getApiCallSummary();
+            
+            if ($summary['total'] > 0) {
+                echo "\n";
+                echo "═══════════════════════════════════════════════════════════════\n";
+                echo "API Call Tracking Summary for " . $this->getName() . "\n";
+                echo "═══════════════════════════════════════════════════════════════\n";
+                echo sprintf("  Total API Calls:        %d\n", $summary['total']);
+                echo sprintf("  Unique Calls:           %d\n", $summary['unique']);
+                echo sprintf("  Redundant Call Groups:  %d\n", $summary['redundant']);
+                echo sprintf("  Schema API Calls:       %d\n", $summary['schema_calls']);
+                echo sprintf("  CRUD6 API Calls:        %d\n", $summary['crud6_calls']);
+                
+                // Show redundant calls if any
+                if ($summary['redundant'] > 0) {
+                    echo "\n⚠️  WARNING: Redundant API calls detected!\n";
+                    $redundantCalls = $this->getRedundantApiCalls();
+                    foreach ($redundantCalls as $key => $data) {
+                        $firstCall = $data['calls'][0];
+                        echo sprintf("  - %s %s (called %dx)\n", 
+                            $firstCall['method'], 
+                            $firstCall['uri'], 
+                            $data['count']
+                        );
+                    }
+                } else {
+                    echo "\n✅ No redundant calls detected\n";
+                }
+                echo "═══════════════════════════════════════════════════════════════\n";
+            }
+        }
+        
+        $this->tearDownApiTracking();
+        parent::tearDown();
     }
 
     /**
@@ -52,7 +100,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
     {
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Login Required', $response, 'title');
@@ -70,7 +118,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Access Denied', $response, 'title');
@@ -91,7 +139,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertResponseStatus(200, $response);
@@ -111,7 +159,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id);
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Login Required', $response, 'title');
@@ -132,7 +180,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id);
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Access Denied', $response, 'title');
@@ -156,7 +204,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id);
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertResponseStatus(200, $response);
@@ -184,7 +232,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/999999');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status
         $this->assertResponseStatus(404, $response);
@@ -200,7 +248,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
     {
         // Create request with method and url and fetch response
         $request = $this->createRequest('GET', '/crud6/groups');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Should either return the page (200) or redirect to login (302)
         $statusCode = $response->getStatusCode();
@@ -223,7 +271,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createRequest('GET', '/crud6/groups/' . $group->id);
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Should either return the page (200) or redirect to login (302)
         $statusCode = $response->getStatusCode();
@@ -243,7 +291,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Login Required', $response, 'title');
@@ -264,7 +312,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertJsonResponse('Access Denied', $response, 'title');
@@ -290,7 +338,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group->id . '/users?size=10&page=0');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
         $this->assertResponseStatus(200, $response);
@@ -321,7 +369,7 @@ class CRUD6GroupsIntegrationTest extends AdminTestCase
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/999999/users');
-        $response = $this->handleRequest($request);
+        $response = $this->handleRequestWithTracking($request);
 
         // Assert response status
         $this->assertResponseStatus(404, $response);

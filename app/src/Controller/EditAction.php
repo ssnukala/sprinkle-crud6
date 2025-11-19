@@ -77,8 +77,8 @@ class EditAction extends Base
         
         $method = $request->getMethod();
         
-        // Always log edit action requests for debugging critical issues
-        $this->logger->debug("CRUD6 [EditAction] Request received", [
+        // Log edit action requests
+        $this->debugLog("CRUD6 [EditAction] Request received", [
             'method' => $method,
             'uri' => (string) $request->getUri(),
             'model' => $crudSchema['model'],
@@ -95,24 +95,18 @@ class EditAction extends Base
         try {
             // Handle GET request (read operation)
             if ($method === 'GET') {
-                $this->logger->debug("CRUD6 [EditAction] Processing GET request", [
+                $this->debugLog("CRUD6 [EditAction] Processing GET request", [
                     'model' => $crudSchema['model'],
                     'record_id' => $crudModel->getAttribute($crudSchema['primary_key'] ?? 'id'),
-                ]);
-                $this->debugLog("CRUD6 [EditAction] Processing GET request (read)", [
-                    'model' => $crudSchema['model'],
                 ]);
                 return $this->handleRead($crudSchema, $crudModel, $request, $response);
             }
             
             // Handle PUT request (update operation)
             if ($method === 'PUT') {
-                $this->logger->debug("CRUD6 [EditAction] Processing PUT request", [
+                $this->debugLog("CRUD6 [EditAction] Processing PUT request", [
                     'model' => $crudSchema['model'],
                     'record_id' => $crudModel->getAttribute($crudSchema['primary_key'] ?? 'id'),
-                ]);
-                $this->debugLog("CRUD6 [EditAction] Processing PUT request (update)", [
-                    'model' => $crudSchema['model'],
                 ]);
                 return $this->handleUpdate($crudSchema, $crudModel, $request, $response);
             }

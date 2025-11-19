@@ -81,8 +81,8 @@ class SprunjeAction extends Base
             // Get the relation parameter if it exists
             $relation = $this->getParameter($request, 'relation', 'NONE');
 
-            // Always log critical request info for debugging nested endpoint issues
-            $this->logger->debug("CRUD6 [SprunjeAction] Request received", [
+            // Log request info for debugging nested endpoint issues
+            $this->debugLog("CRUD6 [SprunjeAction] Request received", [
                 'uri' => (string) $request->getUri(),
                 'model' => $crudSchema['model'],
                 'relation' => $relation,
@@ -137,16 +137,16 @@ class SprunjeAction extends Base
                 'relation' => $relation,
             ]);
 
-            // Always log the result of detail config search for debugging
+            // Log the result of detail config search for debugging
             if ($relation !== 'NONE') {
                 if ($detailConfig !== null) {
-                    $this->logger->debug("CRUD6 [SprunjeAction] Detail config found", [
+                    $this->debugLog("CRUD6 [SprunjeAction] Detail config found", [
                         'relation' => $relation,
                         'model' => $crudSchema['model'],
                         'detail_config' => $detailConfig,
                     ]);
                 } else {
-                    $this->logger->debug("CRUD6 [SprunjeAction] No detail config found", [
+                    $this->debugLog("CRUD6 [SprunjeAction] No detail config found", [
                         'relation' => $relation,
                         'model' => $crudSchema['model'],
                         'details_count' => isset($crudSchema['details']) ? count($crudSchema['details']) : 0,

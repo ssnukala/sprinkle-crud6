@@ -265,7 +265,7 @@ class RelationshipAction extends Base
             $responseData = [
                 'rows' => $result['rows'],
                 'count' => $result['total'],           // Total count without filters
-                'count_filtered' => $result['count'],  // Count with current filters/search
+                'count_filtered' => $result['filtered'],  // Count with current filters/search (before pagination)
                 // Additional metadata (not used by UFSprunjeTable but useful for debugging)
                 'page' => $page,
                 'per_page' => $perPage,
@@ -331,6 +331,9 @@ class RelationshipAction extends Base
             ->join($pivotTable, "{$pivotTable}.{$relatedKey}", '=', "{$relatedTable}.{$relatedPrimaryKey}")
             ->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
         
+        // Get total count BEFORE applying search filters (unfiltered total)
+        $totalCount = $query->count();
+        
         // Apply search if provided
         if ($search && !empty($listFields)) {
             $query->where(function($q) use ($search, $listFields, $relatedTable) {
@@ -340,8 +343,17 @@ class RelationshipAction extends Base
             });
         }
         
-        // Get total count
-        $total = $query->count();
+        // Get filtered count AFTER applying search but BEFORE pagination
+        $filteredCount = $query->count();
+        
+        $this->logger->debug("CRUD6 [RelationshipAction] Many-to-many counts", [
+            'model' => $crudSchema['model'],
+            'record_id' => $crudModel->id,
+            'relationship' => $relatedModel,
+            'total_count' => $totalCount,
+            'filtered_count' => $filteredCount,
+            'has_search' => !empty($search),
+        ]);
         
         // Apply sorting
         if ($sortField) {
@@ -372,9 +384,10 @@ class RelationshipAction extends Base
         
         return [
             'rows' => $rows,
-            'count' => count($rows),
-            'total' => $total,
-            'total_pages' => (int) ceil($total / $perPage),
+            'count' => count($rows),              // Current page row count
+            'total' => $totalCount,                // Total unfiltered count
+            'filtered' => $filteredCount,          // Total filtered count (before pagination)
+            'total_pages' => (int) ceil($filteredCount / $perPage),  // Pages based on filtered count
         ];
     }
 
@@ -425,6 +438,9 @@ class RelationshipAction extends Base
             ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$relatedTable}.{$throughKey}")
             ->where("{$throughTable}.{$foreignKey}", $crudModel->id);
         
+        // Get total count BEFORE applying search filters (unfiltered total)
+        $totalCount = $query->count();
+        
         // Apply search if provided
         if ($search && !empty($listFields)) {
             $query->where(function($q) use ($search, $listFields, $relatedTable) {
@@ -434,8 +450,17 @@ class RelationshipAction extends Base
             });
         }
         
-        // Get total count
-        $total = $query->count();
+        // Get filtered count AFTER applying search but BEFORE pagination
+        $filteredCount = $query->count();
+        
+        $this->logger->debug("CRUD6 [RelationshipAction] Belongs-to-many-through counts", [
+            'model' => $crudSchema['model'],
+            'record_id' => $crudModel->id,
+            'relationship' => $relatedModel,
+            'total_count' => $totalCount,
+            'filtered_count' => $filteredCount,
+            'has_search' => !empty($search),
+        ]);
         
         // Apply sorting
         if ($sortField) {
@@ -466,9 +491,10 @@ class RelationshipAction extends Base
         
         return [
             'rows' => $rows,
-            'count' => count($rows),
-            'total' => $total,
-            'total_pages' => (int) ceil($total / $perPage),
+            'count' => count($rows),              // Current page row count
+            'total' => $totalCount,                // Total unfiltered count
+            'filtered' => $filteredCount,          // Total filtered count (before pagination)
+            'total_pages' => (int) ceil($filteredCount / $perPage),  // Pages based on filtered count
         ];
     }
 }

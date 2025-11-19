@@ -377,6 +377,26 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                 } else {
                     console.log(`   ✅ Page loaded: ${currentUrl}`);
                     
+                    // Check for UserFrosting error notifications in the page
+                    const errorNotifications = await page.locator('.uf-alert.uf-alert-danger, .uk-alert-danger, [class*="alert"][class*="danger"]').all();
+                    
+                    let hasErrorNotification = false;
+                    const errorMessages = [];
+                    
+                    for (const notification of errorNotifications) {
+                        const isVisible = await notification.isVisible();
+                        if (isVisible) {
+                            const text = await notification.textContent();
+                            // Check for the specific UserFrosting error message
+                            if (text.includes("We've sensed a great disturbance in the Force") || 
+                                text.includes("server might have goofed") ||
+                                text.includes("check the PHP or Userfrosting logs")) {
+                                hasErrorNotification = true;
+                                errorMessages.push(text.trim());
+                            }
+                        }
+                    }
+                    
                     const screenshotPath = `/tmp/screenshot_${screenshot.screenshot_name}.png`;
                     await page.screenshot({ 
                         path: screenshotPath, 
@@ -384,31 +404,41 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                     });
                     console.log(`   ✅ Screenshot saved: ${screenshotPath}`);
                     
-                    // Get requests made during this page load
-                    const allRequests = networkTracker.getRequests();
-                    const pageRequests = allRequests.slice(requestsBeforePage);
-                    
-                    // Calculate stats for this page
-                    const pageCRUD6 = pageRequests.filter(r => networkTracker.isCRUD6Call(r.url)).length;
-                    const pageSchema = pageRequests.filter(r => networkTracker.isSchemaCall(r.url)).length;
-                    
-                    pageNetworkStats.push({
-                        name: screenshot.name,
-                        path: screenshot.path,
-                        total: pageRequests.length,
-                        crud6Calls: pageCRUD6,
-                        schemaCalls: pageSchema
-                    });
-                    
-                    pageNetworkDetails.push({
-                        name: screenshot.name,
-                        path: screenshot.path,
-                        requests: pageRequests
-                    });
-                    
-                    console.log(`   📡 Network: ${pageRequests.length} requests (${pageCRUD6} CRUD6, ${pageSchema} Schema)`);
-                    
-                    successCount++;
+                    if (hasErrorNotification) {
+                        console.error(`   ❌ ERROR NOTIFICATION DETECTED on page!`);
+                        errorMessages.forEach(msg => {
+                            console.error(`      "${msg.substring(0, 100)}${msg.length > 100 ? '...' : ''}"`);
+                        });
+                        failCount++;
+                    } else {
+                        // Get requests made during this page load
+                        const allRequests = networkTracker.getRequests();
+                        const pageRequests = allRequests.slice(requestsBeforePage);
+                        
+                        // Calculate stats for this page
+                        const pageCRUD6 = pageRequests.filter(r => networkTracker.isCRUD6Call(r.url)).length;
+                        const pageSchema = pageRequests.filter(r => networkTracker.isSchemaCall(r.url)).length;
+                        
+                        pageNetworkStats.push({
+                            name: screenshot.name,
+                            path: screenshot.path,
+                            total: pageRequests.length,
+                            crud6Calls: pageCRUD6,
+                            schemaCalls: pageSchema,
+                            hasError: false
+                        });
+                        
+                        pageNetworkDetails.push({
+                            name: screenshot.name,
+                            path: screenshot.path,
+                            requests: pageRequests
+                        });
+                        
+                        console.log(`   📡 Network: ${pageRequests.length} requests (${pageCRUD6} CRUD6, ${pageSchema} Schema)`);
+                        console.log(`   ✅ No error notifications detected`);
+                        
+                        successCount++;
+                    }
                 }
             } catch (error) {
                 console.error(`   ❌ Failed: ${error.message}`);
@@ -426,9 +456,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log('========================================');
 
         if (failCount > 0) {
-            console.log('⚠️  Some screenshots failed');
+            console.error('❌ TESTS FAILED: Some screenshots had errors or error notifications detected');
+            console.error(`   ${failCount} page(s) with errors detected`);
         } else {
-            console.log('✅ All screenshots taken successfully');
+            console.log('✅ All screenshots taken successfully with no error notifications');
         }
 
         // Output network tracking summary
@@ -634,6 +665,9 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         networkTracker.stopTracking();
         await browser.close();
     }
+    
+    // Return the fail count so caller can exit with appropriate code
+    return failCount;
 }
 
 // Parse command line arguments
@@ -649,7 +683,14 @@ const [configFile, baseUrl, username, password] = args;
 
 // Run the script
 takeScreenshotsFromConfig(configFile, baseUrl, username, password)
-    .then(() => {
+    .then((failCount) => {
+        if (failCount > 0) {
+            console.error('');
+            console.error('========================================');
+            console.error(`❌ Test failed: ${failCount} page(s) had errors`);
+            console.error('========================================');
+            process.exit(1);
+        }
         process.exit(0);
     })
     .catch((error) => {

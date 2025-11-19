@@ -298,11 +298,10 @@ function formatFieldValue(value: any, field: any): string {
 // Load data when component mounts
 onMounted(async () => {
     // Schema loading is handled by the model watcher with immediate: true
-    // No need to load schema here to avoid duplicate calls
+    // Record fetching is handled by the recordId watcher with immediate: true
+    // No need to load schema or fetch record here to avoid duplicate calls
     
-    if (!isCreateMode.value && recordId.value) {
-        fetch()
-    } else if (isCreateMode.value) {
+    if (isCreateMode.value) {
         // Initialize empty record for create mode using schema
         record.value = {}
         CRUD6Row.value = createInitialRecord(schema.value?.fields)

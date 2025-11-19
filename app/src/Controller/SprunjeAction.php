@@ -81,6 +81,15 @@ class SprunjeAction extends Base
             // Get the relation parameter if it exists
             $relation = $this->getParameter($request, 'relation', 'NONE');
 
+            // Always log critical request info for debugging nested endpoint issues
+            $this->logger->debug("CRUD6 [SprunjeAction] Request received", [
+                'uri' => (string) $request->getUri(),
+                'model' => $crudSchema['model'],
+                'relation' => $relation,
+                'has_details' => isset($crudSchema['details']),
+                'details_count' => isset($crudSchema['details']) ? count($crudSchema['details']) : 0,
+            ]);
+
             $this->debugLog("CRUD6 [SprunjeAction] Relation parameter parsed", [
                 'relation' => $relation,
                 'has_detail' => isset($crudSchema['detail']) ? 'yes' : 'no',
@@ -127,6 +136,24 @@ class SprunjeAction extends Base
                 'found' => $detailConfig !== null ? 'YES' : 'NO',
                 'relation' => $relation,
             ]);
+
+            // Always log the result of detail config search for debugging
+            if ($relation !== 'NONE') {
+                if ($detailConfig !== null) {
+                    $this->logger->debug("CRUD6 [SprunjeAction] Detail config found", [
+                        'relation' => $relation,
+                        'model' => $crudSchema['model'],
+                        'detail_config' => $detailConfig,
+                    ]);
+                } else {
+                    $this->logger->debug("CRUD6 [SprunjeAction] No detail config found", [
+                        'relation' => $relation,
+                        'model' => $crudSchema['model'],
+                        'details_count' => isset($crudSchema['details']) ? count($crudSchema['details']) : 0,
+                        'available_details' => isset($crudSchema['details']) ? array_column($crudSchema['details'], 'model') : [],
+                    ]);
+                }
+            }
 
             if ($relation !== 'NONE' && $detailConfig !== null) {
                 // Handle dynamic relation based on schema detail configuration

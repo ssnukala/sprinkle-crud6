@@ -380,7 +380,7 @@ class SchemaService
             $type = $field['type'] ?? 'string';
 
             // Check if it's a legacy boolean type with UI suffix
-            if (preg_match('/^boolean-(tgl|chk|sel)$/', $type, $matches)) {
+            if (preg_match('/^boolean-(tgl|chk|sel|yn)$/', $type, $matches)) {
                 $uiType = $matches[1];
                 
                 // Normalize to standard boolean type
@@ -392,6 +392,7 @@ class SchemaService
                         'tgl' => 'toggle',
                         'chk' => 'checkbox',
                         'sel' => 'select',
+                        'yn' => 'select',
                     ];
                     $field['ui'] = $uiMap[$uiType] ?? 'checkbox';
                 }

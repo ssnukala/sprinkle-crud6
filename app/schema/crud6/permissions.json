@@ -1,0 +1,143 @@
+{
+    "model": "permissions",
+    "title": "PERMISSION.PAGE",
+    "singular_title": "PERMISSION.1",
+    "description": "PERMISSION.PAGE_DESCRIPTION",
+    "table": "permissions",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_permissions",
+        "create": "create_permission",
+        "update": "update_permission",
+        "delete": "delete_permission"
+    },
+    "default_sort": {
+        "slug": "asc"
+    },
+    "relationships": [
+        {
+            "name": "roles",
+            "type": "many_to_many",
+            "pivot_table": "permission_roles",
+            "foreign_key": "permission_id",
+            "related_key": "role_id",
+            "title": "ROLE.2",
+            "actions": {
+                "on_update": {
+                    "sync": "role_ids",
+                    "description": "Sync permission roles from form input"
+                },
+                "on_delete": {
+                    "detach": "all",
+                    "description": "Remove all role associations when permission is deleted"
+                }
+            }
+        },
+        {
+            "name": "users",
+            "type": "belongs_to_many_through",
+            "through": "roles",
+            "first_pivot_table": "permission_roles",
+            "first_foreign_key": "permission_id",
+            "first_related_key": "role_id",
+            "second_pivot_table": "role_users",
+            "second_foreign_key": "role_id",
+            "second_related_key": "user_id",
+            "title": "PERMISSION.USERS"
+        }
+    ],
+    "details": [
+        {
+            "model": "users",
+            "list_fields": ["user_name", "first_name", "last_name", "email"],
+            "title": "PERMISSION.USERS"
+        },
+        {
+            "model": "roles",
+            "list_fields": ["name", "slug", "description"],
+            "title": "ROLE.2"
+        }
+    ],
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "readonly": true,
+            "show_in": ["detail"]
+        },
+        "slug": {
+            "type": "string",
+            "label": "Slug",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "unique": true,
+                "length": {
+                    "max": 255
+                },
+                "no_whitespace": true
+            }
+        },
+        "name": {
+            "type": "string",
+            "label": "Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 255
+                },
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "conditions": {
+            "type": "text",
+            "label": "Conditions",
+            "required": false,
+            "show_in": ["form", "detail"]
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": ["list", "form", "detail"]
+        },
+        "role_ids": {
+            "type": "multiselect",
+            "label": "Roles",
+            "description": "Permission roles (used for sync on update)",
+            "lookup": {
+                "model": "roles",
+                "id": "id",
+                "desc": "name"
+            },
+            "required": false,
+            "show_in": ["form"]
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        }
+    }
+}

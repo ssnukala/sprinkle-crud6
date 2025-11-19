@@ -1,0 +1,98 @@
+{
+    "model": "groups",
+    "title": "GROUP.PAGE",
+    "singular_title": "GROUP.1",
+    "description": "GROUP.PAGE_DESCRIPTION",
+    "table": "groups",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_groups",
+        "create": "create_group",
+        "update": "update_group_field",
+        "delete": "delete_group"
+    },
+    "default_sort": {
+        "name": "asc"
+    },
+    "details": [
+        {
+            "model": "users",
+            "foreign_key": "group_id",
+            "list_fields": ["user_name", "first_name", "last_name", "email", "flag_enabled"],
+            "title": "GROUP.USERS"
+        }
+    ],
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "readonly": true,
+            "show_in": ["detail"]
+        },
+        "slug": {
+            "type": "string",
+            "label": "Slug",
+            "required": true,
+            "show_in": ["form", "detail"],
+            "validation": {
+                "required": true,
+                "unique": true,
+                "length": {
+                    "max": 255
+                },
+                "no_whitespace": true
+            }
+        },
+        "name": {
+            "type": "string",
+            "label": "Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 255
+                },
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": ["list", "form", "detail"]
+        },
+        "icon": {
+            "type": "string",
+            "label": "Icon",
+            "required": false,
+            "show_in": ["form", "detail"],
+            "validation": {
+                "length": {
+                    "max": 100
+                }
+            }
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        }
+    }
+}

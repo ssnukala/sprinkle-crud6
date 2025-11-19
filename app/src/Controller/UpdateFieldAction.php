@@ -138,9 +138,14 @@ class UpdateFieldAction extends Base
                 'params' => $params,
             ]);
 
+            // For boolean fields without validation rules, ensure they pass through
+            // The RequestDataTransformer might skip fields with empty validation rules
+            $fieldType = $fieldConfig['type'] ?? 'string';
+            $validationRules = $fieldConfig['validation'] ?? [];
+            
             // Create a validation schema for just this field
             $validationSchema = new RequestSchema([
-                $fieldName => $fieldConfig['validation'] ?? []
+                $fieldName => $validationRules
             ]);
 
             // Validate the single field
@@ -166,6 +171,18 @@ class UpdateFieldAction extends Base
             // Transform data
             $transformer = new RequestDataTransformer($validationSchema);
             $data = $transformer->transform($params);
+            
+            // For fields with no validation rules (especially booleans), ensure the field is in the data
+            // RequestDataTransformer may skip fields with empty validation schemas
+            if (!array_key_exists($fieldName, $data) && array_key_exists($fieldName, $params)) {
+                $data[$fieldName] = $params[$fieldName];
+                $this->debugLog("CRUD6 [UpdateFieldAction] Field added to data (no validation rules)", [
+                    'model' => $crudSchema['model'],
+                    'field' => $fieldName,
+                    'type' => $fieldType,
+                    'value' => $data[$fieldName],
+                ]);
+            }
             
             $this->debugLog("CRUD6 [UpdateFieldAction] Data transformed", [
                 'model' => $crudSchema['model'],

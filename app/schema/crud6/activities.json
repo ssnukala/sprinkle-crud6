@@ -1,0 +1,72 @@
+{
+    "model": "activities",
+    "title": "ACTIVITY.PAGE",
+    "singular_title": "ACTIVITY.1",
+    "description": "ACTIVITY.PAGE_DESCRIPTION",
+    "table": "activities",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_activities",
+        "create": "create_activity",
+        "update": "update_activity",
+        "delete": "delete_activity"
+    },
+    "default_sort": {
+        "occurred_at": "desc"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "readonly": true,
+            "show_in": ["detail"]
+        },
+        "ip_address": {
+            "type": "string",
+            "label": "IP Address",
+            "required": false,
+            "show_in": ["form", "detail"],
+            "validation": {
+                "length": {
+                    "max": 45
+                }
+            }
+        },
+        "user_id": {
+            "type": "integer",
+            "label": "User ID",
+            "required": true,
+            "show_in": ["form", "detail"]
+        },
+        "type": {
+            "type": "string",
+            "label": "Type",
+            "required": true,
+            "show_in": ["form", "detail"],
+            "validation": {
+                "required": true,
+                "length": {
+                    "max": 255
+                }
+            }
+        },
+        "occurred_at": {
+            "type": "datetime",
+            "label": "Occurred At",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "date_format": "Y-m-d H:i:s"
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": ["list", "form", "detail"]
+        }
+    }
+}

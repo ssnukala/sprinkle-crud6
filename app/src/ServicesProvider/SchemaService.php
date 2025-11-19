@@ -76,7 +76,7 @@ class SchemaService
     /**
      * Log debug message if debug mode is enabled.
      * 
-     * Uses DebugLoggerInterface if available, falls back to error_log() otherwise.
+     * Uses DebugLoggerInterface if available.
      * Only logs when debug_mode config is true.
      * 
      * @param string $message Debug message
@@ -92,10 +92,6 @@ class SchemaService
 
         if ($this->logger !== null) {
             $this->logger->debug($message, $context);
-        } else {
-            // Fallback to error_log if logger not available
-            $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
-            error_log($message . $contextStr);
         }
     }
 

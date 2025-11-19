@@ -77,6 +77,14 @@ class EditAction extends Base
         
         $method = $request->getMethod();
         
+        // Log edit action requests
+        $this->debugLog("CRUD6 [EditAction] Request received", [
+            'method' => $method,
+            'uri' => (string) $request->getUri(),
+            'model' => $crudSchema['model'],
+            'record_id' => $crudModel->getAttribute($crudSchema['primary_key'] ?? 'id'),
+        ]);
+        
         $this->debugLog("CRUD6 [EditAction] ===== REQUEST START =====", [
             'model' => $crudSchema['model'],
             'method' => $method,
@@ -87,16 +95,18 @@ class EditAction extends Base
         try {
             // Handle GET request (read operation)
             if ($method === 'GET') {
-                $this->debugLog("CRUD6 [EditAction] Processing GET request (read)", [
+                $this->debugLog("CRUD6 [EditAction] Processing GET request", [
                     'model' => $crudSchema['model'],
+                    'record_id' => $crudModel->getAttribute($crudSchema['primary_key'] ?? 'id'),
                 ]);
                 return $this->handleRead($crudSchema, $crudModel, $request, $response);
             }
             
             // Handle PUT request (update operation)
             if ($method === 'PUT') {
-                $this->debugLog("CRUD6 [EditAction] Processing PUT request (update)", [
+                $this->debugLog("CRUD6 [EditAction] Processing PUT request", [
                     'model' => $crudSchema['model'],
+                    'record_id' => $crudModel->getAttribute($crudSchema['primary_key'] ?? 'id'),
                 ]);
                 return $this->handleUpdate($crudSchema, $crudModel, $request, $response);
             }

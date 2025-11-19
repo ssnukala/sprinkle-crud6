@@ -1,0 +1,149 @@
+{
+  "description": "Model definitions for generating integration test paths",
+  "version": "1.0",
+  "models": {
+    "users": {
+      "name": "users",
+      "singular": "user",
+      "api_prefix": "/api/crud6",
+      "frontend_prefix": "/crud6",
+      "test_id": 1,
+      "api_validation_keys": ["id", "user_name", "email"],
+      "list_validation_keys": ["rows"],
+      "enabled": true
+    },
+    "groups": {
+      "name": "groups",
+      "singular": "group",
+      "api_prefix": "/api/crud6",
+      "frontend_prefix": "/crud6",
+      "test_id": 1,
+      "api_validation_keys": ["id", "slug", "name"],
+      "list_validation_keys": ["rows"],
+      "enabled": true
+    },
+    "roles": {
+      "name": "roles",
+      "singular": "role",
+      "api_prefix": "/api/crud6",
+      "frontend_prefix": "/crud6",
+      "test_id": 1,
+      "api_validation_keys": ["id", "slug", "name"],
+      "list_validation_keys": ["rows"],
+      "enabled": true
+    },
+    "permissions": {
+      "name": "permissions",
+      "singular": "permission",
+      "api_prefix": "/api/crud6",
+      "frontend_prefix": "/crud6",
+      "test_id": 1,
+      "api_validation_keys": ["id", "slug", "name"],
+      "list_validation_keys": ["rows"],
+      "enabled": true
+    },
+    "activities": {
+      "name": "activities",
+      "singular": "activity",
+      "api_prefix": "/api/crud6",
+      "frontend_prefix": "/crud6",
+      "test_id": 1,
+      "api_validation_keys": ["id", "type"],
+      "list_validation_keys": ["rows"],
+      "enabled": true
+    }
+  },
+  "path_templates": {
+    "authenticated": {
+      "api": {
+        "list": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}",
+          "description": "Get list of {model} via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "single": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Get single {singular} by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        }
+      },
+      "frontend": {
+        "list": {
+          "path": "{frontend_prefix}/{model}",
+          "description": "{model} list page",
+          "screenshot": true,
+          "screenshot_name": "{model}_list"
+        },
+        "detail": {
+          "path": "{frontend_prefix}/{model}/{test_id}",
+          "description": "Single {singular} detail page",
+          "screenshot": true,
+          "screenshot_name": "{singular}_detail"
+        }
+      }
+    },
+    "unauthenticated": {
+      "api": {
+        "list": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}",
+          "description": "Attempt to access {model} list without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "single": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Attempt to access single {singular} without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        }
+      },
+      "frontend": {
+        "list": {
+          "path": "{frontend_prefix}/{model}",
+          "description": "Attempt to access {model} list page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        },
+        "detail": {
+          "path": "{frontend_prefix}/{model}/{test_id}",
+          "description": "Attempt to access {singular} detail page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "base_url": "http://localhost:8080",
+    "auth": {
+      "username": "admin",
+      "password": "admin123"
+    },
+    "timeout": {
+      "api": 10,
+      "frontend": 30
+    }
+  }
+}

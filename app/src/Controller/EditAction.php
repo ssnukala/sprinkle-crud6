@@ -159,6 +159,12 @@ class EditAction extends Base
                 'data' => $recordData,
             ]);
             
+            // Load relationship details if defined in schema
+            $details = [];
+            if (isset($crudSchema['details']) && is_array($crudSchema['details'])) {
+                $details = $this->loadDetailsFromSchema($crudSchema, $crudModel, $recordId);
+            }
+            
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $crudSchema['model'],
@@ -166,6 +172,11 @@ class EditAction extends Base
                 'id' => $recordId,
                 'data' => $recordData
             ];
+            
+            // Add details to response if loaded
+            if (!empty($details)) {
+                $responseData['details'] = $details;
+            }
 
             $this->debugLog("CRUD6 [EditAction] Read response prepared", [
                 'model' => $crudSchema['model'],
@@ -422,5 +433,399 @@ class EditAction extends Base
         }
         
         return $data;
+    }
+
+    /**
+     * Load relationship details from schema configuration.
+     * 
+     * Parses the details section from JSON schema and queries many_to_many relationships.
+     * Applies field filtering (list_fields) and returns formatted response.
+     * 
+     * Phase 3 Optimization: Uses schema consolidation to batch-load all related schemas
+     * in a single call, minimizing database queries. Implements comprehensive error handling 
+     * to ensure partial failures don't break the entire response.
+     * 
+     * @param array               $crudSchema The schema configuration
+     * @param CRUD6ModelInterface $crudModel  The configured model instance with record loaded
+     * @param mixed               $recordId   The record ID
+     * 
+     * @return array Array of details data keyed by relationship name
+     * 
+     * @throws \RuntimeException If critical errors occur during relationship loading
+     */
+    protected function loadDetailsFromSchema(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId): array
+    {
+        $details = [];
+        $detailsConfig = $crudSchema['details'] ?? [];
+        $relationships = $crudSchema['relationships'] ?? [];
+        
+        $this->debugLog("CRUD6 [EditAction] Loading details from schema", [
+            'model' => $crudSchema['model'],
+            'record_id' => $recordId,
+            'details_count' => count($detailsConfig),
+            'relationships_count' => count($relationships),
+        ]);
+        
+        // Early return if no details configured
+        if (empty($detailsConfig)) {
+            return $details;
+        }
+        
+        // Build a lookup map of relationships by name for quick access
+        $relationshipMap = [];
+        foreach ($relationships as $rel) {
+            if (isset($rel['name'])) {
+                $relationshipMap[$rel['name']] = $rel;
+            }
+        }
+        
+        // Phase 3 Optimization: Pre-load all related schemas in a single batch
+        // This avoids multiple getSchema() calls and uses the schema consolidation feature
+        $relatedSchemas = $this->schemaService->loadRelatedSchemas($crudSchema, 'list');
+        
+        $this->debugLog("CRUD6 [EditAction] Pre-loaded related schemas", [
+            'count' => count($relatedSchemas),
+            'models' => array_keys($relatedSchemas),
+        ]);
+        
+        // Process each detail configuration
+        foreach ($detailsConfig as $detailConfig) {
+            $relatedModel = $detailConfig['model'] ?? null;
+            $listFields = $detailConfig['list_fields'] ?? [];
+            $title = $detailConfig['title'] ?? ucfirst($relatedModel);
+            
+            if (!$relatedModel) {
+                $this->debugLog("CRUD6 [EditAction] Skipping detail with no model", [
+                    'detail_config' => $detailConfig,
+                ]);
+                continue;
+            }
+            
+            // Find the corresponding relationship configuration
+            $relationship = $relationshipMap[$relatedModel] ?? null;
+            
+            if (!$relationship) {
+                $this->logger->warning("CRUD6 [EditAction] No relationship found for detail", [
+                    'related_model' => $relatedModel,
+                    'available_relationships' => array_keys($relationshipMap),
+                ]);
+                continue;
+            }
+            
+            // Get pre-loaded schema or null if not available
+            $relatedSchema = $relatedSchemas[$relatedModel] ?? null;
+            
+            // Query the relationship with comprehensive error handling
+            try {
+                $rows = $this->queryRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields, $relatedSchema);
+                
+                $details[$relatedModel] = [
+                    'title' => $title,
+                    'rows' => $rows,
+                    'count' => count($rows),
+                ];
+                
+                $this->debugLog("CRUD6 [EditAction] Loaded detail successfully", [
+                    'related_model' => $relatedModel,
+                    'row_count' => count($rows),
+                    'title' => $title,
+                ]);
+            } catch (\Exception $e) {
+                // Log error but continue loading other relationships
+                $this->logger->error("CRUD6 [EditAction] Failed to load detail", [
+                    'related_model' => $relatedModel,
+                    'error' => $e->getMessage(),
+                    'error_type' => get_class($e),
+                ]);
+                
+                // Include empty result to maintain consistency
+                $details[$relatedModel] = [
+                    'title' => $title,
+                    'rows' => [],
+                    'count' => 0,
+                    'error' => 'Failed to load relationship data',
+                ];
+            }
+        }
+        
+        return $details;
+    }
+
+    /**
+     * Query a relationship to get related records.
+     * 
+     * Routes to the appropriate query method based on relationship type.
+     * Supports many_to_many and belongs_to_many_through relationships.
+     * Applies field filtering and returns array of related records.
+     * 
+     * Phase 3: Enhanced with comprehensive error handling, validation, and
+     * schema consolidation optimization (accepts pre-loaded schema).
+     * 
+     * @param array               $crudSchema     The schema configuration
+     * @param CRUD6ModelInterface $crudModel      The configured model instance
+     * @param mixed               $recordId       The record ID
+     * @param array               $relationship   The relationship configuration
+     * @param array               $listFields     Fields to include in results
+     * @param array|null          $relatedSchema  Pre-loaded related schema (optimization)
+     * 
+     * @return array Array of related records
+     * 
+     * @throws \RuntimeException If relationship type is invalid or query fails critically
+     */
+    protected function queryRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, array $relationship, array $listFields, ?array $relatedSchema = null): array
+    {
+        $type = $relationship['type'] ?? null;
+        $relatedModel = $relationship['name'] ?? null;
+        
+        // Validate relationship configuration
+        if (!$type) {
+            $this->logger->error("CRUD6 [EditAction] Relationship missing type", [
+                'relationship' => $relationship,
+            ]);
+            throw new \RuntimeException("Relationship configuration missing 'type' field");
+        }
+        
+        if (!$relatedModel) {
+            $this->logger->error("CRUD6 [EditAction] Relationship missing name", [
+                'relationship' => $relationship,
+            ]);
+            throw new \RuntimeException("Relationship configuration missing 'name' field");
+        }
+        
+        $this->debugLog("CRUD6 [EditAction] Querying relationship", [
+            'type' => $type,
+            'related_model' => $relatedModel,
+            'record_id' => $recordId,
+            'list_fields' => $listFields,
+            'pre_loaded_schema' => $relatedSchema !== null,
+        ]);
+        
+        // Support many_to_many relationships
+        if ($type === 'many_to_many') {
+            return $this->queryManyToManyRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields, $relatedSchema);
+        }
+        
+        // Support belongs_to_many_through relationships
+        if ($type === 'belongs_to_many_through') {
+            return $this->queryBelongsToManyThroughRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields, $relatedSchema);
+        }
+        
+        // Unsupported relationship type
+        $this->logger->warning("CRUD6 [EditAction] Unsupported relationship type", [
+            'type' => $type,
+            'related_model' => $relatedModel,
+            'supported_types' => ['many_to_many', 'belongs_to_many_through'],
+        ]);
+        
+        return [];
+    }
+
+    /**
+     * Query a many_to_many relationship through a pivot table.
+     * 
+     * Executes an optimized JOIN query to retrieve related records through a pivot table.
+     * Phase 3: Enhanced with validation, error handling, query optimization, and
+     * schema consolidation (uses pre-loaded schema when available).
+     * 
+     * @param array               $crudSchema     The schema configuration
+     * @param CRUD6ModelInterface $crudModel      The configured model instance
+     * @param mixed               $recordId       The record ID
+     * @param array               $relationship   The relationship configuration with pivot_table, foreign_key, related_key
+     * @param array               $listFields     Fields to include in results (empty = all fields)
+     * @param array|null          $relatedSchema  Pre-loaded related schema (optimization - avoids getSchema call)
+     * 
+     * @return array Array of related records
+     * 
+     * @throws \RuntimeException If schema cannot be loaded
+     */
+    protected function queryManyToManyRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, array $relationship, array $listFields, ?array $relatedSchema = null): array
+    {
+        $pivotTable = $relationship['pivot_table'] ?? null;
+        $foreignKey = $relationship['foreign_key'] ?? null;
+        $relatedKey = $relationship['related_key'] ?? null;
+        $relatedModel = $relationship['name'] ?? null;
+        
+        // Validate required configuration
+        if (!$pivotTable || !$foreignKey || !$relatedKey || !$relatedModel) {
+            $this->logger->error("CRUD6 [EditAction] Invalid many_to_many relationship configuration", [
+                'relationship' => $relationship,
+                'missing_fields' => array_filter([
+                    'pivot_table' => !$pivotTable,
+                    'foreign_key' => !$foreignKey,
+                    'related_key' => !$relatedKey,
+                    'name' => !$relatedModel,
+                ]),
+            ]);
+            return [];
+        }
+        
+        try {
+            // Phase 3 Optimization: Use pre-loaded schema if available, otherwise load it
+            if ($relatedSchema === null) {
+                $relatedSchema = $this->schemaService->getSchema($relatedModel);
+            }
+            
+            $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+            $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+            
+            $this->debugLog("CRUD6 [EditAction] Query many_to_many relationship", [
+                'pivot_table' => $pivotTable,
+                'foreign_key' => $foreignKey,
+                'related_key' => $relatedKey,
+                'related_table' => $relatedTable,
+                'related_primary_key' => $relatedPrimaryKey,
+                'list_fields' => $listFields,
+                'schema_pre_loaded' => $relatedSchema !== null,
+            ]);
+            
+            // Build the optimized query with INNER JOIN
+            // SELECT related_table.* FROM related_table
+            // INNER JOIN pivot_table ON pivot_table.related_key = related_table.id
+            // WHERE pivot_table.foreign_key = recordId
+            
+            $query = $this->db->table($relatedTable)
+                ->join($pivotTable, "{$pivotTable}.{$relatedKey}", '=', "{$relatedTable}.{$relatedPrimaryKey}")
+                ->where("{$pivotTable}.{$foreignKey}", $recordId);
+            
+            // Apply field filtering if list_fields is specified
+            if (!empty($listFields)) {
+                // Ensure primary key is always included
+                if (!in_array($relatedPrimaryKey, $listFields)) {
+                    $listFields[] = $relatedPrimaryKey;
+                }
+                
+                // Prefix table name to fields to avoid ambiguity
+                $selectFields = array_map(function($field) use ($relatedTable) {
+                    return "{$relatedTable}.{$field}";
+                }, $listFields);
+                
+                $query->select($selectFields);
+            } else {
+                // Select all fields from related table
+                $query->select("{$relatedTable}.*");
+            }
+            
+            // Execute query
+            $results = $query->get();
+            
+            $this->debugLog("CRUD6 [EditAction] Many_to_many query executed", [
+                'related_model' => $relatedModel,
+                'record_id' => $recordId,
+                'row_count' => count($results),
+            ]);
+            
+            // Convert to array
+            return json_decode(json_encode($results), true);
+            
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [EditAction] Failed to query many_to_many relationship", [
+                'relationship' => $relationship,
+                'record_id' => $recordId,
+                'error' => $e->getMessage(),
+                'error_type' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Re-throw if critical schema error, otherwise return empty
+            if ($e instanceof \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException) {
+                throw $e;
+            }
+            
+            return [];
+        }
+    }
+
+    /**
+     * Query a belongs_to_many_through relationship.
+     * 
+     * Phase 3: Enhanced with schema consolidation optimization - uses pre-loaded schema.
+     * 
+     * @param array               $crudSchema     The schema configuration
+     * @param CRUD6ModelInterface $crudModel      The configured model instance
+     * @param mixed               $recordId       The record ID
+     * @param array               $relationship   The relationship configuration
+     * @param array               $listFields     Fields to include in results
+     * @param array|null          $relatedSchema  Pre-loaded related schema (optimization)
+     * 
+     * @return array Array of related records
+     */
+    protected function queryBelongsToManyThroughRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, array $relationship, array $listFields, ?array $relatedSchema = null): array
+    {
+        $throughModel = $relationship['through'] ?? null;
+        $foreignKey = $relationship['foreign_key'] ?? null;
+        $throughKey = $relationship['through_key'] ?? null;
+        $relatedModel = $relationship['name'] ?? null;
+        
+        if (!$throughModel || !$foreignKey || !$throughKey || !$relatedModel) {
+            $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
+                'relationship' => $relationship,
+            ]);
+            return [];
+        }
+        
+        try {
+            // Phase 3 Optimization: Use pre-loaded schema if available
+            // Note: through model schema still needs to be loaded separately
+            $throughSchema = $this->schemaService->getSchema($throughModel);
+            $throughTable = $throughSchema['table'] ?? $throughModel;
+            $throughPrimaryKey = $throughSchema['primary_key'] ?? 'id';
+            
+            if ($relatedSchema === null) {
+                $relatedSchema = $this->schemaService->getSchema($relatedModel);
+            }
+            $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+            $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+            
+            $this->debugLog("CRUD6 [EditAction] Query belongs_to_many_through relationship", [
+                'through_table' => $throughTable,
+                'foreign_key' => $foreignKey,
+                'through_key' => $throughKey,
+                'related_table' => $relatedTable,
+                'related_primary_key' => $relatedPrimaryKey,
+                'list_fields' => $listFields,
+            ]);
+            
+            // Build the query
+            // SELECT related.* FROM related
+            // INNER JOIN through ON through.id = related.through_key
+            // WHERE through.foreign_key = recordId
+            
+            $query = $this->db->table($relatedTable)
+                ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$relatedTable}.{$throughKey}")
+                ->where("{$throughTable}.{$foreignKey}", $recordId);
+            
+            // Apply field filtering if list_fields is specified
+            if (!empty($listFields)) {
+                if (!in_array($relatedPrimaryKey, $listFields)) {
+                    $listFields[] = $relatedPrimaryKey;
+                }
+                $selectFields = array_map(function($field) use ($relatedTable) {
+                    return "{$relatedTable}.{$field}";
+                }, $listFields);
+                $query->select($selectFields);
+            } else {
+                $query->select("{$relatedTable}.*");
+            }
+            
+            $results = $query->get();
+            
+            $this->debugLog("CRUD6 [EditAction] Belongs_to_many_through query executed", [
+                'related_model' => $relatedModel,
+                'record_id' => $recordId,
+                'row_count' => count($results),
+            ]);
+            
+            // Convert to array
+            return json_decode(json_encode($results), true);
+            
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [EditAction] Failed to query belongs_to_many_through relationship", [
+                'relationship' => $relationship,
+                'record_id' => $recordId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return [];
+        }
     }
 }

@@ -43,7 +43,8 @@ class NetworkRequestTracker {
             method: method.toUpperCase(),
             resourceType: resourceType,
             timestamp: Date.now(),
-            key: this.generateRequestKey(url, method)
+            key: this.generateRequestKey(url, method),
+            originalUrl: url
         };
 
         this.requests.push(request);
@@ -129,6 +130,25 @@ class NetworkRequestTracker {
 
     isCRUD6Call(url) {
         return url.includes('/api/crud6/');
+    }
+
+    /**
+     * Filter requests to only CRUD6-related API calls
+     * @param {boolean} includeSchema - Whether to include schema API calls
+     * @returns {Array} Filtered array of CRUD6 requests
+     */
+    getFilteredCRUD6Requests(includeSchema = true) {
+        return this.requests.filter(req => {
+            // Only include CRUD6 API calls
+            if (!this.isCRUD6Call(req.url)) {
+                return false;
+            }
+            // If includeSchema is false, exclude schema calls
+            if (!includeSchema && this.isSchemaCall(req.url)) {
+                return false;
+            }
+            return true;
+        });
     }
 
     getRedundantCallsReport() {
@@ -453,75 +473,122 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         // Generate and save detailed network report to file
         console.log('');
-        console.log('📝 Generating detailed network request report...');
+        console.log('📝 Generating detailed network request report (CRUD6 filtered)...');
+        
+        // Get only CRUD6-related requests for the detailed report
+        const crud6FilteredRequests = networkTracker.getFilteredCRUD6Requests(true);
+        const nonCRUD6Count = allRequests.length - crud6FilteredRequests.length;
         
         let detailedReport = '';
         detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
-        detailedReport += 'NETWORK REQUEST TRACKING DETAILED REPORT\n';
+        detailedReport += 'NETWORK REQUEST TRACKING DETAILED REPORT (CRUD6 FILTERED)\n';
         detailedReport += 'UserFrosting CRUD6 Sprinkle Integration Test\n';
         detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
         detailedReport += `Generated: ${new Date().toISOString()}\n`;
         detailedReport += `Base URL: ${baseUrl}\n`;
         detailedReport += `Total Pages Tested: ${pageNetworkStats.length}\n`;
-        detailedReport += `Total Network Requests: ${allRequests.length}\n`;
+        detailedReport += '\n';
+        detailedReport += 'ℹ️  This report focuses on CRUD6 API calls only.\n';
+        detailedReport += `   Total requests captured: ${allRequests.length}\n`;
+        detailedReport += `   CRUD6 requests (shown below): ${crud6FilteredRequests.length}\n`;
+        detailedReport += `   Non-CRUD6 requests (filtered out): ${nonCRUD6Count}\n`;
         detailedReport += '\n';
 
         // Summary section
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
         detailedReport += 'SUMMARY BY TYPE\n';
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        detailedReport += `Total Requests:        ${allRequests.length}\n`;
-        detailedReport += `CRUD6 API Calls:       ${totalCRUD6}\n`;
-        detailedReport += `Schema API Calls:      ${totalSchema}\n`;
-        detailedReport += `Redundant Call Groups: ${totalRedundant}\n`;
+        detailedReport += `Total Requests Captured:     ${allRequests.length}\n`;
+        detailedReport += `CRUD6 API Calls (filtered):  ${totalCRUD6}\n`;
+        detailedReport += `  - Schema API Calls:        ${totalSchema}\n`;
+        detailedReport += `  - Other CRUD6 Calls:       ${totalCRUD6 - totalSchema}\n`;
+        detailedReport += `Non-CRUD6 Calls (excluded):  ${nonCRUD6Count}\n`;
+        detailedReport += `Redundant Call Groups:       ${totalRedundant}\n`;
         detailedReport += '\n';
 
         // Per-page breakdown
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        detailedReport += 'PER-PAGE BREAKDOWN\n';
+        detailedReport += 'PER-PAGE BREAKDOWN (CRUD6 REQUESTS ONLY)\n';
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
         pageNetworkDetails.forEach((pageDetail, idx) => {
+            // Filter to only CRUD6 requests for this page
+            const pageCRUD6Requests = pageDetail.requests.filter(r => networkTracker.isCRUD6Call(r.url));
+            const pageNonCRUD6Count = pageDetail.requests.length - pageCRUD6Requests.length;
+            
             detailedReport += `\n${idx + 1}. ${pageDetail.name}\n`;
             detailedReport += `   Path: ${pageDetail.path}\n`;
-            detailedReport += `   Requests: ${pageDetail.requests.length}\n`;
-            detailedReport += '\n   Request Details:\n';
-            pageDetail.requests.forEach((req, reqIdx) => {
-                const time = new Date(req.timestamp).toISOString();
-                detailedReport += `   ${reqIdx + 1}. [${time}] ${req.method} ${req.url}\n`;
-                detailedReport += `      Resource Type: ${req.resourceType}\n`;
-                if (networkTracker.isCRUD6Call(req.url)) {
-                    detailedReport += `      📌 CRUD6 API Call\n`;
-                }
-                if (networkTracker.isSchemaCall(req.url)) {
-                    detailedReport += `      📌 Schema API Call\n`;
-                }
-            });
+            detailedReport += `   Total Requests: ${pageDetail.requests.length} (${pageCRUD6Requests.length} CRUD6, ${pageNonCRUD6Count} other)\n`;
+            
+            if (pageCRUD6Requests.length > 0) {
+                detailedReport += '\n   CRUD6 Request Details:\n';
+                pageCRUD6Requests.forEach((req, reqIdx) => {
+                    const time = new Date(req.timestamp).toISOString();
+                    detailedReport += `   ${reqIdx + 1}. [${time}] ${req.method} ${req.url}\n`;
+                    detailedReport += `      Resource Type: ${req.resourceType}\n`;
+                    if (networkTracker.isSchemaCall(req.url)) {
+                        detailedReport += `      📌 Schema API Call\n`;
+                    }
+                });
+            } else {
+                detailedReport += '\n   ℹ️  No CRUD6 requests on this page\n';
+            }
             detailedReport += '\n';
         });
 
-        // Redundant calls section
+        // Redundant calls section (for CRUD6 requests only)
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        detailedReport += 'REDUNDANT CALLS DETECTION\n';
+        detailedReport += 'REDUNDANT CALLS DETECTION (CRUD6 ONLY)\n';
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        if (totalRedundant > 0) {
-            detailedReport += `⚠️  WARNING: ${totalRedundant} redundant call group(s) detected!\n\n`;
-            detailedReport += networkTracker.getRedundantCallsReport();
+        
+        // Calculate redundant calls for CRUD6 requests only
+        const crud6RedundantCalls = {};
+        const crud6Frequency = {};
+        
+        crud6FilteredRequests.forEach(req => {
+            if (!crud6Frequency[req.key]) crud6Frequency[req.key] = [];
+            crud6Frequency[req.key].push(req);
+        });
+        
+        Object.keys(crud6Frequency).forEach(key => {
+            if (crud6Frequency[key].length > 1) {
+                crud6RedundantCalls[key] = {
+                    count: crud6Frequency[key].length,
+                    calls: crud6Frequency[key]
+                };
+            }
+        });
+        
+        const crud6RedundantCount = Object.keys(crud6RedundantCalls).length;
+        
+        if (crud6RedundantCount > 0) {
+            detailedReport += `⚠️  WARNING: ${crud6RedundantCount} redundant CRUD6 call group(s) detected!\n\n`;
+            
+            Object.keys(crud6RedundantCalls).forEach(key => {
+                const data = crud6RedundantCalls[key];
+                const firstCall = data.calls[0];
+                
+                detailedReport += `Endpoint: ${firstCall.method} ${firstCall.url}\n`;
+                detailedReport += `Called ${data.count} times (should be 1):\n`;
+                
+                data.calls.forEach((call, idx) => {
+                    detailedReport += `  ${idx + 1}. Time: ${new Date(call.timestamp).toISOString()}\n`;
+                });
+                
+                detailedReport += '\n';
+            });
         } else {
-            detailedReport += '✅ No redundant calls detected.\n';
+            detailedReport += '✅ No redundant CRUD6 calls detected.\n';
         }
         detailedReport += '\n';
 
-        // All requests chronologically
+        // All CRUD6 requests chronologically
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        detailedReport += 'ALL REQUESTS (CHRONOLOGICAL ORDER)\n';
+        detailedReport += 'ALL CRUD6 REQUESTS (CHRONOLOGICAL ORDER)\n';
         detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
-        allRequests.forEach((req, idx) => {
+        crud6FilteredRequests.forEach((req, idx) => {
             const time = new Date(req.timestamp).toISOString();
             detailedReport += `${idx + 1}. [${time}] ${req.method} ${req.url}\n`;
             detailedReport += `   Resource Type: ${req.resourceType}\n`;
-            if (networkTracker.isCRUD6Call(req.url)) {
-                detailedReport += `   📌 CRUD6 API Call\n`;
-            }
             if (networkTracker.isSchemaCall(req.url)) {
                 detailedReport += `   📌 Schema API Call\n`;
             }
@@ -538,7 +605,9 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             writeFileSync(reportPath, detailedReport, 'utf8');
             console.log(`✅ Network request report saved to: ${reportPath}`);
             console.log(`   File size: ${(detailedReport.length / 1024).toFixed(2)} KB`);
-            console.log(`   Total requests documented: ${allRequests.length}`);
+            console.log(`   Total requests captured: ${allRequests.length}`);
+            console.log(`   CRUD6 requests documented: ${crud6FilteredRequests.length}`);
+            console.log(`   Non-CRUD6 requests filtered: ${nonCRUD6Count}`);
         } catch (writeError) {
             console.error(`❌ Failed to save network report: ${writeError.message}`);
         }

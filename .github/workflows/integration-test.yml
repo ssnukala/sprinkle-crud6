@@ -114,31 +114,19 @@ jobs:
           # Check that the package files are accessible
           test -f node_modules/@ssnukala/sprinkle-crud6/app/assets/index.ts && echo "✅ NPM package files accessible" || echo "⚠️ NPM package files not found"
 
-      - name: Create groups schema
+      - name: Create c6admin schemas
         run: |
           cd userfrosting
           mkdir -p app/schema/crud6
-          cat > app/schema/crud6/groups.json << 'EOF'
-          {
-            "model": "groups",
-            "title": "Group Management",
-            "table": "groups",
-            "primary_key": "id",
-            "timestamps": true,
-            "permissions": {
-              "read": "uri_groups",
-              "create": "create_group",
-              "update": "update_group_field",
-              "delete": "delete_group"
-            },
-            "fields": {
-              "id": { "type": "integer", "label": "ID", "readonly": true, "sortable": true },
-              "slug": { "type": "string", "label": "Slug", "required": true, "sortable": true },
-              "name": { "type": "string", "label": "Name", "required": true, "sortable": true },
-              "description": { "type": "text", "label": "Description" }
-            }
-          }
-          EOF
+          # Copy all c6admin schema files from sprinkle-crud6
+          cp ../sprinkle-crud6/examples/schema/c6admin-*.json app/schema/crud6/
+          # Rename files to remove c6admin- prefix
+          for file in app/schema/crud6/c6admin-*.json; do
+            mv "$file" "${file/c6admin-/}"
+          done
+          # Verify schemas were copied
+          echo "Schemas copied:"
+          ls -la app/schema/crud6/
 
       - name: Setup environment
         run: |
@@ -223,14 +211,29 @@ jobs:
           cd userfrosting
           php -r "
           require 'vendor/autoload.php';
-          \$schema = json_decode(file_get_contents('app/schema/crud6/groups.json'), true);
-          if (!\$schema) {
-              echo 'Failed to load schema\n';
-              exit(1);
+          
+          // Test loading all c6admin schemas
+          \$schemas = ['users', 'groups', 'roles', 'permissions', 'activities'];
+          
+          foreach (\$schemas as \$schemaName) {
+              \$schemaPath = 'app/schema/crud6/' . \$schemaName . '.json';
+              if (!file_exists(\$schemaPath)) {
+                  echo 'Schema not found: ' . \$schemaPath . '\n';
+                  exit(1);
+              }
+              
+              \$schema = json_decode(file_get_contents(\$schemaPath), true);
+              if (!\$schema) {
+                  echo 'Failed to load schema: ' . \$schemaPath . '\n';
+                  exit(1);
+              }
+              
+              echo '✅ Schema loaded: ' . \$schemaName . '\n';
+              echo '   Model: ' . \$schema['model'] . '\n';
+              echo '   Table: ' . \$schema['table'] . '\n';
           }
-          echo 'Schema loaded successfully\n';
-          echo 'Model: ' . \$schema['model'] . '\n';
-          echo 'Table: ' . \$schema['table'] . '\n';
+          
+          echo '\n✅ All c6admin schemas loaded successfully\n';
           "
 
       - name: Test database connection
@@ -406,12 +409,14 @@ jobs:
           echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "   Look for 'Artifacts' section at the bottom of the page"
           echo "   Download 'integration-test-screenshots' ZIP file"
+          echo "   Screenshots include: users, groups, roles, permissions, activities pages"
           echo ""
-          echo "📡 **View Network Request Summary:**"
+          echo "📡 **View Network Request Summary (CRUD6 Filtered):**"
           echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "   Look for 'Artifacts' section at the bottom of the page"
           echo "   Download 'network-requests-summary' artifact"
-          echo "   Contains detailed information about all network requests made during tests"
+          echo "   Contains detailed information about CRUD6 API calls only (non-CRUD6 requests filtered out)"
+          echo "   Reports include: users, groups, roles, permissions, activities API calls"
           
           # Add to GitHub Actions Summary with direct link
           cat >> $GITHUB_STEP_SUMMARY << EOF
@@ -469,24 +474,33 @@ jobs:
           2. Look for the **Artifacts** section
           3. Click on **integration-test-screenshots** to download
           4. Extract the ZIP file to view:
+             - \`screenshot_users_list.png\` - Users list page
+             - \`screenshot_user_detail.png\` - User detail page
              - \`screenshot_groups_list.png\` - Groups list page
              - \`screenshot_group_detail.png\` - Group detail page
+             - \`screenshot_roles_list.png\` - Roles list page
+             - \`screenshot_role_detail.png\` - Role detail page
+             - \`screenshot_permissions_list.png\` - Permissions list page
+             - \`screenshot_permission_detail.png\` - Permission detail page
+             - \`screenshot_activities_list.png\` - Activities list page
+             - \`screenshot_activity_detail.png\` - Activity detail page
           
           > **Note:** Screenshots are retained for 30 days
           
-          ### 📡 View Network Request Summary
-          A detailed network request report has been generated and uploaded as an artifact.
+          ### 📡 View Network Request Summary (CRUD6 Filtered)
+          A detailed network request report focusing on CRUD6 API calls has been generated and uploaded as an artifact.
           
           **To view the network request summary:**
           1. Scroll to the bottom of the workflow run page (link above)
           2. Look for the **Artifacts** section
           3. Click on **network-requests-summary** to download
           4. Open the \`network-requests-summary.txt\` file to view:
-             - Complete list of all network requests made during testing
-             - Per-page breakdown of requests
+             - **CRUD6 API calls only** (non-CRUD6 requests filtered out for clarity)
+             - Per-page breakdown of CRUD6 requests
              - CRUD6 and Schema API call identification
              - Redundant call detection and analysis
-             - Chronological request timeline
+             - Chronological request timeline for CRUD6 calls
+             - Summary of total vs filtered request counts
           
           > **Note:** Network summary is retained for 30 days
           

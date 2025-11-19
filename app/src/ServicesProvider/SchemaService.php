@@ -76,7 +76,7 @@ class SchemaService
     /**
      * Log debug message if debug mode is enabled.
      * 
-     * Uses DebugLoggerInterface if available.
+     * Uses DebugLoggerInterface if available, falls back to error_log() otherwise.
      * Only logs when debug_mode config is true.
      * 
      * @param string $message Debug message
@@ -92,6 +92,10 @@ class SchemaService
 
         if ($this->logger !== null) {
             $this->logger->debug($message, $context);
+        } else {
+            // Fallback to error_log if logger not available
+            $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
+            error_log($message . $contextStr);
         }
     }
 
@@ -555,6 +559,7 @@ class SchemaService
             'connection' => $connection ?? 'null',
             'cache_key' => $cacheKey,
             'timestamp' => date('Y-m-d H:i:s.u'),
+            'caller' => $this->getCallerInfo(),
         ]);
         
         $schema = null;
@@ -634,6 +639,30 @@ class SchemaService
     private function getCacheKey(string $model, ?string $connection = null): string
     {
         return sprintf('%s:%s', $model, $connection ?? 'default');
+    }
+    
+    /**
+     * Get caller information for debugging.
+     * 
+     * Returns information about who called getSchema() to help track down duplicate calls.
+     * 
+     * @return string Caller information
+     */
+    private function getCallerInfo(): string
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+        $callers = [];
+        
+        // Skip the first entry (this method) and get the next 2 callers
+        for ($i = 2; $i < count($trace) && $i < 4; $i++) {
+            $frame = $trace[$i];
+            $class = $frame['class'] ?? 'unknown';
+            $function = $frame['function'] ?? 'unknown';
+            $line = $trace[$i - 1]['line'] ?? '?';
+            $callers[] = sprintf("%s::%s():%s", basename($class), $function, $line);
+        }
+        
+        return implode(' <- ', $callers);
     }
     
     /**

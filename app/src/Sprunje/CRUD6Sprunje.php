@@ -38,7 +38,8 @@ class CRUD6Sprunje extends Sprunje
     /**
      * @var string[] List of sortable fields
      */
-    protected array $sortable = [];
+    // TODO : Need to set this dynamically using the yaml schema
+    protected array $sortable = ["name"];
 
     /**
      * @var string[] List of filterable fields (used for global search)

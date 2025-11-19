@@ -136,10 +136,11 @@ class CRUD6Injector extends AbstractInjector
         ]);
 
         // DEBUG: Log before schema load
-        $this->debugLog("CRUD6 [CRUD6Injector] Loading schema from SchemaService", [
-            'model' => $modelName,
-            'connection' => $this->currentConnectionName ?? 'null',
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Loading schema from SchemaService - model: %s, connection: %s",
+            $modelName,
+            $this->currentConnectionName ?? 'null'
+        ));
 
         // Load schema and configure model - pass connection for path-based lookup
         $schema = $this->schemaService->getSchema($modelName, $this->currentConnectionName);
@@ -148,10 +149,11 @@ class CRUD6Injector extends AbstractInjector
         $this->currentSchema = $schema;
 
         // DEBUG: Log after schema load
-        $this->debugLog("CRUD6 [CRUD6Injector] Schema loaded in getInstance() and CACHED for reuse", [
-            'model' => $modelName,
-            'table' => $schema['table'] ?? 'unknown',
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Schema loaded in getInstance() and CACHED for reuse - model: %s, table: %s",
+            $modelName,
+            $schema['table'] ?? 'unknown'
+        ));
 
         $modelInstance = clone $this->crudModel;
         $modelInstance->configureFromSchema($schema);
@@ -175,6 +177,10 @@ class CRUD6Injector extends AbstractInjector
 
         // If no ID provided, return the configured empty model
         if ($id === null) {
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] Returning configured empty model (no ID) - model: %s",
+                $modelName
+            ));
             $this->debugLog("CRUD6 [CRUD6Injector] Returning configured empty model (no ID)", [
                 'model' => $modelName,
             ]);
@@ -193,6 +199,12 @@ class CRUD6Injector extends AbstractInjector
         $record = $modelInstance->where($primaryKey, $id)->first();
 
         if (!$record) {
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] Record not found - model: %s, id: %s, table: %s",
+                $modelName,
+                $id,
+                $modelInstance->getTable()
+            ));
             $this->debugLogger->error("CRUD6 [CRUD6Injector] Record not found", [
                 'model' => $modelName,
                 'id' => $id,
@@ -202,10 +214,11 @@ class CRUD6Injector extends AbstractInjector
             throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$modelInstance->getTable()}'.");
         }
 
-        $this->debugLog("CRUD6 [CRUD6Injector] Record loaded successfully", [
-            'model' => $modelName,
-            'id' => $id,
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Record loaded successfully - model: %s, id: %s",
+            $modelName,
+            $id
+        ));
 
         $this->debugLog("CRUD6 [CRUD6Injector] Record found and loaded", [
             'model' => $modelName,
@@ -259,15 +272,22 @@ class CRUD6Injector extends AbstractInjector
         $route = $routeContext->getRoute();
 
         // DEBUG: Log middleware entry
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] ===== MIDDLEWARE PROCESS START ===== URI: %s, method: %s, timestamp: %s",
+            (string) $request->getUri(),
+            $request->getMethod(),
+            date('Y-m-d H:i:s.u')
+        ));
+
         $this->debugLog("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS START =====", [
             'uri' => (string) $request->getUri(),
             'method' => $request->getMethod(),
-            'timestamp' => date('Y-m-d H:i:s.u'),
         ]);
 
         $modelParam = $route?->getArgument($this->crud_slug);
 
         if ($modelParam === null) {
+            error_log("[CRUD6 CRUD6Injector] ERROR: Model parameter not found in route");
             $this->debugLogger->error("CRUD6 [CRUD6Injector] Model parameter not found in route", [
                 'uri' => (string) $request->getUri(),
                 'route_args' => $route?->getArguments(),
@@ -279,6 +299,10 @@ class CRUD6Injector extends AbstractInjector
         $this->parseModelAndConnection($modelParam);
 
         if (!$this->validateModelName($this->currentModelName)) {
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] ERROR: Invalid model name - %s",
+                $this->currentModelName
+            ));
             $this->debugLogger->error("CRUD6 [CRUD6Injector] Invalid model name", [
                 'model_param' => $modelParam,
                 'parsed_model' => $this->currentModelName,
@@ -288,6 +312,13 @@ class CRUD6Injector extends AbstractInjector
 
         $id = $this->getIdFromRoute($request);
 
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Route parsed - model: %s, connection: %s, id: %s",
+            $this->currentModelName,
+            $this->currentConnectionName ?? 'null',
+            $id ?? 'null'
+        ));
+
         $this->debugLog("CRUD6 [CRUD6Injector] Route parsed", [
             'model' => $this->currentModelName,
             'connection' => $this->currentConnectionName,
@@ -295,16 +326,18 @@ class CRUD6Injector extends AbstractInjector
         ]);
 
         // Get configured model instance
-        $this->debugLog("CRUD6 [CRUD6Injector] Calling getInstance()", [
-            'model' => $this->currentModelName,
-            'id' => $id,
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Calling getInstance() - model: %s, id: %s",
+            $this->currentModelName,
+            $id ?? 'null'
+        ));
         $instance = $this->getInstance($id);
 
         // DEBUG: Reuse cached schema instead of loading again (FIX for duplicate load)
-        $this->debugLog("CRUD6 [CRUD6Injector] ✅ REUSING cached schema from getInstance() (avoiding duplicate load)", [
-            'model' => $this->currentModelName,
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] ✅ REUSING cached schema from getInstance() - model: %s (avoiding duplicate load)",
+            $this->currentModelName
+        ));
 
         // Reuse schema that was loaded in getInstance() instead of loading again
         // This eliminates the duplicate schema load that was happening on every request
@@ -312,16 +345,18 @@ class CRUD6Injector extends AbstractInjector
 
         if ($schema === null) {
             // This should never happen, but log if it does
-            $this->debugLog("CRUD6 [CRUD6Injector] ⚠️ WARNING: Schema cache was null, falling back to loading", [
-                'model' => $this->currentModelName,
-            ]);
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] ⚠️ WARNING: Schema cache was null, falling back to loading - model: %s",
+                $this->currentModelName
+            ));
             $schema = $this->schemaService->getSchema($this->currentModelName, $this->currentConnectionName);
         }
 
-        $this->debugLog("CRUD6 [CRUD6Injector] Schema ready for injection", [
-            'model' => $this->currentModelName,
-            'table' => $schema['table'] ?? 'unknown',
-        ]);
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Schema ready for injection - model: %s, table: %s",
+            $this->currentModelName,
+            $schema['table'] ?? 'unknown'
+        ));
 
         $this->debugLog("CRUD6 [CRUD6Injector] Injecting model and schema into request", [
             'model' => $this->currentModelName,
@@ -334,6 +369,12 @@ class CRUD6Injector extends AbstractInjector
             ->withAttribute($this->model_attribute, $instance)
             ->withAttribute($this->schema_attribute, $schema);
 
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] Request attributes set - model_attr: %s, schema_attr: %s",
+            $this->model_attribute,
+            $this->schema_attribute
+        ));
+
         $this->debugLog("CRUD6 [CRUD6Injector] Request attributes set", [
             'model' => $this->currentModelName,
             'model_attribute_name' => $this->model_attribute,
@@ -344,12 +385,22 @@ class CRUD6Injector extends AbstractInjector
             'has_schema_attribute' => $request->getAttribute($this->schema_attribute) !== null,
         ]);
 
+        error_log(sprintf(
+            "[CRUD6 CRUD6Injector] ===== MIDDLEWARE PROCESS COMPLETE ===== model: %s",
+            $this->currentModelName
+        ));
+
         $this->debugLog("CRUD6 [CRUD6Injector] ===== MIDDLEWARE PROCESS COMPLETE =====", [
             'model' => $this->currentModelName,
         ]);
 
         try {
             $response = $handler->handle($request);
+
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] Controller completed - status: %d",
+                $response->getStatusCode()
+            ));
 
             $this->debugLog("CRUD6 [CRUD6Injector] Controller invocation successful", [
                 'model' => $this->currentModelName,
@@ -358,6 +409,14 @@ class CRUD6Injector extends AbstractInjector
 
             return $response;
         } catch (\Throwable $e) {
+            error_log(sprintf(
+                "[CRUD6 CRUD6Injector] ERROR: Controller failed - %s: %s at %s:%d",
+                get_class($e),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+
             $this->debugLogger->error("CRUD6 [CRUD6Injector] Controller invocation failed", [
                 'model' => $this->currentModelName,
                 'error_type' => get_class($e),

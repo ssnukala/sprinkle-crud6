@@ -260,16 +260,19 @@ class RelationshipAction extends Base
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
             }
             
+            // Return data in Sprunje-compatible format for UFSprunjeTable
+            // UFSprunjeTable expects: { rows: [], count: number, count_filtered: number }
             $responseData = [
-                'relationship' => $relationName,
-                'title' => $relationshipConfig['title'] ?? ucfirst($relationName),
-                'type' => $type,
                 'rows' => $result['rows'],
-                'count' => $result['count'],
-                'total' => $result['total'],
+                'count' => $result['total'],           // Total count without filters
+                'count_filtered' => $result['count'],  // Count with current filters/search
+                // Additional metadata (not used by UFSprunjeTable but useful for debugging)
                 'page' => $page,
                 'per_page' => $perPage,
                 'total_pages' => $result['total_pages'],
+                'relationship' => $relationName,
+                'title' => $relationshipConfig['title'] ?? ucfirst($relationName),
+                'type' => $type,
             ];
             
             $response->getBody()->write(json_encode($responseData));

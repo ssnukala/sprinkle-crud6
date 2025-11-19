@@ -178,9 +178,67 @@ public function testComplexWorkflowNoRedundantCalls(): void
 
 ## Frontend Network Request Tracking
 
-### Setup (JavaScript)
+### Automatic Integration with CI/CD
 
-For frontend integration tests, use the `NetworkRequestTracker`:
+**Frontend network tracking is now integrated into the CI/CD pipeline!** The screenshot capture workflow automatically tracks all network requests made during page loads.
+
+**What's tracked:**
+- All network requests during each frontend page load
+- Total requests, CRUD6 API calls, schema calls
+- Redundant call detection per page
+- Overall statistics across all pages
+
+**Example output from CI:**
+```
+═══════════════════════════════════════════════════════════════
+Network Request Tracking Summary
+═══════════════════════════════════════════════════════════════
+
+📄 groups_list (/crud6/groups)
+   Total Requests:       45
+   CRUD6 API Calls:      3
+   Schema API Calls:     1
+   Redundant Call Groups: 0
+
+📄 groups_detail (/crud6/groups/1)
+   Total Requests:       38
+   CRUD6 API Calls:      2
+   Schema API Calls:     0
+   Redundant Call Groups: 0
+
+────────────────────────────────────────────────────────────────
+Overall Totals:
+   Pages Tested:         2
+   Total Requests:       83
+   Total CRUD6 Calls:    5
+   Total Schema Calls:   1
+   Total Redundant Groups: 0
+
+✅ No redundant calls detected
+═══════════════════════════════════════════════════════════════
+```
+
+### CI/CD Integration
+
+The tracking is implemented in `.github/scripts/take-screenshots-with-tracking.js` which:
+1. Uses Playwright to navigate pages (same as screenshot capture)
+2. Intercepts all network requests via Playwright's request event
+3. Tracks each request with URL, method, and resource type
+4. Analyzes for redundant calls after each page load
+5. Outputs comprehensive summary
+
+**To use in your CI:**
+```yaml
+- name: Take screenshots with network tracking
+  run: |
+    cd userfrosting
+    cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
+    node take-screenshots-with-tracking.js integration-test-paths.json
+```
+
+### Manual Setup (JavaScript)
+
+For manual frontend testing or unit tests, use the `NetworkRequestTracker`:
 
 ```javascript
 import NetworkRequestTracker from './NetworkRequestTracker';

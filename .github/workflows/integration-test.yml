@@ -296,16 +296,17 @@ jobs:
           echo "Using Playwright for authenticated tests instead"
           echo "========================================="
 
-      - name: Take screenshots of frontend pages (Modular)
+      - name: Take screenshots of frontend pages with Network Tracking
         run: |
           cd userfrosting
           
-          # Copy the modular screenshot script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/take-screenshots-modular.js .
+          # Copy the enhanced screenshot script with network tracking from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
           
           # Run the script using configuration file (already copied earlier)
           # The script will read base_url and credentials from integration-test-paths.json
-          node take-screenshots-modular.js integration-test-paths.json
+          # and track all network requests made during page loads
+          node take-screenshots-with-tracking.js integration-test-paths.json
           
           echo ""
           echo "========================================="
@@ -361,6 +362,10 @@ jobs:
           echo "   - Unauthenticated API endpoints (401 responses verified)"
           echo "   - Unauthenticated frontend routes (redirect to login verified)"
           echo "✅ Screenshots captured with authentication and uploaded as artifacts"
+          echo "✅ Network request tracking enabled for frontend pages"
+          echo "   - Tracks all network requests during page loads"
+          echo "   - Detects redundant API calls"
+          echo "   - Reports CRUD6 and schema API call statistics"
           echo ""
           echo "ℹ️  MODULAR TESTING APPROACH:"
           echo "   - Configuration files: .github/config/integration-test-*.json"
@@ -370,6 +375,7 @@ jobs:
           echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
           echo "ℹ️  Screenshots are taken after logging in with admin user credentials"
           echo "ℹ️  Both PHP and Vite servers were running during tests"
+          echo "ℹ️  Network tracking monitors all frontend API calls and flags redundant requests"
           echo ""
           echo "📸 **View Screenshots:**"
           echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -389,12 +395,20 @@ jobs:
           - ✅ Schema loading
           - ✅ Path testing - **using modular config** (unauthenticated API and frontend)
           - ✅ Screenshot capture (authenticated frontend pages)
+          - ✅ **Network request tracking** - Monitors frontend API calls and detects redundant requests
           
           ### 🎯 Modular Testing Framework
           **This workflow uses a modular, configuration-driven testing approach:**
           - **Configuration files:** `.github/config/integration-test-*.json`
           - **Reusable scripts:** `.github/scripts/*-modular.php`
           - **Easy adaptation:** Just modify JSON configs for your sprinkle!
+          
+          ### 📡 Network Request Tracking
+          **Frontend pages are now monitored for API call efficiency:**
+          - Tracks all network requests during page loads
+          - Detects redundant API calls
+          - Reports CRUD6 and schema API statistics per page
+          - Helps identify performance issues
           
           See [.github/MODULAR_TESTING_README.md](../.github/MODULAR_TESTING_README.md) for details.
           

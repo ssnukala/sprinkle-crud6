@@ -117,7 +117,8 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
 
 Each field in the schema can have the following properties:
 
-- **type**: Field data type (`string`, `integer`, `boolean`, `boolean-yn`, `date`, `datetime`, `text`, `json`, `float`, `decimal`, `password`, `email`, `url`, `phone`, `zip`, `address`, `textarea-rXcY`)
+- **type**: Field data type (`string`, `integer`, `boolean`, `boolean-tgl`, `boolean-yn`, `date`, `datetime`, `text`, `json`, `float`, `decimal`, `password`, `email`, `url`, `phone`, `zip`, `address`, `textarea-rXcY`)
+- **ui**: UI widget type for boolean fields (`checkbox`, `toggle`, `select`) - use with `type: boolean` as alternative to legacy `boolean-tgl`/`boolean-yn` types
 - **label**: Human-readable field name
 - **required**: Whether the field is required for creation
 - **sortable**: Whether the field can be sorted in lists
@@ -141,6 +142,12 @@ Each field in the schema can have the following properties:
 > - Example: A `created_at` field might be `listable: false`, `viewable: true`, `editable: false` to show it in detail view but not allow editing
 > 
 > **Note**: Setting `editable: false` automatically makes a field readonly - there's no need to specify both `editable: false` and `readonly: true`.
+
+> **Boolean Field Types**: CRUD6 supports multiple boolean field rendering options:
+> - `type: "boolean"` (default) or `type: "boolean", ui: "checkbox"` - Standard checkbox
+> - `type: "boolean-tgl"` (legacy) or `type: "boolean", ui: "toggle"` - Modern toggle switch with Enabled/Disabled label
+> - `type: "boolean-yn"` (legacy) or `type: "boolean", ui: "select"` - Yes/No dropdown select
+> - The new `ui` property format is recommended for clarity. See [examples/schema/README.md](examples/schema/README.md#boolean-field-types) for detailed examples.
 
 ### Schema Defaults
 

@@ -118,6 +118,9 @@ class CRUD6Sprunje extends Sprunje
      * parameter is present in the request. It applies OR filtering across all
      * fields defined in the $filterable array.
      * 
+     * Field names are qualified with the table name to avoid ambiguity when
+     * joins are present in the query.
+     * 
      * @param \Illuminate\Database\Eloquent\Builder $query      The query builder
      * @param string                                 $value      The search term
      * 
@@ -130,15 +133,23 @@ class CRUD6Sprunje extends Sprunje
             return $query;
         }
 
+        // Get the table name for qualifying field names
+        $tableName = $this->name;
+
         // Apply search to all filterable fields using OR logic
-        return $query->where(function ($subQuery) use ($value) {
+        return $query->where(function ($subQuery) use ($value, $tableName) {
             $isFirst = true;
             foreach ($this->filterable as $field) {
+                // Qualify field with table name if not already qualified
+                $qualifiedField = strpos($field, '.') !== false 
+                    ? $field 
+                    : "{$tableName}.{$field}";
+                
                 if ($isFirst) {
-                    $subQuery->where($field, 'LIKE', "%{$value}%");
+                    $subQuery->where($qualifiedField, 'LIKE', "%{$value}%");
                     $isFirst = false;
                 } else {
-                    $subQuery->orWhere($field, 'LIKE', "%{$value}%");
+                    $subQuery->orWhere($qualifiedField, 'LIKE', "%{$value}%");
                 }
             }
         });

@@ -40,6 +40,10 @@ php test-paths.php integration-test-paths.json
 
 Defines API and frontend paths to test, both authenticated and unauthenticated.
 
+> **NEW**: Paths can now be auto-generated from model definitions! See [MODULAR_PATH_GENERATION_README.md](MODULAR_PATH_GENERATION_README.md) for details.
+
+**Manual Approach** (defining each path):
+
 **Structure:**
 ```json
 {
@@ -76,6 +80,21 @@ Defines API and frontend paths to test, both authenticated and unauthenticated.
   }
 }
 ```
+
+**Modular Approach** (auto-generating from models):
+
+Instead of manually defining 40+ paths, define models once and generate all paths:
+
+```bash
+# 1. Define models in integration-test-models.json (5 model definitions)
+# 2. Generate paths from models
+node .github/scripts/generate-paths-from-models.js \
+  .github/config/integration-test-models.json \
+  .github/config/integration-test-paths.json
+# 3. Result: 40 paths generated automatically!
+```
+
+See [MODULAR_PATH_GENERATION_README.md](MODULAR_PATH_GENERATION_README.md) for full documentation.
 
 ### 2. integration-test-seeds.json
 

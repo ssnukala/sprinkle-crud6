@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Request Tracker - Frontend Integration Test Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 { color: #333; }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .warning { color: orange; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Network Request Tracker - Integration Test Example</h1>
+    
+    <div class="container">
+        <div class="section">
+            <h2>Test Actions</h2>
+            <p>Click buttons to simulate API calls and test the tracker:</p>
+            
+            <h3>Good Behavior (No Duplicates)</h3>
+            <button onclick="loadUsersOnce()">Load Users (Once)</button>
+            <button onclick="loadGroupsOnce()">Load Groups (Once)</button>
+            <button onclick="complexWorkflow()">Complex Workflow</button>
+            
+            <h3>Bad Behavior (Duplicates)</h3>
+            <button onclick="loadUsersTwice()">Load Users (Twice - BAD)</button>
+            <button onclick="loadSchemaTwice()">Load Schema (Twice - BAD)</button>
+            <button onclick="spamApi()">Spam API (5x - BAD)</button>
+            
+            <h3>Tracker Control</h3>
+            <button onclick="startTracking()">Start Tracking</button>
+            <button onclick="stopTracking()">Stop Tracking</button>
+            <button onclick="resetTracking()">Reset Tracker</button>
+        </div>
+        
+        <div class="section">
+            <h2>Tracker Info</h2>
+            <button onclick="showSummary()">Show Summary</button>
+            <button onclick="showRedundantCalls()">Show Redundant Calls</button>
+            <button onclick="showAllCalls()">Show All Calls</button>
+            <button onclick="checkForIssues()">Check for Issues</button>
+        </div>
+    </div>
+    
+    <div id="output"></div>
+
+    <script>
+        // Inline NetworkRequestTracker for demo purposes
+        class NetworkRequestTracker {
+            constructor() {
+                this.requests = [];
+                this.tracking = false;
+                this.originalFetch = null;
+            }
+
+            startTracking() {
+                this.tracking = true;
+                this.requests = [];
+                this.interceptFetch();
+                log('✅ Tracking started', 'success');
+            }
+
+            stopTracking() {
+                this.tracking = false;
+                this.restoreFetch();
+                log('⏸️  Tracking stopped', 'warning');
+            }
+
+            trackRequest(url, method, options = {}) {
+                if (!this.tracking) return;
+
+                const request = {
+                    url: this.normalizeUrl(url),
+                    method: method.toUpperCase(),
+                    timestamp: Date.now(),
+                    params: options.params || {},
+                    key: this.generateRequestKey(url, method, options)
+                };
+
+                this.requests.push(request);
+                log(`📡 Tracked: ${request.method} ${request.url}`);
+            }
+
+            getRequests() { return this.requests; }
+
+            getRedundantCalls() {
+                const frequency = {};
+                const redundant = {};
+
+                this.requests.forEach(req => {
+                    if (!frequency[req.key]) frequency[req.key] = [];
+                    frequency[req.key].push(req);
+                });
+
+                Object.keys(frequency).forEach(key => {
+                    if (frequency[key].length > 1) {
+                        redundant[key] = {
+                            count: frequency[key].length,
+                            calls: frequency[key]
+                        };
+                    }
+                });
+
+                return redundant;
+            }
+
+            getSchemaCalls() {
+                return this.requests.filter(req => this.isSchemaCall(req.url));
+            }
+
+            getCRUD6Calls() {
+                return this.requests.filter(req => this.isCRUD6Call(req.url));
+            }
+
+            hasRedundantCalls() {
+                return Object.keys(this.getRedundantCalls()).length > 0;
+            }
+
+            getSummary() {
+                const redundantCalls = this.getRedundantCalls();
+                
+                return {
+                    total: this.requests.length,
+                    unique: this.requests.length - Object.values(redundantCalls).reduce((sum, r) => sum + r.count - 1, 0),
+                    redundant: Object.keys(redundantCalls).length,
+                    schemaCalls: this.getSchemaCalls().length,
+                    crud6Calls: this.getCRUD6Calls().length
+                };
+            }
+
+            reset() {
+                this.requests = [];
+                log('🔄 Tracker reset', 'warning');
+            }
+
+            interceptFetch() {
+                if (typeof window.fetch === 'undefined') return;
+                this.originalFetch = window.fetch;
+                const self = this;
+
+                window.fetch = function(url, options = {}) {
+                    const method = options.method || 'GET';
+                    self.trackRequest(url, method, {
+                        params: self.extractQueryParams(url)
+                    });
+                    return self.originalFetch.apply(this, arguments);
+                };
+            }
+
+            restoreFetch() {
+                if (this.originalFetch) {
+                    window.fetch = this.originalFetch;
+                    this.originalFetch = null;
+                }
+            }
+
+            normalizeUrl(url) {
+                try {
+                    const urlObj = new URL(url, window.location.origin);
+                    return urlObj.pathname + urlObj.search;
+                } catch (e) {
+                    return url;
+                }
+            }
+
+            extractQueryParams(url) {
+                try {
+                    const urlObj = new URL(url, window.location.origin);
+                    const params = {};
+                    urlObj.searchParams.forEach((value, key) => {
+                        params[key] = value;
+                    });
+                    return params;
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            generateRequestKey(url, method) {
+                const normalizedUrl = this.normalizeUrl(url);
+                const parsedUrl = new URL(normalizedUrl, window.location.origin);
+                const path = parsedUrl.pathname;
+
+                if (this.isSchemaCall(path)) {
+                    return `${method.toUpperCase()}:${path}`;
+                }
+
+                const params = this.extractQueryParams(normalizedUrl);
+                const sortedParams = Object.keys(params).sort().map(k => `${k}=${params[k]}`).join('&');
+                const queryString = sortedParams ? `?${sortedParams}` : '';
+
+                return `${method.toUpperCase()}:${path}${queryString}`;
+            }
+
+            isSchemaCall(url) {
+                return /\/api\/crud6\/[^\/]+\/schema/.test(url);
+            }
+
+            isCRUD6Call(url) {
+                return url.startsWith('/api/crud6/');
+            }
+        }
+
+        // Global tracker instance
+        window.tracker = new NetworkRequestTracker();
+        
+        // Helper functions
+        window.log = function(message, type = '') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type ? ` class="${type}"` : '';
+            output.innerHTML += `<div${className}>[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        };
+
+        window.clearLog = function() {
+            document.getElementById('output').innerHTML = '';
+        };
+
+        // Test functions
+        window.startTracking = () => window.tracker.startTracking();
+        window.stopTracking = () => window.tracker.stopTracking();
+        window.resetTracking = function() {
+            window.tracker.reset();
+            clearLog();
+        };
+
+        window.loadUsersOnce = async () => {
+            log('🔵 Loading users...');
+            await fetch('/api/crud6/users').catch(() => {});
+        };
+
+        window.loadGroupsOnce = async () => {
+            log('🔵 Loading groups...');
+            await fetch('/api/crud6/groups').catch(() => {});
+        };
+
+        window.loadUsersTwice = async () => {
+            log('🔴 Loading users twice (redundant)...');
+            await fetch('/api/crud6/users').catch(() => {});
+            await fetch('/api/crud6/users').catch(() => {});
+        };
+
+        window.loadSchemaTwice = async () => {
+            log('🔴 Loading schema twice (redundant)...');
+            await fetch('/api/crud6/users/schema').catch(() => {});
+            await fetch('/api/crud6/users/schema').catch(() => {});
+        };
+
+        window.spamApi = async () => {
+            log('🔴 Spamming API with 5 identical calls...');
+            for (let i = 0; i < 5; i++) {
+                await fetch('/api/crud6/users/1').catch(() => {});
+            }
+        };
+
+        window.complexWorkflow = async () => {
+            log('🟢 Running complex workflow...');
+            await fetch('/api/crud6/groups').catch(() => {});
+            await fetch('/api/crud6/groups/1').catch(() => {});
+            await fetch('/api/crud6/groups/1/users').catch(() => {});
+            log('✅ Complex workflow complete');
+        };
+
+        window.showSummary = () => {
+            const summary = window.tracker.getSummary();
+            log('📊 Summary:', 'success');
+            log(JSON.stringify(summary, null, 2));
+        };
+
+        window.showRedundantCalls = () => {
+            const redundant = window.tracker.getRedundantCalls();
+            if (Object.keys(redundant).length === 0) {
+                log('✅ No redundant calls detected!', 'success');
+            } else {
+                log('⚠️  Redundant calls found:', 'error');
+                log(JSON.stringify(redundant, null, 2));
+            }
+        };
+
+        window.showAllCalls = () => {
+            const calls = window.tracker.getRequests();
+            log(`📋 All tracked calls (${calls.length} total):`, 'success');
+            calls.forEach((call, idx) => {
+                log(`${idx + 1}. ${call.method} ${call.url}`);
+            });
+        };
+
+        window.checkForIssues = () => {
+            const summary = window.tracker.getSummary();
+            const redundantCalls = window.tracker.getRedundantCalls();
+
+            log('🔍 Checking for issues...', 'success');
+            log('');
+            log(`Total calls: ${summary.total}`);
+            log(`Unique calls: ${summary.unique}`);
+            log(`Redundant call groups: ${summary.redundant}`);
+            log('');
+
+            if (summary.redundant === 0) {
+                log('✅ PASS: No redundant calls detected!', 'success');
+            } else {
+                log(`❌ FAIL: ${summary.redundant} redundant call group(s) detected!`, 'error');
+                
+                Object.keys(redundantCalls).forEach(key => {
+                    const data = redundantCalls[key];
+                    log(`   - ${data.calls[0].method} ${data.calls[0].url} (called ${data.count}x)`, 'error');
+                });
+            }
+        };
+
+        // Auto-start
+        log('🎯 Network Request Tracker Demo');
+        log('Click "Start Tracking" to begin');
+        log('');
+    </script>
+</body>
+</html>

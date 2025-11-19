@@ -1,0 +1,314 @@
+{
+    "model": "users",
+    "title": "USER.PAGE",
+    "singular_title": "USER.1",
+    "description": "USER.PAGE_DESCRIPTION",
+    "table": "users",
+    "primary_key": "id",
+    "permissions": {
+        "read": "uri_users",
+        "create": "create_user",
+        "update": "update_user_field",
+        "delete": "delete_user"
+    },
+    "default_sort": {
+        "user_name": "asc"
+    },
+    "relationships": [
+        {
+            "name": "roles",
+            "type": "many_to_many",
+            "pivot_table": "role_users",
+            "foreign_key": "user_id",
+            "related_key": "role_id",
+            "title": "ROLE.2",
+            "actions": {
+                "on_create": {
+                    "attach": [
+                        {
+                            "related_id": 1,
+                            "description": "Assign default role to new users",
+                            "pivot_data": {
+                                "created_at": "now",
+                                "updated_at": "now"
+                            }
+                        }
+                    ]
+                },
+                "on_update": {
+                    "sync": "role_ids",
+                    "description": "Sync user roles from form input"
+                },
+                "on_delete": {
+                    "detach": "all",
+                    "description": "Remove all role associations when user is deleted"
+                }
+            }
+        },
+        {
+            "name": "permissions",
+            "type": "belongs_to_many_through",
+            "through": "roles",
+            "first_pivot_table": "role_users",
+            "first_foreign_key": "user_id",
+            "first_related_key": "role_id",
+            "second_pivot_table": "permission_roles",
+            "second_foreign_key": "role_id",
+            "second_related_key": "permission_id",
+            "title": "PERMISSION.2"
+        }
+    ],
+    "details": [
+        {
+            "model": "activities",
+            "foreign_key": "user_id",
+            "list_fields": [
+                "occurred_at",
+                "type",
+                "description",
+                "ip_address"
+            ],
+            "title": "ACTIVITY.2"
+        },
+        {
+            "model": "roles",
+            "list_fields": [
+                "name",
+                "slug",
+                "description"
+            ],
+            "title": "ROLE.2"
+        },
+        {
+            "model": "permissions",
+            "list_fields": [
+                "slug",
+                "name",
+                "description"
+            ],
+            "title": "PERMISSION.2"
+        }
+    ],
+    "actions": [
+        {
+            "key": "toggle_enabled",
+            "label": "USER.ADMIN.TOGGLE_ENABLED",
+            "icon": "power-off",
+            "type": "field_update",
+            "field": "flag_enabled",
+            "toggle": true,
+            "style": "default",
+            "permission": "update_user_field",
+            "success_message": "USER.ADMIN.TOGGLE_ENABLED_SUCCESS"
+        },
+        {
+            "key": "toggle_verified",
+            "label": "USER.ADMIN.TOGGLE_VERIFIED",
+            "icon": "check-circle",
+            "type": "field_update",
+            "field": "flag_verified",
+            "toggle": true,
+            "style": "default",
+            "permission": "update_user_field",
+            "success_message": "USER.ADMIN.TOGGLE_VERIFIED_SUCCESS"
+        },
+        {
+            "key": "reset_password",
+            "label": "USER.ADMIN.PASSWORD_RESET",
+            "icon": "envelope",
+            "type": "api_call",
+            "endpoint": "/api/users/{id}/password/reset",
+            "method": "POST",
+            "style": "secondary",
+            "permission": "update_user_field",
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
+            "success_message": "USER.ADMIN.PASSWORD_RESET_SUCCESS"
+        },
+        {
+            "key": "disable_user",
+            "label": "USER.DISABLE",
+            "icon": "ban",
+            "type": "field_update",
+            "field": "flag_enabled",
+            "value": false,
+            "style": "danger",
+            "permission": "update_user_field",
+            "confirm": "USER.DISABLE_CONFIRM",
+            "success_message": "DISABLE_SUCCESSFUL"
+        },
+        {
+            "key": "enable_user",
+            "label": "USER.ENABLE",
+            "icon": "check",
+            "type": "field_update",
+            "field": "flag_enabled",
+            "value": true,
+            "style": "primary",
+            "permission": "update_user_field",
+            "confirm": "USER.ENABLE_CONFIRM",
+            "success_message": "ENABLE_SUCCESSFUL"
+        }
+    ],
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "readonly": true,
+            "show_in": ["detail"]
+        },
+        "user_name": {
+            "type": "string",
+            "label": "Username",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "unique": true,
+                "length": {
+                    "min": 1,
+                    "max": 50
+                },
+                "username": true,
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "first_name": {
+            "type": "string",
+            "label": "First Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 20
+                },
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "last_name": {
+            "type": "string",
+            "label": "Last Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 1,
+                    "max": 30
+                },
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "email": {
+            "type": "email",
+            "label": "Email",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"],
+            "validation": {
+                "required": true,
+                "email": true,
+                "unique": true,
+                "length": {
+                    "max": 254
+                },
+                "no_leading_whitespace": true,
+                "no_trailing_whitespace": true
+            }
+        },
+        "locale": {
+            "type": "string",
+            "label": "Locale",
+            "required": false,
+            "show_in": ["form", "detail"],
+            "default": "en_US",
+            "validation": {
+                "length": {
+                    "max": 10
+                }
+            }
+        },
+        "group_id": {
+            "type": "integer",
+            "label": "Group",
+            "required": false,
+            "show_in": ["form", "detail"]
+        },
+        "flag_verified": {
+            "type": "boolean",
+            "ui": "toggle",
+            "label": "Verified",
+            "description": "Email verification status",
+            "default": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"]
+        },
+        "flag_enabled": {
+            "type": "boolean",
+            "ui": "toggle",
+            "label": "Enabled",
+            "description": "Account enabled status",
+            "default": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": ["list", "form", "detail"]
+        },
+        "role_ids": {
+            "type": "multiselect",
+            "label": "Roles",
+            "description": "User roles (used for sync on update)",
+            "lookup": {
+                "model": "roles",
+                "id": "id",
+                "desc": "name"
+            },
+            "required": false,
+            "show_in": ["form"]
+        },
+        "password": {
+            "type": "password",
+            "label": "Password",
+            "required": false,
+            "show_in": ["create", "edit"],
+            "validation": {
+                "length": {
+                    "min": 8
+                }
+            }
+        },
+        "deleted_at": {
+            "type": "datetime",
+            "label": "Deleted At",
+            "readonly": true,
+            "show_in": [],
+            "date_format": "Y-m-d H:i:s"
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "readonly": true,
+            "show_in": ["detail"],
+            "date_format": "Y-m-d H:i:s"
+        }
+    }
+}

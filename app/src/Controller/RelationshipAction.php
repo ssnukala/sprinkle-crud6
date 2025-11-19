@@ -66,8 +66,15 @@ class RelationshipAction extends Base
         // Get the relationship name from the route
         $relationName = $this->getParameter($request, 'relation');
         
-        // Determine if this is attach (POST) or detach (DELETE)
+        // Determine the HTTP method
         $method = $request->getMethod();
+        
+        // Handle GET request - retrieve relationship data
+        if ($method === 'GET') {
+            return $this->handleGetRelationship($crudSchema, $crudModel, $request, $response, $relationName);
+        }
+        
+        // Determine if this is attach (POST) or detach (DELETE)
         $isAttach = ($method === 'POST');
 
         // Access control check
@@ -166,5 +173,299 @@ class RelationshipAction extends Base
         ]);
 
         return ApiResponse::success($response, $message);
+    }
+
+    /**
+     * Handle GET request to retrieve relationship data.
+     * 
+     * Supports pagination, sorting, and filtering.
+     * 
+     * @param array               $crudSchema     The schema configuration
+     * @param CRUD6ModelInterface $crudModel      The configured model instance
+     * @param Request             $request        The HTTP request
+     * @param Response            $response       The HTTP response
+     * @param string              $relationName   The relationship name
+     * 
+     * @return Response JSON response with relationship data
+     */
+    protected function handleGetRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response, string $relationName): Response
+    {
+        // Access control check for read
+        $this->validateAccess($crudSchema, 'read');
+        
+        // Find the relationship configuration
+        $relationships = $crudSchema['relationships'] ?? [];
+        $relationshipConfig = null;
+        
+        foreach ($relationships as $config) {
+            if ($config['name'] === $relationName) {
+                $relationshipConfig = $config;
+                break;
+            }
+        }
+        
+        if ($relationshipConfig === null) {
+            $errorData = [
+                'error' => "Relationship '{$relationName}' not found in schema for model '{$crudSchema['model']}'"
+            ];
+            $response->getBody()->write(json_encode($errorData));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+        
+        // Get query parameters for pagination, sorting, filtering
+        $queryParams = $request->getQueryParams();
+        $page = max(1, (int) ($queryParams['page'] ?? 1));
+        $perPage = min(100, max(1, (int) ($queryParams['per_page'] ?? 10)));
+        $sortField = $queryParams['sort'] ?? null;
+        $sortDirection = strtoupper($queryParams['direction'] ?? 'ASC');
+        $search = $queryParams['search'] ?? null;
+        $listFields = $queryParams['fields'] ?? [];
+        
+        // If list_fields not provided in query, check details section of schema
+        if (empty($listFields)) {
+            $detailsConfig = $crudSchema['details'] ?? [];
+            foreach ($detailsConfig as $detail) {
+                if ($detail['model'] === $relationName) {
+                    $listFields = $detail['list_fields'] ?? [];
+                    break;
+                }
+            }
+        }
+        
+        $this->logger->debug("CRUD6 [RelationshipAction] GET relationship", [
+            'model' => $crudSchema['model'],
+            'record_id' => $crudModel->id,
+            'relationship' => $relationName,
+            'type' => $relationshipConfig['type'] ?? 'unknown',
+            'page' => $page,
+            'per_page' => $perPage,
+            'sort_field' => $sortField,
+            'sort_direction' => $sortDirection,
+            'search' => $search,
+        ]);
+        
+        // Query based on relationship type
+        $type = $relationshipConfig['type'] ?? null;
+        
+        try {
+            if ($type === 'many_to_many') {
+                $result = $this->getManyToManyRelationship($crudSchema, $crudModel, $relationshipConfig, $listFields, $page, $perPage, $sortField, $sortDirection, $search);
+            } elseif ($type === 'belongs_to_many_through') {
+                $result = $this->getBelongsToManyThroughRelationship($crudSchema, $crudModel, $relationshipConfig, $listFields, $page, $perPage, $sortField, $sortDirection, $search);
+            } else {
+                $errorData = [
+                    'error' => "Unsupported relationship type '{$type}' for relationship '{$relationName}'"
+                ];
+                $response->getBody()->write(json_encode($errorData));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            
+            $responseData = [
+                'relationship' => $relationName,
+                'title' => $relationshipConfig['title'] ?? ucfirst($relationName),
+                'type' => $type,
+                'rows' => $result['rows'],
+                'count' => $result['count'],
+                'total' => $result['total'],
+                'page' => $page,
+                'per_page' => $perPage,
+                'total_pages' => $result['total_pages'],
+            ];
+            
+            $response->getBody()->write(json_encode($responseData));
+            return $response->withHeader('Content-Type', 'application/json');
+            
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [RelationshipAction] Failed to get relationship", [
+                'model' => $crudSchema['model'],
+                'record_id' => $crudModel->id,
+                'relationship' => $relationName,
+                'error' => $e->getMessage(),
+            ]);
+            
+            $errorData = [
+                'error' => 'Failed to retrieve relationship data',
+                'message' => $e->getMessage()
+            ];
+            $response->getBody()->write(json_encode($errorData));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+    }
+
+    /**
+     * Get many_to_many relationship data with pagination.
+     * 
+     * @param array               $crudSchema        The schema configuration
+     * @param CRUD6ModelInterface $crudModel         The configured model instance
+     * @param array               $relationshipConfig The relationship configuration
+     * @param array               $listFields        Fields to include
+     * @param int                 $page              Page number
+     * @param int                 $perPage           Items per page
+     * @param string|null         $sortField         Sort field
+     * @param string              $sortDirection     Sort direction (ASC/DESC)
+     * @param string|null         $search            Search term
+     * 
+     * @return array Result with rows, count, total, total_pages
+     */
+    protected function getManyToManyRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, array $relationshipConfig, array $listFields, int $page, int $perPage, ?string $sortField, string $sortDirection, ?string $search): array
+    {
+        $pivotTable = $relationshipConfig['pivot_table'] ?? null;
+        $foreignKey = $relationshipConfig['foreign_key'] ?? null;
+        $relatedKey = $relationshipConfig['related_key'] ?? null;
+        $relatedModel = $relationshipConfig['name'] ?? null;
+        
+        if (!$pivotTable || !$foreignKey || !$relatedKey || !$relatedModel) {
+            throw new \RuntimeException("Invalid many_to_many relationship configuration");
+        }
+        
+        // Load the related model's schema
+        $relatedSchema = $this->schemaService->getSchema($relatedModel);
+        $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+        $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+        
+        // Build the base query
+        $query = $this->db->table($relatedTable)
+            ->join($pivotTable, "{$pivotTable}.{$relatedKey}", '=', "{$relatedTable}.{$relatedPrimaryKey}")
+            ->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
+        
+        // Apply search if provided
+        if ($search && !empty($listFields)) {
+            $query->where(function($q) use ($search, $listFields, $relatedTable) {
+                foreach ($listFields as $field) {
+                    $q->orWhere("{$relatedTable}.{$field}", 'LIKE', "%{$search}%");
+                }
+            });
+        }
+        
+        // Get total count
+        $total = $query->count();
+        
+        // Apply sorting
+        if ($sortField) {
+            $query->orderBy("{$relatedTable}.{$sortField}", $sortDirection);
+        } else {
+            $query->orderBy("{$relatedTable}.{$relatedPrimaryKey}", 'ASC');
+        }
+        
+        // Apply field filtering
+        if (!empty($listFields)) {
+            if (!in_array($relatedPrimaryKey, $listFields)) {
+                $listFields[] = $relatedPrimaryKey;
+            }
+            $selectFields = array_map(function($field) use ($relatedTable) {
+                return "{$relatedTable}.{$field}";
+            }, $listFields);
+            $query->select($selectFields);
+        } else {
+            $query->select("{$relatedTable}.*");
+        }
+        
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $query->offset($offset)->limit($perPage);
+        
+        $results = $query->get();
+        $rows = json_decode(json_encode($results), true);
+        
+        return [
+            'rows' => $rows,
+            'count' => count($rows),
+            'total' => $total,
+            'total_pages' => (int) ceil($total / $perPage),
+        ];
+    }
+
+    /**
+     * Get belongs_to_many_through relationship data with pagination.
+     * 
+     * @param array               $crudSchema        The schema configuration
+     * @param CRUD6ModelInterface $crudModel         The configured model instance
+     * @param array               $relationshipConfig The relationship configuration
+     * @param array               $listFields        Fields to include
+     * @param int                 $page              Page number
+     * @param int                 $perPage           Items per page
+     * @param string|null         $sortField         Sort field
+     * @param string              $sortDirection     Sort direction (ASC/DESC)
+     * @param string|null         $search            Search term
+     * 
+     * @return array Result with rows, count, total, total_pages
+     */
+    protected function getBelongsToManyThroughRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, array $relationshipConfig, array $listFields, int $page, int $perPage, ?string $sortField, string $sortDirection, ?string $search): array
+    {
+        // belongs_to_many_through uses an intermediate model
+        // e.g., Country -> User -> Post (get posts through users)
+        
+        $throughModel = $relationshipConfig['through'] ?? null;
+        $foreignKey = $relationshipConfig['foreign_key'] ?? null; // e.g., country_id in users table
+        $throughKey = $relationshipConfig['through_key'] ?? null; // e.g., user_id in posts table
+        $relatedModel = $relationshipConfig['name'] ?? null;
+        
+        if (!$throughModel || !$foreignKey || !$throughKey || !$relatedModel) {
+            throw new \RuntimeException("Invalid belongs_to_many_through relationship configuration");
+        }
+        
+        // Load schemas
+        $throughSchema = $this->schemaService->getSchema($throughModel);
+        $throughTable = $throughSchema['table'] ?? $throughModel;
+        $throughPrimaryKey = $throughSchema['primary_key'] ?? 'id';
+        
+        $relatedSchema = $this->schemaService->getSchema($relatedModel);
+        $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+        $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+        
+        // Build the query
+        // SELECT related.* FROM related
+        // INNER JOIN through ON through.id = related.through_key
+        // WHERE through.foreign_key = crudModel.id
+        
+        $query = $this->db->table($relatedTable)
+            ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$relatedTable}.{$throughKey}")
+            ->where("{$throughTable}.{$foreignKey}", $crudModel->id);
+        
+        // Apply search if provided
+        if ($search && !empty($listFields)) {
+            $query->where(function($q) use ($search, $listFields, $relatedTable) {
+                foreach ($listFields as $field) {
+                    $q->orWhere("{$relatedTable}.{$field}", 'LIKE', "%{$search}%");
+                }
+            });
+        }
+        
+        // Get total count
+        $total = $query->count();
+        
+        // Apply sorting
+        if ($sortField) {
+            $query->orderBy("{$relatedTable}.{$sortField}", $sortDirection);
+        } else {
+            $query->orderBy("{$relatedTable}.{$relatedPrimaryKey}", 'ASC');
+        }
+        
+        // Apply field filtering
+        if (!empty($listFields)) {
+            if (!in_array($relatedPrimaryKey, $listFields)) {
+                $listFields[] = $relatedPrimaryKey;
+            }
+            $selectFields = array_map(function($field) use ($relatedTable) {
+                return "{$relatedTable}.{$field}";
+            }, $listFields);
+            $query->select($selectFields);
+        } else {
+            $query->select("{$relatedTable}.*");
+        }
+        
+        // Apply pagination
+        $offset = ($page - 1) * $perPage;
+        $query->offset($offset)->limit($perPage);
+        
+        $results = $query->get();
+        $rows = json_decode(json_encode($results), true);
+        
+        return [
+            'rows' => $rows,
+            'count' => count($rows),
+            'total' => $total,
+            'total_pages' => (int) ceil($total / $perPage),
+        ];
     }
 }

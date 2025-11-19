@@ -536,12 +536,17 @@ class EditAction extends Base
             'list_fields' => $listFields,
         ]);
         
-        // For now, support many_to_many relationships
+        // Support many_to_many relationships
         if ($type === 'many_to_many') {
             return $this->queryManyToManyRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields);
         }
         
-        // TODO: Support other relationship types (belongs_to_many_through, etc.)
+        // Support belongs_to_many_through relationships
+        if ($type === 'belongs_to_many_through') {
+            return $this->queryBelongsToManyThroughRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields);
+        }
+        
+        // Unsupported relationship type
         $this->debugLog("CRUD6 [EditAction] Unsupported relationship type", [
             'type' => $type,
             'related_model' => $relatedModel,
@@ -630,6 +635,94 @@ class EditAction extends Base
             
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [EditAction] Failed to query many_to_many relationship", [
+                'relationship' => $relationship,
+                'record_id' => $recordId,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return [];
+        }
+    }
+
+    /**
+     * Query a belongs_to_many_through relationship.
+     * 
+     * @param array               $crudSchema    The schema configuration
+     * @param CRUD6ModelInterface $crudModel     The configured model instance
+     * @param mixed               $recordId      The record ID
+     * @param array               $relationship  The relationship configuration
+     * @param array               $listFields    Fields to include in results
+     * 
+     * @return array Array of related records
+     */
+    protected function queryBelongsToManyThroughRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, array $relationship, array $listFields): array
+    {
+        $throughModel = $relationship['through'] ?? null;
+        $foreignKey = $relationship['foreign_key'] ?? null;
+        $throughKey = $relationship['through_key'] ?? null;
+        $relatedModel = $relationship['name'] ?? null;
+        
+        if (!$throughModel || !$foreignKey || !$throughKey || !$relatedModel) {
+            $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
+                'relationship' => $relationship,
+            ]);
+            return [];
+        }
+        
+        try {
+            // Load schemas
+            $throughSchema = $this->schemaService->getSchema($throughModel);
+            $throughTable = $throughSchema['table'] ?? $throughModel;
+            $throughPrimaryKey = $throughSchema['primary_key'] ?? 'id';
+            
+            $relatedSchema = $this->schemaService->getSchema($relatedModel);
+            $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+            $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+            
+            $this->debugLog("CRUD6 [EditAction] Query belongs_to_many_through relationship", [
+                'through_table' => $throughTable,
+                'foreign_key' => $foreignKey,
+                'through_key' => $throughKey,
+                'related_table' => $relatedTable,
+                'related_primary_key' => $relatedPrimaryKey,
+                'list_fields' => $listFields,
+            ]);
+            
+            // Build the query
+            // SELECT related.* FROM related
+            // INNER JOIN through ON through.id = related.through_key
+            // WHERE through.foreign_key = recordId
+            
+            $query = $this->db->table($relatedTable)
+                ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$relatedTable}.{$throughKey}")
+                ->where("{$throughTable}.{$foreignKey}", $recordId);
+            
+            // Apply field filtering if list_fields is specified
+            if (!empty($listFields)) {
+                if (!in_array($relatedPrimaryKey, $listFields)) {
+                    $listFields[] = $relatedPrimaryKey;
+                }
+                $selectFields = array_map(function($field) use ($relatedTable) {
+                    return "{$relatedTable}.{$field}";
+                }, $listFields);
+                $query->select($selectFields);
+            } else {
+                $query->select("{$relatedTable}.*");
+            }
+            
+            $results = $query->get();
+            
+            $this->debugLog("CRUD6 [EditAction] Belongs_to_many_through query executed", [
+                'related_model' => $relatedModel,
+                'record_id' => $recordId,
+                'row_count' => count($results),
+            ]);
+            
+            // Convert to array
+            return json_decode(json_encode($results), true);
+            
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [EditAction] Failed to query belongs_to_many_through relationship", [
                 'relationship' => $relationship,
                 'record_id' => $recordId,
                 'error' => $e->getMessage(),

@@ -50,10 +50,44 @@ class RedundantApiCallsTest extends AdminTestCase
     }
 
     /**
-     * Cleanup after each test
+     * Cleanup after each test and output API call tracking summary
      */
     public function tearDown(): void
     {
+        // Output API call tracking summary if any calls were made
+        if ($this->getApiCallTracker() !== null) {
+            $summary = $this->getApiCallSummary();
+            
+            if ($summary['total'] > 0) {
+                echo "\n";
+                echo "═══════════════════════════════════════════════════════════════\n";
+                echo "API Call Tracking Summary for " . $this->getName() . "\n";
+                echo "═══════════════════════════════════════════════════════════════\n";
+                echo sprintf("  Total API Calls:        %d\n", $summary['total']);
+                echo sprintf("  Unique Calls:           %d\n", $summary['unique']);
+                echo sprintf("  Redundant Call Groups:  %d\n", $summary['redundant']);
+                echo sprintf("  Schema API Calls:       %d\n", $summary['schema_calls']);
+                echo sprintf("  CRUD6 API Calls:        %d\n", $summary['crud6_calls']);
+                
+                // Show redundant calls if any
+                if ($summary['redundant'] > 0) {
+                    echo "\n⚠️  WARNING: Redundant API calls detected!\n";
+                    $redundantCalls = $this->getRedundantApiCalls();
+                    foreach ($redundantCalls as $key => $data) {
+                        $firstCall = $data['calls'][0];
+                        echo sprintf("  - %s %s (called %dx)\n", 
+                            $firstCall['method'], 
+                            $firstCall['uri'], 
+                            $data['count']
+                        );
+                    }
+                } else {
+                    echo "\n✅ No redundant calls detected\n";
+                }
+                echo "═══════════════════════════════════════════════════════════════\n";
+            }
+        }
+        
         $this->tearDownApiTracking();
         parent::tearDown();
     }
@@ -69,8 +103,6 @@ class RedundantApiCallsTest extends AdminTestCase
 
         Group::factory()->count(3)->create();
 
-        // Start tracking
-        $this->startApiTracking();
 
         // Make a single API call
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
@@ -97,7 +129,6 @@ class RedundantApiCallsTest extends AdminTestCase
         $user = User::factory()->create();
         $this->actAsUser($user, permissions: ['uri_crud6']);
 
-        $this->startApiTracking();
 
         // Make a schema API call (this endpoint doesn't exist yet, but we're testing tracking)
         // Note: This will return 404 but we're testing the tracking, not the endpoint
@@ -122,7 +153,6 @@ class RedundantApiCallsTest extends AdminTestCase
         /** @var Group */
         $group = Group::factory()->create();
 
-        $this->startApiTracking();
 
         // Make the same API call twice
         $uri = '/api/crud6/groups/' . $group->id;
@@ -161,7 +191,6 @@ class RedundantApiCallsTest extends AdminTestCase
 
         Group::factory()->count(3)->create();
 
-        $this->startApiTracking();
 
         // Make the API call
         $uri = '/api/crud6/groups';
@@ -187,7 +216,6 @@ class RedundantApiCallsTest extends AdminTestCase
         /** @var Group */
         $group2 = Group::factory()->create();
 
-        $this->startApiTracking();
 
         // Make calls to different endpoints
         $request1 = $this->createJsonRequest('GET', '/api/crud6/groups/' . $group1->id);
@@ -223,7 +251,6 @@ class RedundantApiCallsTest extends AdminTestCase
 
         Group::factory()->count(2)->create();
 
-        $this->startApiTracking();
 
         // Make CRUD6 API calls
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
@@ -259,7 +286,6 @@ class RedundantApiCallsTest extends AdminTestCase
             'group_id' => $group->id,
         ]);
 
-        $this->startApiTracking();
 
         // Step 1: Load groups list
         $request1 = $this->createJsonRequest('GET', '/api/crud6/groups');
@@ -298,7 +324,6 @@ class RedundantApiCallsTest extends AdminTestCase
 
         Group::factory()->create();
 
-        $this->startApiTracking();
 
         // Make a call
         $request = $this->createJsonRequest('GET', '/api/crud6/groups');
@@ -330,7 +355,6 @@ class RedundantApiCallsTest extends AdminTestCase
         /** @var Group */
         $group = Group::factory()->create();
 
-        $this->startApiTracking();
 
         // Make the same call multiple times
         $uri = '/api/crud6/groups/' . $group->id;

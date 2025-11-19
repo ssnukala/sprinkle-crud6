@@ -11,7 +11,44 @@ The CRUD6 sprinkle now includes comprehensive tools for tracking and detecting r
 - **Duplicate frontend network requests** from JavaScript code
 - **Performance issues** caused by unnecessary API requests
 
+**All integration tests now automatically track API calls and output a summary after each test.**
+
 ## Backend API Call Tracking
+
+### Automatic Integration
+
+The tracking is now integrated into existing integration tests like `CRUD6GroupsIntegrationTest`. The `TracksApiCalls` trait is added and setUp/tearDown methods automatically start tracking and output summaries.
+
+Example output after running a test:
+```
+═══════════════════════════════════════════════════════════════
+API Call Tracking Summary for testGroupsListApiReturnsGroups
+═══════════════════════════════════════════════════════════════
+  Total API Calls:        1
+  Unique Calls:           1
+  Redundant Call Groups:  0
+  Schema API Calls:       0
+  CRUD6 API Calls:        1
+
+✅ No redundant calls detected
+═══════════════════════════════════════════════════════════════
+```
+
+If redundant calls are detected:
+```
+═══════════════════════════════════════════════════════════════
+API Call Tracking Summary for testComplexWorkflow
+═══════════════════════════════════════════════════════════════
+  Total API Calls:        4
+  Unique Calls:           2
+  Redundant Call Groups:  1
+  Schema API Calls:       0
+  CRUD6 API Calls:        4
+
+⚠️  WARNING: Redundant API calls detected!
+  - GET /api/crud6/users (called 3x)
+═══════════════════════════════════════════════════════════════
+```
 
 ### Setup
 
@@ -24,11 +61,25 @@ class MyIntegrationTest extends AdminTestCase
 {
     use TracksApiCalls;
     
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->startApiTracking();
+    }
+    
+    public function tearDown(): void
+    {
+        // Output summary automatically
+        if ($this->getApiCallTracker() !== null) {
+            $summary = $this->getApiCallSummary();
+            // ... format and echo summary ...
+        }
+        $this->tearDownApiTracking();
+        parent::tearDown();
+    }
+    
     public function testMyFeature(): void
     {
-        // Start tracking
-        $this->startApiTracking();
-        
         // Make API calls using handleRequestWithTracking()
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);

@@ -15,7 +15,7 @@
  */
 
 import { chromium } from 'playwright';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 /**
  * Network Request Tracker (integrated from NetworkRequestTracker.js)
@@ -157,6 +157,71 @@ class NetworkRequestTracker {
         
         return report;
     }
+
+    /**
+     * Generate a detailed text report of all network requests
+     */
+    getDetailedReport() {
+        let report = '';
+        report += '═══════════════════════════════════════════════════════════════════════════════\n';
+        report += 'NETWORK REQUEST TRACKING DETAILED REPORT\n';
+        report += '═══════════════════════════════════════════════════════════════════════════════\n';
+        report += `Generated: ${new Date().toISOString()}\n`;
+        report += `Total Requests: ${this.requests.length}\n`;
+        report += '\n';
+
+        // Group requests by type
+        const apiRequests = this.requests.filter(r => r.url.includes('/api/'));
+        const crud6Requests = this.getCRUD6Calls();
+        const schemaRequests = this.getSchemaCalls();
+        const otherRequests = this.requests.filter(r => !r.url.includes('/api/'));
+
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        report += 'SUMMARY BY TYPE\n';
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        report += `Total Requests:        ${this.requests.length}\n`;
+        report += `API Requests:          ${apiRequests.length}\n`;
+        report += `  - CRUD6 API:         ${crud6Requests.length}\n`;
+        report += `  - Schema API:        ${schemaRequests.length}\n`;
+        report += `Other Requests:        ${otherRequests.length}\n`;
+        report += '\n';
+
+        // Redundant calls section
+        const redundant = this.getRedundantCalls();
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        report += 'REDUNDANT CALLS DETECTION\n';
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        if (Object.keys(redundant).length > 0) {
+            report += `⚠️  WARNING: ${Object.keys(redundant).length} redundant call group(s) detected!\n\n`;
+            report += this.getRedundantCallsReport();
+        } else {
+            report += '✅ No redundant calls detected.\n';
+        }
+        report += '\n';
+
+        // Detailed request list
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        report += 'ALL REQUESTS (CHRONOLOGICAL ORDER)\n';
+        report += '───────────────────────────────────────────────────────────────────────────────\n';
+        this.requests.forEach((req, idx) => {
+            const time = new Date(req.timestamp).toISOString();
+            report += `${idx + 1}. [${time}] ${req.method} ${req.url}\n`;
+            report += `   Resource Type: ${req.resourceType}\n`;
+            if (this.isCRUD6Call(req.url)) {
+                report += `   📌 CRUD6 API Call\n`;
+            }
+            if (this.isSchemaCall(req.url)) {
+                report += `   📌 Schema API Call\n`;
+            }
+            report += '\n';
+        });
+
+        report += '═══════════════════════════════════════════════════════════════════════════════\n';
+        report += 'END OF REPORT\n';
+        report += '═══════════════════════════════════════════════════════════════════════════════\n';
+
+        return report;
+    }
 }
 
 async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOverride, passwordOverride) {
@@ -267,6 +332,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         let successCount = 0;
         let failCount = 0;
         const pageNetworkStats = [];
+        const pageNetworkDetails = []; // Store detailed requests per page
 
         for (const screenshot of screenshots) {
             console.log('');
@@ -274,9 +340,8 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`   Path: ${screenshot.path}`);
             console.log(`   Description: ${screenshot.description}`);
 
-            // Reset tracker for this page
-            networkTracker.reset();
-            networkTracker.startTracking();
+            // Mark the start of this page's requests
+            const requestsBeforePage = networkTracker.getRequests().length;
 
             try {
                 await page.goto(`${baseUrl}${screenshot.path}`, { waitUntil: 'networkidle', timeout: 30000 });
@@ -299,15 +364,29 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                     });
                     console.log(`   ✅ Screenshot saved: ${screenshotPath}`);
                     
-                    // Get network stats for this page
-                    const summary = networkTracker.getSummary();
+                    // Get requests made during this page load
+                    const allRequests = networkTracker.getRequests();
+                    const pageRequests = allRequests.slice(requestsBeforePage);
+                    
+                    // Calculate stats for this page
+                    const pageCRUD6 = pageRequests.filter(r => networkTracker.isCRUD6Call(r.url)).length;
+                    const pageSchema = pageRequests.filter(r => networkTracker.isSchemaCall(r.url)).length;
+                    
                     pageNetworkStats.push({
                         name: screenshot.name,
                         path: screenshot.path,
-                        ...summary
+                        total: pageRequests.length,
+                        crud6Calls: pageCRUD6,
+                        schemaCalls: pageSchema
                     });
                     
-                    console.log(`   📡 Network: ${summary.total} requests (${summary.crud6Calls} CRUD6, ${summary.redundant} redundant groups)`);
+                    pageNetworkDetails.push({
+                        name: screenshot.name,
+                        path: screenshot.path,
+                        requests: pageRequests
+                    });
+                    
+                    console.log(`   📡 Network: ${pageRequests.length} requests (${pageCRUD6} CRUD6, ${pageSchema} Schema)`);
                     
                     successCount++;
                 }
@@ -340,7 +419,6 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         
         let totalRequests = 0;
         let totalCRUD6 = 0;
-        let totalRedundant = 0;
         let totalSchema = 0;
         
         pageNetworkStats.forEach(stats => {
@@ -348,22 +426,20 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`   Total Requests:       ${stats.total}`);
             console.log(`   CRUD6 API Calls:      ${stats.crud6Calls}`);
             console.log(`   Schema API Calls:     ${stats.schemaCalls}`);
-            console.log(`   Redundant Call Groups: ${stats.redundant}`);
-            
-            if (stats.redundant > 0) {
-                console.log(`   ⚠️  WARNING: Redundant calls detected!`);
-            }
             
             totalRequests += stats.total;
             totalCRUD6 += stats.crud6Calls;
-            totalRedundant += stats.redundant;
             totalSchema += stats.schemaCalls;
         });
+        
+        const allRequests = networkTracker.getRequests();
+        const redundantCalls = networkTracker.getRedundantCalls();
+        const totalRedundant = Object.keys(redundantCalls).length;
         
         console.log('\n' + '─'.repeat(80));
         console.log('Overall Totals:');
         console.log(`   Pages Tested:         ${pageNetworkStats.length}`);
-        console.log(`   Total Requests:       ${totalRequests}`);
+        console.log(`   Total Requests:       ${allRequests.length}`);
         console.log(`   Total CRUD6 Calls:    ${totalCRUD6}`);
         console.log(`   Total Schema Calls:   ${totalSchema}`);
         console.log(`   Total Redundant Groups: ${totalRedundant}`);
@@ -374,6 +450,99 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log('\n✅ No redundant calls detected');
         }
         console.log('═══════════════════════════════════════════════════════════════');
+
+        // Generate and save detailed network report to file
+        console.log('');
+        console.log('📝 Generating detailed network request report...');
+        
+        let detailedReport = '';
+        detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
+        detailedReport += 'NETWORK REQUEST TRACKING DETAILED REPORT\n';
+        detailedReport += 'UserFrosting CRUD6 Sprinkle Integration Test\n';
+        detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
+        detailedReport += `Generated: ${new Date().toISOString()}\n`;
+        detailedReport += `Base URL: ${baseUrl}\n`;
+        detailedReport += `Total Pages Tested: ${pageNetworkStats.length}\n`;
+        detailedReport += `Total Network Requests: ${allRequests.length}\n`;
+        detailedReport += '\n';
+
+        // Summary section
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        detailedReport += 'SUMMARY BY TYPE\n';
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        detailedReport += `Total Requests:        ${allRequests.length}\n`;
+        detailedReport += `CRUD6 API Calls:       ${totalCRUD6}\n`;
+        detailedReport += `Schema API Calls:      ${totalSchema}\n`;
+        detailedReport += `Redundant Call Groups: ${totalRedundant}\n`;
+        detailedReport += '\n';
+
+        // Per-page breakdown
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        detailedReport += 'PER-PAGE BREAKDOWN\n';
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        pageNetworkDetails.forEach((pageDetail, idx) => {
+            detailedReport += `\n${idx + 1}. ${pageDetail.name}\n`;
+            detailedReport += `   Path: ${pageDetail.path}\n`;
+            detailedReport += `   Requests: ${pageDetail.requests.length}\n`;
+            detailedReport += '\n   Request Details:\n';
+            pageDetail.requests.forEach((req, reqIdx) => {
+                const time = new Date(req.timestamp).toISOString();
+                detailedReport += `   ${reqIdx + 1}. [${time}] ${req.method} ${req.url}\n`;
+                detailedReport += `      Resource Type: ${req.resourceType}\n`;
+                if (networkTracker.isCRUD6Call(req.url)) {
+                    detailedReport += `      📌 CRUD6 API Call\n`;
+                }
+                if (networkTracker.isSchemaCall(req.url)) {
+                    detailedReport += `      📌 Schema API Call\n`;
+                }
+            });
+            detailedReport += '\n';
+        });
+
+        // Redundant calls section
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        detailedReport += 'REDUNDANT CALLS DETECTION\n';
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        if (totalRedundant > 0) {
+            detailedReport += `⚠️  WARNING: ${totalRedundant} redundant call group(s) detected!\n\n`;
+            detailedReport += networkTracker.getRedundantCallsReport();
+        } else {
+            detailedReport += '✅ No redundant calls detected.\n';
+        }
+        detailedReport += '\n';
+
+        // All requests chronologically
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        detailedReport += 'ALL REQUESTS (CHRONOLOGICAL ORDER)\n';
+        detailedReport += '───────────────────────────────────────────────────────────────────────────────\n';
+        allRequests.forEach((req, idx) => {
+            const time = new Date(req.timestamp).toISOString();
+            detailedReport += `${idx + 1}. [${time}] ${req.method} ${req.url}\n`;
+            detailedReport += `   Resource Type: ${req.resourceType}\n`;
+            if (networkTracker.isCRUD6Call(req.url)) {
+                detailedReport += `   📌 CRUD6 API Call\n`;
+            }
+            if (networkTracker.isSchemaCall(req.url)) {
+                detailedReport += `   📌 Schema API Call\n`;
+            }
+            detailedReport += '\n';
+        });
+
+        detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
+        detailedReport += 'END OF REPORT\n';
+        detailedReport += '═══════════════════════════════════════════════════════════════════════════════\n';
+
+        // Save to file
+        const reportPath = '/tmp/network-requests-summary.txt';
+        try {
+            writeFileSync(reportPath, detailedReport, 'utf8');
+            console.log(`✅ Network request report saved to: ${reportPath}`);
+            console.log(`   File size: ${(detailedReport.length / 1024).toFixed(2)} KB`);
+            console.log(`   Total requests documented: ${allRequests.length}`);
+        } catch (writeError) {
+            console.error(`❌ Failed to save network report: ${writeError.message}`);
+        }
+
 
     } catch (error) {
         console.error('');

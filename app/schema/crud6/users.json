@@ -117,7 +117,7 @@
             "label": "USER.ADMIN.PASSWORD_RESET",
             "icon": "envelope",
             "type": "api_call",
-            "endpoint": "/api/users/{id}/password/reset",
+            "endpoint": "/api/crud6/users/{id}/actions/reset_password",
             "method": "POST",
             "style": "secondary",
             "permission": "update_user_field",

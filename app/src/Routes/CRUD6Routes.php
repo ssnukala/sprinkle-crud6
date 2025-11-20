@@ -20,6 +20,7 @@ use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
 use UserFrosting\Sprinkle\CRUD6\Controller\ApiAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\ConfigAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\CustomActionController;
 use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\RelationshipAction;
@@ -41,6 +42,7 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
  * - PUT    /api/crud6/{model}/{id}                     - Update record (EditAction)
  * - PUT    /api/crud6/{model}/{id}/{field}             - Update single field (UpdateFieldAction)
  * - DELETE /api/crud6/{model}/{id}                     - Delete record
+ * - POST   /api/crud6/{model}/{id}/actions/{actionKey} - Execute custom action (CustomActionController)
  * - GET    /api/crud6/{model}/{id}/{relation}          - Get related data (one-to-many)
  * - POST   /api/crud6/{model}/{id}/{relation}          - Attach relationship (many-to-many)
  * - DELETE /api/crud6/{model}/{id}/{relation}          - Detach relationship (many-to-many)
@@ -91,6 +93,10 @@ class CRUD6Routes implements RouteDefinitionInterface
                 ->setName('api.crud6.relationship.attach');
             $group->delete('/{id}/{relation}', RelationshipAction::class)
                 ->setName('api.crud6.relationship.detach');
+
+            // Custom actions route - MUST be before generic /{id} routes to match properly
+            $group->post('/{id}/actions/{actionKey}', CustomActionController::class)
+                ->setName('api.crud6.custom_action');
 
             // Read single record (GET) and Update record (PUT) - both handled by EditAction
             $group->get('/{id}', EditAction::class)

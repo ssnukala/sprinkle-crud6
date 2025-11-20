@@ -262,7 +262,7 @@ trait ProcessesRelationshipActions
 
         foreach ($pivotData as $key => $value) {
             if ($value === 'now') {
-                $processed[$key] = now();
+                $processed[$key] = date('Y-m-d H:i:s');
             } elseif ($value === 'current_user') {
                 $currentUser = $this->authenticator->user();
                 $processed[$key] = $currentUser ? $currentUser->id : null;

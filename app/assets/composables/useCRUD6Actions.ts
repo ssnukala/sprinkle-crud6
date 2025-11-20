@@ -8,6 +8,21 @@ import { useAlertsStore, useTranslator } from '@userfrosting/sprinkle-core/store
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 /**
+ * Strip HTML tags from a string.
+ * Used to clean confirmation messages for native browser confirm() dialog.
+ * 
+ * @param html String that may contain HTML tags
+ * @returns Plain text string with HTML tags removed
+ */
+function stripHtmlTags(html: string): string {
+    // Create a temporary div element to parse HTML
+    const tmp = document.createElement('div')
+    tmp.innerHTML = html
+    // Return text content (which strips all HTML tags)
+    return tmp.textContent || tmp.innerText || ''
+}
+
+/**
  * Vue composable for executing custom CRUD6 actions.
  * 
  * Provides methods to execute schema-defined custom actions like
@@ -35,11 +50,17 @@ export function useCRUD6Actions(model?: string) {
         currentRecord?: any
     ): Promise<boolean> {
         // Check for confirmation using native browser dialog
-        // Note: In a production application, consider using a UIKit modal
-        // for better user experience and consistency
+        // Note: Native browser confirm() doesn't render HTML, so we strip HTML tags
+        // In a production application, consider using a UIKit modal
+        // for better user experience and HTML rendering support
         if (action.confirm) {
             // Translate the confirmation message if it's a translation key
-            const confirmMessage = translator.translate(action.confirm)
+            let confirmMessage = translator.translate(action.confirm, currentRecord)
+            
+            // Strip HTML tags from confirmation message since native confirm() doesn't render HTML
+            // This prevents showing raw HTML like <strong>{{name}}</strong> to users
+            confirmMessage = stripHtmlTags(confirmMessage)
+            
             if (!confirm(confirmMessage)) {
                 return false
             }

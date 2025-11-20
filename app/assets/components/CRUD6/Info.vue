@@ -8,7 +8,7 @@ import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
 import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
-import CRUD6PasswordInputModal from './PasswordInputModal.vue'
+import CRUD6FieldEditModal from './FieldEditModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 const route = useRoute()
@@ -133,22 +133,31 @@ async function handleActionClick(action: ActionConfig, passwordData?: { password
     }
 }
 
-// Check if action requires password input
-function requiresPasswordInput(action: ActionConfig): boolean {
-    // Check if it's a password_update type (deprecated)
+// Check if action requires field input modal
+function requiresFieldInput(action: ActionConfig): boolean {
+    // Check if it's a deprecated password_update type or has requires_password_input flag
     if (action.type === 'password_update' || action.requires_password_input === true) {
         return true
     }
     
-    // Check if it's a field_update targeting a password field with match validation
+    // Check if it's a field_update with validation.match (requires confirmation input)
     if (action.type === 'field_update' && action.field && finalSchema.value?.fields) {
         const fieldConfig = finalSchema.value.fields[action.field]
-        if (fieldConfig?.type === 'password' && fieldConfig?.validation?.match === true) {
+        // Show field edit modal if field has match validation (needs confirmation)
+        if (fieldConfig?.validation?.match === true) {
             return true
         }
     }
     
     return false
+}
+
+// Get field configuration for an action
+function getFieldConfig(action: ActionConfig): any {
+    if (action.field && finalSchema.value?.fields) {
+        return finalSchema.value.fields[action.field]
+    }
+    return null
 }
 
 // Check if action should be visible based on permissions
@@ -227,13 +236,14 @@ const customActions = computed(() => {
             <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
             
             <!-- Custom action buttons from schema -->
-            <!-- Use PasswordInputModal for password actions, ConfirmActionModal for confirmations, or direct button -->
+            <!-- Use FieldEditModal for fields with match validation, ConfirmActionModal for confirmations, or direct button -->
             <template v-for="action in customActions" :key="action.key">
-                <!-- Password action - use password input modal -->
-                <CRUD6PasswordInputModal
-                    v-if="requiresPasswordInput(action)"
+                <!-- Field edit action - use field edit modal (for fields requiring confirmation input) -->
+                <CRUD6FieldEditModal
+                    v-if="requiresFieldInput(action)"
                     :action="action"
                     :record="crud6"
+                    :field-config="getFieldConfig(action)"
                     :model="model"
                     @confirmed="handleActionClick(action, $event)" />
                 

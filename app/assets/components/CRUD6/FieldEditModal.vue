@@ -5,14 +5,14 @@ import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 
 /**
- * Password Input Modal for CRUD6 Custom Actions
+ * Generic Field Edit Modal for CRUD6 Custom Actions
  * 
- * This component provides a UIKit modal dialog for password input actions
- * (like reset password or change password). It shows password and confirm password
- * fields with validation to ensure they match.
+ * This component provides a UIKit modal dialog for field update actions
+ * that require user input. The edit form automatically adapts based on:
+ * - Field type (password, text, number, email, date, etc.) - determines input type and masking
+ * - Validation rules (match, length, etc.) - determines if confirmation field is shown
  * 
- * Configurable via schema with `requires_password_input: true` or for any
- * action with type 'password_update'.
+ * Replaces the need for separate field-type-specific modals (e.g., PasswordInputModal).
  */
 
 const translator = useTranslator()
@@ -25,6 +25,8 @@ const props = defineProps<{
     action: ActionConfig
     /** The record data for variable interpolation in messages */
     record?: any
+    /** The field configuration from schema */
+    fieldConfig?: any
     /** Model name for display */
     model?: string
 }>()
@@ -33,8 +35,8 @@ const props = defineProps<{
  * Emits
  */
 const emits = defineEmits<{
-    /** Emitted when user confirms with password data */
-    confirmed: [{ password: string }]
+    /** Emitted when user confirms with field data */
+    confirmed: [{ [key: string]: any }]
     /** Emitted when user cancels the action */
     cancelled: []
 }>()
@@ -42,15 +44,15 @@ const emits = defineEmits<{
 /**
  * State
  */
-const password = ref('')
-const confirmPassword = ref('')
+const fieldValue = ref('')
+const confirmValue = ref('')
 const error = ref('')
 
 /**
  * Computed - Modal ID for UIKit toggle
  */
 const modalId = computed(() => {
-    return `password-input-${props.action.key}`
+    return `field-input-${props.action.key}`
 })
 
 /**
@@ -66,6 +68,53 @@ const promptMessage = computed(() => {
  */
 const actionLabel = computed(() => {
     return translator.translate(props.action.label)
+})
+
+/**
+ * Computed - Field label
+ */
+const fieldLabel = computed(() => {
+    if (props.fieldConfig?.label) {
+        return translator.translate(props.fieldConfig.label)
+    }
+    return props.action.field || 'Value'
+})
+
+/**
+ * Computed - Input type based on field type
+ */
+const inputType = computed(() => {
+    const fieldType = props.fieldConfig?.type || 'text'
+    // Map CRUD6 field types to HTML input types
+    switch (fieldType) {
+        case 'password':
+            return 'password'
+        case 'integer':
+        case 'number':
+            return 'number'
+        case 'email':
+            return 'email'
+        case 'date':
+            return 'date'
+        case 'datetime':
+            return 'datetime-local'
+        default:
+            return 'text'
+    }
+})
+
+/**
+ * Computed - Should show matching confirmation field
+ */
+const requiresMatch = computed(() => {
+    return props.fieldConfig?.validation?.match === true
+})
+
+/**
+ * Computed - Minimum length validation
+ */
+const minLength = computed(() => {
+    return props.fieldConfig?.validation?.length?.min || 0
 })
 
 /**
@@ -85,16 +134,16 @@ const acceptSeverity = computed(() => {
 })
 
 /**
- * Computed - Password validation
+ * Computed - Field validation
  */
-const isPasswordValid = computed(() => {
-    if (!password.value) {
+const isFieldValid = computed(() => {
+    if (!fieldValue.value) {
         return false
     }
-    if (password.value.length < 8) {
+    if (minLength.value && fieldValue.value.length < minLength.value) {
         return false
     }
-    if (password.value !== confirmPassword.value) {
+    if (requiresMatch.value && fieldValue.value !== confirmValue.value) {
         return false
     }
     return true
@@ -104,30 +153,36 @@ const isPasswordValid = computed(() => {
  * Methods - Handle confirmation
  */
 function handleConfirmed() {
-    // Validate passwords match
-    if (password.value !== confirmPassword.value) {
-        error.value = translator.translate('PASSWORD.PASSWORDS_MUST_MATCH') || 'Passwords must match'
+    // Validate fields match if required
+    if (requiresMatch.value && fieldValue.value !== confirmValue.value) {
+        error.value = translator.translate('VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
         return
     }
     
-    // Validate password length
-    if (password.value.length < 8) {
-        error.value = translator.translate('PASSWORD.MIN_LENGTH', { min: 8 }) || 'Password must be at least 8 characters'
+    // Validate minimum length
+    if (minLength.value && fieldValue.value.length < minLength.value) {
+        error.value = translator.translate('VALIDATION.MIN_LENGTH', { min: minLength.value }) || `Minimum ${minLength.value} characters required`
         return
     }
     
     error.value = ''
-    emits('confirmed', { password: password.value })
+    
+    // Emit with the field name as key
+    const fieldName = props.action.field || 'value'
+    // For password fields, use 'password' key for backward compatibility
+    const dataKey = props.fieldConfig?.type === 'password' ? 'password' : fieldName
+    
+    emits('confirmed', { [dataKey]: fieldValue.value })
     
     // Reset form
-    password.value = ''
-    confirmPassword.value = ''
+    fieldValue.value = ''
+    confirmValue.value = ''
 }
 
 function handleCancelled() {
     error.value = ''
-    password.value = ''
-    confirmPassword.value = ''
+    fieldValue.value = ''
+    confirmValue.value = ''
     emits('cancelled')
 }
 
@@ -135,8 +190,8 @@ function handleCancelled() {
  * Watch for modal close to reset form
  */
 function resetForm() {
-    password.value = ''
-    confirmPassword.value = ''
+    fieldValue.value = ''
+    confirmValue.value = ''
     error.value = ''
 }
 </script>
@@ -160,7 +215,7 @@ function resetForm() {
         </button>
     </slot>
 
-    <!-- Password Input Modal -->
+    <!-- Field Input Modal -->
     <div :id="modalId" uk-modal>
         <div class="uk-modal-dialog">
             <button class="uk-modal-close-default" type="button" uk-close @click="resetForm"></button>
@@ -173,39 +228,39 @@ function resetForm() {
                 <!-- Prompt message with HTML support -->
                 <div v-if="promptMessage" v-html="promptMessage" class="uk-margin-bottom"></div>
                 
-                <!-- Password input -->
+                <!-- Field input -->
                 <div class="uk-margin">
-                    <label class="uk-form-label" for="password-input">
-                        {{ $t('PASSWORD.NEW') || 'New Password' }}
+                    <label class="uk-form-label" :for="`field-input-${action.key}`">
+                        {{ fieldLabel }}
                     </label>
                     <div class="uk-form-controls">
                         <input
-                            id="password-input"
-                            v-model="password"
-                            type="password"
+                            :id="`field-input-${action.key}`"
+                            v-model="fieldValue"
+                            :type="inputType"
                             class="uk-input"
-                            :placeholder="$t('PASSWORD.ENTER_NEW') || 'Enter new password'"
-                            autocomplete="new-password"
+                            :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
+                            :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
                             required
-                            minlength="8" />
+                            :minlength="minLength || undefined" />
                     </div>
                 </div>
                 
-                <!-- Confirm password input -->
-                <div class="uk-margin">
-                    <label class="uk-form-label" for="confirm-password-input">
-                        {{ $t('PASSWORD.CONFIRM') || 'Confirm Password' }}
+                <!-- Confirm field (shown only when validation.match is true) -->
+                <div v-if="requiresMatch" class="uk-margin">
+                    <label class="uk-form-label" :for="`confirm-field-input-${action.key}`">
+                        {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ fieldLabel }}
                     </label>
                     <div class="uk-form-controls">
                         <input
-                            id="confirm-password-input"
-                            v-model="confirmPassword"
-                            type="password"
+                            :id="`confirm-field-input-${action.key}`"
+                            v-model="confirmValue"
+                            :type="inputType"
                             class="uk-input"
-                            :placeholder="$t('PASSWORD.CONFIRM_PLACEHOLDER') || 'Confirm new password'"
-                            autocomplete="new-password"
+                            :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
+                            :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
                             required
-                            minlength="8" />
+                            :minlength="minLength || undefined" />
                     </div>
                 </div>
                 
@@ -214,14 +269,14 @@ function resetForm() {
                     <p>{{ error }}</p>
                 </div>
                 
-                <!-- Password validation hints -->
-                <div class="uk-text-small uk-text-muted">
+                <!-- Validation hints -->
+                <div v-if="minLength || requiresMatch" class="uk-text-small uk-text-muted">
                     <ul class="uk-list">
-                        <li :class="{ 'uk-text-success': password.length >= 8 }">
-                            {{ $t('PASSWORD.MIN_LENGTH_HINT', { min: 8 }) || 'Minimum 8 characters' }}
+                        <li v-if="minLength" :class="{ 'uk-text-success': fieldValue.length >= minLength }">
+                            {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }) || `Minimum ${minLength} characters` }}
                         </li>
-                        <li :class="{ 'uk-text-success': password && confirmPassword && password === confirmPassword }">
-                            {{ $t('PASSWORD.MATCH_HINT') || 'Passwords must match' }}
+                        <li v-if="requiresMatch" :class="{ 'uk-text-success': fieldValue && confirmValue && fieldValue === confirmValue }">
+                            {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
                         </li>
                     </ul>
                 </div>
@@ -243,7 +298,7 @@ function resetForm() {
                         'uk-button-secondary': acceptSeverity === Severity.Info
                     }"
                     type="button"
-                    :disabled="!isPasswordValid"
+                    :disabled="!isFieldValid"
                     @click="handleConfirmed"
                     :data-test="`btn-confirm-${action.key}`">
                     <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />

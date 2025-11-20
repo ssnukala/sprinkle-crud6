@@ -425,9 +425,11 @@ abstract class Base
      * Check if a field is virtual (not a database column).
      * 
      * Virtual fields are used for UI/relationship management but don't map
-     * to actual database columns. These include:
-     * - multiselect: Used for managing many-to-many relationships
-     * - Other relationship management fields may be added in the future
+     * to actual database columns. A field is considered virtual if:
+     * - It has `computed: true` attribute (calculated/virtual fields)
+     * - It has a virtual field type like 'multiselect' (for many-to-many relationships)
+     * 
+     * Virtual fields are excluded from INSERT and UPDATE database operations.
      * 
      * @param array $fieldConfig The field configuration
      * 
@@ -435,6 +437,12 @@ abstract class Base
      */
     protected function isVirtualField(array $fieldConfig): bool
     {
+        // Check if field is explicitly marked as computed/calculated
+        if ($fieldConfig['computed'] ?? false) {
+            return true;
+        }
+        
+        // Check if field type is a virtual type
         $virtualFieldTypes = ['multiselect'];
         $fieldType = $fieldConfig['type'] ?? '';
         

@@ -270,6 +270,7 @@
             "type": "multiselect",
             "label": "Roles",
             "description": "User roles (used for sync on update)",
+            "computed": true,
             "lookup": {
                 "model": "roles",
                 "id": "id",

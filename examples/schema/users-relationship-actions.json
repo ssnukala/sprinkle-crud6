@@ -121,6 +121,7 @@
       "type": "multiselect",
       "label": "Roles",
       "description": "User roles (used for sync on update)",
+      "computed": true,
       "required": false,
       "editable": true,
       "viewable": false,

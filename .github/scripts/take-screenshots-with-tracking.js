@@ -296,6 +296,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     // Create network tracker
     const networkTracker = new NetworkRequestTracker();
 
+    // Initialize counters at function scope so they're accessible at return
+    let successCount = 0;
+    let failCount = 0;
+
     // Launch browser
     const browser = await chromium.launch({
         headless: true,
@@ -349,8 +353,6 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         await page.waitForTimeout(2000);
 
         // Step 2: Take screenshots from configuration and track network requests per page
-        let successCount = 0;
-        let failCount = 0;
         const pageNetworkStats = [];
         const pageNetworkDetails = []; // Store detailed requests per page
 
@@ -377,8 +379,9 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                 } else {
                     console.log(`   ✅ Page loaded: ${currentUrl}`);
                     
-                    // Check for UserFrosting error notifications in the page
-                    const errorNotifications = await page.locator('.uf-alert.uf-alert-danger, .uk-alert-danger, [class*="alert"][class*="danger"]').all();
+                    // Check for UserFrosting Severity.Danger alerts (UFAlert component)
+                    // UFAlert with Severity.Danger renders as uk-alert-danger class
+                    const errorNotifications = await page.locator('.uk-alert.uk-alert-danger').all();
                     
                     let hasErrorNotification = false;
                     const errorMessages = [];
@@ -386,14 +389,25 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                     for (const notification of errorNotifications) {
                         const isVisible = await notification.isVisible();
                         if (isVisible) {
-                            const text = await notification.textContent();
-                            // Check for the specific UserFrosting error message
-                            if (text.includes("We've sensed a great disturbance in the Force") || 
-                                text.includes("server might have goofed") ||
-                                text.includes("check the PHP or Userfrosting logs")) {
-                                hasErrorNotification = true;
-                                errorMessages.push(text.trim());
+                            hasErrorNotification = true;
+                            
+                            // Try to get the alert title (has data-test="title" attribute)
+                            const titleElement = notification.locator('[data-test="title"]');
+                            const titleCount = await titleElement.count();
+                            let title = '';
+                            if (titleCount > 0) {
+                                title = await titleElement.textContent();
                             }
+                            
+                            // Get the full alert message
+                            const fullText = await notification.textContent();
+                            
+                            // Store error details
+                            const errorDetail = {
+                                title: title ? title.trim() : 'Error',
+                                message: fullText ? fullText.trim() : ''
+                            };
+                            errorMessages.push(errorDetail);
                         }
                     }
                     
@@ -405,9 +419,15 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                     console.log(`   ✅ Screenshot saved: ${screenshotPath}`);
                     
                     if (hasErrorNotification) {
-                        console.error(`   ❌ ERROR NOTIFICATION DETECTED on page!`);
-                        errorMessages.forEach(msg => {
-                            console.error(`      "${msg.substring(0, 100)}${msg.length > 100 ? '...' : ''}"`);
+                        console.error(`   ❌ SEVERITY.DANGER ALERT DETECTED on page!`);
+                        errorMessages.forEach((error, idx) => {
+                            console.error(`      Alert ${idx + 1}:`);
+                            if (error.title) {
+                                console.error(`         Title: ${error.title}`);
+                            }
+                            // Show first 200 chars of message for debugging
+                            const msgPreview = error.message.substring(0, 200);
+                            console.error(`         Message: ${msgPreview}${error.message.length > 200 ? '...' : ''}`);
                         });
                         failCount++;
                     } else {

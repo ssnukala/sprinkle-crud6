@@ -10,7 +10,41 @@
       "test_id": 1,
       "api_validation_keys": ["id", "user_name", "email"],
       "list_validation_keys": ["rows"],
-      "enabled": true
+      "enabled": true,
+      "relationships": [
+        {
+          "name": "roles",
+          "type": "many_to_many",
+          "nested_endpoint": true
+        },
+        {
+          "name": "activities",
+          "type": "has_many",
+          "nested_endpoint": true
+        },
+        {
+          "name": "permissions",
+          "type": "many_to_many_through",
+          "through": "roles",
+          "nested_endpoint": true
+        }
+      ],
+      "custom_actions": [
+        "reset_password",
+        "enable_user",
+        "disable_user"
+      ],
+      "field_toggles": [
+        "flag_enabled",
+        "flag_verified"
+      ],
+      "create_payload": {
+        "user_name": "apitest",
+        "first_name": "API",
+        "last_name": "Test",
+        "email": "apitest@example.com",
+        "password": "TestPassword123"
+      }
     },
     "groups": {
       "name": "groups",
@@ -20,7 +54,20 @@
       "test_id": 1,
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
-      "enabled": true
+      "enabled": true,
+      "relationships": [
+        {
+          "name": "users",
+          "type": "has_many",
+          "nested_endpoint": true
+        }
+      ],
+      "create_payload": {
+        "slug": "api_test_group",
+        "name": "API Test Group",
+        "description": "Group created via API test",
+        "icon": "fa-users"
+      }
     },
     "roles": {
       "name": "roles",
@@ -30,7 +77,24 @@
       "test_id": 1,
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
-      "enabled": true
+      "enabled": true,
+      "relationships": [
+        {
+          "name": "users",
+          "type": "many_to_many",
+          "nested_endpoint": true
+        },
+        {
+          "name": "permissions",
+          "type": "many_to_many",
+          "nested_endpoint": true
+        }
+      ],
+      "create_payload": {
+        "slug": "api_test_role",
+        "name": "API Test Role",
+        "description": "Role created via API test"
+      }
     },
     "permissions": {
       "name": "permissions",
@@ -40,7 +104,26 @@
       "test_id": 1,
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
-      "enabled": true
+      "enabled": true,
+      "relationships": [
+        {
+          "name": "roles",
+          "type": "many_to_many",
+          "nested_endpoint": true
+        },
+        {
+          "name": "users",
+          "type": "many_to_many_through",
+          "through": "roles",
+          "nested_endpoint": true,
+          "note": "Complex nested relationship through roles"
+        }
+      ],
+      "create_payload": {
+        "slug": "api_test_permission",
+        "name": "API Test Permission",
+        "description": "Permission created via API test"
+      }
     },
     "activities": {
       "name": "activities",
@@ -56,6 +139,16 @@
   "path_templates": {
     "authenticated": {
       "api": {
+        "schema": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}/schema",
+          "description": "Get {model} schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
+          }
+        },
         "list": {
           "method": "GET",
           "path": "{api_prefix}/{model}",
@@ -66,6 +159,18 @@
             "contains": "{list_validation_keys}"
           }
         },
+        "create": {
+          "method": "POST",
+          "path": "{api_prefix}/{model}",
+          "description": "Create new {singular} via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["data", "id"]
+          },
+          "requires_permission": "create_{singular}",
+          "note": "Requires payload with model-specific fields"
+        },
         "single": {
           "method": "GET",
           "path": "{api_prefix}/{model}/{test_id}",
@@ -75,6 +180,81 @@
             "type": "json",
             "contains": "{api_validation_keys}"
           }
+        },
+        "update": {
+          "method": "PUT",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Update {singular} via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_{singular}_field",
+          "note": "Requires payload with fields to update"
+        },
+        "update_field": {
+          "method": "PUT",
+          "path": "{api_prefix}/{model}/{test_id}/{field}",
+          "description": "Update single field for {singular}",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_{singular}_field",
+          "note": "Field name and value depend on model schema"
+        },
+        "custom_action": {
+          "method": "POST",
+          "path": "{api_prefix}/{model}/{test_id}/a/{actionKey}",
+          "description": "Execute custom action on {singular}",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 404, 500]
+          },
+          "note": "Action keys defined in model schema"
+        },
+        "relationship_attach": {
+          "method": "POST",
+          "path": "{api_prefix}/{model}/{test_id}/{relation}",
+          "description": "Attach related items to {singular} (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 403]
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "relationship_detach": {
+          "method": "DELETE",
+          "path": "{api_prefix}/{model}/{test_id}/{relation}",
+          "description": "Detach related items from {singular} (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 403]
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "nested_relationship": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}/{test_id}/{relation}",
+          "description": "Get related items for {singular} (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "delete": {
+          "method": "DELETE",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Delete {singular} via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_{singular}"
         }
       },
       "frontend": {
@@ -94,6 +274,15 @@
     },
     "unauthenticated": {
       "api": {
+        "schema": {
+          "method": "GET",
+          "path": "{api_prefix}/{model}/schema",
+          "description": "Attempt to access {model} schema without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
         "list": {
           "method": "GET",
           "path": "{api_prefix}/{model}",
@@ -103,10 +292,37 @@
             "type": "status_only"
           }
         },
+        "create": {
+          "method": "POST",
+          "path": "{api_prefix}/{model}",
+          "description": "Attempt to create {singular} without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
         "single": {
           "method": "GET",
           "path": "{api_prefix}/{model}/{test_id}",
           "description": "Attempt to access single {singular} without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "update": {
+          "method": "PUT",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Attempt to update {singular} without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "delete": {
+          "method": "DELETE",
+          "path": "{api_prefix}/{model}/{test_id}",
+          "description": "Attempt to delete {singular} without authentication",
           "expected_status": 401,
           "validation": {
             "type": "status_only"
@@ -144,6 +360,26 @@
     "timeout": {
       "api": 10,
       "frontend": 30
+    },
+    "security": {
+      "csrf": {
+        "enabled": true,
+        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware. For PHPUnit tests, CSRF is automatically handled by the testing framework. For manual testing, include X-CSRF-Token header.",
+        "testing": {
+          "phpunit": "Automatically handled by createJsonRequest() method",
+          "manual": "Include X-CSRF-Token header with valid token"
+        },
+        "applies_to": ["POST", "PUT", "DELETE"]
+      },
+      "authentication": {
+        "enabled": true,
+        "note": "All endpoints require authentication via AuthGuard middleware",
+        "applies_to": "all_endpoints"
+      },
+      "permissions": {
+        "enabled": true,
+        "note": "Operations require specific permissions as documented in model definitions"
+      }
     }
   }
 }

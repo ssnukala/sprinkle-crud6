@@ -1,8 +1,18 @@
 {
-  "description": "Integration test paths configuration for CRUD6 sprinkle",
+  "description": "Integration test paths configuration for CRUD6 sprinkle - Based on SchemaBasedApiTest.php comprehensive API testing",
   "paths": {
     "authenticated": {
       "api": {
+        "users_schema": {
+          "method": "GET",
+          "path": "/api/crud6/users/schema",
+          "description": "Get users schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
+          }
+        },
         "users_list": {
           "method": "GET",
           "path": "/api/crud6/users",
@@ -11,6 +21,24 @@
           "validation": {
             "type": "json",
             "contains": ["rows"]
+          }
+        },
+        "users_create": {
+          "method": "POST",
+          "path": "/api/crud6/users",
+          "description": "Create new user via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["data", "id"]
+          },
+          "requires_permission": "create_user",
+          "payload": {
+            "user_name": "apitest",
+            "first_name": "API",
+            "last_name": "Test",
+            "email": "apitest@example.com",
+            "password": "TestPassword123"
           }
         },
         "users_single": {
@@ -23,6 +51,91 @@
             "contains": ["id", "user_name", "email"]
           }
         },
+        "users_update": {
+          "method": "PUT",
+          "path": "/api/crud6/users/1",
+          "description": "Update user via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_user_field",
+          "payload": {
+            "first_name": "Updated",
+            "last_name": "Name"
+          }
+        },
+        "users_update_field": {
+          "method": "PUT",
+          "path": "/api/crud6/users/1/flag_enabled",
+          "description": "Update single field (boolean toggle) for user",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_user_field",
+          "payload": {
+            "flag_enabled": false
+          }
+        },
+        "users_custom_action": {
+          "method": "POST",
+          "path": "/api/crud6/users/1/a/reset_password",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 404, 500]
+          },
+          "requires_permission": "update_user_field",
+          "note": "Custom actions may not be fully implemented"
+        },
+        "users_relationship_attach": {
+          "method": "POST",
+          "path": "/api/crud6/users/1/roles",
+          "description": "Attach roles to user (many-to-many relationship)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 403]
+          },
+          "payload": {
+            "related_ids": [1]
+          }
+        },
+        "users_relationship_detach": {
+          "method": "DELETE",
+          "path": "/api/crud6/users/1/roles",
+          "description": "Detach roles from user (many-to-many relationship)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [200, 403]
+          },
+          "payload": {
+            "related_ids": [1]
+          }
+        },
+        "users_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/users/1",
+          "description": "Delete user via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_user"
+        },
+        "groups_schema": {
+          "method": "GET",
+          "path": "/api/crud6/groups/schema",
+          "description": "Get groups schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
+          }
+        },
         "groups_list": {
           "method": "GET",
           "path": "/api/crud6/groups",
@@ -31,6 +144,23 @@
           "validation": {
             "type": "json",
             "contains": ["rows"]
+          }
+        },
+        "groups_create": {
+          "method": "POST",
+          "path": "/api/crud6/groups",
+          "description": "Create new group via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["data", "id"]
+          },
+          "requires_permission": "create_group",
+          "payload": {
+            "slug": "api_test_group",
+            "name": "API Test Group",
+            "description": "Group created via API test",
+            "icon": "fa-users"
           }
         },
         "groups_single": {
@@ -43,6 +173,48 @@
             "contains": ["id", "slug", "name"]
           }
         },
+        "groups_update": {
+          "method": "PUT",
+          "path": "/api/crud6/groups/1",
+          "description": "Update group via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_group_field",
+          "payload": {
+            "name": "Updated Group Name"
+          }
+        },
+        "groups_nested_users": {
+          "method": "GET",
+          "path": "/api/crud6/groups/1/users",
+          "description": "Get users belonging to group (nested relationship endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          }
+        },
+        "groups_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/groups/1",
+          "description": "Delete group via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_group"
+        },
+        "roles_schema": {
+          "method": "GET",
+          "path": "/api/crud6/roles/schema",
+          "description": "Get roles schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
+          }
+        },
         "roles_list": {
           "method": "GET",
           "path": "/api/crud6/roles",
@@ -51,6 +223,22 @@
           "validation": {
             "type": "json",
             "contains": ["rows"]
+          }
+        },
+        "roles_create": {
+          "method": "POST",
+          "path": "/api/crud6/roles",
+          "description": "Create new role via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["data", "id"]
+          },
+          "requires_permission": "create_role",
+          "payload": {
+            "slug": "api_test_role",
+            "name": "API Test Role",
+            "description": "Role created via API test"
           }
         },
         "roles_single": {
@@ -63,6 +251,57 @@
             "contains": ["id", "slug", "name"]
           }
         },
+        "roles_update": {
+          "method": "PUT",
+          "path": "/api/crud6/roles/1",
+          "description": "Update role via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_role_field",
+          "payload": {
+            "name": "Updated Role Name"
+          }
+        },
+        "roles_nested_users": {
+          "method": "GET",
+          "path": "/api/crud6/roles/1/users",
+          "description": "Get users belonging to role (nested relationship endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          }
+        },
+        "roles_nested_permissions": {
+          "method": "GET",
+          "path": "/api/crud6/roles/1/permissions",
+          "description": "Get permissions belonging to role (nested relationship endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          }
+        },
+        "roles_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/roles/1",
+          "description": "Delete role via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_role"
+        },
+        "permissions_schema": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/schema",
+          "description": "Get permissions schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
+          }
+        },
         "permissions_list": {
           "method": "GET",
           "path": "/api/crud6/permissions",
@@ -73,6 +312,22 @@
             "contains": ["rows"]
           }
         },
+        "permissions_create": {
+          "method": "POST",
+          "path": "/api/crud6/permissions",
+          "description": "Create new permission via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["data", "id"]
+          },
+          "requires_permission": "create_permission",
+          "payload": {
+            "slug": "api_test_permission",
+            "name": "API Test Permission",
+            "description": "Permission created via API test"
+          }
+        },
         "permissions_single": {
           "method": "GET",
           "path": "/api/crud6/permissions/1",
@@ -81,6 +336,44 @@
           "validation": {
             "type": "json",
             "contains": ["id", "slug", "name"]
+          }
+        },
+        "permissions_nested_roles": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/1/roles",
+          "description": "Get roles for permission (nested relationship endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          }
+        },
+        "permissions_nested_users": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/1/users",
+          "description": "Get users for permission through roles (complex nested relationship)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          }
+        },
+        "permissions_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/permissions/1",
+          "description": "Delete permission via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_permission"
+        },
+        "activities_schema": {
+          "method": "GET",
+          "path": "/api/crud6/activities/schema",
+          "description": "Get activities schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["model", "fields"]
           }
         },
         "activities_list": {
@@ -169,6 +462,15 @@
     },
     "unauthenticated": {
       "api": {
+        "users_schema": {
+          "method": "GET",
+          "path": "/api/crud6/users/schema",
+          "description": "Attempt to access users schema without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
         "users_list": {
           "method": "GET",
           "path": "/api/crud6/users",
@@ -182,6 +484,42 @@
           "method": "GET",
           "path": "/api/crud6/users/1",
           "description": "Attempt to access single user without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "users_create": {
+          "method": "POST",
+          "path": "/api/crud6/users",
+          "description": "Attempt to create user without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "users_update": {
+          "method": "PUT",
+          "path": "/api/crud6/users/1",
+          "description": "Attempt to update user without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "users_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/users/1",
+          "description": "Attempt to delete user without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "groups_schema": {
+          "method": "GET",
+          "path": "/api/crud6/groups/schema",
+          "description": "Attempt to access groups schema without authentication",
           "expected_status": 401,
           "validation": {
             "type": "status_only"
@@ -205,6 +543,15 @@
             "type": "status_only"
           }
         },
+        "roles_schema": {
+          "method": "GET",
+          "path": "/api/crud6/roles/schema",
+          "description": "Attempt to access roles schema without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
         "roles_list": {
           "method": "GET",
           "path": "/api/crud6/roles",
@@ -223,6 +570,15 @@
             "type": "status_only"
           }
         },
+        "permissions_schema": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/schema",
+          "description": "Attempt to access permissions schema without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
         "permissions_list": {
           "method": "GET",
           "path": "/api/crud6/permissions",
@@ -236,6 +592,15 @@
           "method": "GET",
           "path": "/api/crud6/permissions/1",
           "description": "Attempt to access single permission without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "activities_schema": {
+          "method": "GET",
+          "path": "/api/crud6/activities/schema",
+          "description": "Attempt to access activities schema without authentication",
           "expected_status": 401,
           "validation": {
             "type": "status_only"
@@ -363,6 +728,27 @@
     "timeout": {
       "api": 10,
       "frontend": 30
+    },
+    "security": {
+      "csrf": {
+        "enabled": true,
+        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware in production. For automated testing (PHPUnit), the testing framework automatically handles CSRF tokens via createJsonRequest() method. For manual testing with curl/Postman, you must include CSRF token in headers or disable CSRF middleware temporarily.",
+        "testing": {
+          "phpunit": "Automatically handled by UserFrosting\\Testing\\TestCase::createJsonRequest()",
+          "manual": "Include X-CSRF-Token header with valid token from /csrf endpoint"
+        },
+        "applies_to": ["POST", "PUT", "DELETE"]
+      },
+      "authentication": {
+        "enabled": true,
+        "note": "All CRUD6 API endpoints require authentication via AuthGuard middleware. Tests use WithTestUser trait and actAsUser() method. For manual testing, include Authorization header or session cookies.",
+        "applies_to": "all_endpoints"
+      },
+      "permissions": {
+        "enabled": true,
+        "note": "Many operations require specific permissions (documented in requires_permission field). Tests verify both with and without required permissions.",
+        "documented_in": "requires_permission field for each endpoint"
+      }
     }
   }
 }

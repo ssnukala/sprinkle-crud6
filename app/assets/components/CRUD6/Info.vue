@@ -135,7 +135,20 @@ async function handleActionClick(action: ActionConfig, passwordData?: { password
 
 // Check if action requires password input
 function requiresPasswordInput(action: ActionConfig): boolean {
-    return action.type === 'password_update' || action.requires_password_input === true
+    // Check if it's a password_update type (deprecated)
+    if (action.type === 'password_update' || action.requires_password_input === true) {
+        return true
+    }
+    
+    // Check if it's a field_update targeting a password field with match validation
+    if (action.type === 'field_update' && action.field && finalSchema.value?.fields) {
+        const fieldConfig = finalSchema.value.fields[action.field]
+        if (fieldConfig?.type === 'password' && fieldConfig?.validation?.match === true) {
+            return true
+        }
+    }
+    
+    return false
 }
 
 // Check if action should be visible based on permissions

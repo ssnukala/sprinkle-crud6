@@ -152,7 +152,12 @@ export function useCRUD6Actions(model?: string) {
 
         let newValue: any
 
-        if (action.toggle && currentRecord) {
+        // Check if this is a field update with password data from PasswordInputModal
+        // The modal passes the password in currentRecord.password
+        if (currentRecord && currentRecord.password && 
+            (action.field === 'password' || currentRecord[action.field] === undefined)) {
+            newValue = currentRecord.password
+        } else if (action.toggle && currentRecord) {
             // Toggle boolean field - handle null/undefined values
             const currentValue = currentRecord[action.field]
             
@@ -166,7 +171,7 @@ export function useCRUD6Actions(model?: string) {
             // Set specific value
             newValue = action.value
         } else {
-            debugError('Field update action requires either toggle or value property')
+            debugError('Field update action requires either toggle, value, or password property')
             return false
         }
 

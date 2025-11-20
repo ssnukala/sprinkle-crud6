@@ -125,11 +125,11 @@
             "success_message": "USER.ADMIN.PASSWORD_RESET_SUCCESS"
         },
         {
-            "key": "change_password",
+            "key": "password_action",
             "label": "USER.ADMIN.PASSWORD_CHANGE",
             "icon": "key",
-            "type": "password_update",
-            "password_field": "password",
+            "type": "field_update",
+            "field": "password",
             "style": "warning",
             "permission": "update_user_field",
             "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
@@ -298,7 +298,8 @@
             "validation": {
                 "length": {
                     "min": 8
-                }
+                },
+                "match": true
             }
         },
         "deleted_at": {

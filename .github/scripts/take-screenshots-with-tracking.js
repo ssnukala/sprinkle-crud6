@@ -296,6 +296,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     // Create network tracker
     const networkTracker = new NetworkRequestTracker();
 
+    // Initialize counters at function scope so they're accessible at return
+    let successCount = 0;
+    let failCount = 0;
+
     // Launch browser
     const browser = await chromium.launch({
         headless: true,
@@ -349,8 +353,6 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         await page.waitForTimeout(2000);
 
         // Step 2: Take screenshots from configuration and track network requests per page
-        let successCount = 0;
-        let failCount = 0;
         const pageNetworkStats = [];
         const pageNetworkDetails = []; // Store detailed requests per page
 

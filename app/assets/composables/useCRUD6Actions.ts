@@ -227,18 +227,29 @@ export function useCRUD6Actions(model?: string) {
 
     /**
      * Execute an API call action
+     * 
+     * If no endpoint is specified, automatically generates one based on:
+     * - Model name (from useCRUD6Actions initialization)
+     * - Action key
+     * Format: /api/crud6/{model}/{id}/a/{actionKey}
      */
     async function executeApiCall(
         action: ActionConfig,
         recordId: string | number
     ): Promise<boolean> {
-        if (!action.endpoint) {
-            debugError('API call action requires an endpoint property')
+        // Auto-generate endpoint if not provided
+        let endpoint: string
+        if (action.endpoint) {
+            endpoint = action.endpoint.replace('{id}', String(recordId))
+        } else if (model) {
+            // Infer endpoint from model and action key
+            endpoint = `/api/crud6/${model}/${recordId}/a/${action.key}`
+        } else {
+            debugError('API call action requires either an endpoint property or model context')
             return false
         }
 
         const method = action.method || 'POST'
-        const endpoint = action.endpoint.replace('{id}', String(recordId))
         
         try {
             await axios.request({

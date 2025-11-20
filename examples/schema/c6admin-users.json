@@ -95,12 +95,22 @@
             "label": "USER.ADMIN.PASSWORD_RESET",
             "icon": "envelope",
             "type": "api_call",
-            "endpoint": "/api/users/{id}/password/reset",
             "method": "POST",
             "style": "secondary",
             "permission": "update_user_field",
             "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "success_message": "USER.ADMIN.PASSWORD_RESET_SUCCESS"
+        },
+        {
+            "key": "password_action",
+            "label": "USER.ADMIN.PASSWORD_CHANGE",
+            "icon": "key",
+            "type": "field_update",
+            "field": "password",
+            "style": "warning",
+            "permission": "update_user_field",
+            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "success_message": "USER.ADMIN.PASSWORD_CHANGE_SUCCESS"
         },
         {
             "key": "disable_user",
@@ -264,7 +274,8 @@
                 "length": {
                     "min": 8,
                     "max": 255
-                }
+                },
+                "match": true
             }
         },
         "deleted_at": {

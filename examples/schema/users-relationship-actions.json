@@ -121,6 +121,7 @@
       "type": "multiselect",
       "label": "Roles",
       "description": "User roles (used for sync on update)",
+      "computed": true,
       "required": false,
       "editable": true,
       "viewable": false,
@@ -159,7 +160,8 @@
         "length": {
           "min": 8,
           "max": 255
-        }
+        },
+        "match": true
       }
     },
     "created_at": {

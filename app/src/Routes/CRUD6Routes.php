@@ -20,6 +20,7 @@ use UserFrosting\Sprinkle\Core\Middlewares\NoCache;
 use UserFrosting\Sprinkle\CRUD6\Controller\ApiAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\ConfigAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\CreateAction;
+use UserFrosting\Sprinkle\CRUD6\Controller\CustomActionController;
 use UserFrosting\Sprinkle\CRUD6\Controller\DeleteAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\EditAction;
 use UserFrosting\Sprinkle\CRUD6\Controller\RelationshipAction;
@@ -34,16 +35,17 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
  * Follows the UserFrosting 6 route definition pattern from sprinkle-core.
  * 
  * RESTful API endpoints:
- * - GET    /api/crud6/{model}/schema                   - Get schema metadata
- * - GET    /api/crud6/{model}                          - List records (Sprunje with filter/sort/paginate)
- * - POST   /api/crud6/{model}                          - Create new record
- * - GET    /api/crud6/{model}/{id}                     - Read single record (EditAction)
- * - PUT    /api/crud6/{model}/{id}                     - Update record (EditAction)
- * - PUT    /api/crud6/{model}/{id}/{field}             - Update single field (UpdateFieldAction)
- * - DELETE /api/crud6/{model}/{id}                     - Delete record
- * - GET    /api/crud6/{model}/{id}/{relation}          - Get related data (one-to-many)
- * - POST   /api/crud6/{model}/{id}/{relation}          - Attach relationship (many-to-many)
- * - DELETE /api/crud6/{model}/{id}/{relation}          - Detach relationship (many-to-many)
+ * - GET    /api/crud6/{model}/schema                - Get schema metadata
+ * - GET    /api/crud6/{model}                       - List records (Sprunje with filter/sort/paginate)
+ * - POST   /api/crud6/{model}                       - Create new record
+ * - GET    /api/crud6/{model}/{id}                  - Read single record (EditAction)
+ * - PUT    /api/crud6/{model}/{id}                  - Update record (EditAction)
+ * - PUT    /api/crud6/{model}/{id}/{field}          - Update single field (UpdateFieldAction)
+ * - DELETE /api/crud6/{model}/{id}                  - Delete record
+ * - POST   /api/crud6/{model}/{id}/a/{actionKey}    - Execute custom action (CustomActionController) - /a/ is shortcode for /actions/
+ * - GET    /api/crud6/{model}/{id}/{relation}       - Get related data (one-to-many)
+ * - POST   /api/crud6/{model}/{id}/{relation}       - Attach relationship (many-to-many)
+ * - DELETE /api/crud6/{model}/{id}/{relation}       - Detach relationship (many-to-many)
  * 
  * Database Connection Selection:
  * - /api/crud6/users        - Uses default connection (or schema connection)
@@ -91,6 +93,11 @@ class CRUD6Routes implements RouteDefinitionInterface
                 ->setName('api.crud6.relationship.attach');
             $group->delete('/{id}/{relation}', RelationshipAction::class)
                 ->setName('api.crud6.relationship.detach');
+
+            // Custom actions route - MUST be before generic /{id} routes to match properly
+            // Using /a/ as shortcode for /actions/ for cleaner URLs
+            $group->post('/{id}/a/{actionKey}', CustomActionController::class)
+                ->setName('api.crud6.custom_action');
 
             // Read single record (GET) and Update record (PUT) - both handled by EditAction
             $group->get('/{id}', EditAction::class)

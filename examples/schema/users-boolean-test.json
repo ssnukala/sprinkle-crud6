@@ -140,7 +140,8 @@
         "length": {
           "min": 8,
           "max": 255
-        }
+        },
+        "match": true
       }
     },
     "created_at": {

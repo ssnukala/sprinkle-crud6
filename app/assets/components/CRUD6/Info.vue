@@ -7,7 +7,10 @@ import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
+import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
+import CRUD6FieldEditModal from './FieldEditModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInference'
 
 const route = useRoute()
 const router = useRouter()
@@ -44,7 +47,7 @@ debugLog('[Info] Creating schemaComposable - providedSchema exists:', !!provided
 const schemaComposable = providedSchema ? null : useCRUD6Schema()
 
 // Create actions composable for executing custom actions
-const { executeAction, loading: actionLoading } = useCRUD6Actions(model.value)
+const { executeActionWithoutConfirm, loading: actionLoading } = useCRUD6Actions(model.value)
 
 // Extract functions with fallbacks
 const hasPermission = schemaComposable?.hasPermission || (() => true)
@@ -119,13 +122,70 @@ function formatFieldValue(value: any, field: any): string {
     }
 }
 
-// Handle custom action execution
-async function handleActionClick(action: ActionConfig) {
-    const success = await executeAction(action, crud6.id, crud6)
-    if (success && action.type === 'field_update') {
+// Handle custom action execution (called after modal confirmation)
+async function handleActionClick(action: ActionConfig, passwordData?: { password: string }) {
+    // For password actions, merge password data with record
+    const recordData = passwordData ? { ...crud6, ...passwordData } : crud6
+    
+    const success = await executeActionWithoutConfirm(action, crud6.id, recordData)
+    if (success && (action.type === 'field_update' || action.type === 'password_update')) {
         // Refresh the record data after field update
         emits('crud6Updated')
     }
+}
+
+// Check if action requires field input modal
+function requiresFieldInput(action: ActionConfig): boolean {
+    // Check if it's a deprecated password_update type or has requires_password_input flag
+    if (action.type === 'password_update' || action.requires_password_input === true) {
+        return true
+    }
+    
+    // Check if it's a field_update with validation.match (requires confirmation input)
+    if (action.type === 'field_update' && action.field && finalSchema.value?.fields) {
+        const fieldConfig = finalSchema.value.fields[action.field]
+        // Show field edit modal if field has match validation (needs confirmation)
+        if (fieldConfig?.validation?.match === true) {
+            return true
+        }
+    }
+    
+    return false
+}
+
+// Get field configuration for an action
+function getFieldConfig(action: ActionConfig): any {
+    const field = action.field || inferFieldFromKey(action.key)
+    if (field && finalSchema.value?.fields) {
+        return finalSchema.value.fields[field]
+    }
+    return null
+}
+
+// Get action label with proper fallback logic
+function getActionLabel(action: ActionConfig): string {
+    // If action has explicit label, try to translate it
+    if (action.label) {
+        const translated = translator.translate(action.label)
+        
+        // If translation returns the key itself (not found), check for field label fallback
+        if (translated === action.label && action.label.startsWith('CRUD6.ACTION.EDIT_')) {
+            // This is an auto-generated translation key that doesn't exist
+            // Fallback to field label
+            const fieldConfig = getFieldConfig(action)
+            if (fieldConfig?.label) {
+                return translator.translate(fieldConfig.label) || fieldConfig.label
+            }
+        }
+        
+        return translated
+    }
+    
+    // No label - use humanized key as ultimate fallback
+    return action.key
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
 }
 
 // Check if action should be visible based on permissions
@@ -136,10 +196,25 @@ function isActionVisible(action: ActionConfig): boolean {
     return hasPermission(action.permission as any)
 }
 
-// Get custom actions from schema
+// Get custom actions from schema with enriched properties
 const customActions = computed(() => {
     if (!finalSchema.value?.actions) return []
-    return finalSchema.value.actions.filter(isActionVisible)
+    
+    // Enrich each action with inferred properties
+    return finalSchema.value.actions
+        .map(action => {
+            // Infer field if not specified
+            const field = action.field || inferFieldFromKey(action.key)
+            
+            // Get field configuration if field exists
+            const fieldConfig = field && finalSchema.value?.fields?.[field] 
+                ? finalSchema.value.fields[field]
+                : undefined
+            
+            // Return enriched action with inferred properties
+            return getEnrichedAction(action, fieldConfig)
+        })
+        .filter(isActionVisible)
 })
 
 // Schema loading is completely handled by parent PageRow component and passed as a prop
@@ -204,22 +279,42 @@ const customActions = computed(() => {
             <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
             
             <!-- Custom action buttons from schema -->
-            <button
-                v-for="action in customActions"
-                :key="action.key"
-                @click="handleActionClick(action)"
-                :disabled="actionLoading"
-                :data-test="`btn-action-${action.key}`"
-                :class="[
-                    'uk-width-1-1',
-                    'uk-margin-small-bottom',
-                    'uk-button',
-                    'uk-button-small',
-                    action.style ? `uk-button-${action.style}` : 'uk-button-default'
-                ]">
-                <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-                {{ $t(action.label) }}
-            </button>
+            <!-- Use FieldEditModal for fields with match validation, ConfirmActionModal for confirmations, or direct button -->
+            <template v-for="action in customActions" :key="action.key">
+                <!-- Field edit action - use field edit modal (for fields requiring confirmation input) -->
+                <CRUD6FieldEditModal
+                    v-if="requiresFieldInput(action)"
+                    :action="action"
+                    :record="crud6"
+                    :field-config="getFieldConfig(action)"
+                    :model="model"
+                    @confirmed="handleActionClick(action, $event)" />
+                
+                <!-- Action with confirmation - use confirm modal -->
+                <CRUD6ConfirmActionModal
+                    v-else-if="action.confirm"
+                    :action="action"
+                    :record="crud6"
+                    :model="model"
+                    @confirmed="handleActionClick(action)" />
+                
+                <!-- Action without confirmation - direct button -->
+                <button
+                    v-else
+                    @click="handleActionClick(action)"
+                    :disabled="actionLoading"
+                    :data-test="`btn-action-${action.key}`"
+                    :class="[
+                        'uk-width-1-1',
+                        'uk-margin-small-bottom',
+                        'uk-button',
+                        'uk-button-small',
+                        action.style ? `uk-button-${action.style}` : 'uk-button-default'
+                    ]">
+                    <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                    {{ getActionLabel(action) }}
+                </button>
+            </template>
             
             <!-- Edit button - shows modal only after user clicks -->
             <button

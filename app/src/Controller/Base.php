@@ -422,11 +422,40 @@ abstract class Base
     }
 
     /**
+     * Check if a field is virtual (not a database column).
+     * 
+     * Virtual fields are used for UI/relationship management but don't map
+     * to actual database columns. A field is considered virtual if:
+     * - It has `computed: true` attribute (calculated/virtual fields)
+     * - It has a virtual field type like 'multiselect' (for many-to-many relationships)
+     * 
+     * Virtual fields are excluded from INSERT and UPDATE database operations.
+     * 
+     * @param array $fieldConfig The field configuration
+     * 
+     * @return bool True if field is virtual, false otherwise
+     */
+    protected function isVirtualField(array $fieldConfig): bool
+    {
+        // Check if field is explicitly marked as computed/calculated
+        if ($fieldConfig['computed'] ?? false) {
+            return true;
+        }
+        
+        // Check if field type is a virtual type
+        $virtualFieldTypes = ['multiselect'];
+        $fieldType = $fieldConfig['type'] ?? '';
+        
+        return in_array($fieldType, $virtualFieldTypes, true);
+    }
+
+    /**
      * Prepare data for database insertion.
      * 
      * Transforms field values according to their types and applies defaults.
      * Handles timestamps if configured in schema.
      * Password fields are hashed via hashPasswordFields() hook method.
+     * Excludes virtual fields (like multiselect) that don't map to database columns.
      * 
      * @param array $schema The schema configuration
      * @param array $data   The input data
@@ -441,7 +470,10 @@ abstract class Base
         $insertData = [];
         $fields = $schema['fields'] ?? [];
         foreach ($fields as $fieldName => $fieldConfig) {
-            if ($fieldConfig['auto_increment'] ?? false || $fieldConfig['computed'] ?? false) {
+            // Skip auto-increment, computed, and virtual fields
+            if ($fieldConfig['auto_increment'] ?? false || 
+                $fieldConfig['computed'] ?? false ||
+                $this->isVirtualField($fieldConfig)) {
                 continue;
             }
             if (isset($data[$fieldName])) {
@@ -465,6 +497,7 @@ abstract class Base
      * Uses getEditableFields() to determine which fields can be updated.
      * Handles timestamps if configured in schema.
      * Password fields are hashed via hashPasswordFields() hook method.
+     * Excludes virtual fields (like multiselect) that don't map to database columns.
      * 
      * @param array $schema The schema configuration
      * @param array $data   The input data
@@ -482,6 +515,10 @@ abstract class Base
 
         foreach ($editableFields as $fieldName) {
             if (isset($data[$fieldName]) && isset($fields[$fieldName])) {
+                // Skip virtual fields
+                if ($this->isVirtualField($fields[$fieldName])) {
+                    continue;
+                }
                 $updateData[$fieldName] = $this->transformFieldValue($fields[$fieldName], $data[$fieldName]);
             }
         }

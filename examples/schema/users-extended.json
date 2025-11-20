@@ -35,59 +35,36 @@
   ],
   "actions": [
     {
-      "key": "toggle_enabled",
-      "label": "CRUD6.ACTION.TOGGLE_ENABLED",
-      "icon": "power-off",
+      "key": "flag_enabled_action",
       "type": "field_update",
-      "field": "flag_enabled",
       "toggle": true,
-      "style": "default",
-      "permission": "update_user_field",
-      "success_message": "CRUD6.ACTION.SUCCESS"
+      "permission": "update_user_field"
     },
     {
-      "key": "toggle_verified",
-      "label": "CRUD6.ACTION.TOGGLE_VERIFIED",
-      "icon": "check-circle",
+      "key": "flag_verified_action",
       "type": "field_update",
-      "field": "flag_verified",
       "toggle": true,
-      "style": "default",
-      "permission": "update_user_field",
-      "success_message": "CRUD6.ACTION.SUCCESS"
+      "permission": "update_user_field"
     },
     {
-      "key": "change_password",
-      "label": "CRUD6.ACTION.CHANGE_PASSWORD",
-      "icon": "key",
-      "type": "route",
-      "route": "user.password",
-      "style": "primary",
+      "key": "password_action",
+      "type": "field_update",
       "permission": "update_user_field"
     },
     {
       "key": "reset_password",
-      "label": "CRUD6.ACTION.RESET_PASSWORD",
-      "icon": "envelope",
       "type": "api_call",
-      "endpoint": "/api/users/{id}/password/reset",
       "method": "POST",
-      "style": "secondary",
       "permission": "update_user_field",
-      "confirm": "Are you sure you want to send a password reset email to this user?",
-      "success_message": "Password reset email sent successfully"
+      "confirm": "Are you sure you want to send a password reset email to this user?"
     },
     {
       "key": "disable_user",
-      "label": "CRUD6.ACTION.DISABLE_USER",
-      "icon": "ban",
       "type": "field_update",
       "field": "flag_enabled",
       "value": false,
-      "style": "danger",
       "permission": "update_user_field",
-      "confirm": "Are you sure you want to disable this user?",
-      "success_message": "User disabled successfully"
+      "confirm": "Are you sure you want to disable this user?"
     }
   ],
   "fields": {
@@ -158,19 +135,20 @@
       }
     },
     "password": {
-      "type": "string",
+      "type": "password",
       "label": "Password",
       "required": false,
       "sortable": false,
       "filterable": false,
       "listable": false,
       "viewable": false,
-      "editable": false,
+      "editable": true,
       "validation": {
         "length": {
           "min": 8,
           "max": 255
-        }
+        },
+        "match": true
       }
     },
     "locale": {

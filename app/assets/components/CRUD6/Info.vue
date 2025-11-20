@@ -10,6 +10,7 @@ import CRUD6DeleteModal from './DeleteModal.vue'
 import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
 import CRUD6FieldEditModal from './FieldEditModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInference'
 
 const route = useRoute()
 const router = useRouter()
@@ -154,10 +155,37 @@ function requiresFieldInput(action: ActionConfig): boolean {
 
 // Get field configuration for an action
 function getFieldConfig(action: ActionConfig): any {
-    if (action.field && finalSchema.value?.fields) {
-        return finalSchema.value.fields[action.field]
+    const field = action.field || inferFieldFromKey(action.key)
+    if (field && finalSchema.value?.fields) {
+        return finalSchema.value.fields[field]
     }
     return null
+}
+
+// Get action label with proper fallback logic
+function getActionLabel(action: ActionConfig): string {
+    // If action has explicit label, try to translate it
+    if (action.label) {
+        const translated = translator.translate(action.label)
+        
+        // If translation returns the key itself (not found), check for field label fallback
+        if (translated === action.label && action.label.startsWith('CRUD6.ACTION.EDIT_')) {
+            // This is an auto-generated translation key that doesn't exist
+            // Fallback to field label
+            const fieldConfig = getFieldConfig(action)
+            if (fieldConfig?.label) {
+                return translator.translate(fieldConfig.label) || fieldConfig.label
+            }
+        }
+        
+        return translated
+    }
+    
+    // No label - use humanized key as ultimate fallback
+    return action.key
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
 }
 
 // Check if action should be visible based on permissions
@@ -168,10 +196,25 @@ function isActionVisible(action: ActionConfig): boolean {
     return hasPermission(action.permission as any)
 }
 
-// Get custom actions from schema
+// Get custom actions from schema with enriched properties
 const customActions = computed(() => {
     if (!finalSchema.value?.actions) return []
-    return finalSchema.value.actions.filter(isActionVisible)
+    
+    // Enrich each action with inferred properties
+    return finalSchema.value.actions
+        .map(action => {
+            // Infer field if not specified
+            const field = action.field || inferFieldFromKey(action.key)
+            
+            // Get field configuration if field exists
+            const fieldConfig = field && finalSchema.value?.fields?.[field] 
+                ? finalSchema.value.fields[field]
+                : undefined
+            
+            // Return enriched action with inferred properties
+            return getEnrichedAction(action, fieldConfig)
+        })
+        .filter(isActionVisible)
 })
 
 // Schema loading is completely handled by parent PageRow component and passed as a prop
@@ -269,7 +312,7 @@ const customActions = computed(() => {
                         action.style ? `uk-button-${action.style}` : 'uk-button-default'
                     ]">
                     <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-                    {{ $t(action.label) }}
+                    {{ getActionLabel(action) }}
                 </button>
             </template>
             

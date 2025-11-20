@@ -92,71 +92,46 @@
     "actions": [
         {
             "key": "toggle_enabled",
-            "label": "USER.ADMIN.TOGGLE_ENABLED",
-            "icon": "power-off",
             "type": "field_update",
             "field": "flag_enabled",
             "toggle": true,
-            "style": "default",
-            "permission": "update_user_field",
-            "success_message": "USER.ADMIN.TOGGLE_ENABLED_SUCCESS"
+            "permission": "update_user_field"
         },
         {
             "key": "toggle_verified",
-            "label": "USER.ADMIN.TOGGLE_VERIFIED",
-            "icon": "check-circle",
             "type": "field_update",
             "field": "flag_verified",
             "toggle": true,
-            "style": "default",
-            "permission": "update_user_field",
-            "success_message": "USER.ADMIN.TOGGLE_VERIFIED_SUCCESS"
+            "permission": "update_user_field"
         },
         {
             "key": "reset_password",
-            "label": "USER.ADMIN.PASSWORD_RESET",
-            "icon": "envelope",
             "type": "api_call",
             "method": "POST",
-            "style": "secondary",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
-            "success_message": "USER.ADMIN.PASSWORD_RESET_SUCCESS"
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM"
         },
         {
             "key": "password_action",
-            "label": "USER.ADMIN.PASSWORD_CHANGE",
-            "icon": "key",
             "type": "field_update",
-            "field": "password",
-            "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
-            "success_message": "USER.ADMIN.PASSWORD_CHANGE_SUCCESS"
+            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM"
         },
         {
             "key": "disable_user",
-            "label": "USER.DISABLE",
-            "icon": "ban",
             "type": "field_update",
             "field": "flag_enabled",
             "value": false,
-            "style": "danger",
             "permission": "update_user_field",
-            "confirm": "USER.DISABLE_CONFIRM",
-            "success_message": "DISABLE_SUCCESSFUL"
+            "confirm": "USER.DISABLE_CONFIRM"
         },
         {
             "key": "enable_user",
-            "label": "USER.ENABLE",
-            "icon": "check",
             "type": "field_update",
             "field": "flag_enabled",
             "value": true,
-            "style": "primary",
             "permission": "update_user_field",
-            "confirm": "USER.ENABLE_CONFIRM",
-            "success_message": "ENABLE_SUCCESSFUL"
+            "confirm": "USER.ENABLE_CONFIRM"
         }
     ],
     "fields": {

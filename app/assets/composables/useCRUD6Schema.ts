@@ -43,7 +43,7 @@ export interface ActionConfig {
     /** Icon to display on the button */
     icon?: string
     /** Action type */
-    type: 'field_update' | 'modal' | 'route' | 'api_call'
+    type: 'field_update' | 'modal' | 'route' | 'api_call' | 'password_update'
     /** Permission required to see/use this action */
     permission?: string
     /** For field_update: field to update */
@@ -66,6 +66,10 @@ export interface ActionConfig {
     confirm?: string
     /** Success message after action completes */
     success_message?: string
+    /** Requires password input with confirmation (for password_update type or password fields) */
+    requires_password_input?: boolean
+    /** For password_update: field to update with new password */
+    password_field?: string
 }
 
 export interface CRUD6Schema {

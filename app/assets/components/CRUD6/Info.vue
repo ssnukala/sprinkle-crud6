@@ -8,6 +8,7 @@ import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
 import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
+import CRUD6PasswordInputModal from './PasswordInputModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 const route = useRoute()
@@ -121,12 +122,20 @@ function formatFieldValue(value: any, field: any): string {
 }
 
 // Handle custom action execution (called after modal confirmation)
-async function handleActionClick(action: ActionConfig) {
-    const success = await executeActionWithoutConfirm(action, crud6.id, crud6)
-    if (success && action.type === 'field_update') {
+async function handleActionClick(action: ActionConfig, passwordData?: { password: string }) {
+    // For password actions, merge password data with record
+    const recordData = passwordData ? { ...crud6, ...passwordData } : crud6
+    
+    const success = await executeActionWithoutConfirm(action, crud6.id, recordData)
+    if (success && (action.type === 'field_update' || action.type === 'password_update')) {
         // Refresh the record data after field update
         emits('crud6Updated')
     }
+}
+
+// Check if action requires password input
+function requiresPasswordInput(action: ActionConfig): boolean {
+    return action.type === 'password_update' || action.requires_password_input === true
 }
 
 // Check if action should be visible based on permissions
@@ -205,11 +214,19 @@ const customActions = computed(() => {
             <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
             
             <!-- Custom action buttons from schema -->
-            <!-- Use ConfirmActionModal if action requires confirmation, otherwise direct button -->
+            <!-- Use PasswordInputModal for password actions, ConfirmActionModal for confirmations, or direct button -->
             <template v-for="action in customActions" :key="action.key">
-                <!-- Action with confirmation - use modal -->
+                <!-- Password action - use password input modal -->
+                <CRUD6PasswordInputModal
+                    v-if="requiresPasswordInput(action)"
+                    :action="action"
+                    :record="crud6"
+                    :model="model"
+                    @confirmed="handleActionClick(action, $event)" />
+                
+                <!-- Action with confirmation - use confirm modal -->
                 <CRUD6ConfirmActionModal
-                    v-if="action.confirm"
+                    v-else-if="action.confirm"
                     :action="action"
                     :record="crud6"
                     :model="model"

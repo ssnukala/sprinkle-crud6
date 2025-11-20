@@ -102,6 +102,9 @@ export function useCRUD6Actions(model?: string) {
                 case 'field_update':
                     return await executeFieldUpdate(action, recordId, currentRecord)
                 
+                case 'password_update':
+                    return await executePasswordUpdate(action, recordId, currentRecord)
+                
                 case 'route':
                     return executeRouteNavigation(action, recordId)
                 
@@ -258,12 +261,61 @@ export function useCRUD6Actions(model?: string) {
         }
     }
 
+    /**
+     * Execute a password update action.
+     * 
+     * This method updates a password field. The password value should be provided
+     * in the currentRecord parameter (typically from PasswordInputModal).
+     * 
+     * @param action The action configuration
+     * @param recordId The record ID
+     * @param currentRecord Current record data, must include 'password' property
+     * @returns Promise<boolean> True if successful
+     */
+    async function executePasswordUpdate(
+        action: ActionConfig,
+        recordId: string | number,
+        currentRecord?: any
+    ): Promise<boolean> {
+        const passwordField = action.password_field || 'password'
+        
+        if (!currentRecord || !currentRecord.password) {
+            debugError('Password update action requires password in currentRecord')
+            return false
+        }
+
+        if (!updateField) {
+            debugError('updateField function not available')
+            return false
+        }
+
+        try {
+            await updateField(String(recordId), passwordField, currentRecord.password)
+            
+            // Show success message - translate if it's a translation key
+            const successMsg = action.success_message 
+                ? translator.translate(action.success_message) 
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
+            alertsStore.push({
+                title: translator.translate('CRUD6.ACTION.SUCCESS_TITLE') || 'Success',
+                description: successMsg,
+                style: Severity.Success
+            })
+            
+            return true
+        } catch (err) {
+            debugError('Password update failed:', err)
+            throw err
+        }
+    }
+
     return {
         loading,
         error,
         executeAction,
         executeActionWithoutConfirm,
         executeFieldUpdate,
+        executePasswordUpdate,
         executeRouteNavigation,
         executeApiCall
     }

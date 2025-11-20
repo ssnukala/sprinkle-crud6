@@ -125,6 +125,17 @@
             "success_message": "USER.ADMIN.PASSWORD_RESET_SUCCESS"
         },
         {
+            "key": "change_password",
+            "label": "USER.ADMIN.PASSWORD_CHANGE",
+            "icon": "key",
+            "type": "password_update",
+            "password_field": "password",
+            "style": "warning",
+            "permission": "update_user_field",
+            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "success_message": "USER.ADMIN.PASSWORD_CHANGE_SUCCESS"
+        },
+        {
             "key": "disable_user",
             "label": "USER.DISABLE",
             "icon": "ban",

@@ -47,6 +47,17 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * This approach ensures that the actual API endpoints work correctly,
  * not just the modal/UI behavior, which was the gap that allowed the
  * undefined now() function error to slip through.
+ * 
+ * **Test Models:**
+ * Tests use the c6admin example schemas from examples/schema/:
+ * - c6admin-users.json (users model with relationships and actions)
+ * - c6admin-roles.json (roles model with many-to-many relationships)
+ * - c6admin-groups.json (groups model with simple CRUD)
+ * - c6admin-permissions.json (permissions model with nested relationships)
+ * - c6admin-activities.json (activities model)
+ * 
+ * These schemas are loaded from app/schema/crud6/ in the test environment
+ * and represent real-world admin interface models used in production.
  */
 class SchemaBasedApiTest extends AdminTestCase
 {
@@ -80,10 +91,18 @@ class SchemaBasedApiTest extends AdminTestCase
      * This comprehensive test exercises all API endpoints for the users model
      * based on its schema configuration, testing the actual HTTP endpoints
      * that the frontend modals and forms would call.
+     * 
+     * Schema: Based on examples/schema/c6admin-users.json
+     * This schema includes:
+     * - User fields (user_name, first_name, last_name, email, password, etc.)
+     * - Boolean toggle actions (flag_enabled, flag_verified)
+     * - Custom actions (reset_password, enable_user, disable_user)
+     * - Many-to-many relationship with roles (with on_create pivot_data using "now")
+     * - Nested relationships (activities, permissions through roles)
      */
     public function testUsersModelCompleteApiIntegration(): void
     {
-        echo "\n[SCHEMA-BASED API TEST] Testing users model API endpoints\n";
+        echo "\n[SCHEMA-BASED API TEST] Testing users model API endpoints (c6admin-users.json)\n";
 
         // Get schema to understand what endpoints and actions are available
         /** @var SchemaService */
@@ -452,10 +471,12 @@ class SchemaBasedApiTest extends AdminTestCase
      * - Many-to-many relationships (permissions, users)
      * - Relationship actions (on_update sync, on_delete detach)
      * - Nested endpoints for related data
+     * 
+     * Schema: Based on examples/schema/c6admin-roles.json
      */
     public function testRolesModelCompleteApiIntegration(): void
     {
-        echo "\n[SCHEMA-BASED API TEST] Testing roles model API endpoints (c6admin)\n";
+        echo "\n[SCHEMA-BASED API TEST] Testing roles model API endpoints (c6admin-roles.json)\n";
 
         /** @var SchemaService */
         $schemaService = $this->ci->get(SchemaService::class);
@@ -535,10 +556,12 @@ class SchemaBasedApiTest extends AdminTestCase
      * Tests the groups model from c6admin schemas, which includes:
      * - Simple CRUD operations
      * - Detail relationships (users belonging to group)
+     * 
+     * Schema: Based on examples/schema/c6admin-groups.json
      */
     public function testGroupsModelCompleteApiIntegration(): void
     {
-        echo "\n[SCHEMA-BASED API TEST] Testing groups model API endpoints (c6admin)\n";
+        echo "\n[SCHEMA-BASED API TEST] Testing groups model API endpoints (c6admin-groups.json)\n";
 
         /** @var SchemaService */
         $schemaService = $this->ci->get(SchemaService::class);
@@ -613,10 +636,12 @@ class SchemaBasedApiTest extends AdminTestCase
      * Tests the permissions model from c6admin schemas, which includes:
      * - Many-to-many relationships with roles
      * - Complex nested relationships (users through roles)
+     * 
+     * Schema: Based on examples/schema/c6admin-permissions.json
      */
     public function testPermissionsModelCompleteApiIntegration(): void
     {
-        echo "\n[SCHEMA-BASED API TEST] Testing permissions model API endpoints (c6admin)\n";
+        echo "\n[SCHEMA-BASED API TEST] Testing permissions model API endpoints (c6admin-permissions.json)\n";
 
         /** @var SchemaService */
         $schemaService = $this->ci->get(SchemaService::class);

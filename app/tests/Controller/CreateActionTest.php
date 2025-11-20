@@ -237,4 +237,61 @@ class CreateActionTest extends AdminTestCase
         $this->assertTrue((bool) $newUser->flag_enabled, 'Default flag_enabled should be true');
         $this->assertTrue((bool) $newUser->flag_verified, 'Default flag_verified should be true');
     }
+
+    /**
+     * Test POST /api/crud6/users with pivot data processing ('now' timestamps)
+     * 
+     * This test verifies that:
+     * 1. User creation triggers on_create relationship actions
+     * 2. Pivot data with "now" is correctly processed to actual timestamps
+     * 3. Default role assignment works with timestamps
+     * 
+     * This test was added after discovering that the processPivotData() method
+     * was calling undefined now() function, which wasn't caught by existing tests.
+     * 
+     * @see ProcessesRelationshipActions::processPivotData()
+     */
+    public function testCreateUserWithPivotDataTimestamps(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['create_user']);
+
+        $userData = [
+            'user_name' => 'pivottest',
+            'first_name' => 'Pivot',
+            'last_name' => 'Test',
+            'email' => 'pivottest@example.com',
+            'password' => 'TestPassword123',
+        ];
+
+        $request = $this->createJsonRequest('POST', '/api/crud6/users', $userData);
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(200, $response);
+        
+        // Verify user was created
+        $newUser = User::where('user_name', 'pivottest')->first();
+        $this->assertNotNull($newUser, 'User should be created');
+        
+        // Verify role assignment with pivot timestamps
+        // According to users.json schema, on_create should attach role id=1
+        // with pivot_data containing "now" for created_at and updated_at
+        $roles = $newUser->roles;
+        $this->assertNotEmpty($roles, 'User should have at least one role assigned');
+        
+        // Check pivot table directly to verify timestamps were set
+        $pivotData = \Illuminate\Support\Facades\DB::table('role_users')
+            ->where('user_id', $newUser->id)
+            ->first();
+        
+        if ($pivotData !== null) {
+            $this->assertNotNull($pivotData->created_at, 'Pivot created_at should be set');
+            $this->assertNotNull($pivotData->updated_at, 'Pivot updated_at should be set');
+            
+            // Verify timestamps are actual datetime values, not the string "now"
+            $this->assertNotEquals('now', $pivotData->created_at, 'created_at should be processed from "now" to actual timestamp');
+            $this->assertNotEquals('now', $pivotData->updated_at, 'updated_at should be processed from "now" to actual timestamp');
+        }
+    }
 }

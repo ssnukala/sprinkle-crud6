@@ -1,4 +1,5 @@
 // Export all CRUD6 components
+export { default as CRUD6ConfirmActionModal } from './CRUD6/ConfirmActionModal.vue'
 export { default as CRUD6CreateModal } from './CRUD6/CreateModal.vue'
 export { default as CRUD6DeleteModal } from './CRUD6/DeleteModal.vue'
 export { default as CRUD6Details } from './CRUD6/Details.vue'

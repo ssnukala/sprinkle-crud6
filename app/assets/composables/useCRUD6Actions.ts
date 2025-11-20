@@ -31,6 +31,10 @@ function stripHtmlTags(html: string): string {
  * Supports i18n for confirm and success messages. Messages can be either:
  * - Translation keys (e.g., "CRUD6.ACTION.RESET_PASSWORD.CONFIRM")
  * - Plain text strings for backward compatibility
+ * 
+ * Note: Confirmation dialogs should be handled by components (e.g., ConfirmActionModal)
+ * rather than using native browser confirm(). Use executeActionWithoutConfirm() when
+ * the component handles confirmation.
  */
 export function useCRUD6Actions(model?: string) {
     const router = useRouter()
@@ -42,7 +46,11 @@ export function useCRUD6Actions(model?: string) {
     const error = ref<ApiErrorResponse | null>(null)
 
     /**
-     * Execute a custom action based on its configuration
+     * Execute a custom action based on its configuration (DEPRECATED)
+     * 
+     * @deprecated Use executeActionWithoutConfirm() and handle confirmation in component
+     * This method uses native browser confirm() which doesn't render HTML properly.
+     * For better UX, use ConfirmActionModal component with executeActionWithoutConfirm().
      */
     async function executeAction(
         action: ActionConfig,
@@ -51,8 +59,7 @@ export function useCRUD6Actions(model?: string) {
     ): Promise<boolean> {
         // Check for confirmation using native browser dialog
         // Note: Native browser confirm() doesn't render HTML, so we strip HTML tags
-        // In a production application, consider using a UIKit modal
-        // for better user experience and HTML rendering support
+        // DEPRECATED: Use ConfirmActionModal component instead
         if (action.confirm) {
             // Translate the confirmation message if it's a translation key
             let confirmMessage = translator.translate(action.confirm, currentRecord)
@@ -65,6 +72,27 @@ export function useCRUD6Actions(model?: string) {
                 return false
             }
         }
+
+        return executeActionWithoutConfirm(action, recordId, currentRecord)
+    }
+
+    /**
+     * Execute a custom action without confirmation prompt.
+     * 
+     * This method should be used when the component handles confirmation
+     * (e.g., through ConfirmActionModal). It skips the native browser confirm()
+     * and directly executes the action.
+     * 
+     * @param action The action configuration from schema
+     * @param recordId The ID of the record to act on
+     * @param currentRecord The current record data for field updates
+     * @returns Promise<boolean> True if action succeeded, false otherwise
+     */
+    async function executeActionWithoutConfirm(
+        action: ActionConfig,
+        recordId: string | number,
+        currentRecord?: any
+    ): Promise<boolean> {
 
         loading.value = true
         error.value = null
@@ -234,6 +262,7 @@ export function useCRUD6Actions(model?: string) {
         loading,
         error,
         executeAction,
+        executeActionWithoutConfirm,
         executeFieldUpdate,
         executeRouteNavigation,
         executeApiCall

@@ -7,6 +7,7 @@ import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
+import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 const route = useRoute()
@@ -44,7 +45,7 @@ debugLog('[Info] Creating schemaComposable - providedSchema exists:', !!provided
 const schemaComposable = providedSchema ? null : useCRUD6Schema()
 
 // Create actions composable for executing custom actions
-const { executeAction, loading: actionLoading } = useCRUD6Actions(model.value)
+const { executeActionWithoutConfirm, loading: actionLoading } = useCRUD6Actions(model.value)
 
 // Extract functions with fallbacks
 const hasPermission = schemaComposable?.hasPermission || (() => true)
@@ -119,9 +120,9 @@ function formatFieldValue(value: any, field: any): string {
     }
 }
 
-// Handle custom action execution
+// Handle custom action execution (called after modal confirmation)
 async function handleActionClick(action: ActionConfig) {
-    const success = await executeAction(action, crud6.id, crud6)
+    const success = await executeActionWithoutConfirm(action, crud6.id, crud6)
     if (success && action.type === 'field_update') {
         // Refresh the record data after field update
         emits('crud6Updated')
@@ -204,22 +205,33 @@ const customActions = computed(() => {
             <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
             
             <!-- Custom action buttons from schema -->
-            <button
-                v-for="action in customActions"
-                :key="action.key"
-                @click="handleActionClick(action)"
-                :disabled="actionLoading"
-                :data-test="`btn-action-${action.key}`"
-                :class="[
-                    'uk-width-1-1',
-                    'uk-margin-small-bottom',
-                    'uk-button',
-                    'uk-button-small',
-                    action.style ? `uk-button-${action.style}` : 'uk-button-default'
-                ]">
-                <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-                {{ $t(action.label) }}
-            </button>
+            <!-- Use ConfirmActionModal if action requires confirmation, otherwise direct button -->
+            <template v-for="action in customActions" :key="action.key">
+                <!-- Action with confirmation - use modal -->
+                <CRUD6ConfirmActionModal
+                    v-if="action.confirm"
+                    :action="action"
+                    :record="crud6"
+                    :model="model"
+                    @confirmed="handleActionClick(action)" />
+                
+                <!-- Action without confirmation - direct button -->
+                <button
+                    v-else
+                    @click="handleActionClick(action)"
+                    :disabled="actionLoading"
+                    :data-test="`btn-action-${action.key}`"
+                    :class="[
+                        'uk-width-1-1',
+                        'uk-margin-small-bottom',
+                        'uk-button',
+                        'uk-button-small',
+                        action.style ? `uk-button-${action.style}` : 'uk-button-default'
+                    ]">
+                    <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                    {{ $t(action.label) }}
+                </button>
+            </template>
             
             <!-- Edit button - shows modal only after user clicks -->
             <button

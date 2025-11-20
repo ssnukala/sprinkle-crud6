@@ -124,8 +124,8 @@ class RelationshipAction extends Base
                     $this->db->table($pivotTable)->insertOrIgnore([
                         $foreignKey => $crudModel->id,
                         $relatedKey => $relatedId,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
                     ]);
                 }
 

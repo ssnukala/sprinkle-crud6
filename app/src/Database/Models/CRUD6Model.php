@@ -261,7 +261,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function softDelete(): bool
     {
         if ($this->deleted_at) {
-            $this->{$this->getDeletedAtColumn()} = now();
+            $this->{$this->getDeletedAtColumn()} = date('Y-m-d H:i:s');
             return $this->save();
         }
 

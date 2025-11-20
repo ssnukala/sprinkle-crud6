@@ -190,12 +190,46 @@ class SprunjeAction extends Base
 
                 // For 'users' relation, use UserSprunje for compatibility
                 if ($relation === 'users') {
-                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation");
+                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation", [
+                        'has_relationship_config' => $relationshipConfig !== null,
+                        'relationship_type' => $relationshipConfig['type'] ?? 'direct',
+                    ]);
 
                     $this->userSprunje->setOptions($params);
-                    $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
-                        return $query->where($foreignKey, $crudModel->id);
-                    });
+                    
+                    // Handle many-to-many relationship with proper JOIN
+                    if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
+                        $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many for users relation", [
+                            'pivot_table' => $relationshipConfig['pivot_table'] ?? null,
+                            'foreign_key' => $relationshipConfig['foreign_key'] ?? null,
+                            'related_key' => $relationshipConfig['related_key'] ?? null,
+                        ]);
+                        
+                        // Build JOIN query for many-to-many
+                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $relationshipConfig) {
+                            $pivotTable = $relationshipConfig['pivot_table'];
+                            $foreignKey = $relationshipConfig['foreign_key'];
+                            $relatedKey = $relationshipConfig['related_key'];
+                            
+                            return $query->join(
+                                $pivotTable,
+                                "users.id",
+                                '=',
+                                "{$pivotTable}.{$relatedKey}"
+                            )->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
+                        });
+                    } else {
+                        // Direct relationship - qualify the column with table name to avoid ambiguity
+                        // UserSprunje may join with activities table, making unqualified 'id' ambiguous
+                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedSchema) {
+                            $relatedTable = $relatedSchema['table'] ?? 'users';
+                            $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
+                                ? $foreignKey 
+                                : "{$relatedTable}.{$foreignKey}";
+                            return $query->where($qualifiedForeignKey, $crudModel->id);
+                        });
+                    }
+                    
                     return $this->userSprunje->toResponse($response);
                 }
 
@@ -369,10 +403,16 @@ class SprunjeAction extends Base
                         'relation' => $relation,
                         'foreign_key' => $foreignKey,
                         'parent_id' => $crudModel->id,
+                        'related_table' => $relatedModel->getTable(),
                     ]);
 
-                    $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey) {
-                        return $query->where($foreignKey, $crudModel->id);
+                    // Qualify the foreign key with table name to avoid ambiguity when joins are present
+                    $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedModel) {
+                        $relatedTable = $relatedModel->getTable();
+                        $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
+                            ? $foreignKey 
+                            : "{$relatedTable}.{$foreignKey}";
+                        return $query->where($qualifiedForeignKey, $crudModel->id);
                     });
                 }
 

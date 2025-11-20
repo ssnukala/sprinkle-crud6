@@ -360,6 +360,26 @@
     "timeout": {
       "api": 10,
       "frontend": 30
+    },
+    "security": {
+      "csrf": {
+        "enabled": true,
+        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware. For PHPUnit tests, CSRF is automatically handled by the testing framework. For manual testing, include X-CSRF-Token header.",
+        "testing": {
+          "phpunit": "Automatically handled by createJsonRequest() method",
+          "manual": "Include X-CSRF-Token header with valid token"
+        },
+        "applies_to": ["POST", "PUT", "DELETE"]
+      },
+      "authentication": {
+        "enabled": true,
+        "note": "All endpoints require authentication via AuthGuard middleware",
+        "applies_to": "all_endpoints"
+      },
+      "permissions": {
+        "enabled": true,
+        "note": "Operations require specific permissions as documented in model definitions"
+      }
     }
   }
 }

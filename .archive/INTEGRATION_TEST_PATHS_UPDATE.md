@@ -192,9 +192,54 @@ Use the model definitions in `integration-test-models.json` to generate test cas
 ### For Documentation
 Both files serve as comprehensive API documentation for the CRUD6 sprinkle.
 
+## Security Considerations
+
+### CSRF Protection
+
+**UserFrosting 6 Security Mechanisms:**
+- All POST, PUT, and DELETE endpoints are protected by `CsrfGuardMiddleware` in production
+- CSRF tokens are required for all state-changing operations
+
+**For PHPUnit Integration Tests:**
+- CSRF is **automatically handled** by UserFrosting's testing framework
+- The `createJsonRequest()` method includes necessary CSRF headers
+- Tests use `WithTestUser` trait and `actAsUser()` for authentication
+- No manual CSRF token management needed in tests
+- See `SchemaBasedApiTest.php` lines 47-51 for implementation details
+
+**For Manual Testing (curl/Postman):**
+```bash
+# 1. Get CSRF token
+TOKEN=$(curl -c cookies.txt http://localhost:8080/csrf | jq -r '.csrf_token')
+
+# 2. Use token in POST/PUT/DELETE requests
+curl -b cookies.txt -X POST http://localhost:8080/api/crud6/users \
+  -H "X-CSRF-Token: $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"user_name":"test",...}'
+```
+
+**Configuration Files:**
+- Both `integration-test-paths.json` and `integration-test-models.json` now include `security` section
+- Documents CSRF requirements for POST, PUT, DELETE operations
+- Clarifies automatic handling in PHPUnit vs manual testing requirements
+
+### Authentication
+
+- All CRUD6 API endpoints require authentication via `AuthGuard` middleware
+- Tests verify both authenticated and unauthenticated scenarios
+- Unauthenticated requests return HTTP 401
+
+### Permissions
+
+- Many operations require specific permissions (documented in `requires_permission` field)
+- Tests verify permission enforcement (HTTP 403 when permission missing)
+- Permission requirements documented for each endpoint
+
 ## Notes
 
 - All endpoints require authentication (AuthGuard middleware)
+- CSRF protection is enforced on POST/PUT/DELETE operations (CsrfGuardMiddleware)
 - Permission requirements are documented but not enforced in unauthenticated tests
 - Custom actions and field toggles are model-specific (primarily users model)
 - Relationship endpoints support both attach/detach and nested listing operations

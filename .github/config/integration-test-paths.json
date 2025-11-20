@@ -728,6 +728,27 @@
     "timeout": {
       "api": 10,
       "frontend": 30
+    },
+    "security": {
+      "csrf": {
+        "enabled": true,
+        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware in production. For automated testing (PHPUnit), the testing framework automatically handles CSRF tokens via createJsonRequest() method. For manual testing with curl/Postman, you must include CSRF token in headers or disable CSRF middleware temporarily.",
+        "testing": {
+          "phpunit": "Automatically handled by UserFrosting\\Testing\\TestCase::createJsonRequest()",
+          "manual": "Include X-CSRF-Token header with valid token from /csrf endpoint"
+        },
+        "applies_to": ["POST", "PUT", "DELETE"]
+      },
+      "authentication": {
+        "enabled": true,
+        "note": "All CRUD6 API endpoints require authentication via AuthGuard middleware. Tests use WithTestUser trait and actAsUser() method. For manual testing, include Authorization header or session cookies.",
+        "applies_to": "all_endpoints"
+      },
+      "permissions": {
+        "enabled": true,
+        "note": "Many operations require specific permissions (documented in requires_permission field). Tests verify both with and without required permissions.",
+        "documented_in": "requires_permission field for each endpoint"
+      }
     }
   }
 }

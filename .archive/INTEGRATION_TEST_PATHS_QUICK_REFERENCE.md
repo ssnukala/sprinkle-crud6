@@ -9,6 +9,43 @@ The integration test path configuration provides a comprehensive mapping of all 
 - **`integration-test-paths.json`** - Complete endpoint definitions with payloads and validation
 - **`integration-test-models.json`** - Model metadata and path templates for code generation
 
+## Security Requirements
+
+### CSRF Protection
+
+**All POST, PUT, and DELETE requests require CSRF tokens in production.**
+
+For manual testing, you must include the CSRF token:
+
+```bash
+# 1. Get CSRF token (start session)
+curl -c cookies.txt -X GET http://localhost:8080/csrf
+
+# 2. Extract token from response
+TOKEN=$(curl -c cookies.txt http://localhost:8080/csrf | jq -r '.csrf_token')
+
+# 3. Include token in state-changing requests
+curl -b cookies.txt -X POST http://localhost:8080/api/crud6/users \
+  -H "X-CSRF-Token: $TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: ******" \
+  -d '{"user_name":"test","email":"test@example.com",...}'
+```
+
+**For PHPUnit tests:** CSRF is automatically handled by the testing framework's `createJsonRequest()` method.
+
+### Authentication
+
+All endpoints require authentication. Include authorization header or session cookies:
+
+```bash
+# With authorization header
+curl -H "Authorization: ******" http://localhost:8080/api/crud6/users
+
+# With session cookies (after login)
+curl -b cookies.txt http://localhost:8080/api/crud6/users
+```
+
 ## Quick Examples
 
 ### 1. Testing Authentication
@@ -38,11 +75,16 @@ curl -X GET http://localhost:8080/api/crud6/users/schema \
 
 ### 3. CRUD Operations
 
-**Create:**
+**Create (requires CSRF token):**
 
 ```bash
-curl -X POST http://localhost:8080/api/crud6/users \
+# Get CSRF token first
+CSRF_TOKEN=$(curl -c cookies.txt http://localhost:8080/csrf | jq -r '.csrf_token')
+
+# Create with CSRF token
+curl -b cookies.txt -X POST http://localhost:8080/api/crud6/users \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "user_name": "apitest",
@@ -55,7 +97,7 @@ curl -X POST http://localhost:8080/api/crud6/users \
 # Response: { "data": { "id": 123, ... } }
 ```
 
-**Read:**
+**Read (no CSRF needed for GET):**
 
 ```bash
 curl -X GET http://localhost:8080/api/crud6/users/1 \
@@ -64,11 +106,12 @@ curl -X GET http://localhost:8080/api/crud6/users/1 \
 # Response: { "id": 1, "user_name": "admin", "email": "admin@example.com", ... }
 ```
 
-**Update:**
+**Update (requires CSRF token):**
 
 ```bash
-curl -X PUT http://localhost:8080/api/crud6/users/1 \
+curl -b cookies.txt -X PUT http://localhost:8080/api/crud6/users/1 \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "Updated",
@@ -77,21 +120,23 @@ curl -X PUT http://localhost:8080/api/crud6/users/1 \
 # Expected: 200 OK
 ```
 
-**Delete:**
+**Delete (requires CSRF token):**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/crud6/users/1 \
-  -H "Authorization: Bearer $TOKEN"
+curl -b cookies.txt -X DELETE http://localhost:8080/api/crud6/users/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN"
 # Expected: 200 OK
 ```
 
 ### 4. Field Updates (Boolean Toggles)
 
-**Update single field:**
+**Update single field (requires CSRF token):**
 
 ```bash
-curl -X PUT http://localhost:8080/api/crud6/users/1/flag_enabled \
+curl -b cookies.txt -X PUT http://localhost:8080/api/crud6/users/1/flag_enabled \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "flag_enabled": false }'
 # Expected: 200 OK
@@ -99,32 +144,35 @@ curl -X PUT http://localhost:8080/api/crud6/users/1/flag_enabled \
 
 ### 5. Custom Actions
 
-**Execute custom action:**
+**Execute custom action (requires CSRF token):**
 
 ```bash
-curl -X POST http://localhost:8080/api/crud6/users/1/a/reset_password \
+curl -b cookies.txt -X POST http://localhost:8080/api/crud6/users/1/a/reset_password \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json"
 # Expected: 200, 404, or 500 (depending on implementation)
 ```
 
 ### 6. Relationship Operations
 
-**Attach related records (many-to-many):**
+**Attach related records (requires CSRF token):**
 
 ```bash
-curl -X POST http://localhost:8080/api/crud6/users/1/roles \
+curl -b cookies.txt -X POST http://localhost:8080/api/crud6/users/1/roles \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "related_ids": [1, 2, 3] }'
 # Expected: 200 OK or 403 Forbidden
 ```
 
-**Detach related records:**
+**Detach related records (requires CSRF token):**
 
 ```bash
-curl -X DELETE http://localhost:8080/api/crud6/users/1/roles \
+curl -b cookies.txt -X DELETE http://localhost:8080/api/crud6/users/1/roles \
   -H "Authorization: Bearer $TOKEN" \
+  -H "X-CSRF-Token: $CSRF_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "related_ids": [2] }'
 # Expected: 200 OK or 403 Forbidden
@@ -391,11 +439,41 @@ done
 ## Tips
 
 1. **Always authenticate** - All endpoints require authentication
-2. **Check permissions** - Many operations require specific permissions
-3. **Use schema endpoints** - Get field definitions and available actions
-4. **Test error cases** - Try without auth, without permissions, with invalid data
-5. **Verify relationships** - Test both attach/detach and nested listing
-6. **Check nested endpoints** - Some relationships are read-only (nested GET only)
+2. **Include CSRF tokens** - POST, PUT, DELETE requests require X-CSRF-Token header
+3. **Check permissions** - Many operations require specific permissions
+4. **Use schema endpoints** - Get field definitions and available actions
+5. **Test error cases** - Try without auth, without permissions, with invalid data
+6. **Verify relationships** - Test both attach/detach and nested listing
+7. **Check nested endpoints** - Some relationships are read-only (nested GET only)
+8. **Maintain session** - Use `-b cookies.txt -c cookies.txt` to preserve session cookies
+
+## Security Summary
+
+### UserFrosting 6 Security Mechanisms
+
+**CSRF Protection:**
+- Required for: POST, PUT, DELETE operations
+- Enforced by: `CsrfGuardMiddleware`
+- PHPUnit tests: Automatically handled by `createJsonRequest()`
+- Manual testing: Include `X-CSRF-Token` header
+
+**Authentication:**
+- Required for: All CRUD6 API endpoints
+- Enforced by: `AuthGuard` middleware
+- Return: HTTP 401 when not authenticated
+
+**Permissions:**
+- Required for: Create, update, delete operations
+- Documented in: `requires_permission` field for each endpoint
+- Return: HTTP 403 when permission missing
+
+### Configuration Files Include Security Info
+
+Both `integration-test-paths.json` and `integration-test-models.json` now include a `security` section documenting:
+- CSRF requirements (POST, PUT, DELETE)
+- Authentication requirements (all endpoints)
+- Permission requirements (operation-specific)
+- Testing approaches (PHPUnit vs manual)
 
 ## Additional Resources
 
@@ -403,3 +481,4 @@ done
 - Example schemas: `examples/schema/c6admin-*.json`
 - Test implementation: `app/tests/Integration/SchemaBasedApiTest.php`
 - API routes: `app/src/Routes/CRUD6Routes.php`
+- Security documentation: See `config.security` section in JSON files

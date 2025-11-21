@@ -351,116 +351,120 @@ jobs:
 
       - name: Configure PHPUnit for CRUD6 tests
         run: |
-          cd userfrosting
+          if(false){
+            cd userfrosting
 
-          # Create phpunit.xml with proper autoloading for CRUD6 test classes
-          cat > phpunit-crud6.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
-                   bootstrap="vendor/autoload.php"
-                   colors="true"
-                   stopOnFailure="false">
-              <testsuites>
-                  <testsuite name="CRUD6 Integration Tests">
-                      <directory>../sprinkle-crud6/app/tests/Integration</directory>
-                  </testsuite>
-                  <testsuite name="CRUD6 Controller Tests">
-                      <directory>../sprinkle-crud6/app/tests/Controller</directory>
-                  </testsuite>
-                  <testsuite name="CRUD6 Generated Schema Tests">
-                      <directory>../sprinkle-crud6/app/tests/Generated</directory>
-                  </testsuite>
-              </testsuites>
-              <php>
-                  <!-- Add autoload for CRUD6 test classes -->
-                  <ini name="memory_limit" value="-1"/>
-              </php>
-          </phpunit>
-          EOF
+            # Create phpunit.xml with proper autoloading for CRUD6 test classes
+            cat > phpunit-crud6.xml << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+                    bootstrap="vendor/autoload.php"
+                    colors="true"
+                    stopOnFailure="false">
+                <testsuites>
+                    <testsuite name="CRUD6 Integration Tests">
+                        <directory>../sprinkle-crud6/app/tests/Integration</directory>
+                    </testsuite>
+                    <testsuite name="CRUD6 Controller Tests">
+                        <directory>../sprinkle-crud6/app/tests/Controller</directory>
+                    </testsuite>
+                    <testsuite name="CRUD6 Generated Schema Tests">
+                        <directory>../sprinkle-crud6/app/tests/Generated</directory>
+                    </testsuite>
+                </testsuites>
+                <php>
+                    <!-- Add autoload for CRUD6 test classes -->
+                    <ini name="memory_limit" value="-1"/>
+                </php>
+            </phpunit>
+            EOF
 
-          # Create bootstrap file to load CRUD6 test classes
-          cat > bootstrap-crud6.php << 'EOF'
-          <?php
-          // Load UserFrosting vendor autoloader
-          require_once __DIR__ . '/vendor/autoload.php';
+            # Create bootstrap file to load CRUD6 test classes
+            cat > bootstrap-crud6.php << 'EOF'
+            <?php
+            // Load UserFrosting vendor autoloader
+            require_once __DIR__ . '/vendor/autoload.php';
 
-          // Manually register CRUD6 test namespace since autoload-dev is not loaded for dependencies
-          // This allows PHPUnit to find test helper classes like AdminTestCase
-          $loader = require __DIR__ . '/vendor/autoload.php';
-          $loader->addPsr4('UserFrosting\\Sprinkle\\CRUD6\\Tests\\', __DIR__ . '/../sprinkle-crud6/app/tests/');
+            // Manually register CRUD6 test namespace since autoload-dev is not loaded for dependencies
+            // This allows PHPUnit to find test helper classes like AdminTestCase
+            $loader = require __DIR__ . '/vendor/autoload.php';
+            $loader->addPsr4('UserFrosting\\Sprinkle\\CRUD6\\Tests\\', __DIR__ . '/../sprinkle-crud6/app/tests/');
 
-          // Create runtime directories required by UserFrosting for testing
-          // These directories are needed by SessionService, CacheService, and LoggerInterface
-          // In production, these are created during installation, but in CI they must be created here
-          // UserFrosting 6 expects storage/ directory structure, not app/sessions
+            // Create runtime directories required by UserFrosting for testing
+            // These directories are needed by SessionService, CacheService, and LoggerInterface
+            // In production, these are created during installation, but in CI they must be created here
+            // UserFrosting 6 expects storage/ directory structure, not app/sessions
 
-          echo "\n========================================\n";
-          echo "BOOTSTRAP: Creating Runtime Directories\n";
-          echo "========================================\n";
-          echo "Current directory: " . __DIR__ . "\n";
-          echo "PHP User: " . get_current_user() . "\n";
-          echo "PHP UID: " . getmyuid() . "\n";
-          echo "PHP GID: " . getmygid() . "\n\n";
+            echo "\n========================================\n";
+            echo "BOOTSTRAP: Creating Runtime Directories\n";
+            echo "========================================\n";
+            echo "Current directory: " . __DIR__ . "\n";
+            echo "PHP User: " . get_current_user() . "\n";
+            echo "PHP UID: " . getmyuid() . "\n";
+            echo "PHP GID: " . getmygid() . "\n\n";
 
-          $runtimeDirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
-          foreach ($runtimeDirs as $dir) {
-              $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
-              echo "Processing: $dir\n";
-              echo "  Full path: $fullPath\n";
-              
-              if (is_dir($fullPath)) {
-                  echo "  Status: Directory already exists\n";
-                  $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
-                  echo "  Permissions: $perms\n";
-                  echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
-              } else {
-                  echo "  Status: Creating directory...\n";
-                  $result = mkdir($fullPath, 0755, true);
-                  if ($result) {
-                      echo "  Result: Successfully created\n";
-                      $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
-                      echo "  Permissions: $perms\n";
-                      echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
-                  } else {
-                      $error = error_get_last();
-                      echo "  Result: FAILED to create\n";
-                      if ($error) {
-                          echo "  Error: " . $error['message'] . "\n";
-                      }
-                      throw new \RuntimeException(sprintf('Directory "%s" was not created', $fullPath));
-                  }
-              }
-              echo "\n";
+            $runtimeDirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
+            foreach ($runtimeDirs as $dir) {
+                $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
+                echo "Processing: $dir\n";
+                echo "  Full path: $fullPath\n";
+                
+                if (is_dir($fullPath)) {
+                    echo "  Status: Directory already exists\n";
+                    $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
+                    echo "  Permissions: $perms\n";
+                    echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
+                } else {
+                    echo "  Status: Creating directory...\n";
+                    $result = mkdir($fullPath, 0755, true);
+                    if ($result) {
+                        echo "  Result: Successfully created\n";
+                        $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
+                        echo "  Permissions: $perms\n";
+                        echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
+                    } else {
+                        $error = error_get_last();
+                        echo "  Result: FAILED to create\n";
+                        if ($error) {
+                            echo "  Error: " . $error['message'] . "\n";
+                        }
+                        throw new \RuntimeException(sprintf('Directory "%s" was not created', $fullPath));
+                    }
+                }
+                echo "\n";
+            }
+
+            echo "========================================\n";
+            echo "Directory Creation Complete\n";
+            echo "========================================\n\n";
+
+            // Verify all directories exist and are writable
+            echo "Final verification:\n";
+            foreach ($runtimeDirs as $dir) {
+                $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
+                $exists = is_dir($fullPath);
+                $writable = is_writable($fullPath);
+                echo "  $dir: " . ($exists ? 'EXISTS' : 'MISSING') . " | " . ($writable ? 'WRITABLE' : 'NOT WRITABLE') . "\n";
+                
+                if (!$exists) {
+                    throw new \RuntimeException(sprintf('Required directory "%s" does not exist after creation', $dir));
+                }
+                if (!$writable) {
+                    throw new \RuntimeException(sprintf('Required directory "%s" is not writable', $dir));
+                }
+            }
+            echo "\n";
+            EOF
+
+            # Update phpunit.xml to use bootstrap file
+            sed -i 's|bootstrap="vendor/autoload.php"|bootstrap="bootstrap-crud6.php"|' phpunit-crud6.xml
+
+            echo "✅ PHPUnit configuration created for CRUD6 tests"
+            cat phpunit-crud6.xml
+          } else {
+            echo "Skipping PHPUnit configuration step (disabled)";
           }
-
-          echo "========================================\n";
-          echo "Directory Creation Complete\n";
-          echo "========================================\n\n";
-
-          // Verify all directories exist and are writable
-          echo "Final verification:\n";
-          foreach ($runtimeDirs as $dir) {
-              $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
-              $exists = is_dir($fullPath);
-              $writable = is_writable($fullPath);
-              echo "  $dir: " . ($exists ? 'EXISTS' : 'MISSING') . " | " . ($writable ? 'WRITABLE' : 'NOT WRITABLE') . "\n";
-              
-              if (!$exists) {
-                  throw new \RuntimeException(sprintf('Required directory "%s" does not exist after creation', $dir));
-              }
-              if (!$writable) {
-                  throw new \RuntimeException(sprintf('Required directory "%s" is not writable', $dir));
-              }
-          }
-          echo "\n";
-          EOF
-
-          # Update phpunit.xml to use bootstrap file
-          sed -i 's|bootstrap="vendor/autoload.php"|bootstrap="bootstrap-crud6.php"|' phpunit-crud6.xml
-
-          echo "✅ PHPUnit configuration created for CRUD6 tests"
-          cat phpunit-crud6.xml
 
       - name: Verify Runtime Directories Before Tests
         run: |

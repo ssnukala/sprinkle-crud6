@@ -51,10 +51,21 @@ class AdminTestCase extends TestCase
             'app/logs',
         ];
         
+        // Use realpath to get the base directory of the sprinkle
+        $baseDir = realpath(__DIR__ . '/../../') ?: __DIR__ . '/../..';
+        
         foreach ($runtimeDirs as $dir) {
-            $fullPath = __DIR__ . '/../../' . $dir;
+            $fullPath = $baseDir . '/' . $dir;
             if (!is_dir($fullPath)) {
-                @mkdir($fullPath, 0755, true);
+                // Check if parent directory exists first
+                $parentDir = dirname($fullPath);
+                if (!is_dir($parentDir)) {
+                    mkdir($parentDir, 0755, true);
+                }
+                // Now create the directory
+                if (!mkdir($fullPath, 0755, true) && !is_dir($fullPath)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $fullPath));
+                }
             }
         }
     }

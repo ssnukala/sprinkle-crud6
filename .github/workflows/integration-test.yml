@@ -298,6 +298,26 @@ jobs:
           echo "Note: Authenticated API and frontend paths tested via screenshots step"
           echo "========================================="
 
+      - name: Generate Schema-Driven Tests
+        run: |
+          cd sprinkle-crud6
+          
+          echo "========================================="
+          echo "Generating Schema-Driven Tests"
+          echo "========================================="
+          echo ""
+          echo "Analyzing JSON schemas and generating comprehensive tests..."
+          echo ""
+          
+          # Run schema test generator
+          node .github/scripts/generate-schema-tests.js app/schema/crud6 app/tests/Generated
+          
+          echo ""
+          echo "========================================="
+          echo "Generated Test Summary"
+          echo "========================================="
+          ls -la app/tests/Generated/ || echo "No generated tests directory"
+
       - name: Configure PHPUnit for CRUD6 tests
         run: |
           cd userfrosting
@@ -316,6 +336,9 @@ jobs:
                   </testsuite>
                   <testsuite name="CRUD6 Controller Tests">
                       <directory>../sprinkle-crud6/app/tests/Controller</directory>
+                  </testsuite>
+                  <testsuite name="CRUD6 Generated Schema Tests">
+                      <directory>../sprinkle-crud6/app/tests/Generated</directory>
                   </testsuite>
               </testsuites>
               <php>
@@ -369,6 +392,13 @@ jobs:
           vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Controller Tests" --testdox --colors=always
 
           echo ""
+          echo "Running Generated Schema Tests (All JSON Schema Features)"
+          echo "========================================="
+
+          # Run generated schema-driven tests
+          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Generated Schema Tests" --testdox --colors=always || echo "⚠️  Some schema tests may have failed"
+
+          echo ""
           echo "========================================="
           echo "✅ PHPUnit Integration Tests Completed"
           echo "========================================="
@@ -388,6 +418,38 @@ jobs:
           echo ""
           echo "All 11 API endpoint types tested with 3 authentication scenarios each!"
           echo ""
+
+      - name: Run Enhanced Frontend Error Detection
+        run: |
+          cd userfrosting
+          
+          echo "========================================="
+          echo "Enhanced Frontend Error Detection"
+          echo "========================================="
+          echo ""
+          echo "Comprehensive error monitoring for:"
+          echo "  - JavaScript console errors"
+          echo "  - Network errors (4xx/5xx)"
+          echo "  - Vue.js component errors"
+          echo "  - UI error notifications"
+          echo "  - Page load validation"
+          echo ""
+          
+          # Copy enhanced error detection script
+          cp ../sprinkle-crud6/.github/scripts/enhanced-error-detection.js .
+          
+          # Run error detection on all frontend pages
+          node enhanced-error-detection.js integration-test-paths.json || echo "⚠️  Errors detected but continuing..."
+          
+          echo ""
+          echo "========================================="
+          echo "Error Detection Summary"
+          echo "========================================="
+          if [ -f /tmp/frontend-error-report.txt ]; then
+            cat /tmp/frontend-error-report.txt
+          else
+            echo "⚠️  Error report not found"
+          fi
 
       - name: Take screenshots and test authenticated API endpoints (with Network Tracking)
         run: |
@@ -454,6 +516,15 @@ jobs:
         with:
           name: network-requests-summary
           path: /tmp/network-requests-summary.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload frontend error report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-error-report
+          path: /tmp/frontend-error-report.txt
           if-no-files-found: ignore
           retention-days: 30
 

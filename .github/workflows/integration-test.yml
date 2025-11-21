@@ -2,9 +2,9 @@ name: Integration Test with UserFrosting 6
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
@@ -34,35 +34,35 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: "8.1"
           extensions: mbstring, xml, gd, pdo_mysql
           coverage: none
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Create UserFrosting project using composer create-project
         run: |
           composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
-          
+
           # Create storage and app runtime directories immediately after project creation
           # This ensures all required directories are available for subsequent steps
           echo ""
           echo "Creating runtime directories with 777 permissions..."
           cd userfrosting/app
-          
+
           # Set ownership to current user
           chown -R $USER: .
-          
+
           # Create required directories (UserFrosting 6 structure)
           mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
           chmod -R 777 storage sessions logs cache
-          
+
           # Create log file
           touch logs/userfrosting.log
-        
+
           echo "✅ Runtime directories created and permissions set to 777"
           echo ""
           echo "Storage directories:"
@@ -171,6 +171,10 @@ jobs:
           echo "" >> app/.env
           echo "# Bakery Configuration" >> app/.env
           echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
+          # Use database session handler for testing (avoids file session directory issues)
+          echo "" >> app/.env
+          echo "# Testing Configuration" >> app/.env
+          echo "TEST_SESSION_HANDLER=database" >> app/.env
 
       - name: Run migrations
         run: |
@@ -328,17 +332,17 @@ jobs:
       - name: Generate Schema-Driven Tests
         run: |
           cd sprinkle-crud6
-          
+
           echo "========================================="
           echo "Generating Schema-Driven Tests"
           echo "========================================="
           echo ""
           echo "Analyzing JSON schemas and generating comprehensive tests..."
           echo ""
-          
+
           # Run schema test generator
           node .github/scripts/generate-schema-tests.js app/schema/crud6 app/tests/Generated
-          
+
           echo ""
           echo "========================================="
           echo "Generated Test Summary"
@@ -348,7 +352,7 @@ jobs:
       - name: Configure PHPUnit for CRUD6 tests
         run: |
           cd userfrosting
-          
+
           # Create phpunit.xml with proper autoloading for CRUD6 test classes
           cat > phpunit-crud6.xml << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -374,23 +378,23 @@ jobs:
               </php>
           </phpunit>
           EOF
-          
+
           # Create bootstrap file to load CRUD6 test classes
           cat > bootstrap-crud6.php << 'EOF'
           <?php
           // Load UserFrosting vendor autoloader
           require_once __DIR__ . '/vendor/autoload.php';
-          
+
           // Manually register CRUD6 test namespace since autoload-dev is not loaded for dependencies
           // This allows PHPUnit to find test helper classes like AdminTestCase
           $loader = require __DIR__ . '/vendor/autoload.php';
           $loader->addPsr4('UserFrosting\\Sprinkle\\CRUD6\\Tests\\', __DIR__ . '/../sprinkle-crud6/app/tests/');
-          
+
           // Create runtime directories required by UserFrosting for testing
           // These directories are needed by SessionService, CacheService, and LoggerInterface
           // In production, these are created during installation, but in CI they must be created here
           // UserFrosting 6 expects storage/ directory structure, not app/sessions
-          
+
           echo "\n========================================\n";
           echo "BOOTSTRAP: Creating Runtime Directories\n";
           echo "========================================\n";
@@ -398,7 +402,7 @@ jobs:
           echo "PHP User: " . get_current_user() . "\n";
           echo "PHP UID: " . getmyuid() . "\n";
           echo "PHP GID: " . getmygid() . "\n\n";
-          
+
           $runtimeDirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
           foreach ($runtimeDirs as $dir) {
               $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
@@ -429,11 +433,11 @@ jobs:
               }
               echo "\n";
           }
-          
+
           echo "========================================\n";
           echo "Directory Creation Complete\n";
           echo "========================================\n\n";
-          
+
           // Verify all directories exist and are writable
           echo "Final verification:\n";
           foreach ($runtimeDirs as $dir) {
@@ -451,29 +455,29 @@ jobs:
           }
           echo "\n";
           EOF
-          
+
           # Update phpunit.xml to use bootstrap file
           sed -i 's|bootstrap="vendor/autoload.php"|bootstrap="bootstrap-crud6.php"|' phpunit-crud6.xml
-          
+
           echo "✅ PHPUnit configuration created for CRUD6 tests"
           cat phpunit-crud6.xml
 
       - name: Verify Runtime Directories Before Tests
         run: |
           cd userfrosting
-          
+
           echo "========================================="
           echo "Pre-Test Directory Verification"
           echo "========================================="
           echo ""
           echo "Checking runtime directories before PHPUnit execution..."
           echo ""
-          
+
           # Run a PHP script to check directory state
           php -r "
           \$dirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
           \$allGood = true;
-          
+
           foreach (\$dirs as \$dir) {
               \$fullPath = __DIR__ . DIRECTORY_SEPARATOR . \$dir;
               \$exists = is_dir(\$fullPath);
@@ -494,7 +498,7 @@ jobs:
               }
               echo \"\n\";
           }
-          
+
           if (!\$allGood) {
               echo \"⚠️  WARNING: Some directories have issues. Tests may fail.\n\";
               exit(1);
@@ -502,11 +506,16 @@ jobs:
               echo \"✅ All runtime directories are ready for testing.\n\";
           }
           "
-          
+
           echo ""
           echo "Directory listing (ls -la storage/):"
           ls -la storage/ || echo "storage/ directory does not exist"
           echo ""
+          echo "Directory listing (ls -la app/storage/):"
+          ls -la app/storage/ || echo "app/storage/ directory does not exist"
+          echo ""
+          echo "Directory listing (ls -la app/storage/sessions/):"
+          ls -la app/storage/sessions/ || echo "app/storage/sessions/ directory does not exist"
 
       - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
         run: |
@@ -564,7 +573,7 @@ jobs:
       - name: Run Enhanced Frontend Error Detection
         run: |
           cd userfrosting
-          
+
           echo "========================================="
           echo "Enhanced Frontend Error Detection"
           echo "========================================="
@@ -576,13 +585,13 @@ jobs:
           echo "  - UI error notifications"
           echo "  - Page load validation"
           echo ""
-          
+
           # Copy enhanced error detection script
           cp ../sprinkle-crud6/.github/scripts/enhanced-error-detection.js .
-          
+
           # Run error detection on all frontend pages
           node enhanced-error-detection.js integration-test-paths.json || echo "⚠️  Errors detected but continuing..."
-          
+
           echo ""
           echo "========================================="
           echo "Error Detection Summary"
@@ -858,6 +867,6 @@ jobs:
           This single authenticated session is then reused for:
           - Taking screenshots of all frontend pages
           - Testing all authenticated API endpoints
-          
+
           This approach avoids logging in multiple times and improves test efficiency.
           EOF

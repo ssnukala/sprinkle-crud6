@@ -160,7 +160,6 @@ class CRUD6SprunjeSearchTest extends AdminTestCase
     /**
      * Test that search does not search non-filterable fields.
      */
-    public function testSearchOnlySearchableFields(): void
     public function testSearchOnlyFilterableFields(): void
     {
         /** @var CRUD6Sprunje */

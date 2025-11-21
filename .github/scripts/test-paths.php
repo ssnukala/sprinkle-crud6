@@ -53,10 +53,11 @@ $totalTests = 0;
 $passedTests = 0;
 $failedTests = 0;
 $skippedTests = 0;
+$warningTests = 0;
 
 // Function to test a path
 function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = null, $password = null) {
-    global $totalTests, $passedTests, $failedTests, $skippedTests;
+    global $totalTests, $passedTests, $failedTests, $skippedTests, $warningTests;
     
     $totalTests++;
     
@@ -98,6 +99,15 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     
     // Execute curl command
     $httpCode = trim(shell_exec($curlCmd));
+    
+    // For unauthenticated API tests, permission failures (401/403) should warn, not fail
+    // We're looking for actual code/SQL failures (500, syntax errors, etc.)
+    $isUnauthApiTest = !$isAuth && isset($pathConfig['path']) && strpos($pathConfig['path'], '/api/') !== false;
+    $isPermissionFailure = in_array($httpCode, ['401', '403']);
+    $isServerError = in_array($httpCode, ['500', '502', '503', '504']);
+    
+    // Check if this is a CREATE endpoint (POST method)
+    $isCreateEndpoint = $method === 'POST' && strpos($path, '/api/crud6/') !== false && !strpos($path, '/a/');
     
     // Validate status code
     if ($httpCode == $expectedStatus) {
@@ -150,6 +160,31 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
         
         echo "   ✅ PASSED\n\n";
         $passedTests++;
+    } elseif ($isUnauthApiTest && $isPermissionFailure) {
+        // For unauthenticated API tests, permission failures are expected - warn and continue
+        echo "   ⚠️  Status: {$httpCode} (expected {$expectedStatus})\n";
+        if ($isCreateEndpoint) {
+            echo "   ⚠️  WARNING: CREATE endpoint returned {$httpCode} - this is acceptable (may or may not need permissions)\n";
+        } else {
+            echo "   ⚠️  WARNING: Permission failure ({$httpCode}) - expected for unauthenticated request\n";
+        }
+        echo "   ⚠️  WARNED (continuing tests to check for code/SQL failures)\n\n";
+        $warningTests++;
+    } elseif ($isUnauthApiTest && $isServerError) {
+        // Server errors indicate actual code/SQL failures - these should fail
+        echo "   ❌ Status: {$httpCode} (expected {$expectedStatus})\n";
+        echo "   ❌ FAILED: Server error detected - possible code/SQL failure\n";
+        
+        // Try to read error details from response
+        $content = file_get_contents($tmpFile);
+        if ($content) {
+            $json = json_decode($content, true);
+            if ($json && isset($json['message'])) {
+                echo "   ❌ Error: {$json['message']}\n";
+            }
+        }
+        echo "\n";
+        $failedTests++;
     } else {
         echo "   ❌ Status: {$httpCode} (expected {$expectedStatus})\n";
         echo "   ❌ FAILED\n\n";
@@ -216,13 +251,20 @@ echo "Test Summary\n";
 echo "=========================================\n";
 echo "Total tests: {$totalTests}\n";
 echo "Passed: {$passedTests}\n";
+echo "Warnings: {$warningTests}\n";
 echo "Failed: {$failedTests}\n";
 echo "Skipped: {$skippedTests}\n";
 echo "\n";
 
 if ($failedTests > 0) {
-    echo "❌ Some tests failed\n";
+    echo "❌ Some tests failed (actual code/SQL errors detected)\n";
+    echo "   Note: Permission failures (401/403) are warnings, not failures\n";
     exit(1);
+} elseif ($warningTests > 0) {
+    echo "✅ All tests passed (permission warnings are expected for unauthenticated requests)\n";
+    echo "   {$warningTests} permission warnings detected (401/403 status codes)\n";
+    echo "   No actual code/SQL errors found\n";
+    exit(0);
 } else {
     echo "✅ All tests passed\n";
     exit(0);

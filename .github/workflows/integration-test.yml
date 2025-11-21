@@ -46,6 +46,16 @@ jobs:
       - name: Create UserFrosting project using composer create-project
         run: |
           composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
+          
+          # Create storage directories immediately after project creation
+          # This ensures all required directories are available for subsequent steps
+          echo ""
+          echo "Creating storage directories with 777 permissions..."
+          cd userfrosting
+          mkdir -p storage/sessions storage/cache storage/logs
+          chmod -R 777 storage
+          echo "✅ Storage directories created and permissions set to 777"
+          ls -ld storage storage/sessions storage/cache storage/logs
 
       - name: Configure Composer for beta packages and local sprinkle-crud6
         run: |

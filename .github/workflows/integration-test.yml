@@ -47,15 +47,38 @@ jobs:
         run: |
           composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
           
-          # Create storage directories immediately after project creation
+          # Create storage and app runtime directories immediately after project creation
           # This ensures all required directories are available for subsequent steps
           echo ""
-          echo "Creating storage directories with 777 permissions..."
+          echo "Creating runtime directories with 777 permissions..."
           cd userfrosting
+          
+          # Create storage directories (UserFrosting 6 structure)
           mkdir -p storage/sessions storage/cache storage/logs
           chmod -R 777 storage
-          echo "✅ Storage directories created and permissions set to 777"
+          
+          # Create app directories (legacy/compatibility structure)
+          mkdir -p app/logs app/cache app/sessions
+          
+          # Create log file
+          touch app/logs/userfrosting.log
+          
+          # Set ownership to current user
+          chown -R $USER: .
+          
+          # Set permissions on app directories
+          chmod 777 app/logs app/cache app/sessions
+          
+          echo "✅ Runtime directories created and permissions set to 777"
+          echo ""
+          echo "Storage directories:"
           ls -ld storage storage/sessions storage/cache storage/logs
+          echo ""
+          echo "App directories:"
+          ls -ld app/logs app/cache app/sessions
+          echo ""
+          echo "Log file:"
+          ls -la app/logs/userfrosting.log
 
       - name: Configure Composer for beta packages and local sprinkle-crud6
         run: |

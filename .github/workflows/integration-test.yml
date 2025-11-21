@@ -618,7 +618,7 @@ jobs:
           echo "   Reports include: users, groups, roles, permissions, activities API calls"
 
           # Add to GitHub Actions Summary with direct link
-          cat >> $GITHUB_STEP_SUMMARY << EOF
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
           ## Integration Test Results ✅ (Modular Testing Framework)
 
           ### Test Coverage

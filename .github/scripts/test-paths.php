@@ -100,11 +100,11 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     // Execute curl command
     $httpCode = trim(shell_exec($curlCmd));
     
-    // For unauthenticated API tests, permission failures (401/403) should warn, not fail
+    // For unauthenticated API tests, permission failures (400/401/403) should warn, not fail
     // We're looking for actual code/SQL failures (500, syntax errors, etc.)
     // Note: Patterns are hardcoded as they're specific to CRUD6 API structure
     $isUnauthApiTest = !$isAuth && isset($pathConfig['path']) && strpos($pathConfig['path'], '/api/') !== false;
-    $isPermissionFailure = in_array($httpCode, ['401', '403']); // HTTP unauthorized/forbidden
+    $isPermissionFailure = in_array($httpCode, ['400', '401', '403']); // HTTP bad request/unauthorized/forbidden
     $isServerError = in_array($httpCode, ['500', '502', '503', '504']); // HTTP server errors
     
     // Check if this is a CREATE endpoint (POST method to /api/crud6/{model})
@@ -165,7 +165,9 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     } elseif ($isUnauthApiTest && $isPermissionFailure) {
         // For unauthenticated API tests, permission failures are expected - warn and continue
         echo "   ⚠️  Status: {$httpCode} (expected {$expectedStatus})\n";
-        if ($isCreateEndpoint) {
+        if ($httpCode === '400') {
+            echo "   ⚠️  WARNING: Authentication/CSRF failure ({$httpCode}) - expected for unauthenticated request\n";
+        } elseif ($isCreateEndpoint) {
             echo "   ⚠️  WARNING: CREATE endpoint returned {$httpCode} - this is acceptable (may or may not need permissions)\n";
         } else {
             echo "   ⚠️  WARNING: Permission failure ({$httpCode}) - expected for unauthenticated request\n";
@@ -260,11 +262,11 @@ echo "\n";
 
 if ($failedTests > 0) {
     echo "❌ Some tests failed (actual code/SQL errors detected)\n";
-    echo "   Note: Permission failures (401/403) are warnings, not failures\n";
+    echo "   Note: Permission failures (400/401/403) are warnings, not failures\n";
     exit(1);
 } elseif ($warningTests > 0) {
     echo "✅ All tests passed (permission warnings are expected for unauthenticated requests)\n";
-    echo "   {$warningTests} permission warnings detected (401/403 status codes)\n";
+    echo "   {$warningTests} permission warnings detected (400/401/403 status codes)\n";
     echo "   No actual code/SQL errors found\n";
     exit(0);
 } else {

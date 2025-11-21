@@ -53,6 +53,34 @@ class SprunjeActionTest extends AdminTestCase
     }
 
     /**
+     * Test GET /api/crud6/users requires authentication
+     */
+    public function testListRequiresAuthentication(): void
+    {
+        $request = $this->createJsonRequest('GET', '/api/crud6/users');
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertJsonResponse('Login Required', $response, 'title');
+        $this->assertResponseStatus(401, $response);
+    }
+
+    /**
+     * Test GET /api/crud6/users requires permission
+     */
+    public function testListRequiresPermission(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user);  // No permissions
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users');
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertJsonResponse('Access Denied', $response, 'title');
+        $this->assertResponseStatus(403, $response);
+    }
+
+    /**
      * Test GET /api/crud6/users returns paginated list
      */
     public function testListUsersReturnsPaginatedData(): void

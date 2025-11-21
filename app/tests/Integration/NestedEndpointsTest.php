@@ -96,6 +96,40 @@ class NestedEndpointsTest extends AdminTestCase
     }
 
     /**
+     * Test nested endpoints require authentication
+     */
+    public function testNestedEndpointRequiresAuthentication(): void
+    {
+        /** @var Role */
+        $role = Role::factory()->create();
+
+        $request = $this->createJsonRequest('GET', "/api/crud6/roles/{$role->id}/permissions");
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(401, $response,
+            'Nested endpoint should require authentication');
+    }
+
+    /**
+     * Test nested endpoints require permission
+     */
+    public function testNestedEndpointRequiresPermission(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user);  // No permissions
+
+        /** @var Role */
+        $role = Role::factory()->create();
+
+        $request = $this->createJsonRequest('GET', "/api/crud6/roles/{$role->id}/permissions");
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(403, $response,
+            'Nested endpoint should require permission');
+    }
+
+    /**
      * Test GET /api/crud6/permissions/1 returns a single permission
      * 
      * This is the basic detail endpoint that was reported as failing.

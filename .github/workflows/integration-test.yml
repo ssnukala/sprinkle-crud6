@@ -299,6 +299,52 @@ jobs:
           echo "Using Playwright for authenticated tests instead"
           echo "========================================="
 
+      - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
+        run: |
+          cd userfrosting
+          
+          echo "========================================="
+          echo "Running PHPUnit Integration Tests"
+          echo "========================================="
+          echo ""
+          echo "These tests verify ALL CRUD6 API endpoints with:"
+          echo "  - Unauthenticated requests (401 expected)"
+          echo "  - Authenticated but no permission (403 expected)"
+          echo "  - Authenticated with permission (200 expected)"
+          echo ""
+          
+          # Run all CRUD6 integration tests
+          # These test both authenticated and unauthenticated scenarios
+          vendor/bin/phpunit ../sprinkle-crud6/app/tests/Integration/ --testdox --colors=always
+          
+          echo ""
+          echo "Running Controller Tests (All API Endpoints)"
+          echo "========================================="
+          
+          # Run controller tests that cover all CRUD6 endpoints
+          vendor/bin/phpunit ../sprinkle-crud6/app/tests/Controller/ --testdox --colors=always
+          
+          echo ""
+          echo "========================================="
+          echo "✅ PHPUnit Integration Tests Completed"
+          echo "========================================="
+          echo ""
+          echo "Test Coverage Summary:"
+          echo "  ✅ Schema endpoint (GET /api/crud6/{model}/schema) - 401, 403, 200"
+          echo "  ✅ List endpoint (GET /api/crud6/{model}) - 401, 403, 200"
+          echo "  ✅ Create endpoint (POST /api/crud6/{model}) - 401, 403, 200"
+          echo "  ✅ Read endpoint (GET /api/crud6/{model}/{id}) - 401, 403, 200"
+          echo "  ✅ Update endpoint (PUT /api/crud6/{model}/{id}) - 401, 403, 200"
+          echo "  ✅ Update field endpoint (PUT /api/crud6/{model}/{id}/{field}) - 401, 403, 200"
+          echo "  ✅ Delete endpoint (DELETE /api/crud6/{model}/{id}) - 401, 403, 200"
+          echo "  ✅ Custom action endpoint (POST /api/crud6/{model}/{id}/a/{action}) - 401, 403, 200"
+          echo "  ✅ Nested list endpoint (GET /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
+          echo "  ✅ Attach relationship endpoint (POST /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
+          echo "  ✅ Detach relationship endpoint (DELETE /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
+          echo ""
+          echo "All 11 API endpoint types tested with 3 authentication scenarios each!"
+          echo ""
+
       - name: Take screenshots of frontend pages with Network Tracking
         run: |
           cd userfrosting
@@ -401,6 +447,11 @@ jobs:
           echo "   - Paths tested from integration-test-paths.json"
           echo "   - Unauthenticated API endpoints (401 responses verified)"
           echo "   - Unauthenticated frontend routes (redirect to login verified)"
+          echo "✅ PHPUnit integration tests completed:"
+          echo "   - All 11 CRUD6 API endpoint types tested"
+          echo "   - Each endpoint tested with 3 auth scenarios (401, 403, 200)"
+          echo "   - Both Integration and Controller test suites executed"
+          echo "   - Total: 33+ authentication test scenarios covered"
           echo "✅ Screenshots captured with authentication and uploaded as artifacts"
           echo "✅ Network request tracking enabled for frontend pages"
           echo "   - Tracks all network requests during page loads"
@@ -443,8 +494,18 @@ jobs:
           - ✅ Admin user creation - **from config**
           - ✅ Schema loading
           - ✅ Path testing - **using modular config** (unauthenticated API and frontend)
+          - ✅ **PHPUnit Integration Tests** - **NEW!** All 11 API endpoints with auth scenarios
+          - ✅ **PHPUnit Controller Tests** - **NEW!** Comprehensive endpoint coverage
           - ✅ Screenshot capture (authenticated frontend pages)
           - ✅ **Network request tracking** - Monitors frontend API calls and detects redundant requests
+          
+          ### 🧪 PHPUnit Testing (NEW)
+          **Comprehensive authentication testing for all CRUD6 API endpoints:**
+          - **11 endpoint types** × **3 auth scenarios** = **33 test scenarios**
+          - Tests verify: Unauthenticated (401), No Permission (403), Authenticated (200)
+          - Covers all CRUD operations, relationships, custom actions, and nested endpoints
+          - Both Integration and Controller test suites executed
+          - **Reference:** See `.archive/COMPREHENSIVE_API_TEST_MATRIX.md` for complete matrix
           
           ### 🎯 Modular Testing Framework
           **This workflow uses a modular, configuration-driven testing approach:**

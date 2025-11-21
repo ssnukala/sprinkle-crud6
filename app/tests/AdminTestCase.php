@@ -31,4 +31,31 @@ class AdminTestCase extends TestCase
      * @var string Main sprinkle class for CRUD6 tests
      */
     protected string $mainSprinkle = CRUD6::class;
+
+    /**
+     * Setup test environment.
+     * 
+     * Creates required runtime directories (sessions, cache, logs) for testing.
+     * These directories are managed by UserFrosting at runtime and should not
+     * be committed to the repository.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Create runtime directories required by UserFrosting for testing
+        // These match the structure expected by SessionService and other core services
+        $runtimeDirs = [
+            'app/sessions',
+            'app/cache',
+            'app/logs',
+        ];
+        
+        foreach ($runtimeDirs as $dir) {
+            $fullPath = __DIR__ . '/../../' . $dir;
+            if (!is_dir($fullPath)) {
+                @mkdir($fullPath, 0755, true);
+            }
+        }
+    }
 }

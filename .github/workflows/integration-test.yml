@@ -279,7 +279,7 @@ jobs:
           sleep 10
           echo "✅ Vite server started"
 
-      - name: Test API and Frontend paths (Modular)
+      - name: Test Unauthenticated API paths
         run: |
           cd userfrosting
           # Copy path configuration from sprinkle
@@ -295,21 +295,7 @@ jobs:
 
           echo ""
           echo "========================================="
-          echo "Testing Authenticated API Paths"
-          echo "========================================="
-          echo "Using Playwright for session management and API testing"
-          echo ""
-
-          # Copy authenticated API testing script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/test-authenticated-api-paths.js .
-
-          # Test authenticated API endpoints using Playwright
-          # This handles session cookies and CSRF tokens automatically
-          node test-authenticated-api-paths.js integration-test-paths.json
-
-          echo ""
-          echo "========================================="
-          echo "Note: Authenticated frontend paths tested via screenshots"
+          echo "Note: Authenticated API and frontend paths tested via screenshots step"
           echo "========================================="
 
       - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
@@ -358,16 +344,19 @@ jobs:
           echo "All 11 API endpoint types tested with 3 authentication scenarios each!"
           echo ""
 
-      - name: Take screenshots of frontend pages with Network Tracking
+      - name: Take screenshots and test authenticated API endpoints (with Network Tracking)
         run: |
           cd userfrosting
 
-          # Copy the enhanced screenshot script with network tracking from sprinkle
+          # Copy the enhanced screenshot script with network tracking and API testing from sprinkle
           cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
 
           # Run the script using configuration file (already copied earlier)
-          # The script will read base_url and credentials from integration-test-paths.json
-          # and track all network requests made during page loads
+          # The script will:
+          # 1. Log in once to establish authenticated session
+          # 2. Take screenshots of all frontend pages
+          # 3. Test all authenticated API endpoints (reusing the same session)
+          # 4. Track all network requests made during page loads
           # NOTE: This script now detects error notifications and fails if found
           node take-screenshots-with-tracking.js integration-test-paths.json
 
@@ -459,9 +448,11 @@ jobs:
           echo "✅ Path tests completed using modular configuration:"
           echo "   - Paths tested from integration-test-paths.json"
           echo "   - Unauthenticated API endpoints (401 responses verified)"
-          echo "   - Authenticated API endpoints (200 responses verified)"
-          echo "   - Unauthenticated frontend routes (redirect to login verified)"
-          echo "   - Authenticated frontend routes (screenshots captured)"
+          echo "✅ Screenshots and authenticated API testing completed (single login session):"
+          echo "   - Admin user logged in once"
+          echo "   - Frontend screenshots captured (authenticated pages)"
+          echo "   - Authenticated API endpoints tested (200 responses verified)"
+          echo "   - Session reused for both screenshots and API tests"
           echo "✅ PHPUnit integration tests completed:"
           echo "   - All 11 CRUD6 API endpoint types tested"
           echo "   - Each endpoint tested with 3 auth scenarios (401, 403, 200)"
@@ -479,8 +470,8 @@ jobs:
           echo "   - Reusable scripts: .github/scripts/*-modular.php"
           echo "   - Easy to adapt for other sprinkles - just modify JSON configs!"
           echo ""
-          echo "ℹ️  Note: Authentication tests verify 401 responses for unauthenticated requests"
-          echo "ℹ️  Screenshots are taken after logging in with admin user credentials"
+          echo "ℹ️  Note: Unauthenticated API tests verify 401 responses"
+          echo "ℹ️  Screenshots and authenticated API tests use a single login session"
           echo "ℹ️  Both PHP and Vite servers were running during tests"
           echo "ℹ️  Network tracking monitors all frontend API calls and flags redundant requests"
           echo ""
@@ -549,10 +540,12 @@ jobs:
           ### Path Testing Details
           **Paths Tested (from configuration):**
           - Unauthenticated API endpoints return 401 (warnings, not failures)
-          - Authenticated API endpoints return 200 (all CRUD operations tested)
-          - Unauthenticated frontend routes redirect to login
-          - Authenticated frontend routes tested via Playwright screenshots
-          - **NEW:** Authenticated API endpoints tested using Playwright with session management
+          - **Authenticated testing with single login session:**
+            - Admin user logs in once
+            - Screenshots captured for all frontend pages
+            - All authenticated API endpoints tested (reusing the same session)
+            - Session management handled by Playwright automatically
+          - Avoids duplicate login and improves test efficiency
 
           ### 📸 View Screenshots
           Screenshots have been captured and uploaded as artifacts.
@@ -603,6 +596,10 @@ jobs:
           - Both servers were running during tests
 
           ### Authentication Note
-          Screenshots are taken after authenticating with the admin user (username: admin).
-          This ensures the CRUD6 pages are fully rendered and accessible.
+          The admin user (username: admin) logs in once at the start of the screenshots step.
+          This single authenticated session is then reused for:
+          - Taking screenshots of all frontend pages
+          - Testing all authenticated API endpoints
+          
+          This approach avoids logging in multiple times and improves test efficiency.
           EOF

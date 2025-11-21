@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * UserFrosting CRUD6 Sprinkle Integration Test - Screenshots with Network Tracking
+ * UserFrosting CRUD6 Sprinkle Integration Test - Screenshots with Network Tracking and API Testing
  * 
- * This script uses Playwright to take screenshots and track network requests.
+ * This script uses Playwright to take screenshots, track network requests, and test authenticated API endpoints.
  * It reads the paths configuration and:
- * 1. Takes screenshots for all frontend paths
- * 2. Tracks all network requests made during page loads
- * 3. Detects redundant API calls
- * 4. Outputs a summary of network activity
+ * 1. Logs in once to establish an authenticated session
+ * 2. Takes screenshots for all frontend paths
+ * 3. Tests all authenticated API endpoints (reusing the same session)
+ * 4. Tracks all network requests made during page loads
+ * 5. Detects redundant API calls
+ * 6. Outputs a summary of network activity
+ * 
+ * This approach avoids logging in multiple times by reusing the authenticated session
+ * for both screenshots and API testing.
  * 
  * Usage: node take-screenshots-with-tracking.js <config_file> [base_url] [username] [password]
  * Example: node take-screenshots-with-tracking.js integration-test-paths.json
@@ -244,9 +249,177 @@ class NetworkRequestTracker {
     }
 }
 
+// Test counters for API testing
+let totalApiTests = 0;
+let passedApiTests = 0;
+let failedApiTests = 0;
+let skippedApiTests = 0;
+let warningApiTests = 0;
+
+/**
+ * Get CSRF token from the page
+ */
+async function getCsrfToken(page) {
+    try {
+        // Try to get CSRF token from meta tag
+        const csrfToken = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (csrfToken) {
+            return csrfToken;
+        }
+        
+        // Try to get from /csrf endpoint
+        const response = await page.request.get('/csrf');
+        if (response.ok()) {
+            const data = await response.json();
+            return data.csrf_token || data.token;
+        }
+        
+        return null;
+    } catch (error) {
+        console.warn('   ⚠️  Could not retrieve CSRF token:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Test a single API path
+ */
+async function testApiPath(page, name, pathConfig, baseUrl) {
+    totalApiTests++;
+    
+    // Check if test should be skipped
+    if (pathConfig.skip) {
+        console.log(`⏭️  SKIP: ${name}`);
+        console.log(`   Reason: ${pathConfig.skip_reason || 'Not specified'}\n`);
+        skippedApiTests++;
+        return;
+    }
+    
+    const path = pathConfig.path;
+    const method = pathConfig.method || 'GET';
+    const description = pathConfig.description || name;
+    const expectedStatus = pathConfig.expected_status || 200;
+    const payload = pathConfig.payload || {};
+    
+    console.log(`Testing: ${name}`);
+    console.log(`   Description: ${description}`);
+    console.log(`   Method: ${method}`);
+    console.log(`   Path: ${path}`);
+    
+    try {
+        const url = `${baseUrl}${path}`;
+        let response;
+        
+        // Get CSRF token for state-changing operations
+        let headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+        
+        if (['POST', 'PUT', 'DELETE'].includes(method)) {
+            const csrfToken = await getCsrfToken(page);
+            if (csrfToken) {
+                headers['X-CSRF-Token'] = csrfToken;
+            }
+        }
+        
+        // Make the API request
+        if (method === 'GET') {
+            response = await page.request.get(url, { headers });
+        } else if (method === 'POST') {
+            response = await page.request.post(url, { 
+                headers,
+                data: payload 
+            });
+        } else if (method === 'PUT') {
+            response = await page.request.put(url, { 
+                headers,
+                data: payload 
+            });
+        } else if (method === 'DELETE') {
+            response = await page.request.delete(url, { 
+                headers,
+                data: payload 
+            });
+        }
+        
+        const status = response.status();
+        
+        // Validate status code
+        if (status === expectedStatus) {
+            console.log(`   ✅ Status: ${status} (expected ${expectedStatus})`);
+            
+            // Additional validation if specified
+            if (pathConfig.validation) {
+                const validation = pathConfig.validation;
+                
+                if (validation.type === 'json') {
+                    try {
+                        const data = await response.json();
+                        let allFound = true;
+                        
+                        for (const key of (validation.contains || [])) {
+                            if (!data.hasOwnProperty(key)) {
+                                console.log(`   ⚠️  Missing expected key: ${key}`);
+                                allFound = false;
+                            }
+                        }
+                        
+                        if (allFound) {
+                            console.log(`   ✅ Validation: JSON contains expected keys`);
+                        }
+                    } catch (error) {
+                        console.log(`   ⚠️  Response is not valid JSON`);
+                    }
+                }
+            }
+            
+            console.log(`   ✅ PASSED\n`);
+            passedApiTests++;
+        } else if (status === 403) {
+            // Permission failure - warn instead of fail
+            console.log(`   ⚠️  Status: ${status} (expected ${expectedStatus})`);
+            console.log(`   ⚠️  WARNING: Permission failure (403) - user may lack required permission`);
+            if (pathConfig.requires_permission) {
+                console.log(`   ⚠️  Required permission: ${pathConfig.requires_permission}`);
+            }
+            console.log(`   ⚠️  WARNED (continuing tests)\n`);
+            warningApiTests++;
+        } else if (status >= 500) {
+            // Server error - this is a real failure
+            console.log(`   ❌ Status: ${status} (expected ${expectedStatus})`);
+            console.log(`   ❌ FAILED: Server error detected - possible code/SQL failure`);
+            
+            try {
+                const data = await response.json();
+                if (data.message) {
+                    console.log(`   ❌ Error: ${data.message}`);
+                }
+            } catch (error) {
+                // Can't parse error message
+            }
+            
+            console.log('');
+            failedApiTests++;
+        } else {
+            console.log(`   ❌ Status: ${status} (expected ${expectedStatus})`);
+            console.log(`   ❌ FAILED\n`);
+            failedApiTests++;
+        }
+    } catch (error) {
+        console.log(`   ❌ Exception: ${error.message}`);
+        console.log(`   ❌ FAILED\n`);
+        failedApiTests++;
+    }
+}
+
 async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOverride, passwordOverride) {
     console.log('========================================');
-    console.log('Taking Screenshots with Network Tracking');
+    console.log('Screenshots + Network Tracking + API Testing');
     console.log('========================================');
     console.log(`Config file: ${configFile}`);
     console.log('');
@@ -521,6 +694,50 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log('\n✅ No redundant calls detected');
         }
         console.log('═══════════════════════════════════════════════════════════════');
+
+        // Step 3: Test authenticated API paths using the same session
+        const authApiPaths = config.paths?.authenticated?.api || {};
+        
+        if (Object.keys(authApiPaths).length > 0) {
+            console.log('');
+            console.log('');
+            console.log('=========================================');
+            console.log('Testing Authenticated API Endpoints');
+            console.log('=========================================');
+            console.log('Using existing authenticated session from screenshots\n');
+            
+            for (const [name, pathConfig] of Object.entries(authApiPaths)) {
+                await testApiPath(page, name, pathConfig, baseUrl);
+            }
+            
+            // Print API test summary
+            console.log('');
+            console.log('=========================================');
+            console.log('API Test Summary');
+            console.log('=========================================');
+            console.log(`Total tests: ${totalApiTests}`);
+            console.log(`Passed: ${passedApiTests}`);
+            console.log(`Warnings: ${warningApiTests}`);
+            console.log(`Failed: ${failedApiTests}`);
+            console.log(`Skipped: ${skippedApiTests}`);
+            console.log('');
+            
+            if (failedApiTests > 0) {
+                console.log('❌ Some API tests failed (actual code/SQL errors detected)');
+                console.log('   Note: Permission failures (403) are warnings, not failures');
+                failCount += failedApiTests; // Add API failures to total fail count
+            } else if (warningApiTests > 0) {
+                console.log('✅ All API tests passed (permission warnings are expected for some endpoints)');
+                console.log(`   ${warningApiTests} permission warnings detected (403 status codes)`);
+                console.log('   No actual code/SQL errors found');
+            } else {
+                console.log('✅ All API tests passed');
+            }
+            console.log('=========================================');
+        } else {
+            console.log('');
+            console.log('ℹ️  No authenticated API paths configured - skipping API tests');
+        }
 
         // Generate and save detailed network report to file
         console.log('');

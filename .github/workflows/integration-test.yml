@@ -363,15 +363,66 @@ jobs:
           // These directories are needed by SessionService, CacheService, and LoggerInterface
           // In production, these are created during installation, but in CI they must be created here
           // UserFrosting 6 expects storage/ directory structure, not app/sessions
+          
+          echo "\n========================================\n";
+          echo "BOOTSTRAP: Creating Runtime Directories\n";
+          echo "========================================\n";
+          echo "Current directory: " . __DIR__ . "\n";
+          echo "PHP User: " . get_current_user() . "\n";
+          echo "PHP UID: " . getmyuid() . "\n";
+          echo "PHP GID: " . getmygid() . "\n\n";
+          
           $runtimeDirs = ['storage/sessions', 'storage/cache', 'storage/logs'];
           foreach ($runtimeDirs as $dir) {
               $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
-              if (!is_dir($fullPath)) {
-                  if (!mkdir($fullPath, 0755, true) && !is_dir($fullPath)) {
+              echo "Processing: $dir\n";
+              echo "  Full path: $fullPath\n";
+              
+              if (is_dir($fullPath)) {
+                  echo "  Status: Directory already exists\n";
+                  $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
+                  echo "  Permissions: $perms\n";
+                  echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
+              } else {
+                  echo "  Status: Creating directory...\n";
+                  $result = mkdir($fullPath, 0755, true);
+                  if ($result) {
+                      echo "  Result: Successfully created\n";
+                      $perms = substr(sprintf('%o', fileperms($fullPath)), -4);
+                      echo "  Permissions: $perms\n";
+                      echo "  Writable: " . (is_writable($fullPath) ? 'YES' : 'NO') . "\n";
+                  } else {
+                      $error = error_get_last();
+                      echo "  Result: FAILED to create\n";
+                      if ($error) {
+                          echo "  Error: " . $error['message'] . "\n";
+                      }
                       throw new \RuntimeException(sprintf('Directory "%s" was not created', $fullPath));
                   }
               }
+              echo "\n";
           }
+          
+          echo "========================================\n";
+          echo "Directory Creation Complete\n";
+          echo "========================================\n\n";
+          
+          // Verify all directories exist and are writable
+          echo "Final verification:\n";
+          foreach ($runtimeDirs as $dir) {
+              $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
+              $exists = is_dir($fullPath);
+              $writable = is_writable($fullPath);
+              echo "  $dir: " . ($exists ? 'EXISTS' : 'MISSING') . " | " . ($writable ? 'WRITABLE' : 'NOT WRITABLE') . "\n";
+              
+              if (!$exists) {
+                  throw new \RuntimeException(sprintf('Required directory "%s" does not exist after creation', $dir));
+              }
+              if (!$writable) {
+                  throw new \RuntimeException(sprintf('Required directory "%s" is not writable', $dir));
+              }
+          }
+          echo "\n";
           EOF
           
           # Update phpunit.xml to use bootstrap file
@@ -379,6 +430,56 @@ jobs:
           
           echo "✅ PHPUnit configuration created for CRUD6 tests"
           cat phpunit-crud6.xml
+
+      - name: Verify Runtime Directories Before Tests
+        run: |
+          cd userfrosting
+          
+          echo "========================================="
+          echo "Pre-Test Directory Verification"
+          echo "========================================="
+          echo ""
+          echo "Checking runtime directories before PHPUnit execution..."
+          echo ""
+          
+          # Run a PHP script to check directory state
+          php -r "
+          \$dirs = ['storage/sessions', 'storage/cache', 'storage/logs'];
+          \$allGood = true;
+          
+          foreach (\$dirs as \$dir) {
+              \$fullPath = __DIR__ . DIRECTORY_SEPARATOR . \$dir;
+              \$exists = is_dir(\$fullPath);
+              \$writable = is_writable(\$fullPath);
+              \$perms = \$exists ? substr(sprintf('%o', fileperms(\$fullPath)), -4) : 'N/A';
+              
+              echo \"\$dir:\n\";
+              echo \"  Path: \$fullPath\n\";
+              echo \"  Exists: \" . (\$exists ? 'YES' : 'NO') . \"\n\";
+              echo \"  Writable: \" . (\$writable ? 'YES' : 'NO') . \"\n\";
+              echo \"  Permissions: \$perms\n\";
+              
+              if (!\$exists || !\$writable) {
+                  \$allGood = false;
+                  echo \"  ⚠️  WARNING: Directory has issues!\n\";
+              } else {
+                  echo \"  ✅ Directory is ready\n\";
+              }
+              echo \"\n\";
+          }
+          
+          if (!\$allGood) {
+              echo \"⚠️  WARNING: Some directories have issues. Tests may fail.\n\";
+              exit(1);
+          } else {
+              echo \"✅ All runtime directories are ready for testing.\n\";
+          }
+          "
+          
+          echo ""
+          echo "Directory listing (ls -la storage/):"
+          ls -la storage/ || echo "storage/ directory does not exist"
+          echo ""
 
       - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
         run: |

@@ -10,7 +10,7 @@ on:
 jobs:
   integration-test:
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
         image: mysql:8.0
@@ -173,22 +173,22 @@ jobs:
           cd userfrosting
           # Copy idempotency test script from sprinkle
           cp ../sprinkle-crud6/.github/scripts/test-seed-idempotency-modular.php .
-          
+
           echo "========================================="
           echo "Testing Seed Idempotency (Modular)"
           echo "========================================="
-          
+
           # Count records before re-seeding
           echo "Counting records before re-seeding..."
           BEFORE_OUTPUT=$(php test-seed-idempotency-modular.php integration-test-seeds.json)
           echo "$BEFORE_OUTPUT"
           BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2-)
-          
+
           # Re-run seeds using modular script
           echo ""
           echo "Re-running CRUD6 seeds..."
           php run-seeds.php integration-test-seeds.json crud6
-          
+
           # Count records after re-seeding and verify they're the same
           echo ""
           echo "Counting records after re-seeding..."
@@ -211,28 +211,28 @@ jobs:
           cd userfrosting
           php -r "
           require 'vendor/autoload.php';
-          
+
           // Test loading all c6admin schemas
           \$schemas = ['users', 'groups', 'roles', 'permissions', 'activities'];
-          
+
           foreach (\$schemas as \$schemaName) {
               \$schemaPath = 'app/schema/crud6/' . \$schemaName . '.json';
               if (!file_exists(\$schemaPath)) {
                   echo 'Schema not found: ' . \$schemaPath . '\n';
                   exit(1);
               }
-              
+
               \$schema = json_decode(file_get_contents(\$schemaPath), true);
               if (!\$schema) {
                   echo 'Failed to load schema: ' . \$schemaPath . '\n';
                   exit(1);
               }
-              
+
               echo '✅ Schema loaded: ' . \$schemaName . '\n';
               echo '   Model: ' . \$schema['model'] . '\n';
               echo '   Table: ' . \$schema['table'] . '\n';
           }
-          
+
           echo '\n✅ All c6admin schemas loaded successfully\n';
           "
 
@@ -262,7 +262,7 @@ jobs:
           SERVER_PID=$!
           echo $SERVER_PID > /tmp/server.pid
           sleep 10
-          
+
           # Test if server is running
           curl -f http://localhost:8080 || (echo "⚠️ Server may not be ready yet" && sleep 5 && curl -f http://localhost:8080)
           echo "✅ PHP server started on localhost:8080"
@@ -286,23 +286,36 @@ jobs:
           cp ../sprinkle-crud6/.github/config/integration-test-paths.json .
           # Copy path testing script from sprinkle
           cp ../sprinkle-crud6/.github/scripts/test-paths.php .
-          
+
           echo "========================================="
           echo "Testing Unauthenticated Paths"
           echo "========================================="
           # Test unauthenticated paths
           php test-paths.php integration-test-paths.json unauth
-          
+
           echo ""
           echo "========================================="
-          echo "Note: Authenticated path tests require session management"
-          echo "Using Playwright for authenticated tests instead"
+          echo "Testing Authenticated API Paths"
+          echo "========================================="
+          echo "Using Playwright for session management and API testing"
+          echo ""
+
+          # Copy authenticated API testing script from sprinkle
+          cp ../sprinkle-crud6/.github/scripts/test-authenticated-api-paths.js .
+
+          # Test authenticated API endpoints using Playwright
+          # This handles session cookies and CSRF tokens automatically
+          node test-authenticated-api-paths.js integration-test-paths.json
+
+          echo ""
+          echo "========================================="
+          echo "Note: Authenticated frontend paths tested via screenshots"
           echo "========================================="
 
       - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
         run: |
           cd userfrosting
-          
+
           echo "========================================="
           echo "Running PHPUnit Integration Tests"
           echo "========================================="
@@ -312,18 +325,18 @@ jobs:
           echo "  - Authenticated but no permission (403 expected)"
           echo "  - Authenticated with permission (200 expected)"
           echo ""
-          
+
           # Run all CRUD6 integration tests
           # These test both authenticated and unauthenticated scenarios
           vendor/bin/phpunit ../sprinkle-crud6/app/tests/Integration/ --testdox --colors=always
-          
+
           echo ""
           echo "Running Controller Tests (All API Endpoints)"
           echo "========================================="
-          
+
           # Run controller tests that cover all CRUD6 endpoints
           vendor/bin/phpunit ../sprinkle-crud6/app/tests/Controller/ --testdox --colors=always
-          
+
           echo ""
           echo "========================================="
           echo "✅ PHPUnit Integration Tests Completed"
@@ -348,23 +361,23 @@ jobs:
       - name: Take screenshots of frontend pages with Network Tracking
         run: |
           cd userfrosting
-          
+
           # Copy the enhanced screenshot script with network tracking from sprinkle
           cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
-          
+
           # Run the script using configuration file (already copied earlier)
           # The script will read base_url and credentials from integration-test-paths.json
           # and track all network requests made during page loads
           # NOTE: This script now detects error notifications and fails if found
           node take-screenshots-with-tracking.js integration-test-paths.json
-          
+
           echo ""
           echo "========================================="
           echo "Screenshot summary"
           echo "========================================="
           # List screenshots if they exist
           ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"
-          
+
           echo ""
           echo "========================================="
           echo "Network Request Summary"
@@ -384,11 +397,11 @@ jobs:
         if: always()
         run: |
           cd userfrosting
-          
+
           # Copy PHP error log capture script from sprinkle
           cp ../sprinkle-crud6/.github/scripts/capture-php-error-logs.sh .
           chmod +x capture-php-error-logs.sh
-          
+
           # Run the script to capture and display error logs
           ./capture-php-error-logs.sh || echo "Error log capture script failed, but continuing..."
 
@@ -446,7 +459,9 @@ jobs:
           echo "✅ Path tests completed using modular configuration:"
           echo "   - Paths tested from integration-test-paths.json"
           echo "   - Unauthenticated API endpoints (401 responses verified)"
+          echo "   - Authenticated API endpoints (200 responses verified)"
           echo "   - Unauthenticated frontend routes (redirect to login verified)"
+          echo "   - Authenticated frontend routes (screenshots captured)"
           echo "✅ PHPUnit integration tests completed:"
           echo "   - All 11 CRUD6 API endpoint types tested"
           echo "   - Each endpoint tested with 3 auth scenarios (401, 403, 200)"
@@ -481,11 +496,11 @@ jobs:
           echo "   Download 'network-requests-summary' artifact"
           echo "   Contains detailed information about CRUD6 API calls only (non-CRUD6 requests filtered out)"
           echo "   Reports include: users, groups, roles, permissions, activities API calls"
-          
+
           # Add to GitHub Actions Summary with direct link
           cat >> $GITHUB_STEP_SUMMARY << EOF
           ## Integration Test Results ✅ (Modular Testing Framework)
-          
+
           ### Test Coverage
           - ✅ Database migrations
           - ✅ Database seeding (Account + CRUD6 sprinkles) - **using modular config**
@@ -498,7 +513,7 @@ jobs:
           - ✅ **PHPUnit Controller Tests** - **NEW!** Comprehensive endpoint coverage
           - ✅ Screenshot capture (authenticated frontend pages)
           - ✅ **Network request tracking** - Monitors frontend API calls and detects redundant requests
-          
+
           ### 🧪 PHPUnit Testing (NEW)
           **Comprehensive authentication testing for all CRUD6 API endpoints:**
           - **11 endpoint types** × **3 auth scenarios** = **33 test scenarios**
@@ -506,13 +521,13 @@ jobs:
           - Covers all CRUD operations, relationships, custom actions, and nested endpoints
           - Both Integration and Controller test suites executed
           - **Reference:** See `.archive/COMPREHENSIVE_API_TEST_MATRIX.md` for complete matrix
-          
+
           ### 🎯 Modular Testing Framework
           **This workflow uses a modular, configuration-driven testing approach:**
           - **Configuration files:** `.github/config/integration-test-*.json`
           - **Reusable scripts:** `.github/scripts/*-modular.php`
           - **Easy adaptation:** Just modify JSON configs for your sprinkle!
-          
+
           ### 📡 Network Request Tracking
           **Frontend pages are now monitored for API call efficiency:**
           - Tracks all network requests during page loads
@@ -520,9 +535,9 @@ jobs:
           - Reports CRUD6 and schema API statistics per page
           - Helps identify performance issues
           - **NEW:** Detailed network request summary saved as downloadable artifact
-          
+
           See [.github/MODULAR_TESTING_README.md](../.github/MODULAR_TESTING_README.md) for details.
-          
+
           ### Seed Testing Details
           **CRUD6 Seeds Validated (from configuration):**
           - DefaultRoles seed creates crud6-admin role
@@ -530,19 +545,21 @@ jobs:
           - Permissions correctly assigned to crud6-admin role
           - Permissions correctly assigned to site-admin role
           - Seeds are idempotent (can be run multiple times without duplicates)
-          
+
           ### Path Testing Details
           **Paths Tested (from configuration):**
-          - Unauthenticated API endpoints return 401
+          - Unauthenticated API endpoints return 401 (warnings, not failures)
+          - Authenticated API endpoints return 200 (all CRUD operations tested)
           - Unauthenticated frontend routes redirect to login
-          - Authenticated tests use Playwright for session management
-          
+          - Authenticated frontend routes tested via Playwright screenshots
+          - **NEW:** Authenticated API endpoints tested using Playwright with session management
+
           ### 📸 View Screenshots
           Screenshots have been captured and uploaded as artifacts.
-          
+
           **Direct link to this workflow run:**
           https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
+
           **To view screenshots:**
           1. Scroll to the bottom of the workflow run page (link above)
           2. Look for the **Artifacts** section
@@ -558,12 +575,12 @@ jobs:
              - \`screenshot_permission_detail.png\` - Permission detail page
              - \`screenshot_activities_list.png\` - Activities list page
              - \`screenshot_activity_detail.png\` - Activity detail page
-          
+
           > **Note:** Screenshots are retained for 30 days
-          
+
           ### 📡 View Network Request Summary (CRUD6 Filtered)
           A detailed network request report focusing on CRUD6 API calls has been generated and uploaded as an artifact.
-          
+
           **To view the network request summary:**
           1. Scroll to the bottom of the workflow run page (link above)
           2. Look for the **Artifacts** section
@@ -575,16 +592,16 @@ jobs:
              - Redundant call detection and analysis
              - Chronological request timeline for CRUD6 calls
              - Summary of total vs filtered request counts
-          
+
           > **Note:** Network summary is retained for 30 days
-          
+
           ---
-          
+
           ### Server Information
           - PHP Server: Started with \`php bakery serve\`
           - Vite Server: Started with \`php bakery assets:vite\`
           - Both servers were running during tests
-          
+
           ### Authentication Note
           Screenshots are taken after authenticating with the admin user (username: admin).
           This ensures the CRUD6 pages are fully rendered and accessible.

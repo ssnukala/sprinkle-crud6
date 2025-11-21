@@ -298,6 +298,51 @@ jobs:
           echo "Note: Authenticated API and frontend paths tested via screenshots step"
           echo "========================================="
 
+      - name: Configure PHPUnit for CRUD6 tests
+        run: |
+          cd userfrosting
+          
+          # Create phpunit.xml with proper autoloading for CRUD6 test classes
+          cat > phpunit-crud6.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+                   bootstrap="vendor/autoload.php"
+                   colors="true"
+                   stopOnFailure="false">
+              <testsuites>
+                  <testsuite name="CRUD6 Integration Tests">
+                      <directory>../sprinkle-crud6/app/tests/Integration</directory>
+                  </testsuite>
+                  <testsuite name="CRUD6 Controller Tests">
+                      <directory>../sprinkle-crud6/app/tests/Controller</directory>
+                  </testsuite>
+              </testsuites>
+              <php>
+                  <!-- Add autoload for CRUD6 test classes -->
+                  <ini name="memory_limit" value="-1"/>
+              </php>
+          </phpunit>
+          EOF
+          
+          # Create bootstrap file to load CRUD6 test classes
+          cat > bootstrap-crud6.php << 'EOF'
+          <?php
+          // Load UserFrosting vendor autoloader
+          require_once __DIR__ . '/vendor/autoload.php';
+          
+          // Manually register CRUD6 test namespace since autoload-dev is not loaded for dependencies
+          // This allows PHPUnit to find test helper classes like AdminTestCase
+          $loader = require __DIR__ . '/vendor/autoload.php';
+          $loader->addPsr4('UserFrosting\\Sprinkle\\CRUD6\\Tests\\', __DIR__ . '/../sprinkle-crud6/app/tests/');
+          EOF
+          
+          # Update phpunit.xml to use bootstrap file
+          sed -i 's|bootstrap="vendor/autoload.php"|bootstrap="bootstrap-crud6.php"|' phpunit-crud6.xml
+          
+          echo "✅ PHPUnit configuration created for CRUD6 tests"
+          cat phpunit-crud6.xml
+
       - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
         run: |
           cd userfrosting
@@ -312,16 +357,16 @@ jobs:
           echo "  - Authenticated with permission (200 expected)"
           echo ""
 
-          # Run all CRUD6 integration tests
+          # Run all CRUD6 integration tests using custom configuration
           # These test both authenticated and unauthenticated scenarios
-          vendor/bin/phpunit ../sprinkle-crud6/app/tests/Integration/ --testdox --colors=always
+          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Integration Tests" --testdox --colors=always
 
           echo ""
           echo "Running Controller Tests (All API Endpoints)"
           echo "========================================="
 
-          # Run controller tests that cover all CRUD6 endpoints
-          vendor/bin/phpunit ../sprinkle-crud6/app/tests/Controller/ --testdox --colors=always
+          # Run controller tests that cover all CRUD6 endpoints using custom configuration
+          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Controller Tests" --testdox --colors=always
 
           echo ""
           echo "========================================="

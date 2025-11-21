@@ -51,34 +51,28 @@ jobs:
           # This ensures all required directories are available for subsequent steps
           echo ""
           echo "Creating runtime directories with 777 permissions..."
-          cd userfrosting
-          
-          # Create storage directories (UserFrosting 6 structure)
-          mkdir -p storage/sessions storage/cache storage/logs
-          chmod -R 777 storage
-          
-          # Create app directories (legacy/compatibility structure)
-          mkdir -p app/logs app/cache app/sessions
-          
-          # Create log file
-          touch app/logs/userfrosting.log
+          cd userfrosting/app
           
           # Set ownership to current user
           chown -R $USER: .
           
-          # Set permissions on app directories
-          chmod 777 app/logs app/cache app/sessions
+          # Create required directories (UserFrosting 6 structure)
+          mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
+          chmod -R 777 storage sessions logs cache
           
+          # Create log file
+          touch logs/userfrosting.log
+        
           echo "✅ Runtime directories created and permissions set to 777"
           echo ""
           echo "Storage directories:"
           ls -ld storage storage/sessions storage/cache storage/logs
           echo ""
-          echo "App directories:"
-          ls -ld app/logs app/cache app/sessions
+          echo "Other directories:"
+          ls -ld logs cache sessions
           echo ""
           echo "Log file:"
-          ls -la app/logs/userfrosting.log
+          ls -la logs/userfrosting.log
 
       - name: Configure Composer for beta packages and local sprinkle-crud6
         run: |
@@ -405,7 +399,7 @@ jobs:
           echo "PHP UID: " . getmyuid() . "\n";
           echo "PHP GID: " . getmygid() . "\n\n";
           
-          $runtimeDirs = ['storage/sessions', 'storage/cache', 'storage/logs'];
+          $runtimeDirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
           foreach ($runtimeDirs as $dir) {
               $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
               echo "Processing: $dir\n";
@@ -477,7 +471,7 @@ jobs:
           
           # Run a PHP script to check directory state
           php -r "
-          \$dirs = ['storage/sessions', 'storage/cache', 'storage/logs'];
+          \$dirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
           \$allGood = true;
           
           foreach (\$dirs as \$dir) {

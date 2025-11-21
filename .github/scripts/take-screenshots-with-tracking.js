@@ -259,7 +259,7 @@ let warningApiTests = 0;
 /**
  * Get CSRF token from the page
  */
-async function getCsrfToken(page) {
+async function getCsrfToken(page, baseUrl) {
     try {
         // Try to get CSRF token from meta tag
         const csrfToken = await page.evaluate(() => {
@@ -271,8 +271,8 @@ async function getCsrfToken(page) {
             return csrfToken;
         }
         
-        // Try to get from /csrf endpoint
-        const response = await page.request.get('/csrf');
+        // Try to get from /csrf endpoint (must use full URL for page.request API)
+        const response = await page.request.get(`${baseUrl}/csrf`);
         if (response.ok()) {
             const data = await response.json();
             return data.csrf_token || data.token;
@@ -321,7 +321,7 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         };
         
         if (['POST', 'PUT', 'DELETE'].includes(method)) {
-            const csrfToken = await getCsrfToken(page);
+            const csrfToken = await getCsrfToken(page, baseUrl);
             if (csrfToken) {
                 headers['X-CSRF-Token'] = csrfToken;
             }

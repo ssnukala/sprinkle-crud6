@@ -362,7 +362,8 @@ jobs:
           // Create runtime directories required by UserFrosting for testing
           // These directories are needed by SessionService, CacheService, and LoggerInterface
           // In production, these are created during installation, but in CI they must be created here
-          $runtimeDirs = ['app/sessions', 'app/cache', 'app/logs'];
+          // UserFrosting 6 expects storage/ directory structure, not app/sessions
+          $runtimeDirs = ['storage/sessions', 'storage/cache', 'storage/logs'];
           foreach ($runtimeDirs as $dir) {
               $fullPath = __DIR__ . DIRECTORY_SEPARATOR . $dir;
               if (!is_dir($fullPath)) {
@@ -618,7 +619,7 @@ jobs:
           echo "   Reports include: users, groups, roles, permissions, activities API calls"
 
           # Add to GitHub Actions Summary with direct link
-          cat >> $GITHUB_STEP_SUMMARY << EOF
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
           ## Integration Test Results ✅ (Modular Testing Framework)
 
           ### Test Coverage

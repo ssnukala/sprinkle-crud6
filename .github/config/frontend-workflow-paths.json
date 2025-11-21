@@ -1,0 +1,574 @@
+{
+  "description": "Frontend paths and API payload configurations for comprehensive user workflow testing",
+  "version": "1.0",
+  "models": {
+    "users": {
+      "frontend_paths": [
+        "/users",
+        "/users/u/{id}"
+      ],
+      "workflows": {
+        "create": {
+          "description": "Create new user from frontend",
+          "steps": [
+            {
+              "action": "navigate",
+              "path": "/users",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users"
+            },
+            {
+              "action": "open_create_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users/schema"
+            },
+            {
+              "action": "submit_form",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/users",
+              "payload": {
+                "user_name": "newuser",
+                "first_name": "New",
+                "last_name": "User",
+                "email": "newuser@example.com",
+                "password": "SecurePassword123",
+                "flag_enabled": true,
+                "flag_verified": false
+              }
+            }
+          ]
+        },
+        "edit": {
+          "description": "Edit existing user",
+          "steps": [
+            {
+              "action": "navigate_to_detail",
+              "path": "/users/u/{id}",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users/{id}"
+            },
+            {
+              "action": "open_edit_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users/schema"
+            },
+            {
+              "action": "submit_changes",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/users/{id}",
+              "payload": {
+                "first_name": "Updated",
+                "last_name": "Name",
+                "email": "updated@example.com"
+              }
+            }
+          ]
+        },
+        "toggle_enabled": {
+          "description": "Toggle user enabled flag",
+          "steps": [
+            {
+              "action": "click_toggle",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/users/{id}/flag_enabled",
+              "payload": {
+                "flag_enabled": false
+              }
+            }
+          ]
+        },
+        "toggle_verified": {
+          "description": "Toggle user verified flag",
+          "steps": [
+            {
+              "action": "click_toggle",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/users/{id}/flag_verified",
+              "payload": {
+                "flag_verified": true
+              }
+            }
+          ]
+        },
+        "assign_roles": {
+          "description": "Assign roles to user",
+          "steps": [
+            {
+              "action": "open_manage_roles_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users/{id}/roles"
+            },
+            {
+              "action": "load_available_roles",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles"
+            },
+            {
+              "action": "submit_role_selection",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/users/{id}/roles",
+              "payload": {
+                "related_ids": [1, 2, 3]
+              }
+            }
+          ]
+        },
+        "remove_roles": {
+          "description": "Remove roles from user",
+          "steps": [
+            {
+              "action": "submit_role_removal",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/users/{id}/roles",
+              "payload": {
+                "related_ids": [1]
+              }
+            }
+          ]
+        },
+        "delete": {
+          "description": "Delete user",
+          "steps": [
+            {
+              "action": "click_delete_confirm",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/users/{id}"
+            }
+          ]
+        },
+        "search": {
+          "description": "Search users",
+          "steps": [
+            {
+              "action": "type_search_query",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users?search={query}"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Filter users",
+          "steps": [
+            {
+              "action": "apply_filter",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users?filters[user_name]={value}"
+            }
+          ]
+        },
+        "sort": {
+          "description": "Sort users",
+          "steps": [
+            {
+              "action": "click_column_header",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users?sorts[user_name]=asc"
+            }
+          ]
+        },
+        "paginate": {
+          "description": "Navigate pages",
+          "steps": [
+            {
+              "action": "click_next_page",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/users?size=10&page=1"
+            }
+          ]
+        }
+      }
+    },
+    "roles": {
+      "frontend_paths": [
+        "/roles",
+        "/roles/r/{slug}"
+      ],
+      "workflows": {
+        "create": {
+          "description": "Create new role",
+          "steps": [
+            {
+              "action": "navigate",
+              "path": "/roles",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles"
+            },
+            {
+              "action": "open_create_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles/schema"
+            },
+            {
+              "action": "submit_form",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/roles",
+              "payload": {
+                "slug": "new-role",
+                "name": "New Role",
+                "description": "Role created from frontend"
+              }
+            }
+          ]
+        },
+        "edit": {
+          "description": "Edit role",
+          "steps": [
+            {
+              "action": "navigate_to_detail",
+              "path": "/roles/r/{slug}",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles/{id}"
+            },
+            {
+              "action": "submit_changes",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/roles/{id}",
+              "payload": {
+                "name": "Updated Role Name",
+                "description": "Updated description"
+              }
+            }
+          ]
+        },
+        "assign_permissions": {
+          "description": "Assign permissions to role",
+          "steps": [
+            {
+              "action": "open_manage_permissions_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles/{id}/permissions"
+            },
+            {
+              "action": "load_available_permissions",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/permissions"
+            },
+            {
+              "action": "submit_permission_selection",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/roles/{id}/permissions",
+              "payload": {
+                "related_ids": [1, 2, 3, 4]
+              }
+            }
+          ]
+        },
+        "remove_permissions": {
+          "description": "Remove permissions from role",
+          "steps": [
+            {
+              "action": "submit_permission_removal",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/roles/{id}/permissions",
+              "payload": {
+                "related_ids": [1]
+              }
+            }
+          ]
+        },
+        "view_users": {
+          "description": "View users in role",
+          "steps": [
+            {
+              "action": "navigate_to_users_tab",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/roles/{id}/users"
+            }
+          ]
+        },
+        "delete": {
+          "description": "Delete role",
+          "steps": [
+            {
+              "action": "click_delete_confirm",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/roles/{id}"
+            }
+          ]
+        }
+      }
+    },
+    "groups": {
+      "frontend_paths": [
+        "/groups",
+        "/groups/g/{slug}"
+      ],
+      "workflows": {
+        "create": {
+          "description": "Create new group",
+          "steps": [
+            {
+              "action": "navigate",
+              "path": "/groups",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/groups"
+            },
+            {
+              "action": "open_create_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/groups/schema"
+            },
+            {
+              "action": "submit_form",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/groups",
+              "payload": {
+                "slug": "new-group",
+                "name": "New Group",
+                "description": "Group created from frontend",
+                "icon": "fa-users"
+              }
+            }
+          ]
+        },
+        "edit": {
+          "description": "Edit group",
+          "steps": [
+            {
+              "action": "submit_changes",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/groups/{id}",
+              "payload": {
+                "name": "Updated Group Name",
+                "description": "Updated description"
+              }
+            }
+          ]
+        },
+        "view_users": {
+          "description": "View users in group",
+          "steps": [
+            {
+              "action": "navigate_to_users_tab",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/groups/{id}/users"
+            }
+          ]
+        },
+        "delete": {
+          "description": "Delete group",
+          "steps": [
+            {
+              "action": "click_delete_confirm",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/groups/{id}"
+            }
+          ]
+        }
+      }
+    },
+    "permissions": {
+      "frontend_paths": [
+        "/permissions",
+        "/permissions/p/{slug}"
+      ],
+      "workflows": {
+        "create": {
+          "description": "Create new permission",
+          "steps": [
+            {
+              "action": "navigate",
+              "path": "/permissions",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/permissions"
+            },
+            {
+              "action": "open_create_modal",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/permissions/schema"
+            },
+            {
+              "action": "submit_form",
+              "method": "POST",
+              "api_endpoint": "/api/crud6/permissions",
+              "payload": {
+                "slug": "new_permission",
+                "name": "New Permission",
+                "description": "Permission created from frontend"
+              }
+            }
+          ]
+        },
+        "edit": {
+          "description": "Edit permission",
+          "steps": [
+            {
+              "action": "submit_changes",
+              "method": "PUT",
+              "api_endpoint": "/api/crud6/permissions/{id}",
+              "payload": {
+                "name": "Updated Permission Name"
+              }
+            }
+          ]
+        },
+        "view_roles": {
+          "description": "View roles with this permission",
+          "steps": [
+            {
+              "action": "navigate_to_roles_tab",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/permissions/{id}/roles"
+            }
+          ]
+        },
+        "view_users": {
+          "description": "View users with this permission (through roles)",
+          "steps": [
+            {
+              "action": "navigate_to_users_tab",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/permissions/{id}/users"
+            }
+          ]
+        },
+        "delete": {
+          "description": "Delete permission",
+          "steps": [
+            {
+              "action": "click_delete_confirm",
+              "method": "DELETE",
+              "api_endpoint": "/api/crud6/permissions/{id}"
+            }
+          ]
+        }
+      }
+    },
+    "activities": {
+      "frontend_paths": [
+        "/activities"
+      ],
+      "workflows": {
+        "list": {
+          "description": "View activities list",
+          "steps": [
+            {
+              "action": "navigate",
+              "path": "/activities",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/activities"
+            }
+          ]
+        },
+        "filter_by_user": {
+          "description": "Filter activities by user",
+          "steps": [
+            {
+              "action": "apply_filter",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/activities?filters[user_id]={user_id}"
+            }
+          ]
+        },
+        "filter_by_type": {
+          "description": "Filter activities by type",
+          "steps": [
+            {
+              "action": "apply_filter",
+              "method": "GET",
+              "api_endpoint": "/api/crud6/activities?filters[type]={type}"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "common_operations": {
+    "list_with_pagination": {
+      "description": "Load paginated list",
+      "api_pattern": "/api/crud6/{model}?size={size}&page={page}"
+    },
+    "search": {
+      "description": "Search records",
+      "api_pattern": "/api/crud6/{model}?search={query}"
+    },
+    "filter": {
+      "description": "Filter by field",
+      "api_pattern": "/api/crud6/{model}?filters[{field}]={value}"
+    },
+    "sort": {
+      "description": "Sort by field",
+      "api_pattern": "/api/crud6/{model}?sorts[{field}]={direction}"
+    },
+    "get_schema": {
+      "description": "Load schema for forms/modals",
+      "api_pattern": "/api/crud6/{model}/schema"
+    },
+    "get_detail": {
+      "description": "Load single record",
+      "api_pattern": "/api/crud6/{model}/{id}"
+    },
+    "create": {
+      "description": "Create new record",
+      "api_pattern": "/api/crud6/{model}",
+      "method": "POST"
+    },
+    "update": {
+      "description": "Update record",
+      "api_pattern": "/api/crud6/{model}/{id}",
+      "method": "PUT"
+    },
+    "update_field": {
+      "description": "Update single field (toggle)",
+      "api_pattern": "/api/crud6/{model}/{id}/{field}",
+      "method": "PUT"
+    },
+    "delete": {
+      "description": "Delete record",
+      "api_pattern": "/api/crud6/{model}/{id}",
+      "method": "DELETE"
+    },
+    "attach_relationship": {
+      "description": "Attach related records",
+      "api_pattern": "/api/crud6/{model}/{id}/{relation}",
+      "method": "POST",
+      "payload_pattern": {
+        "related_ids": [1, 2, 3]
+      }
+    },
+    "detach_relationship": {
+      "description": "Detach related records",
+      "api_pattern": "/api/crud6/{model}/{id}/{relation}",
+      "method": "DELETE",
+      "payload_pattern": {
+        "related_ids": [1]
+      }
+    },
+    "get_nested_list": {
+      "description": "Get related records list",
+      "api_pattern": "/api/crud6/{model}/{id}/{relation}"
+    }
+  },
+  "authentication": {
+    "required": true,
+    "permissions_by_model": {
+      "users": {
+        "read": "uri_users",
+        "create": "create_user",
+        "update": "update_user_field",
+        "delete": "delete_user"
+      },
+      "roles": {
+        "read": "uri_roles",
+        "create": "create_role",
+        "update": "update_role_field",
+        "delete": "delete_role"
+      },
+      "groups": {
+        "read": "uri_groups",
+        "create": "create_group",
+        "update": "update_group_field",
+        "delete": "delete_group"
+      },
+      "permissions": {
+        "read": "uri_permissions",
+        "create": "create_permission",
+        "update": "update_permission",
+        "delete": "delete_permission"
+      },
+      "activities": {
+        "read": "uri_activities"
+      }
+    }
+  }
+}

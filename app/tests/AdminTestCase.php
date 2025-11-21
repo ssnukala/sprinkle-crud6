@@ -52,10 +52,10 @@ class AdminTestCase extends TestCase
         ];
         
         // Use realpath to get the base directory of the sprinkle
-        $baseDir = realpath(__DIR__ . '/../../') ?: __DIR__ . '/../..';
+        $baseDir = realpath(dirname(__DIR__, 2)) ?: dirname(__DIR__, 2);
         
         foreach ($runtimeDirs as $dir) {
-            $fullPath = $baseDir . '/' . $dir;
+            $fullPath = $baseDir . DIRECTORY_SEPARATOR . $dir;
             if (!is_dir($fullPath)) {
                 // Check if parent directory exists first
                 $parentDir = dirname($fullPath);

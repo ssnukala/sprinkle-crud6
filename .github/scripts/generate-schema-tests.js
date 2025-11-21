@@ -123,7 +123,16 @@ class SchemaTestGenerator {
      * Generate full test content
      */
     generateTestContent(model, schema, className) {
-        const fields = schema.fields || [];
+        // Handle fields as either array or object
+        let fields = schema.fields || [];
+        if (!Array.isArray(fields)) {
+            // Convert object to array of field objects with name property
+            fields = Object.entries(fields).map(([name, field]) => ({
+                name,
+                ...field
+            }));
+        }
+        
         const relationships = schema.relationships || [];
         const actions = schema.actions || [];
         const details = schema.details || [];
@@ -216,8 +225,13 @@ class ${className} extends AdminTestCase
             hasDetails: false
         };
 
-        // Analyze fields
-        const fields = schema.fields || [];
+        // Analyze fields - handle both array and object formats
+        let fields = schema.fields || [];
+        if (!Array.isArray(fields)) {
+            // Convert object to array of field objects
+            fields = Object.values(fields);
+        }
+        
         for (const field of fields) {
             if (field.type) features.fieldTypes.add(field.type);
             if (field.validation) {
@@ -457,6 +471,9 @@ ${ops.map(op => `        \$this->assertArrayHasKey('${op}', \$data['permissions'
         const defaultSort = schema.default_sort;
         if (!defaultSort) return '';
         
+        // Convert JavaScript object to PHP array syntax
+        const phpArray = this.jsObjectToPhpArray(defaultSort);
+        
         return `
     /**
      * Test default sorting is properly configured
@@ -467,10 +484,33 @@ ${ops.map(op => `        \$this->assertArrayHasKey('${op}', \$data['permissions'
         \$data = json_decode((string) \$response->getBody(), true);
         
         \$this->assertArrayHasKey('default_sort', \$data);
-        \$this->assertEquals(${JSON.stringify(defaultSort)}, \$data['default_sort']);
+        \$this->assertEquals(${phpArray}, \$data['default_sort']);
     }
 
 `;
+    }
+    
+    /**
+     * Convert JavaScript object to PHP array syntax
+     */
+    jsObjectToPhpArray(obj) {
+        if (Array.isArray(obj)) {
+            const items = obj.map(item => this.jsObjectToPhpArray(item));
+            return `[${items.join(', ')}]`;
+        } else if (typeof obj === 'object' && obj !== null) {
+            const pairs = Object.entries(obj).map(([key, value]) => {
+                const phpValue = this.jsObjectToPhpArray(value);
+                return `'${key}' => ${phpValue}`;
+            });
+            return `[${pairs.join(', ')}]`;
+        } else if (typeof obj === 'string') {
+            return `'${obj}'`;
+        } else if (typeof obj === 'number' || typeof obj === 'boolean') {
+            return String(obj);
+        } else if (obj === null) {
+            return 'null';
+        }
+        return 'null';
     }
 }
 

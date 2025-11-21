@@ -33,11 +33,16 @@ class AdminTestCase extends TestCase
     protected string $mainSprinkle = CRUD6::class;
 
     /**
-     * Setup test environment.
+     * Set up test environment.
      * 
      * Creates required runtime directories (sessions, cache, logs) for testing.
      * These directories are managed by UserFrosting at runtime and should not
      * be committed to the repository.
+     * 
+     * Required by:
+     * - SessionService (app/sessions)
+     * - CacheService (app/cache)
+     * - LoggerInterface (app/logs)
      */
     protected function setUp(): void
     {
@@ -59,7 +64,9 @@ class AdminTestCase extends TestCase
             if (!is_dir($fullPath)) {
                 // Create the directory with recursive flag to handle parent directories
                 if (!mkdir($fullPath, 0755, true) && !is_dir($fullPath)) {
-                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $fullPath));
+                    $error = error_get_last();
+                    $errorMsg = $error ? $error['message'] : 'Unknown error';
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created: %s', $fullPath, $errorMsg));
                 }
             }
         }

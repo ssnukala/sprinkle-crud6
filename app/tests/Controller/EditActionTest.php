@@ -20,18 +20,24 @@ use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**
- * CRUD6 Edit/Update Action Integration Test
+ * CRUD6 Edit/Read Action Integration Test
  *
- * Tests PUT /api/crud6/{model}/{id} endpoint for updating existing records.
+ * Tests GET and PUT /api/crud6/{model}/{id} endpoints.
  * 
- * Features tested:
- * - Authentication and authorization
- * - Field validation
- * - Data transformation
- * - Database updates
- * - Partial updates (only changed fields)
- * - Relationship handling (on_update actions)
- * - Response format
+ * GET endpoint (Read):
+ * - Retrieves a single record by ID
+ * - Tests authentication and authorization
+ * - Tests 404 handling
+ * 
+ * PUT endpoint (Update):
+ * - Updates an existing record
+ * - Tests authentication and authorization
+ * - Tests field validation
+ * - Tests data transformation
+ * - Tests database updates
+ * - Tests partial updates (only changed fields)
+ * - Tests relationship handling (on_update actions)
+ * - Tests response format
  */
 class EditActionTest extends AdminTestCase
 {
@@ -51,6 +57,85 @@ class EditActionTest extends AdminTestCase
     {
         $this->tearDownApiTracking();
         parent::tearDown();
+    }
+
+    /**
+     * Test GET /api/crud6/users/{id} requires authentication
+     */
+    public function testReadRequiresAuthentication(): void
+    {
+        /** @var User */
+        $testUser = User::factory()->create();
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/' . $testUser->id);
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertJsonResponse('Login Required', $response, 'title');
+        $this->assertResponseStatus(401, $response);
+    }
+
+    /**
+     * Test GET /api/crud6/users/{id} requires permission
+     */
+    public function testReadRequiresPermission(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user);  // No permissions
+
+        /** @var User */
+        $testUser = User::factory()->create();
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/' . $testUser->id);
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertJsonResponse('Access Denied', $response, 'title');
+        $this->assertResponseStatus(403, $response);
+    }
+
+    /**
+     * Test GET /api/crud6/users/{id} returns user data with authentication
+     */
+    public function testReadUserSuccess(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['uri_users']);
+
+        /** @var User */
+        $testUser = User::factory()->create([
+            'user_name' => 'testread',
+            'first_name' => 'Test',
+            'last_name' => 'Read',
+        ]);
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/' . $testUser->id);
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(200, $response);
+        
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($body);
+        $this->assertArrayHasKey('id', $body);
+        $this->assertEquals($testUser->id, $body['id']);
+        $this->assertEquals('testread', $body['user_name']);
+        $this->assertEquals('Test', $body['first_name']);
+        $this->assertEquals('Read', $body['last_name']);
+    }
+
+    /**
+     * Test GET /api/crud6/users/{id} returns 404 for non-existent user
+     */
+    public function testReadNonExistentUserReturns404(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['uri_users']);
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/999999');
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(404, $response);
     }
 
     /**

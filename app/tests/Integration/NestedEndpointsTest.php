@@ -100,8 +100,6 @@ class NestedEndpointsTest extends AdminTestCase
      */
     public function testNestedEndpointRequiresAuthentication(): void
     {
-        echo "\n[TEST] Testing nested endpoint authentication requirements\n";
-
         /** @var Role */
         $role = Role::factory()->create();
 
@@ -110,8 +108,6 @@ class NestedEndpointsTest extends AdminTestCase
 
         $this->assertResponseStatus(401, $response,
             'Nested endpoint should require authentication');
-        
-        echo "[TEST] ✓ Nested endpoint correctly requires authentication\n";
     }
 
     /**
@@ -119,8 +115,6 @@ class NestedEndpointsTest extends AdminTestCase
      */
     public function testNestedEndpointRequiresPermission(): void
     {
-        echo "\n[TEST] Testing nested endpoint permission requirements\n";
-
         /** @var User */
         $user = User::factory()->create();
         $this->actAsUser($user);  // No permissions
@@ -133,8 +127,6 @@ class NestedEndpointsTest extends AdminTestCase
 
         $this->assertResponseStatus(403, $response,
             'Nested endpoint should require permission');
-        
-        echo "[TEST] ✓ Nested endpoint correctly requires permission\n";
     }
 
     /**

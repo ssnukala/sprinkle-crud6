@@ -102,11 +102,13 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     
     // For unauthenticated API tests, permission failures (401/403) should warn, not fail
     // We're looking for actual code/SQL failures (500, syntax errors, etc.)
+    // Note: Patterns are hardcoded as they're specific to CRUD6 API structure
     $isUnauthApiTest = !$isAuth && isset($pathConfig['path']) && strpos($pathConfig['path'], '/api/') !== false;
-    $isPermissionFailure = in_array($httpCode, ['401', '403']);
-    $isServerError = in_array($httpCode, ['500', '502', '503', '504']);
+    $isPermissionFailure = in_array($httpCode, ['401', '403']); // HTTP unauthorized/forbidden
+    $isServerError = in_array($httpCode, ['500', '502', '503', '504']); // HTTP server errors
     
-    // Check if this is a CREATE endpoint (POST method)
+    // Check if this is a CREATE endpoint (POST method to /api/crud6/{model})
+    // Excludes custom actions (/a/{action}) which use POST but aren't create operations
     $isCreateEndpoint = $method === 'POST' && strpos($path, '/api/crud6/') !== false && !strpos($path, '/a/');
     
     // Validate status code

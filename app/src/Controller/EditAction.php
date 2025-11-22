@@ -747,8 +747,8 @@ class EditAction extends Base
                 'row_count' => count($results),
             ]);
             
-            // Convert to array
-            return json_decode(json_encode($results), true);
+            // Convert Collection to array
+            return $results->toArray();
             
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [EditAction] Failed to query many_to_many relationship", [
@@ -885,6 +885,7 @@ class EditAction extends Base
             // Add distinct to avoid duplicates from multiple join paths
             $query->distinct();
             
+            // Execute query
             $results = $query->get();
             
             $this->debugLog("CRUD6 [EditAction] Belongs_to_many_through query executed", [
@@ -893,8 +894,8 @@ class EditAction extends Base
                 'row_count' => count($results),
             ]);
             
-            // Convert to array
-            return json_decode(json_encode($results), true);
+            // Convert Collection to array
+            return $results->toArray();
             
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [EditAction] Failed to query belongs_to_many_through relationship", [
@@ -916,9 +917,13 @@ class EditAction extends Base
      * reference the current record via a foreign key field.
      * For example: activities table has a user_id column that references users.id
      * 
+     * **Security Note**: All parameters are safely bound using Laravel's query builder
+     * parameter binding, which automatically escapes values to prevent SQL injection.
+     * The `where()` method uses prepared statements with bound parameters.
+     * 
      * @param array               $crudSchema     The schema configuration
      * @param CRUD6ModelInterface $crudModel      The configured model instance
-     * @param mixed               $recordId       The record ID
+     * @param mixed               $recordId       The record ID (safely bound as parameter)
      * @param string              $relatedModel   The name of the related model
      * @param string              $foreignKey     The foreign key column name in the related table
      * @param array               $listFields     Fields to include in results
@@ -976,8 +981,8 @@ class EditAction extends Base
                 'row_count' => count($results),
             ]);
             
-            // Convert to array
-            return json_decode(json_encode($results), true);
+            // Convert Collection to array
+            return $results->toArray();
             
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [EditAction] Failed to query has-many relationship", [

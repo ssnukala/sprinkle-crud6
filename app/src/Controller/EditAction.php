@@ -795,7 +795,8 @@ class EditAction extends Base
             'second_related_key' => $secondRelatedKey,
         ];
         
-        $missingFields = array_keys(array_filter($requiredFields, fn($value) => empty($value)));
+        // Check for missing fields (null or not set) - using === null to allow zero/empty string values
+        $missingFields = array_keys(array_filter($requiredFields, fn($value) => $value === null));
         
         if (!empty($missingFields)) {
             $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [

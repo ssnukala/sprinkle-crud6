@@ -390,8 +390,16 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
                             console.log(`   ❌ Status message: ${data.status.message}`);
                         }
                     } catch (jsonError) {
-                        // Not JSON, print first 200 chars of response
-                        console.log(`   ❌ Response: ${responseText.substring(0, 200)}`);
+                        // Not JSON, print first 500 chars of response with ellipsis if truncated
+                        const maxLength = 500;
+                        const truncated = responseText.length > maxLength;
+                        const displayText = truncated 
+                            ? responseText.substring(0, maxLength) + '...' 
+                            : responseText;
+                        console.log(`   ❌ Response: ${displayText}`);
+                        if (truncated) {
+                            console.log(`   ⚠️  Response truncated (${responseText.length} total characters)`);
+                        }
                     }
                 }
             } catch (error) {

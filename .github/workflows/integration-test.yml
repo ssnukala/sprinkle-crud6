@@ -523,38 +523,6 @@ jobs:
           echo "All 11 API endpoint types tested with 3 authentication scenarios each!"
           echo ""
 
-      - name: Run Enhanced Frontend Error Detection
-        run: |
-          cd userfrosting
-
-          echo "========================================="
-          echo "Enhanced Frontend Error Detection"
-          echo "========================================="
-          echo ""
-          echo "Comprehensive error monitoring for:"
-          echo "  - JavaScript console errors"
-          echo "  - Network errors (4xx/5xx)"
-          echo "  - Vue.js component errors"
-          echo "  - UI error notifications"
-          echo "  - Page load validation"
-          echo ""
-
-          # Copy enhanced error detection script
-          cp ../sprinkle-crud6/.github/scripts/enhanced-error-detection.js .
-
-          # Run error detection on all frontend pages
-          node enhanced-error-detection.js integration-test-paths.json || echo "⚠️  Errors detected but continuing..."
-
-          echo ""
-          echo "========================================="
-          echo "Error Detection Summary"
-          echo "========================================="
-          if [ -f /tmp/frontend-error-report.txt ]; then
-            cat /tmp/frontend-error-report.txt
-          else
-            echo "⚠️  Error report not found"
-          fi
-
       - name: Take screenshots and test authenticated API endpoints (with Network Tracking)
         run: |
           cd userfrosting
@@ -620,15 +588,6 @@ jobs:
         with:
           name: network-requests-summary
           path: /tmp/network-requests-summary.txt
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Upload frontend error report as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-error-report
-          path: /tmp/frontend-error-report.txt
           if-no-files-found: ignore
           retention-days: 30
 

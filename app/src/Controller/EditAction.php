@@ -503,6 +503,7 @@ class EditAction extends Base
             $relatedModel = $detailConfig['model'] ?? null;
             $listFields = $detailConfig['list_fields'] ?? [];
             $title = $detailConfig['title'] ?? ucfirst($relatedModel);
+            $foreignKey = $detailConfig['foreign_key'] ?? null;
             
             if (!$relatedModel) {
                 $this->debugLog("CRUD6 [EditAction] Skipping detail with no model", [
@@ -511,23 +512,44 @@ class EditAction extends Base
                 continue;
             }
             
-            // Find the corresponding relationship configuration
-            $relationship = $relationshipMap[$relatedModel] ?? null;
-            
-            if (!$relationship) {
-                $this->logger->warning("CRUD6 [EditAction] No relationship found for detail", [
-                    'related_model' => $relatedModel,
-                    'available_relationships' => array_keys($relationshipMap),
-                ]);
-                continue;
-            }
-            
-            // Get pre-loaded schema or null if not available
-            $relatedSchema = $relatedSchemas[$relatedModel] ?? null;
-            
-            // Query the relationship with comprehensive error handling
+            // Query the detail with comprehensive error handling
             try {
-                $rows = $this->queryRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields, $relatedSchema);
+                $rows = [];
+                
+                // Check if this is a has-many relationship via foreign_key
+                if ($foreignKey !== null) {
+                    // This is a has-many relationship (e.g., activities where user_id = current_user.id)
+                    $this->debugLog("CRUD6 [EditAction] Loading has-many relationship via foreign_key", [
+                        'related_model' => $relatedModel,
+                        'foreign_key' => $foreignKey,
+                        'record_id' => $recordId,
+                    ]);
+                    
+                    // Get pre-loaded schema or null if not available
+                    $relatedSchema = $relatedSchemas[$relatedModel] ?? null;
+                    
+                    // Query has-many relationship
+                    $rows = $this->queryHasManyRelationship($crudSchema, $crudModel, $recordId, $relatedModel, $foreignKey, $listFields, $relatedSchema);
+                } else {
+                    // This is a many-to-many relationship through pivot table
+                    // Find the corresponding relationship configuration
+                    $relationship = $relationshipMap[$relatedModel] ?? null;
+                    
+                    if (!$relationship) {
+                        $this->logger->warning("CRUD6 [EditAction] No relationship or foreign_key found for detail", [
+                            'related_model' => $relatedModel,
+                            'available_relationships' => array_keys($relationshipMap),
+                            'detail_config' => $detailConfig,
+                        ]);
+                        continue;
+                    }
+                    
+                    // Get pre-loaded schema or null if not available
+                    $relatedSchema = $relatedSchemas[$relatedModel] ?? null;
+                    
+                    // Query the relationship
+                    $rows = $this->queryRelationship($crudSchema, $crudModel, $recordId, $relationship, $listFields, $relatedSchema);
+                }
                 
                 $details[$relatedModel] = [
                     'title' => $title,
@@ -539,6 +561,7 @@ class EditAction extends Base
                     'related_model' => $relatedModel,
                     'row_count' => count($rows),
                     'title' => $title,
+                    'via_foreign_key' => $foreignKey !== null,
                 ]);
             } catch (\Exception $e) {
                 // Log error but continue loading other relationships
@@ -881,6 +904,95 @@ class EditAction extends Base
                 'error_type' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);
+            
+            return [];
+        }
+    }
+
+    /**
+     * Query a has-many relationship via foreign key.
+     * 
+     * Handles simple has-many relationships where records in the related table
+     * reference the current record via a foreign key field.
+     * For example: activities table has a user_id column that references users.id
+     * 
+     * @param array               $crudSchema     The schema configuration
+     * @param CRUD6ModelInterface $crudModel      The configured model instance
+     * @param mixed               $recordId       The record ID
+     * @param string              $relatedModel   The name of the related model
+     * @param string              $foreignKey     The foreign key column name in the related table
+     * @param array               $listFields     Fields to include in results
+     * @param array|null          $relatedSchema  Pre-loaded related schema (optimization)
+     * 
+     * @return array Array of related records
+     * 
+     * @throws \RuntimeException If schema cannot be loaded
+     */
+    protected function queryHasManyRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, string $relatedModel, string $foreignKey, array $listFields, ?array $relatedSchema = null): array
+    {
+        try {
+            // Load related schema if not pre-loaded
+            if ($relatedSchema === null) {
+                $relatedSchema = $this->schemaService->getSchema($relatedModel);
+            }
+            
+            $relatedTable = $relatedSchema['table'] ?? $relatedModel;
+            $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
+            
+            $this->debugLog("CRUD6 [EditAction] Query has-many relationship", [
+                'related_model' => $relatedModel,
+                'related_table' => $relatedTable,
+                'foreign_key' => $foreignKey,
+                'record_id' => $recordId,
+                'list_fields' => $listFields,
+                'schema_pre_loaded' => $relatedSchema !== null,
+            ]);
+            
+            // Build simple query: SELECT * FROM related_table WHERE foreign_key = recordId
+            $query = $this->db->table($relatedTable)
+                ->where($foreignKey, $recordId);
+            
+            // Apply field filtering if list_fields is specified
+            if (!empty($listFields)) {
+                // Ensure primary key is always included
+                if (!in_array($relatedPrimaryKey, $listFields)) {
+                    $listFields[] = $relatedPrimaryKey;
+                }
+                
+                // Select specified fields
+                $query->select($listFields);
+            } else {
+                // Select all fields
+                $query->select('*');
+            }
+            
+            // Execute query
+            $results = $query->get();
+            
+            $this->debugLog("CRUD6 [EditAction] Has-many query executed", [
+                'related_model' => $relatedModel,
+                'record_id' => $recordId,
+                'foreign_key' => $foreignKey,
+                'row_count' => count($results),
+            ]);
+            
+            // Convert to array
+            return json_decode(json_encode($results), true);
+            
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [EditAction] Failed to query has-many relationship", [
+                'related_model' => $relatedModel,
+                'foreign_key' => $foreignKey,
+                'record_id' => $recordId,
+                'error' => $e->getMessage(),
+                'error_type' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Re-throw if critical schema error, otherwise return empty
+            if ($e instanceof \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException) {
+                throw $e;
+            }
             
             return [];
         }

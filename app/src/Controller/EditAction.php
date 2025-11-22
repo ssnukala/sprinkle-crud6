@@ -748,6 +748,17 @@ class EditAction extends Base
     /**
      * Query a belongs_to_many_through relationship.
      * 
+     * Handles complex many-to-many-through relationships that traverse two pivot tables.
+     * For example: permissions -> roles -> users uses two pivot tables (permission_roles and role_users).
+     * 
+     * Schema structure:
+     * - first_pivot_table: The first pivot table to join (e.g., permission_roles)
+     * - first_foreign_key: The foreign key in first pivot table pointing to source (e.g., permission_id)
+     * - first_related_key: The key in first pivot table pointing to intermediate model (e.g., role_id)
+     * - second_pivot_table: The second pivot table to join (e.g., role_users)
+     * - second_foreign_key: The foreign key in second pivot table pointing to intermediate model (e.g., role_id)
+     * - second_related_key: The key in second pivot table pointing to target (e.g., user_id)
+     * 
      * Phase 3: Enhanced with schema consolidation optimization - uses pre-loaded schema.
      * 
      * @param array               $crudSchema     The schema configuration
@@ -762,20 +773,37 @@ class EditAction extends Base
     protected function queryBelongsToManyThroughRelationship(array $crudSchema, CRUD6ModelInterface $crudModel, $recordId, array $relationship, array $listFields, ?array $relatedSchema = null): array
     {
         $throughModel = $relationship['through'] ?? null;
-        $foreignKey = $relationship['foreign_key'] ?? null;
-        $throughKey = $relationship['through_key'] ?? null;
         $relatedModel = $relationship['name'] ?? null;
         
-        if (!$throughModel || !$foreignKey || !$throughKey || !$relatedModel) {
+        // Get pivot table configuration
+        $firstPivotTable = $relationship['first_pivot_table'] ?? null;
+        $firstForeignKey = $relationship['first_foreign_key'] ?? null;
+        $firstRelatedKey = $relationship['first_related_key'] ?? null;
+        $secondPivotTable = $relationship['second_pivot_table'] ?? null;
+        $secondForeignKey = $relationship['second_foreign_key'] ?? null;
+        $secondRelatedKey = $relationship['second_related_key'] ?? null;
+        
+        // Validate required configuration
+        if (!$throughModel || !$relatedModel || !$firstPivotTable || !$firstForeignKey || 
+            !$firstRelatedKey || !$secondPivotTable || !$secondForeignKey || !$secondRelatedKey) {
             $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
                 'relationship' => $relationship,
+                'missing_fields' => array_filter([
+                    'through' => !$throughModel,
+                    'name' => !$relatedModel,
+                    'first_pivot_table' => !$firstPivotTable,
+                    'first_foreign_key' => !$firstForeignKey,
+                    'first_related_key' => !$firstRelatedKey,
+                    'second_pivot_table' => !$secondPivotTable,
+                    'second_foreign_key' => !$secondForeignKey,
+                    'second_related_key' => !$secondRelatedKey,
+                ]),
             ]);
             return [];
         }
         
         try {
             // Phase 3 Optimization: Use pre-loaded schema if available
-            // Note: through model schema still needs to be loaded separately
             $throughSchema = $this->schemaService->getSchema($throughModel);
             $throughTable = $throughSchema['table'] ?? $throughModel;
             $throughPrimaryKey = $throughSchema['primary_key'] ?? 'id';
@@ -787,22 +815,32 @@ class EditAction extends Base
             $relatedPrimaryKey = $relatedSchema['primary_key'] ?? 'id';
             
             $this->debugLog("CRUD6 [EditAction] Query belongs_to_many_through relationship", [
+                'through_model' => $throughModel,
                 'through_table' => $throughTable,
-                'foreign_key' => $foreignKey,
-                'through_key' => $throughKey,
+                'related_model' => $relatedModel,
                 'related_table' => $relatedTable,
-                'related_primary_key' => $relatedPrimaryKey,
-                'list_fields' => $listFields,
+                'first_pivot_table' => $firstPivotTable,
+                'second_pivot_table' => $secondPivotTable,
+                'record_id' => $recordId,
             ]);
             
-            // Build the query
-            // SELECT related.* FROM related
-            // INNER JOIN through ON through.id = related.through_key
-            // WHERE through.foreign_key = recordId
+            // Build the complex query with two pivot table joins
+            // Example for permissions -> roles -> users:
+            // SELECT users.* FROM users
+            // INNER JOIN role_users ON role_users.user_id = users.id
+            // INNER JOIN roles ON roles.id = role_users.role_id
+            // INNER JOIN permission_roles ON permission_roles.role_id = roles.id
+            // WHERE permission_roles.permission_id = recordId
             
             $query = $this->db->table($relatedTable)
-                ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$relatedTable}.{$throughKey}")
-                ->where("{$throughTable}.{$foreignKey}", $recordId);
+                // Join second pivot table to related table
+                ->join($secondPivotTable, "{$secondPivotTable}.{$secondRelatedKey}", '=', "{$relatedTable}.{$relatedPrimaryKey}")
+                // Join intermediate (through) table to second pivot table
+                ->join($throughTable, "{$throughTable}.{$throughPrimaryKey}", '=', "{$secondPivotTable}.{$secondForeignKey}")
+                // Join first pivot table to intermediate table
+                ->join($firstPivotTable, "{$firstPivotTable}.{$firstRelatedKey}", '=', "{$throughTable}.{$throughPrimaryKey}")
+                // Filter by source record ID in first pivot table
+                ->where("{$firstPivotTable}.{$firstForeignKey}", $recordId);
             
             // Apply field filtering if list_fields is specified
             if (!empty($listFields)) {
@@ -816,6 +854,9 @@ class EditAction extends Base
             } else {
                 $query->select("{$relatedTable}.*");
             }
+            
+            // Add distinct to avoid duplicates from multiple join paths
+            $query->distinct();
             
             $results = $query->get();
             
@@ -833,6 +874,8 @@ class EditAction extends Base
                 'relationship' => $relationship,
                 'record_id' => $recordId,
                 'error' => $e->getMessage(),
+                'error_type' => get_class($e),
+                'trace' => $e->getTraceAsString(),
             ]);
             
             return [];

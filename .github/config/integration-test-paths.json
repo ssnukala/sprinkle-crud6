@@ -741,7 +741,7 @@
         "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware in production. For automated testing (PHPUnit), the testing framework automatically handles CSRF tokens via createJsonRequest() method. For manual testing with curl/Postman, you must include CSRF token in headers or disable CSRF middleware temporarily.",
         "testing": {
           "phpunit": "Automatically handled by UserFrosting\\Testing\\TestCase::createJsonRequest()",
-          "manual": "Include X-CSRF-Token header with valid token from /csrf endpoint"
+          "manual": "Include X-CSRF-Token header with valid token from <meta name='csrf-token'> tag on any authenticated UserFrosting page"
         },
         "applies_to": ["POST", "PUT", "DELETE"]
       },

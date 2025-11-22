@@ -27,11 +27,15 @@ let warningTests = 0;
 
 /**
  * Get CSRF token from the page
+ * 
+ * UserFrosting 6 provides CSRF tokens via meta tags in HTML pages, not via a dedicated API endpoint.
+ * This function retrieves the token from the current page's meta tag.
+ * If no token is found, it navigates to the dashboard to get a fresh token.
  */
 async function getCsrfToken(page, baseUrl) {
     try {
-        // Try to get CSRF token from meta tag
-        const csrfToken = await page.evaluate(() => {
+        // Try to get CSRF token from meta tag on current page
+        let csrfToken = await page.evaluate(() => {
             const metaTag = document.querySelector('meta[name="csrf-token"]');
             return metaTag ? metaTag.getAttribute('content') : null;
         });
@@ -40,13 +44,23 @@ async function getCsrfToken(page, baseUrl) {
             return csrfToken;
         }
         
-        // Try to get from /csrf endpoint (must use full URL for page.request API)
-        const response = await page.request.get(`${baseUrl}/csrf`);
-        if (response.ok()) {
-            const data = await response.json();
-            return data.csrf_token || data.token;
+        // If no token on current page, navigate to dashboard to get one
+        // This ensures we're on a valid UserFrosting page with a CSRF meta tag
+        console.warn('   ⚠️  No CSRF token on current page, navigating to dashboard to get token...');
+        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        
+        // Try again to get token from dashboard page
+        csrfToken = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (csrfToken) {
+            console.log('   ✅ CSRF token retrieved from dashboard page');
+            return csrfToken;
         }
         
+        console.warn('   ⚠️  Could not find CSRF token meta tag on dashboard page either');
         return null;
     } catch (error) {
         console.warn('   ⚠️  Could not retrieve CSRF token:', error.message);

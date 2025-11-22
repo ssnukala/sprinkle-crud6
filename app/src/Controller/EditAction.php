@@ -783,21 +783,24 @@ class EditAction extends Base
         $secondForeignKey = $relationship['second_foreign_key'] ?? null;
         $secondRelatedKey = $relationship['second_related_key'] ?? null;
         
-        // Validate required configuration
-        if (!$throughModel || !$relatedModel || !$firstPivotTable || !$firstForeignKey || 
-            !$firstRelatedKey || !$secondPivotTable || !$secondForeignKey || !$secondRelatedKey) {
+        // Validate required configuration - check all required fields
+        $requiredFields = [
+            'through' => $throughModel,
+            'name' => $relatedModel,
+            'first_pivot_table' => $firstPivotTable,
+            'first_foreign_key' => $firstForeignKey,
+            'first_related_key' => $firstRelatedKey,
+            'second_pivot_table' => $secondPivotTable,
+            'second_foreign_key' => $secondForeignKey,
+            'second_related_key' => $secondRelatedKey,
+        ];
+        
+        $missingFields = array_keys(array_filter($requiredFields, fn($value) => empty($value)));
+        
+        if (!empty($missingFields)) {
             $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
                 'relationship' => $relationship,
-                'missing_fields' => array_filter([
-                    'through' => !$throughModel,
-                    'name' => !$relatedModel,
-                    'first_pivot_table' => !$firstPivotTable,
-                    'first_foreign_key' => !$firstForeignKey,
-                    'first_related_key' => !$firstRelatedKey,
-                    'second_pivot_table' => !$secondPivotTable,
-                    'second_foreign_key' => !$secondForeignKey,
-                    'second_related_key' => !$secondRelatedKey,
-                ]),
+                'missing_fields' => $missingFields,
             ]);
             return [];
         }

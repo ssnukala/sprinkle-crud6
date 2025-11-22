@@ -237,6 +237,19 @@ jobs:
             --lastName=User
           echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
 
+      - name: Create test user for modification tests
+        run: |
+          cd userfrosting
+          # Create a second user that can be safely modified/deleted in tests
+          # This prevents issues with modifying the logged-in admin user (ID 1)
+          php bakery create:user \
+            --username=testuser \
+            --password=TestPass123 \
+            --email=testuser@example.com \
+            --firstName=Test \
+            --lastName=User
+          echo "✅ Test user created (testuser) - will be used for modification/deletion tests"
+
       - name: Test schema loading
         run: |
           cd userfrosting

@@ -53,7 +53,7 @@
         },
         "users_update": {
           "method": "PUT",
-          "path": "/api/crud6/users/1",
+          "path": "/api/crud6/users/2",
           "description": "Update user via CRUD6 API",
           "expected_status": 200,
           "validation": {
@@ -63,11 +63,12 @@
           "payload": {
             "first_name": "Updated",
             "last_name": "Name"
-          }
+          },
+          "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },
         "users_update_field": {
           "method": "PUT",
-          "path": "/api/crud6/users/1/flag_enabled",
+          "path": "/api/crud6/users/2/flag_enabled",
           "description": "Update single field (boolean toggle) for user",
           "expected_status": 200,
           "validation": {
@@ -76,11 +77,12 @@
           "requires_permission": "update_user_field",
           "payload": {
             "flag_enabled": false
-          }
+          },
+          "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },
         "users_custom_action": {
           "method": "POST",
-          "path": "/api/crud6/users/1/a/reset_password",
+          "path": "/api/crud6/users/2/a/reset_password",
           "description": "Execute custom action on user",
           "expected_status": 200,
           "validation": {
@@ -88,11 +90,11 @@
             "acceptable_statuses": [200, 404, 500]
           },
           "requires_permission": "update_user_field",
-          "note": "Custom actions may not be fully implemented"
+          "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user. Custom actions may not be fully implemented"
         },
         "users_relationship_attach": {
           "method": "POST",
-          "path": "/api/crud6/users/1/roles",
+          "path": "/api/crud6/users/2/roles",
           "description": "Attach roles to user (many-to-many relationship)",
           "expected_status": 200,
           "validation": {
@@ -101,11 +103,12 @@
           },
           "payload": {
             "related_ids": [1]
-          }
+          },
+          "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },
         "users_relationship_detach": {
           "method": "DELETE",
-          "path": "/api/crud6/users/1/roles",
+          "path": "/api/crud6/users/2/roles",
           "description": "Detach roles from user (many-to-many relationship)",
           "expected_status": 200,
           "validation": {
@@ -114,17 +117,19 @@
           },
           "payload": {
             "related_ids": [1]
-          }
+          },
+          "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },
         "users_delete": {
           "method": "DELETE",
-          "path": "/api/crud6/users/1",
+          "path": "/api/crud6/users/2",
           "description": "Delete user via CRUD6 API",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "requires_permission": "delete_user"
+          "requires_permission": "delete_user",
+          "note": "Uses user ID 2 (testuser) to avoid deleting the logged-in admin user"
         },
         "groups_schema": {
           "method": "GET",
@@ -405,10 +410,11 @@
           "screenshot_name": "users_list"
         },
         "users_detail": {
-          "path": "/crud6/users/1",
+          "path": "/crud6/users/2",
           "description": "Single user detail page",
           "screenshot": true,
-          "screenshot_name": "user_detail"
+          "screenshot_name": "user_detail",
+          "note": "Uses user ID 2 (testuser) instead of admin user"
         },
         "groups_list": {
           "path": "/crud6/groups",
@@ -482,7 +488,7 @@
         },
         "users_single": {
           "method": "GET",
-          "path": "/api/crud6/users/1",
+          "path": "/api/crud6/users/2",
           "description": "Attempt to access single user without authentication",
           "expected_status": 401,
           "validation": {
@@ -500,7 +506,7 @@
         },
         "users_update": {
           "method": "PUT",
-          "path": "/api/crud6/users/1",
+          "path": "/api/crud6/users/2",
           "description": "Attempt to update user without authentication",
           "expected_status": 401,
           "validation": {
@@ -509,7 +515,7 @@
         },
         "users_delete": {
           "method": "DELETE",
-          "path": "/api/crud6/users/1",
+          "path": "/api/crud6/users/2",
           "description": "Attempt to delete user without authentication",
           "expected_status": 401,
           "validation": {
@@ -636,7 +642,7 @@
           }
         },
         "users_detail": {
-          "path": "/crud6/users/1",
+          "path": "/crud6/users/2",
           "description": "Attempt to access user detail page without authentication (should redirect to login)",
           "expected_status": 200,
           "validation": {

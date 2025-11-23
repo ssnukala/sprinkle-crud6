@@ -261,51 +261,89 @@ let skippedApiTests = 0;
 let warningApiTests = 0;
 
 /**
- * Get CSRF token from the current page or by navigating to known pages
- * Tries multiple strategies to ensure a CSRF token is obtained
+ * Helper function to extract CSRF tokens from the current page (UserFrosting 6 format)
+ * UserFrosting 6 uses TWO meta tags for CSRF: csrf_name and csrf_value
+ * @param {Page} page - Playwright page object
+ * @returns {Promise<{name: string, value: string}|null>} CSRF tokens or null if not found
+ */
+async function extractCsrfTokensFromPage(page) {
+    try {
+        const tokens = await page.evaluate(() => {
+            const nameTag = document.querySelector('meta[name="csrf_name"]');
+            const valueTag = document.querySelector('meta[name="csrf_value"]');
+            
+            if (nameTag && valueTag) {
+                return {
+                    name: nameTag.getAttribute('content'),
+                    value: valueTag.getAttribute('content')
+                };
+            }
+            return null;
+        });
+        return tokens;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Validate CSRF tokens structure
+ * @param {object|null} tokens - Tokens object with name and value
+ * @returns {boolean} True if tokens are valid
+ */
+function isValidCsrfTokens(tokens) {
+    return tokens !== null && 
+           tokens !== undefined && 
+           typeof tokens.name === 'string' && 
+           tokens.name.length > 0 &&
+           typeof tokens.value === 'string' && 
+           tokens.value.length > 0;
+}
+
+/**
+ * Get CSRF tokens from the current page or by navigating to known pages
+ * UserFrosting 6 uses a dual-token CSRF protection with csrf_name and csrf_value
+ * Tries multiple strategies to ensure CSRF tokens are obtained
  * 
  * @param {Page} page - Playwright page object
  * @param {string} baseUrl - Base URL of the application
- * @returns {Promise<string|null>} CSRF token or null if not found after all attempts
+ * @returns {Promise<{name: string, value: string}|null>} CSRF tokens or null if not found after all attempts
  */
 async function getCsrfToken(page, baseUrl) {
-    console.log('🔐 Attempting to load CSRF token...');
+    console.log('🔐 Attempting to load CSRF tokens (UserFrosting 6 format)...');
+    console.log('   Looking for meta tags: csrf_name and csrf_value');
     
-    // Strategy 1: Try to get token from current page first (most efficient)
+    // Strategy 1: Try to get tokens from current page first (most efficient)
     try {
-        console.log('   📍 Strategy 1: Checking current page for CSRF token...');
-        const tokenFromCurrentPage = await page.evaluate(() => {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : null;
-        });
+        console.log('   📍 Strategy 1: Checking current page for CSRF tokens...');
+        const tokensFromCurrentPage = await extractCsrfTokensFromPage(page);
         
-        if (tokenFromCurrentPage && tokenFromCurrentPage.length > 0) {
-            console.log(`   ✅ CSRF token found on current page`);
-            console.log(`   Token preview: ${tokenFromCurrentPage.substring(0, 20)}...`);
-            return tokenFromCurrentPage;
+        if (isValidCsrfTokens(tokensFromCurrentPage)) {
+            console.log(`   ✅ CSRF tokens found on current page`);
+            console.log(`   Token name: ${tokensFromCurrentPage.name}`);
+            console.log(`   Token value preview: ${tokensFromCurrentPage.value.substring(0, 20)}...`);
+            return tokensFromCurrentPage;
         } else {
-            console.log('   ⚠️  No CSRF token on current page, trying next strategy...');
+            console.log('   ⚠️  No CSRF tokens on current page, trying next strategy...');
         }
     } catch (error) {
         console.log(`   ⚠️  Error checking current page: ${error.message}`);
     }
     
-    // Strategy 2: Navigate to dashboard page (most likely to have CSRF token)
+    // Strategy 2: Navigate to dashboard page (most likely to have CSRF tokens after login)
     try {
         console.log('   📍 Strategy 2: Navigating to dashboard page...');
-        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 15000 });
         
-        const tokenFromDashboard = await page.evaluate(() => {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : null;
-        });
+        const tokensFromDashboard = await extractCsrfTokensFromPage(page);
         
-        if (tokenFromDashboard && tokenFromDashboard.length > 0) {
-            console.log(`   ✅ CSRF token found on dashboard page`);
-            console.log(`   Token preview: ${tokenFromDashboard.substring(0, 20)}...`);
-            return tokenFromDashboard;
+        if (isValidCsrfTokens(tokensFromDashboard)) {
+            console.log(`   ✅ CSRF tokens found on dashboard page`);
+            console.log(`   Token name: ${tokensFromDashboard.name}`);
+            console.log(`   Token value preview: ${tokensFromDashboard.value.substring(0, 20)}...`);
+            return tokensFromDashboard;
         } else {
-            console.log('   ⚠️  No CSRF token on dashboard, trying next strategy...');
+            console.log('   ⚠️  No CSRF tokens on dashboard, trying next strategy...');
         }
     } catch (error) {
         console.log(`   ⚠️  Error accessing dashboard: ${error.message}`);
@@ -314,26 +352,25 @@ async function getCsrfToken(page, baseUrl) {
     // Strategy 3: Navigate to home page as fallback
     try {
         console.log('   📍 Strategy 3: Navigating to home page (/)...');
-        await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 15000 });
         
-        const tokenFromHome = await page.evaluate(() => {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : null;
-        });
+        const tokensFromHome = await extractCsrfTokensFromPage(page);
         
-        if (tokenFromHome && tokenFromHome.length > 0) {
-            console.log(`   ✅ CSRF token found on home page`);
-            console.log(`   Token preview: ${tokenFromHome.substring(0, 20)}...`);
-            return tokenFromHome;
+        if (isValidCsrfTokens(tokensFromHome)) {
+            console.log(`   ✅ CSRF tokens found on home page`);
+            console.log(`   Token name: ${tokensFromHome.name}`);
+            console.log(`   Token value preview: ${tokensFromHome.value.substring(0, 20)}...`);
+            return tokensFromHome;
         } else {
-            console.log('   ⚠️  No CSRF token on home page either');
+            console.log('   ⚠️  No CSRF tokens on home page either');
         }
     } catch (error) {
         console.log(`   ⚠️  Error accessing home page: ${error.message}`);
     }
     
     // All strategies failed
-    console.error('   ❌ CRITICAL: Could not find CSRF token after trying all strategies!');
+    console.error('   ❌ CRITICAL: Could not find CSRF tokens after trying all strategies!');
+    console.error('   ❌ Expected meta tags: <meta name="csrf_name"> and <meta name="csrf_value">');
     console.error('   ❌ API tests requiring POST/PUT/DELETE will fail!');
     return null;
 }
@@ -373,19 +410,24 @@ async function testApiPath(page, name, pathConfig, baseUrl, csrfToken = null) {
         let response;
         
         // Set up headers for API request
-        // Include CSRF token for state-changing requests (POST/PUT/DELETE)
+        // UserFrosting 6 uses dual-header CSRF protection: csrf_name and csrf_value
         let headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         };
         
-        // Add CSRF token header for POST/PUT/DELETE requests
+        // Add CSRF headers for POST/PUT/DELETE requests
+        // UserFrosting 6 requires BOTH csrf_name and csrf_value headers
         if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
-            if (csrfToken && csrfToken.length > 0) {
-                headers['X-CSRF-Token'] = csrfToken;
-                console.log(`   🔐 CSRF token included: ${csrfToken.substring(0, 20)}...`);
+            if (csrfToken && csrfToken.name && csrfToken.value) {
+                headers['csrf_name'] = csrfToken.name;
+                headers['csrf_value'] = csrfToken.value;
+                console.log(`   🔐 CSRF tokens included:`);
+                console.log(`      Name header: ${csrfToken.name}`);
+                console.log(`      Value preview: ${csrfToken.value.substring(0, 20)}...`);
             } else {
-                console.log(`   ⚠️  WARNING: No CSRF token available for ${method} request!`);
+                console.log(`   ⚠️  WARNING: No CSRF tokens available for ${method} request!`);
+                console.log(`   ⚠️  Expected tokens object with 'name' and 'value' properties`);
                 console.log(`   ⚠️  This request will likely fail with "Missing CSRF token" error`);
             }
         }
@@ -922,26 +964,29 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Give session a moment to stabilize
         await page.waitForTimeout(2000);
 
-        // Step 1.5: Load CSRF token for API testing
-        // The CSRF token is required for POST/PUT/DELETE requests
+        // Step 1.5: Load CSRF tokens for API testing (UserFrosting 6 dual-token format)
+        // UserFrosting 6 uses TWO tokens: csrf_name and csrf_value
         console.log('========================================');
-        console.log('Loading CSRF Token for API Testing');
+        console.log('Loading CSRF Tokens for API Testing');
         console.log('========================================');
         const csrfToken = await getCsrfToken(page, baseUrl);
         console.log('');
         
-        if (!csrfToken) {
+        if (!csrfToken || !csrfToken.name || !csrfToken.value) {
             console.log('⚠️  ========================================');
-            console.log('⚠️  WARNING: NO CSRF TOKEN AVAILABLE');
+            console.log('⚠️  WARNING: NO CSRF TOKENS AVAILABLE');
             console.log('⚠️  ========================================');
+            console.log('⚠️  UserFrosting 6 requires both csrf_name and csrf_value');
             console.log('⚠️  API tests requiring POST/PUT/DELETE will fail!');
             console.log('⚠️  Continuing with tests anyway...');
             console.log('⚠️  ========================================');
         } else {
             console.log('✅ ========================================');
-            console.log('✅ CSRF Token Successfully Loaded');
+            console.log('✅ CSRF Tokens Successfully Loaded');
             console.log('✅ ========================================');
-            console.log(`✅ Token will be used for POST/PUT/DELETE requests`);
+            console.log(`✅ Token name: ${csrfToken.name}`);
+            console.log(`✅ Token value: ${csrfToken.value.substring(0, 20)}...`);
+            console.log(`✅ Tokens will be used for POST/PUT/DELETE requests`);
             console.log('✅ ========================================');
         }
         console.log('');

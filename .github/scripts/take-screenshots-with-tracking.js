@@ -518,9 +518,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     // Create network tracker
     const networkTracker = new NetworkRequestTracker();
 
-    // Initialize counters at function scope so they're accessible at return
+    // Initialize counters and error tracking at function scope so they're accessible at return and in error handler
     let successCount = 0;
     let failCount = 0;
+    let consoleErrors = [];
 
     // Launch browser
     const browser = await chromium.launch({
@@ -536,6 +537,16 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         const page = await context.newPage();
 
+        // Set up console error logging - use function-scoped consoleErrors array
+        page.on('console', msg => {
+            const type = msg.type();
+            const text = msg.text();
+            if (type === 'error' || type === 'warning') {
+                consoleErrors.push({ type, text, timestamp: Date.now() });
+                console.log(`   🖥️  Browser ${type}: ${text}`);
+            }
+        });
+
         // Set up network tracking
         networkTracker.startTracking();
         
@@ -550,12 +561,60 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Step 1: Navigate to login page and authenticate
         console.log('📍 Navigating to login page...');
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
-        console.log('✅ Login page loaded');
+        
+        // Log page info for debugging
+        const pageTitle = await page.title();
+        const pageUrl = page.url();
+        console.log(`✅ Login page loaded`);
+        console.log(`   Page Title: ${pageTitle}`);
+        console.log(`   Page URL: ${pageUrl}`);
+        
+        // Take early screenshot to see what's rendering
+        await page.screenshot({ path: '/tmp/screenshot_login_page_initial.png', fullPage: true });
+        console.log('📸 Early screenshot saved: /tmp/screenshot_login_page_initial.png');
         
         // Wait a bit for any JavaScript to execute
         await page.waitForTimeout(2000);
 
         console.log('🔐 Logging in...');
+        
+        // Take screenshot before looking for selectors
+        await page.screenshot({ path: '/tmp/screenshot_before_login_selectors.png', fullPage: true });
+        console.log('📸 Screenshot before selector search: /tmp/screenshot_before_login_selectors.png');
+        
+        // Try to extract CSRF token from the login page
+        let csrfToken = null;
+        try {
+            csrfToken = await page.evaluate(() => {
+                // Try to find CSRF token in various common locations
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                if (metaTag) return metaTag.getAttribute('content');
+                
+                const inputField = document.querySelector('input[name="csrf_token"], input[name="_csrf_token"], input[name="csrf-token"]');
+                if (inputField) return inputField.value;
+                
+                return null;
+            });
+            if (csrfToken) {
+                // Only show ellipsis if token is longer than 20 characters
+                const tokenPreview = csrfToken.length > 20 
+                    ? `${csrfToken.substring(0, 20)}...` 
+                    : csrfToken;
+                console.log(`   ✅ Found CSRF token: ${tokenPreview}`);
+            } else {
+                console.log('   ⚠️  No CSRF token found on login page');
+            }
+        } catch (e) {
+            console.log('   ⚠️  Error extracting CSRF token:', e.message);
+        }
+        
+        // Log browser console errors if any occurred during page load
+        if (consoleErrors.length > 0) {
+            console.log(`   ⚠️  ${consoleErrors.length} browser console errors/warnings detected:`);
+            consoleErrors.forEach((error, idx) => {
+                console.log(`      ${idx + 1}. [${error.type}] ${error.text}`);
+            });
+        }
         
         // Wait for the login form to be visible with increased timeout
         // Try multiple selectors in case the page structure varies
@@ -566,10 +625,13 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             'input[name="username"]',
         ];
         
+        // Reduce timeout since we have better debugging now
+        const selectorTimeout = 10000; // 10 seconds per selector
+        
         for (const selector of selectors) {
             try {
                 console.log(`   Trying selector: ${selector}`);
-                usernameInput = await page.waitForSelector(selector, { timeout: 30000, state: 'visible' });
+                usernameInput = await page.waitForSelector(selector, { timeout: selectorTimeout, state: 'visible' });
                 if (usernameInput) {
                     console.log(`   ✅ Found username input with selector: ${selector}`);
                     break;
@@ -582,7 +644,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         if (!usernameInput) {
             // If we still can't find it, save debug info
             const pageContent = await page.content();
-            require('fs').writeFileSync('/tmp/login_page_debug.html', pageContent);
+            writeFileSync('/tmp/login_page_debug.html', pageContent);
             await page.screenshot({ path: '/tmp/login_page_debug.png', fullPage: true });
             console.error('❌ Could not find username input field after trying all selectors');
             console.error('   Debug HTML saved to /tmp/login_page_debug.html');
@@ -1032,6 +1094,15 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.error('❌ Error taking screenshots:');
         console.error(error.message);
         console.error('========================================');
+        
+        // Log any browser console errors that were captured
+        if (consoleErrors && consoleErrors.length > 0) {
+            console.error('');
+            console.error('🖥️  Browser Console Errors/Warnings:');
+            consoleErrors.forEach((err, idx) => {
+                console.error(`   ${idx + 1}. [${err.type}] ${err.text}`);
+            });
+        }
         
         // Take a screenshot of the current page for debugging
         try {

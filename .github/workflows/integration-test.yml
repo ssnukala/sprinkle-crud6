@@ -253,6 +253,27 @@ jobs:
           echo "" >> app/.env
           echo "# Testing Configuration" >> app/.env
           echo "TEST_SESSION_HANDLER=database" >> app/.env
+          
+          # Create CRUD6 test configuration to enable debug mode
+          echo "Creating CRUD6 test configuration with debug mode enabled..."
+          mkdir -p app/config
+          cat > app/config/crud6-test.php << 'EOF'
+          <?php
+          declare(strict_types=1);
+          
+          /**
+           * CRUD6 test configuration
+           * Enables debug mode for comprehensive backend logging during CI tests
+           */
+          return [
+              'crud6' => [
+                  'debug_mode' => true,
+              ],
+          ];
+          EOF
+          
+          echo "✅ CRUD6 debug mode configuration created"
+          cat app/config/crud6-test.php
 
       - name: Run migrations
         run: |
@@ -674,6 +695,15 @@ jobs:
         with:
           name: network-requests-summary
           path: /tmp/network-requests-summary.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload browser console errors as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-console-errors
+          path: /tmp/browser-console-errors.txt
           if-no-files-found: ignore
           retention-days: 30
 

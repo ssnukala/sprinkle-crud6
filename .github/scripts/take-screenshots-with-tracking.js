@@ -22,6 +22,10 @@
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'fs';
 
+// Report formatting constants
+const REPORT_SEPARATOR = '═══════════════════════════════════════════════════════════════════════════════';
+const SECTION_SEPARATOR = '───────────────────────────────────────────────────────────────────────────────';
+
 /**
  * Network Request Tracker (integrated from NetworkRequestTracker.js)
  */
@@ -294,6 +298,11 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
     console.log(`   Method: ${method}`);
     console.log(`   Path: ${path}`);
     
+    // Log payload for debugging (only for non-GET requests)
+    if (method !== 'GET' && Object.keys(payload).length > 0) {
+        console.log(`   📦 Payload:`, JSON.stringify(payload, null, 2));
+    }
+    
     try {
         const url = `${baseUrl}${path}`;
         let response;
@@ -327,6 +336,13 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         }
         
         const status = response.status();
+        const responseHeaders = response.headers();
+        
+        // Log response headers for debugging (helps identify session/auth issues)
+        console.log(`   📡 Response Status: ${status}`);
+        if (responseHeaders['content-type']) {
+            console.log(`   📄 Content-Type: ${responseHeaders['content-type']}`);
+        }
         
         // Validate status code
         if (status === expectedStatus) {
@@ -387,21 +403,72 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         } else {
             console.log(`   ❌ Status: ${status} (expected ${expectedStatus})`);
             
+            // Log request details for debugging
+            console.log(`   🔍 Request Details:`);
+            console.log(`      URL: ${method} ${baseUrl}${path}`);
+            if (method !== 'GET' && Object.keys(payload).length > 0) {
+                console.log(`      Payload: ${JSON.stringify(payload)}`);
+            }
+            console.log(`      Headers: ${JSON.stringify(headers)}`);
+            
             // Try to get error details from response
             try {
                 const responseText = await response.text();
                 if (responseText) {
+                    console.log(`   📝 Response Body (${responseText.length} bytes):`);
+                    
                     try {
                         const data = JSON.parse(responseText);
+                        
+                        // Log error message
                         if (data.message) {
-                            console.log(`   ❌ Error: ${data.message}`);
+                            console.log(`   ❌ Error Message: ${data.message}`);
                         }
+                        
+                        // Log validation errors with field details
                         if (data.errors) {
-                            console.log(`   ❌ Validation errors:`, data.errors);
+                            console.log(`   ❌ Validation Errors:`);
+                            if (typeof data.errors === 'object') {
+                                // Fortress validation errors are typically an object with field names as keys
+                                for (const [field, messages] of Object.entries(data.errors)) {
+                                    if (Array.isArray(messages)) {
+                                        messages.forEach(msg => {
+                                            console.log(`      • ${field}: ${msg}`);
+                                        });
+                                    } else {
+                                        console.log(`      • ${field}: ${messages}`);
+                                    }
+                                }
+                            } else {
+                                console.log(`      ${JSON.stringify(data.errors, null, 2)}`);
+                            }
                         }
+                        
+                        // Log status message
                         if (data.status && data.status.message) {
-                            console.log(`   ❌ Status message: ${data.status.message}`);
+                            console.log(`   ❌ Status Message: ${data.status.message}`);
                         }
+                        
+                        // Log any other error details
+                        if (data.title) {
+                            console.log(`   ❌ Title: ${data.title}`);
+                        }
+                        if (data.description) {
+                            console.log(`   ❌ Description: ${data.description}`);
+                        }
+                        
+                        // For 400 errors specifically, provide debugging hints
+                        if (status === 400) {
+                            console.log(`   💡 Debugging Hints for HTTP 400:`);
+                            console.log(`      - Check if all required fields are provided`);
+                            console.log(`      - Verify field types match schema expectations`);
+                            console.log(`      - Check validation rules in schema`);
+                            console.log(`      - Ensure unique fields don't conflict with existing data`);
+                            if (!data.errors && !data.message) {
+                                console.log(`      ⚠️  No error details in response - check backend logs`);
+                            }
+                        }
+                        
                     } catch (jsonError) {
                         // Not JSON, print first 500 chars of response with ellipsis if truncated
                         const maxLength = 500;
@@ -409,14 +476,16 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
                         const displayText = truncated 
                             ? responseText.substring(0, maxLength) + '...' 
                             : responseText;
-                        console.log(`   ❌ Response: ${displayText}`);
+                        console.log(`   ❌ Response (Non-JSON): ${displayText}`);
                         if (truncated) {
                             console.log(`   ⚠️  Response truncated (${responseText.length} total characters)`);
                         }
                     }
+                } else {
+                    console.log(`   ⚠️  Empty response body`);
                 }
             } catch (error) {
-                // Can't read response body
+                console.log(`   ⚠️  Could not read response body: ${error.message}`);
             }
             
             console.log(`   ❌ FAILED\n`);
@@ -1130,6 +1199,60 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`   Non-CRUD6 requests filtered: ${nonCRUD6Count}`);
         } catch (writeError) {
             console.error(`❌ Failed to save network report: ${writeError.message}`);
+        }
+
+        // Save browser console errors to file for artifact upload
+        console.log('');
+        console.log('📝 Saving browser console errors/warnings to file...');
+        
+        // Build report using array for better performance
+        const consoleLogLines = [];
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push('BROWSER CONSOLE ERRORS AND WARNINGS');
+        consoleLogLines.push('UserFrosting CRUD6 Sprinkle Integration Test');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push(`Generated: ${new Date().toISOString()}`);
+        consoleLogLines.push(`Base URL: ${baseUrl}`);
+        consoleLogLines.push(`Total Console Messages Captured: ${consoleErrors.length}`);
+        consoleLogLines.push('');
+        
+        if (consoleErrors.length > 0) {
+            consoleLogLines.push(SECTION_SEPARATOR);
+            consoleLogLines.push('CONSOLE ERRORS AND WARNINGS');
+            consoleLogLines.push(SECTION_SEPARATOR);
+            
+            consoleErrors.forEach((error, idx) => {
+                const time = new Date(error.timestamp).toISOString();
+                consoleLogLines.push('');
+                consoleLogLines.push(`${idx + 1}. [${time}] ${error.type.toUpperCase()}`);
+                consoleLogLines.push(`   Message: ${error.text}`);
+                if (error.stack) {
+                    consoleLogLines.push(`   Stack Trace:`);
+                    const stackLines = error.stack.split('\n');
+                    stackLines.forEach(line => {
+                        consoleLogLines.push(`      ${line}`);
+                    });
+                }
+            });
+        } else {
+            consoleLogLines.push('✅ No browser console errors or warnings detected.');
+        }
+        
+        consoleLogLines.push('');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push('END OF CONSOLE LOG REPORT');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        
+        const consoleLogReport = consoleLogLines.join('\n');
+        
+        const consoleLogPath = '/tmp/browser-console-errors.txt';
+        try {
+            writeFileSync(consoleLogPath, consoleLogReport, 'utf8');
+            console.log(`✅ Browser console log saved to: ${consoleLogPath}`);
+            console.log(`   Total errors/warnings: ${consoleErrors.length}`);
+            console.log(`   File size: ${(consoleLogReport.length / 1024).toFixed(2)} KB`);
+        } catch (writeError) {
+            console.error(`❌ Failed to save console log: ${writeError.message}`);
         }
 
 

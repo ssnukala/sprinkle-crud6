@@ -257,6 +257,49 @@ let skippedApiTests = 0;
 let warningApiTests = 0;
 
 /**
+ * Get CSRF token from the page
+ * 
+ * UserFrosting 6 provides CSRF tokens via meta tags in HTML pages, not via a dedicated API endpoint.
+ * This function retrieves the token from the current page's meta tag.
+ * If no token is found, it navigates to the dashboard to get a fresh token.
+ */
+async function getCsrfToken(page, baseUrl) {
+    try {
+        // Try to get CSRF token from meta tag on current page
+        let csrfToken = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (csrfToken) {
+            return csrfToken;
+        }
+        
+        // If no token on current page, navigate to dashboard to get one
+        // This ensures we're on a valid UserFrosting page with a CSRF meta tag
+        console.warn('   ⚠️  No CSRF token on current page, navigating to dashboard to get token...');
+        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        
+        // Try again to get token from dashboard page
+        csrfToken = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (csrfToken) {
+            console.log('   ✅ CSRF token retrieved from dashboard page');
+            return csrfToken;
+        }
+        
+        console.warn('   ⚠️  Could not find CSRF token meta tag on dashboard page either');
+        return null;
+    } catch (error) {
+        console.warn('   ⚠️  Could not retrieve CSRF token:', error.message);
+        return null;
+    }
+}
+
+/**
  * Test a single API path
  */
 async function testApiPath(page, name, pathConfig, baseUrl) {
@@ -286,12 +329,18 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         let response;
         
         // Set up headers for API request
-        // Note: CSRF protection is not currently enforced on CRUD6 API routes
-        // The routes use AuthGuard for authentication but not CsrfGuard
         let headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         };
+        
+        // Get CSRF token for state-changing operations (POST, PUT, DELETE)
+        if (['POST', 'PUT', 'DELETE'].includes(method)) {
+            const csrfToken = await getCsrfToken(page, baseUrl);
+            if (csrfToken) {
+                headers['X-CSRF-Token'] = csrfToken;
+            }
+        }
         
         // Make the API request
         if (method === 'GET') {

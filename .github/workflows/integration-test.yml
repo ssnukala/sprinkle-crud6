@@ -141,6 +141,36 @@ jobs:
           # Check that the package files are accessible
           test -f node_modules/@ssnukala/sprinkle-crud6/app/assets/index.ts && echo "✅ NPM package files accessible" || echo "⚠️ NPM package files not found"
 
+      - name: Configure vite.config.ts for CommonJS dependencies
+        run: |
+          cd userfrosting
+          # Configure vite.config.ts to handle CommonJS dependencies (limax and lodash.deburr)
+          # sprinkle-crud6 uses limax which depends on lodash.deburr (CommonJS modules)
+          # These need to be pre-bundled by Vite to work properly
+          
+          # Check if optimizeDeps section exists
+          if grep -q "optimizeDeps:" vite.config.ts; then
+            echo "optimizeDeps section exists, checking for include array..."
+            if grep -q "include:" vite.config.ts; then
+              echo "include array exists, adding limax and lodash.deburr..."
+              # Add to existing include array (before closing bracket)
+              sed -i "/include: \[/a \        'limax',\n        'lodash.deburr'," vite.config.ts
+            else
+              echo "include array doesn't exist, creating it..."
+              # Add include array to optimizeDeps
+              sed -i "/optimizeDeps: {/a \        include: ['limax', 'lodash.deburr']," vite.config.ts
+            fi
+          else
+            echo "optimizeDeps section doesn't exist, creating it..."
+            # Add optimizeDeps section after plugins
+            sed -i "/plugins: \[/,/\],/a \    optimizeDeps: {\n        // Include CommonJS dependencies for sprinkle-crud6\n        // limax uses lodash.deburr which is a CommonJS module\n        include: ['limax', 'lodash.deburr']\n    }," vite.config.ts
+          fi
+          
+          echo ""
+          echo "✅ Vite configuration updated for CommonJS dependencies"
+          echo "Updated vite.config.ts:"
+          cat vite.config.ts
+
       - name: Create c6admin schemas
         run: |
           cd userfrosting

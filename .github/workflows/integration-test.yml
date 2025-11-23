@@ -155,9 +155,40 @@ jobs:
             echo "optimizeDeps section exists, checking for include array..."
             if grep -q "include:" vite.config.ts; then
               echo "include array exists, adding limax and lodash.deburr to it..."
-              # Add to existing include array by replacing the closing bracket
-              # This handles both single-line and multi-line arrays
-              sed -i "s/include: \[\(.*\)\]/include: [\1, 'limax', 'lodash.deburr']/" vite.config.ts
+              # Add to existing include array using awk (handles both single-line and multi-line)
+              awk '
+                /include: \[/ {
+                  if (/\]/) {
+                    # Single-line array: include: [...]
+                    sub(/\]/, ", '\''limax'\'', '\''lodash.deburr'\'']");
+                    print;
+                    next;
+                  } else {
+                    # Multi-line array start
+                    print;
+                    in_array=1;
+                    next;
+                  }
+                }
+                in_array {
+                  if (/\]/) {
+                    # Multi-line array end - add items before closing bracket
+                    print "            '\''limax'\'',";
+                    print "            '\''lodash.deburr'\''";
+                    print $0;
+                    in_array=0;
+                    next;
+                  } else {
+                    # Inside array - ensure trailing comma
+                    if (!/,$/) {
+                      sub(/$/, ",");
+                    }
+                    print;
+                    next;
+                  }
+                }
+                {print}
+              ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
             else
               echo "include array doesn't exist, creating it..."
               # Add include array to optimizeDeps

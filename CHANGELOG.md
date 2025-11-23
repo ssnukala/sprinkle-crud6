@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Vite Module Loading**: Added dependency optimization for CommonJS modules
+  - Configured `optimizeDeps.include` in `vite.config.ts` to pre-bundle `limax` and `lodash.deburr`
+  - Fixes error: "The requested module '.../lodash.deburr/index.js' does not provide an export named 'default'"
+  - Resolves integration test failures where login page failed to load
+  - See `.archive/VITE_COMMONJS_MODULE_FIX.md` for detailed explanation
 - **Import Removal**: Removed explicit import of `UFFormValidationError` component from `Form.vue`
   - `UFFormValidationError` is globally registered by `@userfrosting/theme-pink-cupcake` plugin
   - Aligns with UserFrosting 6 patterns where theme components are auto-registered (see `GroupForm.vue`)

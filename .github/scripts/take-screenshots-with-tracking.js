@@ -275,23 +275,24 @@ async function getCsrfToken(page, baseUrl) {
             return csrfToken;
         }
         
-        // If no token on current page, navigate to dashboard to get one
-        // This ensures we're on a valid UserFrosting page with a CSRF meta tag
-        console.warn('   ⚠️  No CSRF token on current page, navigating to dashboard to get token...');
-        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        // If no token on current page, navigate to home page to get one
+        // Home page is unauthenticated and will have a CSRF meta tag
+        // Dashboard would redirect to login since it requires authentication
+        console.warn('   ⚠️  No CSRF token on current page, navigating to home page to get token...');
+        await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 10000 });
         
-        // Try again to get token from dashboard page
+        // Try again to get token from home page
         csrfToken = await page.evaluate(() => {
             const metaTag = document.querySelector('meta[name="csrf-token"]');
             return metaTag ? metaTag.getAttribute('content') : null;
         });
         
         if (csrfToken) {
-            console.log('   ✅ CSRF token retrieved from dashboard page');
+            console.log('   ✅ CSRF token retrieved from home page');
             return csrfToken;
         }
         
-        console.warn('   ⚠️  Could not find CSRF token meta tag on dashboard page either');
+        console.warn('   ⚠️  Could not find CSRF token meta tag on home page either');
         return null;
     } catch (error) {
         console.warn('   ⚠️  Could not retrieve CSRF token:', error.message);

@@ -272,34 +272,23 @@ async function getCsrfToken(page, baseUrl) {
     try {
         console.log('🔐 Loading CSRF token from home page...');
         
-        // Navigate to home page (could be / or /dashboard depending on UF config)
-        // Try / first, then /dashboard as fallback
-        const homeUrls = ['/', '/dashboard'];
+        // Navigate to home page to extract CSRF token
+        await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 15000 });
         
-        for (const homeUrl of homeUrls) {
-            try {
-                await page.goto(`${baseUrl}${homeUrl}`, { waitUntil: 'networkidle', timeout: 15000 });
-                
-                // Extract CSRF token from meta tag
-                const csrfToken = await page.evaluate(() => {
-                    const metaTag = document.querySelector('meta[name="csrf-token"]');
-                    return metaTag ? metaTag.getAttribute('content') : null;
-                });
-                
-                if (csrfToken) {
-                    console.log(`   ✅ CSRF token loaded from ${homeUrl}`);
-                    console.log(`   Token: ${csrfToken.substring(0, 20)}...`);
-                    return csrfToken;
-                } else {
-                    console.log(`   ⚠️  No CSRF token found on ${homeUrl}, trying next...`);
-                }
-            } catch (error) {
-                console.log(`   ⚠️  Failed to load ${homeUrl}: ${error.message}`);
-            }
+        // Extract CSRF token from meta tag
+        const csrfToken = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (csrfToken) {
+            console.log(`   ✅ CSRF token loaded from home page (/)`);
+            console.log(`   Token: ${csrfToken.substring(0, 20)}...`);
+            return csrfToken;
+        } else {
+            console.log('   ⚠️  WARNING: Could not find CSRF token on home page');
+            return null;
         }
-        
-        console.log('   ⚠️  WARNING: Could not find CSRF token on any home page');
-        return null;
     } catch (error) {
         console.error(`   ❌ Error getting CSRF token: ${error.message}`);
         return null;

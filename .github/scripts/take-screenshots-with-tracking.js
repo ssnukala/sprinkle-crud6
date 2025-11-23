@@ -261,38 +261,81 @@ let skippedApiTests = 0;
 let warningApiTests = 0;
 
 /**
- * Get CSRF token from the home page
- * After login, navigate to home page to extract CSRF token from meta tag
+ * Get CSRF token from the current page or by navigating to known pages
+ * Tries multiple strategies to ensure a CSRF token is obtained
  * 
  * @param {Page} page - Playwright page object
  * @param {string} baseUrl - Base URL of the application
- * @returns {Promise<string|null>} CSRF token or null if not found
+ * @returns {Promise<string|null>} CSRF token or null if not found after all attempts
  */
 async function getCsrfToken(page, baseUrl) {
+    console.log('🔐 Attempting to load CSRF token...');
+    
+    // Strategy 1: Try to get token from current page first (most efficient)
     try {
-        console.log('🔐 Loading CSRF token from home page...');
-        
-        // Navigate to home page to extract CSRF token
-        await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 15000 });
-        
-        // Extract CSRF token from meta tag
-        const csrfToken = await page.evaluate(() => {
+        console.log('   📍 Strategy 1: Checking current page for CSRF token...');
+        const tokenFromCurrentPage = await page.evaluate(() => {
             const metaTag = document.querySelector('meta[name="csrf-token"]');
             return metaTag ? metaTag.getAttribute('content') : null;
         });
         
-        if (csrfToken) {
-            console.log(`   ✅ CSRF token loaded from home page (/)`);
-            console.log(`   Token: ${csrfToken.substring(0, 20)}...`);
-            return csrfToken;
+        if (tokenFromCurrentPage && tokenFromCurrentPage.length > 0) {
+            console.log(`   ✅ CSRF token found on current page`);
+            console.log(`   Token preview: ${tokenFromCurrentPage.substring(0, 20)}...`);
+            return tokenFromCurrentPage;
         } else {
-            console.log('   ⚠️  WARNING: Could not find CSRF token on home page');
-            return null;
+            console.log('   ⚠️  No CSRF token on current page, trying next strategy...');
         }
     } catch (error) {
-        console.error(`   ❌ Error getting CSRF token: ${error.message}`);
-        return null;
+        console.log(`   ⚠️  Error checking current page: ${error.message}`);
     }
+    
+    // Strategy 2: Navigate to dashboard page (most likely to have CSRF token)
+    try {
+        console.log('   📍 Strategy 2: Navigating to dashboard page...');
+        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        
+        const tokenFromDashboard = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (tokenFromDashboard && tokenFromDashboard.length > 0) {
+            console.log(`   ✅ CSRF token found on dashboard page`);
+            console.log(`   Token preview: ${tokenFromDashboard.substring(0, 20)}...`);
+            return tokenFromDashboard;
+        } else {
+            console.log('   ⚠️  No CSRF token on dashboard, trying next strategy...');
+        }
+    } catch (error) {
+        console.log(`   ⚠️  Error accessing dashboard: ${error.message}`);
+    }
+    
+    // Strategy 3: Navigate to home page as fallback
+    try {
+        console.log('   📍 Strategy 3: Navigating to home page (/)...');
+        await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        
+        const tokenFromHome = await page.evaluate(() => {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            return metaTag ? metaTag.getAttribute('content') : null;
+        });
+        
+        if (tokenFromHome && tokenFromHome.length > 0) {
+            console.log(`   ✅ CSRF token found on home page`);
+            console.log(`   Token preview: ${tokenFromHome.substring(0, 20)}...`);
+            return tokenFromHome;
+        } else {
+            console.log('   ⚠️  No CSRF token on home page either');
+        }
+    } catch (error) {
+        console.log(`   ⚠️  Error accessing home page: ${error.message}`);
+    }
+    
+    // All strategies failed
+    console.error('   ❌ CRITICAL: Could not find CSRF token after trying all strategies!');
+    console.error('   ❌ API tests requiring POST/PUT/DELETE will fail!');
+    return null;
 }
 
 /**
@@ -337,9 +380,14 @@ async function testApiPath(page, name, pathConfig, baseUrl, csrfToken = null) {
         };
         
         // Add CSRF token header for POST/PUT/DELETE requests
-        if (csrfToken && (method === 'POST' || method === 'PUT' || method === 'DELETE')) {
-            headers['X-CSRF-Token'] = csrfToken;
-            console.log(`   🔐 Including CSRF token in ${method} request`);
+        if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
+            if (csrfToken && csrfToken.length > 0) {
+                headers['X-CSRF-Token'] = csrfToken;
+                console.log(`   🔐 CSRF token included: ${csrfToken.substring(0, 20)}...`);
+            } else {
+                console.log(`   ⚠️  WARNING: No CSRF token available for ${method} request!`);
+                console.log(`   ⚠️  This request will likely fail with "Missing CSRF token" error`);
+            }
         }
         
         // Make the API request
@@ -869,17 +917,32 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         }
         
         console.log('✅ Logged in successfully');
+        console.log('');
         
         // Give session a moment to stabilize
         await page.waitForTimeout(2000);
 
-        // Step 1.5: Load CSRF token from home page
-        // After successful login, navigate to home page to get CSRF token
-        // This token will be used for API testing (POST/PUT/DELETE requests)
-        console.log('');
+        // Step 1.5: Load CSRF token for API testing
+        // The CSRF token is required for POST/PUT/DELETE requests
+        console.log('========================================');
+        console.log('Loading CSRF Token for API Testing');
+        console.log('========================================');
         const csrfToken = await getCsrfToken(page, baseUrl);
+        console.log('');
+        
         if (!csrfToken) {
-            console.log('   ⚠️  WARNING: No CSRF token found - API tests may fail for POST/PUT/DELETE');
+            console.log('⚠️  ========================================');
+            console.log('⚠️  WARNING: NO CSRF TOKEN AVAILABLE');
+            console.log('⚠️  ========================================');
+            console.log('⚠️  API tests requiring POST/PUT/DELETE will fail!');
+            console.log('⚠️  Continuing with tests anyway...');
+            console.log('⚠️  ========================================');
+        } else {
+            console.log('✅ ========================================');
+            console.log('✅ CSRF Token Successfully Loaded');
+            console.log('✅ ========================================');
+            console.log(`✅ Token will be used for POST/PUT/DELETE requests`);
+            console.log('✅ ========================================');
         }
         console.log('');
 

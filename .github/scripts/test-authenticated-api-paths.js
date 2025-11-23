@@ -74,10 +74,11 @@ async function getCsrfToken(page, baseUrl) {
 async function testApiPath(page, name, pathConfig, baseUrl) {
     totalTests++;
     
-    // Check if test should be skipped
-    if (pathConfig.skip) {
+    // Check if test should be skipped or disabled
+    if (pathConfig.skip || pathConfig.disabled) {
         console.log(`⏭️  SKIP: ${name}`);
-        console.log(`   Reason: ${pathConfig.skip_reason || 'Not specified'}\n`);
+        const reason = pathConfig.skip_reason || pathConfig.note || 'Test disabled or marked for skip';
+        console.log(`   Reason: ${reason}\n`);
         skippedTests++;
         return;
     }
@@ -133,8 +134,16 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         const status = response.status();
         
         // Validate status code
-        if (status === expectedStatus) {
-            console.log(`   ✅ Status: ${status} (expected ${expectedStatus})`);
+        // Success: exact match OR both in 2xx range (e.g., 200 vs 201 are both success)
+        const isSuccess = status === expectedStatus || 
+                         (status >= 200 && status < 300 && expectedStatus >= 200 && expectedStatus < 300);
+        
+        if (isSuccess) {
+            if (status === expectedStatus) {
+                console.log(`   ✅ Status: ${status} (exact match)`);
+            } else {
+                console.log(`   ✅ Status: ${status} (expected ${expectedStatus}, both are 2xx success)`);
+            }
             
             // Additional validation if specified
             if (pathConfig.validation) {

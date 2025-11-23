@@ -419,7 +419,7 @@ async function testApiPath(page, name, pathConfig, baseUrl, csrfToken = null) {
         // Add CSRF headers for POST/PUT/DELETE requests
         // UserFrosting 6 requires BOTH csrf_name and csrf_value headers
         if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
-            if (csrfToken && csrfToken.name && csrfToken.value) {
+            if (isValidCsrfTokens(csrfToken)) {
                 headers['csrf_name'] = csrfToken.name;
                 headers['csrf_value'] = csrfToken.value;
                 console.log(`   🔐 CSRF tokens included:`);
@@ -972,7 +972,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         const csrfToken = await getCsrfToken(page, baseUrl);
         console.log('');
         
-        if (!csrfToken || !csrfToken.name || !csrfToken.value) {
+        if (!isValidCsrfTokens(csrfToken)) {
             console.log('⚠️  ========================================');
             console.log('⚠️  WARNING: NO CSRF TOKENS AVAILABLE');
             console.log('⚠️  ========================================');

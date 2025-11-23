@@ -561,7 +561,13 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Step 1: Navigate to login page and authenticate
         console.log('📍 Navigating to login page...');
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
-        console.log('✅ Login page loaded');
+        
+        // Log page info for debugging
+        const pageTitle = await page.title();
+        const pageUrl = page.url();
+        console.log(`✅ Login page loaded`);
+        console.log(`   Page Title: ${pageTitle}`);
+        console.log(`   Page URL: ${pageUrl}`);
         
         // Take early screenshot to see what's rendering
         await page.screenshot({ path: '/tmp/screenshot_login_page_initial.png', fullPage: true });
@@ -615,10 +621,13 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             'input[name="username"]',
         ];
         
+        // Reduce timeout since we have better debugging now
+        const selectorTimeout = 10000; // 10 seconds per selector
+        
         for (const selector of selectors) {
             try {
                 console.log(`   Trying selector: ${selector}`);
-                usernameInput = await page.waitForSelector(selector, { timeout: 30000, state: 'visible' });
+                usernameInput = await page.waitForSelector(selector, { timeout: selectorTimeout, state: 'visible' });
                 if (usernameInput) {
                     console.log(`   ✅ Found username input with selector: ${selector}`);
                     break;

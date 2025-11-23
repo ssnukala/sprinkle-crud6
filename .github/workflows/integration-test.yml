@@ -268,7 +268,7 @@ jobs:
           return [
               'crud6' => [
                   'debug_mode' => true,
-              ]
+              ],
           ];
           EOF
           

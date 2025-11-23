@@ -22,6 +22,10 @@
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'fs';
 
+// Report formatting constants
+const REPORT_SEPARATOR = '═══════════════════════════════════════════════════════════════════════════════';
+const SECTION_SEPARATOR = '───────────────────────────────────────────────────────────────────────────────';
+
 /**
  * Network Request Tracker (integrated from NetworkRequestTracker.js)
  */
@@ -1201,41 +1205,45 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log('');
         console.log('📝 Saving browser console errors/warnings to file...');
         
-        let consoleLogReport = '';
-        consoleLogReport += '═══════════════════════════════════════════════════════════════════════════════\n';
-        consoleLogReport += 'BROWSER CONSOLE ERRORS AND WARNINGS\n';
-        consoleLogReport += 'UserFrosting CRUD6 Sprinkle Integration Test\n';
-        consoleLogReport += '═══════════════════════════════════════════════════════════════════════════════\n';
-        consoleLogReport += `Generated: ${new Date().toISOString()}\n`;
-        consoleLogReport += `Base URL: ${baseUrl}\n`;
-        consoleLogReport += `Total Console Messages Captured: ${consoleErrors.length}\n`;
-        consoleLogReport += '\n';
+        // Build report using array for better performance
+        const consoleLogLines = [];
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push('BROWSER CONSOLE ERRORS AND WARNINGS');
+        consoleLogLines.push('UserFrosting CRUD6 Sprinkle Integration Test');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push(`Generated: ${new Date().toISOString()}`);
+        consoleLogLines.push(`Base URL: ${baseUrl}`);
+        consoleLogLines.push(`Total Console Messages Captured: ${consoleErrors.length}`);
+        consoleLogLines.push('');
         
         if (consoleErrors.length > 0) {
-            consoleLogReport += '───────────────────────────────────────────────────────────────────────────────\n';
-            consoleLogReport += 'CONSOLE ERRORS AND WARNINGS\n';
-            consoleLogReport += '───────────────────────────────────────────────────────────────────────────────\n';
+            consoleLogLines.push(SECTION_SEPARATOR);
+            consoleLogLines.push('CONSOLE ERRORS AND WARNINGS');
+            consoleLogLines.push(SECTION_SEPARATOR);
             
             consoleErrors.forEach((error, idx) => {
                 const time = new Date(error.timestamp).toISOString();
-                consoleLogReport += `\n${idx + 1}. [${time}] ${error.type.toUpperCase()}\n`;
-                consoleLogReport += `   Message: ${error.text}\n`;
+                consoleLogLines.push('');
+                consoleLogLines.push(`${idx + 1}. [${time}] ${error.type.toUpperCase()}`);
+                consoleLogLines.push(`   Message: ${error.text}`);
                 if (error.stack) {
-                    consoleLogReport += `   Stack Trace:\n`;
+                    consoleLogLines.push(`   Stack Trace:`);
                     const stackLines = error.stack.split('\n');
                     stackLines.forEach(line => {
-                        consoleLogReport += `      ${line}\n`;
+                        consoleLogLines.push(`      ${line}`);
                     });
                 }
             });
         } else {
-            consoleLogReport += '✅ No browser console errors or warnings detected.\n';
+            consoleLogLines.push('✅ No browser console errors or warnings detected.');
         }
         
-        consoleLogReport += '\n';
-        consoleLogReport += '═══════════════════════════════════════════════════════════════════════════════\n';
-        consoleLogReport += 'END OF CONSOLE LOG REPORT\n';
-        consoleLogReport += '═══════════════════════════════════════════════════════════════════════════════\n';
+        consoleLogLines.push('');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        consoleLogLines.push('END OF CONSOLE LOG REPORT');
+        consoleLogLines.push(REPORT_SEPARATOR);
+        
+        const consoleLogReport = consoleLogLines.join('\n');
         
         const consoleLogPath = '/tmp/browser-console-errors.txt';
         try {

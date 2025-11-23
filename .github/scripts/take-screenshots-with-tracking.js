@@ -500,14 +500,35 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         const page = await context.newPage();
 
-        // Set up console error logging - use function-scoped consoleErrors array
+        // Set up console logging - capture ALL messages for debugging
         page.on('console', msg => {
             const type = msg.type();
             const text = msg.text();
+            // Log all console messages (not just errors/warnings)
+            console.log(`   🖥️  Browser ${type}: ${text}`);
+            // Store errors and warnings for later analysis
             if (type === 'error' || type === 'warning') {
                 consoleErrors.push({ type, text, timestamp: Date.now() });
-                console.log(`   🖥️  Browser ${type}: ${text}`);
             }
+        });
+
+        // Capture page errors (uncaught exceptions)
+        page.on('pageerror', error => {
+            console.log(`   ❌ Page Error (uncaught exception): ${error.message}`);
+            console.log(`      Stack: ${error.stack}`);
+            consoleErrors.push({ 
+                type: 'pageerror', 
+                text: error.message, 
+                stack: error.stack,
+                timestamp: Date.now() 
+            });
+        });
+
+        // Capture failed requests
+        page.on('requestfailed', request => {
+            const failure = request.failure();
+            console.log(`   ⚠️  Request Failed: ${request.url()}`);
+            console.log(`      Error: ${failure ? failure.errorText : 'Unknown error'}`);
         });
 
         // Set up network tracking
@@ -539,6 +560,47 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Wait a bit for any JavaScript to execute
         await page.waitForTimeout(2000);
 
+        // Check for Vue app and JavaScript errors
+        console.log('🔍 Checking page state...');
+        const pageState = await page.evaluate(() => {
+            const state = {
+                hasVue: typeof window.Vue !== 'undefined' || typeof window.__VUE__ !== 'undefined',
+                hasVueRouter: typeof window.VueRouter !== 'undefined',
+                vueVersion: window.Vue ? window.Vue.version : 'unknown',
+                bodyClasses: document.body.className,
+                bodyHtml: document.body.innerHTML.substring(0, 500),
+                scripts: Array.from(document.querySelectorAll('script')).map(s => ({
+                    src: s.src,
+                    type: s.type,
+                    hasContent: s.innerHTML.length > 0
+                })),
+                stylesheets: Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href),
+                vueApps: []
+            };
+
+            // Try to detect Vue 3 apps
+            if (window.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+                const hook = window.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+                if (hook.apps) {
+                    state.vueApps = hook.apps.map(app => ({
+                        version: app.version,
+                        config: app.config ? 'present' : 'missing'
+                    }));
+                }
+            }
+
+            return state;
+        });
+
+        console.log('   Page state:');
+        console.log(`      Vue detected: ${pageState.hasVue}`);
+        console.log(`      Vue Router: ${pageState.hasVueRouter}`);
+        console.log(`      Vue apps: ${pageState.vueApps.length}`);
+        console.log(`      Body classes: ${pageState.bodyClasses}`);
+        console.log(`      Scripts loaded: ${pageState.scripts.length}`);
+        console.log(`      Stylesheets loaded: ${pageState.stylesheets.length}`);
+        console.log(`      Body HTML (first 500 chars): ${pageState.bodyHtml}`);
+
         console.log('🔐 Logging in...');
         
         // Take screenshot before looking for selectors
@@ -550,7 +612,12 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`   ⚠️  ${consoleErrors.length} browser console errors/warnings detected:`);
             consoleErrors.forEach((error, idx) => {
                 console.log(`      ${idx + 1}. [${error.type}] ${error.text}`);
+                if (error.stack) {
+                    console.log(`          Stack: ${error.stack}`);
+                }
             });
+        } else {
+            console.log(`   ✅ No browser console errors detected during page load`);
         }
         
         // Wait for the login form to be visible with increased timeout
@@ -579,13 +646,54 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         }
         
         if (!usernameInput) {
-            // If we still can't find it, save debug info
+            // If we still can't find it, save debug info and analyze the HTML
             const pageContent = await page.content();
             writeFileSync('/tmp/login_page_debug.html', pageContent);
             await page.screenshot({ path: '/tmp/login_page_debug.png', fullPage: true });
+            
+            // Analyze the HTML structure
+            const htmlAnalysis = await page.evaluate(() => {
+                return {
+                    hasForm: document.querySelector('form') !== null,
+                    formCount: document.querySelectorAll('form').length,
+                    inputCount: document.querySelectorAll('input').length,
+                    inputs: Array.from(document.querySelectorAll('input')).map(input => ({
+                        type: input.type,
+                        name: input.name,
+                        id: input.id,
+                        dataTest: input.getAttribute('data-test'),
+                        placeholder: input.placeholder
+                    })),
+                    hasVueApp: document.querySelector('#app') !== null,
+                    vueAppHtml: document.querySelector('#app') ? document.querySelector('#app').innerHTML.substring(0, 200) : 'No #app element',
+                    bodyChildren: document.body.children.length,
+                    bodyHasContent: document.body.textContent.trim().length > 0
+                };
+            });
+
             console.error('❌ Could not find username input field after trying all selectors');
             console.error('   Debug HTML saved to /tmp/login_page_debug.html');
             console.error('   Debug screenshot saved to /tmp/login_page_debug.png');
+            console.error('');
+            console.error('   HTML Analysis:');
+            console.error(`      Has form: ${htmlAnalysis.hasForm}`);
+            console.error(`      Form count: ${htmlAnalysis.formCount}`);
+            console.error(`      Input count: ${htmlAnalysis.inputCount}`);
+            console.error(`      Has Vue app (#app): ${htmlAnalysis.hasVueApp}`);
+            console.error(`      Body children: ${htmlAnalysis.bodyChildren}`);
+            console.error(`      Body has content: ${htmlAnalysis.bodyHasContent}`);
+            
+            if (htmlAnalysis.inputs.length > 0) {
+                console.error('      Input fields found:');
+                htmlAnalysis.inputs.forEach((input, idx) => {
+                    console.error(`         ${idx + 1}. type=${input.type}, name=${input.name}, id=${input.id}, data-test=${input.dataTest}`);
+                });
+            } else {
+                console.error('      ⚠️  No input fields found at all!');
+            }
+            
+            console.error(`      Vue app content (first 200 chars): ${htmlAnalysis.vueAppHtml}`);
+            
             throw new Error('Login form not found - username input field is missing');
         }
         

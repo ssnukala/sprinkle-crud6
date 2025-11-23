@@ -80,18 +80,42 @@ awk '
      echo "limax already in vite.config.ts, skipping configuration"
    ```
 
-2. **Fixed Include Array Modification:** Changed from append to substitution for adding to existing include arrays:
+2. **Fixed Include Array Modification:** Replaced sed with awk to handle both single-line and multi-line include arrays:
    ```bash
-   # Before (broken - appends outside array)
+   # Before (broken - appends outside array, doesn't handle multi-line)
    sed -i "/include: \[/a \        'limax',\n        'lodash.deburr'," vite.config.ts
    
-   # After (fixed - substitutes within array)
-   sed -i "s/include: \[\(.*\)\]/include: [\1, 'limax', 'lodash.deburr']/" vite.config.ts
+   # After (fixed - uses awk to handle both single-line and multi-line arrays)
+   awk '
+     /include: \[/ {
+       if (/\]/) {
+         # Single-line array: include: [...]
+         sub(/\]/, ", '\''limax'\'', '\''lodash.deburr'\'']");
+         print; next;
+       } else {
+         # Multi-line array start
+         print; in_array=1; next;
+       }
+     }
+     in_array {
+       if (/\]/) {
+         # Add items before closing bracket with proper indentation
+         print "            '\''limax'\'',";
+         print "            '\''lodash.deburr'\''";
+         print $0; in_array=0; next;
+       } else {
+         # Ensure trailing comma on existing items
+         if (!/,$/) { sub(/$/, ","); }
+         print; next;
+       }
+     }
+     {print}
+   ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
    ```
 
 ## Testing
 
-All scenarios tested and verified, including both single-line and multi-line plugins arrays:
+All scenarios tested and verified, including both single-line and multi-line arrays:
 
 ### 1. No optimizeDeps - Single-line Plugins (Most Common)
 Creates complete optimizeDeps block after single-line plugins:

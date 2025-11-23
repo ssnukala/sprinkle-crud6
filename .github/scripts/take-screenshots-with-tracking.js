@@ -518,9 +518,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     // Create network tracker
     const networkTracker = new NetworkRequestTracker();
 
-    // Initialize counters at function scope so they're accessible at return
+    // Initialize counters and error tracking at function scope so they're accessible at return and in error handler
     let successCount = 0;
     let failCount = 0;
+    let consoleErrors = [];
 
     // Launch browser
     const browser = await chromium.launch({
@@ -536,8 +537,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         const page = await context.newPage();
 
-        // Set up console error logging
-        const consoleErrors = [];
+        // Set up console error logging - use function-scoped consoleErrors array
         page.on('console', msg => {
             const type = msg.type();
             const text = msg.text();
@@ -596,7 +596,11 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                 return null;
             });
             if (csrfToken) {
-                console.log(`   ✅ Found CSRF token: ${csrfToken.substring(0, 20)}...`);
+                // Only show ellipsis if token is longer than 20 characters
+                const tokenPreview = csrfToken.length > 20 
+                    ? `${csrfToken.substring(0, 20)}...` 
+                    : csrfToken;
+                console.log(`   ✅ Found CSRF token: ${tokenPreview}`);
             } else {
                 console.log('   ⚠️  No CSRF token found on login page');
             }

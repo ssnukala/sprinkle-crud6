@@ -8,6 +8,11 @@ import ViteYaml from '@modyfi/vite-plugin-yaml'
 // https://stackoverflow.com/a/74397545/445757
 export default defineConfig({
     plugins: [vue(), ViteYaml()],
+    optimizeDeps: {
+        // Include CommonJS dependencies that need to be pre-bundled
+        // limax uses lodash.deburr which is a CommonJS module
+        include: ['limax', 'lodash.deburr']
+    },
     test: {
         coverage: {
             reportsDirectory: './_meta/_coverage',

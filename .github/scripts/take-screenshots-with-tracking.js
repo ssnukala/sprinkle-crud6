@@ -261,22 +261,55 @@ let skippedApiTests = 0;
 let warningApiTests = 0;
 
 /**
- * NOTE: CSRF token handling removed from this script.
+ * Get CSRF token from the home page
+ * After login, navigate to home page to extract CSRF token from meta tag
  * 
- * CRUD6 API routes do NOT enforce CSRF protection (no CsrfGuard middleware).
- * Authentication is handled via AuthGuard (session-based).
- * 
- * Attempting to fetch CSRF tokens for API routes is unnecessary and was causing test failures.
- * See .archive/CSRF_ANALYSIS_2025_11_22.md for details.
- * 
- * For frontend Vue.js code, CSRF is automatically handled by sprinkle-core's useCsrf() composable.
- * For testing with Playwright, CSRF is not required for CRUD6 API endpoints.
+ * @param {Page} page - Playwright page object
+ * @param {string} baseUrl - Base URL of the application
+ * @returns {Promise<string|null>} CSRF token or null if not found
  */
+async function getCsrfToken(page, baseUrl) {
+    try {
+        console.log('🔐 Loading CSRF token from home page...');
+        
+        // Navigate to home page (could be / or /dashboard depending on UF config)
+        // Try / first, then /dashboard as fallback
+        const homeUrls = ['/', '/dashboard'];
+        
+        for (const homeUrl of homeUrls) {
+            try {
+                await page.goto(`${baseUrl}${homeUrl}`, { waitUntil: 'networkidle', timeout: 15000 });
+                
+                // Extract CSRF token from meta tag
+                const csrfToken = await page.evaluate(() => {
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    return metaTag ? metaTag.getAttribute('content') : null;
+                });
+                
+                if (csrfToken) {
+                    console.log(`   ✅ CSRF token loaded from ${homeUrl}`);
+                    console.log(`   Token: ${csrfToken.substring(0, 20)}...`);
+                    return csrfToken;
+                } else {
+                    console.log(`   ⚠️  No CSRF token found on ${homeUrl}, trying next...`);
+                }
+            } catch (error) {
+                console.log(`   ⚠️  Failed to load ${homeUrl}: ${error.message}`);
+            }
+        }
+        
+        console.log('   ⚠️  WARNING: Could not find CSRF token on any home page');
+        return null;
+    } catch (error) {
+        console.error(`   ❌ Error getting CSRF token: ${error.message}`);
+        return null;
+    }
+}
 
 /**
  * Test a single API path
  */
-async function testApiPath(page, name, pathConfig, baseUrl) {
+async function testApiPath(page, name, pathConfig, baseUrl, csrfToken = null) {
     totalApiTests++;
     
     // Check if test should be skipped
@@ -308,12 +341,17 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         let response;
         
         // Set up headers for API request
-        // Note: CSRF tokens are NOT required for CRUD6 API routes (no CsrfGuard middleware)
-        // Authentication is handled via AuthGuard (session-based)
+        // Include CSRF token for state-changing requests (POST/PUT/DELETE)
         let headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         };
+        
+        // Add CSRF token header for POST/PUT/DELETE requests
+        if (csrfToken && (method === 'POST' || method === 'PUT' || method === 'DELETE')) {
+            headers['X-CSRF-Token'] = csrfToken;
+            console.log(`   🔐 Including CSRF token in ${method} request`);
+        }
         
         // Make the API request
         if (method === 'GET') {
@@ -846,6 +884,16 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Give session a moment to stabilize
         await page.waitForTimeout(2000);
 
+        // Step 1.5: Load CSRF token from home page
+        // After successful login, navigate to home page to get CSRF token
+        // This token will be used for API testing (POST/PUT/DELETE requests)
+        console.log('');
+        const csrfToken = await getCsrfToken(page, baseUrl);
+        if (!csrfToken) {
+            console.log('   ⚠️  WARNING: No CSRF token found - API tests may fail for POST/PUT/DELETE');
+        }
+        console.log('');
+
         // Step 2: Take screenshots from configuration and track network requests per page
         const pageNetworkStats = [];
         const pageNetworkDetails = []; // Store detailed requests per page
@@ -1025,10 +1073,15 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log('=========================================');
             console.log('Testing Authenticated API Endpoints');
             console.log('=========================================');
-            console.log('Using existing authenticated session from screenshots\n');
+            console.log('Using existing authenticated session from screenshots');
+            if (csrfToken) {
+                console.log('Using CSRF token from home page for state-changing requests\n');
+            } else {
+                console.log('⚠️  No CSRF token available - state-changing requests may fail\n');
+            }
             
             for (const [name, pathConfig] of Object.entries(authApiPaths)) {
-                await testApiPath(page, name, pathConfig, baseUrl);
+                await testApiPath(page, name, pathConfig, baseUrl, csrfToken);
             }
             
             // Print API test summary

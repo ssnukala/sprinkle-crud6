@@ -514,14 +514,100 @@ async function testApiPath(page, name, pathConfig, baseUrl, csrfToken = null) {
             // Server error - this is a real failure
             console.log(`   ❌ Status: ${status} (expected ${expectedStatus})`);
             console.log(`   ❌ FAILED: Server error detected - possible code/SQL failure`);
+            console.log(`   🔍 Request Details:`);
+            console.log(`      URL: ${method} ${baseUrl}${path}`);
+            if (method !== 'GET' && Object.keys(payload).length > 0) {
+                console.log(`      Payload: ${JSON.stringify(payload, null, 2)}`);
+            }
             
+            // Try to extract detailed error information
             try {
-                const data = await response.json();
-                if (data.message) {
-                    console.log(`   ❌ Error: ${data.message}`);
+                const responseText = await response.text();
+                
+                if (responseText) {
+                    console.log(`   📝 Response Body (${responseText.length} bytes):`);
+                    
+                    try {
+                        const data = JSON.parse(responseText);
+                        
+                        // Log error message
+                        if (data.message) {
+                            console.log(`   ❌ Error Message: ${data.message}`);
+                        }
+                        
+                        // Log exception details if available
+                        if (data.exception) {
+                            console.log(`   💥 Exception Type: ${data.exception}`);
+                        }
+                        
+                        // Log file and line if available
+                        if (data.file) {
+                            console.log(`   📂 File: ${data.file}`);
+                        }
+                        if (data.line) {
+                            console.log(`   📍 Line: ${data.line}`);
+                        }
+                        
+                        // Log stack trace if available
+                        if (data.trace) {
+                            console.log(`   📚 Stack Trace:`);
+                            if (Array.isArray(data.trace)) {
+                                data.trace.slice(0, 5).forEach((frame, idx) => {
+                                    console.log(`      ${idx + 1}. ${frame.file || 'unknown'}:${frame.line || '?'}`);
+                                    if (frame.class && frame.function) {
+                                        console.log(`         ${frame.class}::${frame.function}()`);
+                                    }
+                                });
+                                if (data.trace.length > 5) {
+                                    console.log(`      ... and ${data.trace.length - 5} more frames`);
+                                }
+                            } else if (typeof data.trace === 'string') {
+                                // If trace is a string, show first few lines
+                                const traceLines = data.trace.split('\n').slice(0, 10);
+                                traceLines.forEach(line => console.log(`      ${line}`));
+                            }
+                        }
+                        
+                        // Check for SQL-related errors
+                        const errorStr = JSON.stringify(data).toLowerCase();
+                        if (errorStr.includes('sql') || errorStr.includes('database') || errorStr.includes('query')) {
+                            console.log(`   🗄️  POSSIBLE SQL ERROR DETECTED`);
+                            if (data.message && (data.message.toLowerCase().includes('sql') || data.message.toLowerCase().includes('database'))) {
+                                console.log(`   🗄️  SQL Error Details: ${data.message}`);
+                            }
+                        }
+                        
+                        // Log full error for complete context (limited to first 1000 chars)
+                        const fullError = JSON.stringify(data, null, 2);
+                        if (fullError.length > 1000) {
+                            console.log(`   📋 Full Error (first 1000 chars):`);
+                            console.log(fullError.substring(0, 1000) + '...');
+                        } else {
+                            console.log(`   📋 Full Error:`);
+                            console.log(fullError);
+                        }
+                        
+                    } catch (parseError) {
+                        // Response is not JSON, try to extract useful information from HTML/text
+                        console.log(`   ⚠️  Response is not JSON, showing raw content (first 500 chars):`);
+                        console.log(responseText.substring(0, 500));
+                        
+                        // Check for common error patterns in HTML/text
+                        if (responseText.toLowerCase().includes('syntax error')) {
+                            console.log(`   💥 SYNTAX ERROR detected in response`);
+                        }
+                        if (responseText.toLowerCase().includes('sql') || responseText.toLowerCase().includes('database')) {
+                            console.log(`   🗄️  SQL/DATABASE keywords found in error response`);
+                        }
+                        if (responseText.toLowerCase().includes('exception') || responseText.toLowerCase().includes('fatal error')) {
+                            console.log(`   💥 PHP Exception or Fatal Error detected`);
+                        }
+                    }
+                } else {
+                    console.log(`   ⚠️  Empty response body`);
                 }
             } catch (error) {
-                // Can't parse error message
+                console.log(`   ⚠️  Could not read response: ${error.message}`);
             }
             
             console.log('');

@@ -536,6 +536,17 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         const page = await context.newPage();
 
+        // Set up console error logging
+        const consoleErrors = [];
+        page.on('console', msg => {
+            const type = msg.type();
+            const text = msg.text();
+            if (type === 'error' || type === 'warning') {
+                consoleErrors.push({ type, text, timestamp: Date.now() });
+                console.log(`   🖥️  Browser ${type}: ${text}`);
+            }
+        });
+
         // Set up network tracking
         networkTracker.startTracking();
         
@@ -552,10 +563,48 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
         console.log('✅ Login page loaded');
         
+        // Take early screenshot to see what's rendering
+        await page.screenshot({ path: '/tmp/screenshot_login_page_initial.png', fullPage: true });
+        console.log('📸 Early screenshot saved: /tmp/screenshot_login_page_initial.png');
+        
         // Wait a bit for any JavaScript to execute
         await page.waitForTimeout(2000);
 
         console.log('🔐 Logging in...');
+        
+        // Take screenshot before looking for selectors
+        await page.screenshot({ path: '/tmp/screenshot_before_login_selectors.png', fullPage: true });
+        console.log('📸 Screenshot before selector search: /tmp/screenshot_before_login_selectors.png');
+        
+        // Try to extract CSRF token from the login page
+        let csrfToken = null;
+        try {
+            csrfToken = await page.evaluate(() => {
+                // Try to find CSRF token in various common locations
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                if (metaTag) return metaTag.getAttribute('content');
+                
+                const inputField = document.querySelector('input[name="csrf_token"], input[name="_csrf_token"], input[name="csrf-token"]');
+                if (inputField) return inputField.value;
+                
+                return null;
+            });
+            if (csrfToken) {
+                console.log(`   ✅ Found CSRF token: ${csrfToken.substring(0, 20)}...`);
+            } else {
+                console.log('   ⚠️  No CSRF token found on login page');
+            }
+        } catch (e) {
+            console.log('   ⚠️  Error extracting CSRF token:', e.message);
+        }
+        
+        // Log browser console errors if any occurred during page load
+        if (consoleErrors.length > 0) {
+            console.log(`   ⚠️  ${consoleErrors.length} browser console errors/warnings detected:`);
+            consoleErrors.forEach((error, idx) => {
+                console.log(`      ${idx + 1}. [${error.type}] ${error.text}`);
+            });
+        }
         
         // Wait for the login form to be visible with increased timeout
         // Try multiple selectors in case the page structure varies
@@ -582,7 +631,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         if (!usernameInput) {
             // If we still can't find it, save debug info
             const pageContent = await page.content();
-            require('fs').writeFileSync('/tmp/login_page_debug.html', pageContent);
+            writeFileSync('/tmp/login_page_debug.html', pageContent);
             await page.screenshot({ path: '/tmp/login_page_debug.png', fullPage: true });
             console.error('❌ Could not find username input field after trying all selectors');
             console.error('   Debug HTML saved to /tmp/login_page_debug.html');
@@ -1032,6 +1081,15 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.error('❌ Error taking screenshots:');
         console.error(error.message);
         console.error('========================================');
+        
+        // Log any browser console errors that were captured
+        if (consoleErrors && consoleErrors.length > 0) {
+            console.error('');
+            console.error('🖥️  Browser Console Errors/Warnings:');
+            consoleErrors.forEach((err, idx) => {
+                console.error(`   ${idx + 1}. [${err.type}] ${err.text}`);
+            });
+        }
         
         // Take a screenshot of the current page for debugging
         try {

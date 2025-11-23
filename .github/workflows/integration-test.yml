@@ -165,8 +165,22 @@ jobs:
             fi
           else
             echo "optimizeDeps section doesn't exist, creating it..."
-            # Add optimizeDeps section after plugins line
-            sed -i "/plugins: \[.*\],$/a \    optimizeDeps: {\n        // Include CommonJS dependencies for sprinkle-crud6\n        // limax uses lodash.deburr which is a CommonJS module\n        include: ['limax', 'lodash.deburr']\n    }," vite.config.ts
+            # Add optimizeDeps section after plugins block
+            # This handles both single-line (plugins: [...],) and multi-line plugins arrays
+            awk '
+              /plugins:/ {in_plugins=1} 
+              in_plugins && /\],/ {
+                print;
+                print "    optimizeDeps: {";
+                print "        // Include CommonJS dependencies for sprinkle-crud6";
+                print "        // limax uses lodash.deburr which is a CommonJS module";
+                print "        include: ['\''limax'\'', '\''lodash.deburr'\'']";
+                print "    },";
+                in_plugins=0;
+                next;
+              } 
+              {print}
+            ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
           fi
           
           echo ""

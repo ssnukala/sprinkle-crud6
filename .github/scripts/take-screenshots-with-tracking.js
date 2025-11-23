@@ -257,48 +257,17 @@ let skippedApiTests = 0;
 let warningApiTests = 0;
 
 /**
- * Get CSRF token from the page
+ * NOTE: CSRF token handling removed from this script.
  * 
- * UserFrosting 6 provides CSRF tokens via meta tags in HTML pages, not via a dedicated API endpoint.
- * This function retrieves the token from the current page's meta tag.
- * If no token is found, it navigates to the dashboard to get a fresh token.
+ * CRUD6 API routes do NOT enforce CSRF protection (no CsrfGuard middleware).
+ * Authentication is handled via AuthGuard (session-based).
+ * 
+ * Attempting to fetch CSRF tokens for API routes is unnecessary and was causing test failures.
+ * See .archive/CSRF_ANALYSIS_2025_11_22.md for details.
+ * 
+ * For frontend Vue.js code, CSRF is automatically handled by sprinkle-core's useCsrf() composable.
+ * For testing with Playwright, CSRF is not required for CRUD6 API endpoints.
  */
-async function getCsrfToken(page, baseUrl) {
-    try {
-        // Try to get CSRF token from meta tag on current page
-        let csrfToken = await page.evaluate(() => {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : null;
-        });
-        
-        if (csrfToken) {
-            return csrfToken;
-        }
-        
-        // If no token on current page, navigate to home page to get one
-        // Home page is unauthenticated and will have a CSRF meta tag
-        // Dashboard would redirect to login since it requires authentication
-        console.warn('   ⚠️  No CSRF token on current page, navigating to home page to get token...');
-        await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 10000 });
-        
-        // Try again to get token from home page
-        csrfToken = await page.evaluate(() => {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : null;
-        });
-        
-        if (csrfToken) {
-            console.log('   ✅ CSRF token retrieved from home page');
-            return csrfToken;
-        }
-        
-        console.warn('   ⚠️  Could not find CSRF token meta tag on home page either');
-        return null;
-    } catch (error) {
-        console.warn('   ⚠️  Could not retrieve CSRF token:', error.message);
-        return null;
-    }
-}
 
 /**
  * Test a single API path
@@ -330,18 +299,12 @@ async function testApiPath(page, name, pathConfig, baseUrl) {
         let response;
         
         // Set up headers for API request
+        // Note: CSRF tokens are NOT required for CRUD6 API routes (no CsrfGuard middleware)
+        // Authentication is handled via AuthGuard (session-based)
         let headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         };
-        
-        // Get CSRF token for state-changing operations (POST, PUT, DELETE)
-        if (['POST', 'PUT', 'DELETE'].includes(method)) {
-            const csrfToken = await getCsrfToken(page, baseUrl);
-            if (csrfToken) {
-                headers['X-CSRF-Token'] = csrfToken;
-            }
-        }
         
         // Make the API request
         if (method === 'GET') {
@@ -581,32 +544,6 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         // Take screenshot before looking for selectors
         await page.screenshot({ path: '/tmp/screenshot_before_login_selectors.png', fullPage: true });
         console.log('📸 Screenshot before selector search: /tmp/screenshot_before_login_selectors.png');
-        
-        // Try to extract CSRF token from the login page
-        let csrfToken = null;
-        try {
-            csrfToken = await page.evaluate(() => {
-                // Try to find CSRF token in various common locations
-                const metaTag = document.querySelector('meta[name="csrf-token"]');
-                if (metaTag) return metaTag.getAttribute('content');
-                
-                const inputField = document.querySelector('input[name="csrf_token"], input[name="_csrf_token"], input[name="csrf-token"]');
-                if (inputField) return inputField.value;
-                
-                return null;
-            });
-            if (csrfToken) {
-                // Only show ellipsis if token is longer than 20 characters
-                const tokenPreview = csrfToken.length > 20 
-                    ? `${csrfToken.substring(0, 20)}...` 
-                    : csrfToken;
-                console.log(`   ✅ Found CSRF token: ${tokenPreview}`);
-            } else {
-                console.log('   ⚠️  No CSRF token found on login page');
-            }
-        } catch (e) {
-            console.log('   ⚠️  Error extracting CSRF token:', e.message);
-        }
         
         // Log browser console errors if any occurred during page load
         if (consoleErrors.length > 0) {

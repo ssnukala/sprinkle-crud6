@@ -148,13 +148,16 @@ jobs:
           # sprinkle-crud6 uses limax which depends on lodash.deburr (CommonJS modules)
           # These need to be pre-bundled by Vite to work properly
           
-          # Check if optimizeDeps section exists
-          if grep -q "optimizeDeps:" vite.config.ts; then
+          # Check if already configured
+          if grep -q "'limax'" vite.config.ts || grep -q '"limax"' vite.config.ts; then
+            echo "limax already in vite.config.ts, skipping configuration"
+          elif grep -q "optimizeDeps:" vite.config.ts; then
             echo "optimizeDeps section exists, checking for include array..."
             if grep -q "include:" vite.config.ts; then
-              echo "include array exists, adding limax and lodash.deburr..."
-              # Add to existing include array (before closing bracket)
-              sed -i "/include: \[/a \        'limax',\n        'lodash.deburr'," vite.config.ts
+              echo "include array exists, adding limax and lodash.deburr to it..."
+              # Add to existing include array by replacing the closing bracket
+              # This handles both single-line and multi-line arrays
+              sed -i "s/include: \[\(.*\)\]/include: [\1, 'limax', 'lodash.deburr']/" vite.config.ts
             else
               echo "include array doesn't exist, creating it..."
               # Add include array to optimizeDeps
@@ -162,8 +165,8 @@ jobs:
             fi
           else
             echo "optimizeDeps section doesn't exist, creating it..."
-            # Add optimizeDeps section after plugins
-            sed -i "/plugins: \[/,/\],/a \    optimizeDeps: {\n        // Include CommonJS dependencies for sprinkle-crud6\n        // limax uses lodash.deburr which is a CommonJS module\n        include: ['limax', 'lodash.deburr']\n    }," vite.config.ts
+            # Add optimizeDeps section after plugins line
+            sed -i "/plugins: \[.*\],$/a \    optimizeDeps: {\n        // Include CommonJS dependencies for sprinkle-crud6\n        // limax uses lodash.deburr which is a CommonJS module\n        include: ['limax', 'lodash.deburr']\n    }," vite.config.ts
           fi
           
           echo ""

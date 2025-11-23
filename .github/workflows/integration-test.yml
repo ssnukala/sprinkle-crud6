@@ -320,7 +320,15 @@ jobs:
           php bakery assets:vite &
           VITE_PID=$!
           echo $VITE_PID > /tmp/vite.pid
-          sleep 10
+          
+          # Wait longer for Vite to fully start up
+          echo "Waiting for Vite server to start..."
+          sleep 20
+          
+          # Try to verify Vite is running by checking if the page loads properly
+          echo "Testing if frontend is accessible..."
+          curl -f http://localhost:8080 || echo "⚠️  Page load test after Vite start"
+          
           echo "✅ Vite server started"
 
       - name: Test Unauthenticated API paths

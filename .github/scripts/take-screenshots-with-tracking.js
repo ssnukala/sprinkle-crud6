@@ -550,23 +550,119 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log('📍 Navigating to login page...');
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
         console.log('✅ Login page loaded');
+        
+        // Wait a bit for any JavaScript to execute
+        await page.waitForTimeout(2000);
 
         console.log('🔐 Logging in...');
         
-        // Wait for the login form to be visible
-        await page.waitForSelector('.uk-card input[data-test="username"]', { timeout: 10000 });
+        // Wait for the login form to be visible with increased timeout
+        // Try multiple selectors in case the page structure varies
+        let usernameInput = null;
+        const selectors = [
+            '.uk-card input[data-test="username"]',
+            'input[data-test="username"]',
+            'input[name="username"]',
+        ];
         
-        // Fill in credentials
-        await page.fill('.uk-card input[data-test="username"]', username);
-        await page.fill('.uk-card input[data-test="password"]', password);
+        for (const selector of selectors) {
+            try {
+                console.log(`   Trying selector: ${selector}`);
+                usernameInput = await page.waitForSelector(selector, { timeout: 30000, state: 'visible' });
+                if (usernameInput) {
+                    console.log(`   ✅ Found username input with selector: ${selector}`);
+                    break;
+                }
+            } catch (e) {
+                console.log(`   ⚠️  Selector ${selector} not found, trying next...`);
+            }
+        }
         
-        // Click the login button and wait for navigation
-        await Promise.all([
-            page.waitForNavigation({ timeout: 15000 }).catch(() => {
-                console.log('⚠️  No navigation detected after login, but continuing...');
-            }),
-            page.click('.uk-card button[data-test="submit"]')
-        ]);
+        if (!usernameInput) {
+            // If we still can't find it, save debug info
+            const pageContent = await page.content();
+            require('fs').writeFileSync('/tmp/login_page_debug.html', pageContent);
+            await page.screenshot({ path: '/tmp/login_page_debug.png', fullPage: true });
+            console.error('❌ Could not find username input field after trying all selectors');
+            console.error('   Debug HTML saved to /tmp/login_page_debug.html');
+            console.error('   Debug screenshot saved to /tmp/login_page_debug.png');
+            throw new Error('Login form not found - username input field is missing');
+        }
+        
+        // Fill in credentials - try the same selector patterns
+        const usernameSelectors = [
+            '.uk-card input[data-test="username"]',
+            'input[data-test="username"]',
+            'input[name="username"]',
+        ];
+        
+        const passwordSelectors = [
+            '.uk-card input[data-test="password"]',
+            'input[data-test="password"]',
+            'input[name="password"]',
+            'input[type="password"]',
+        ];
+        
+        let filled = false;
+        for (const uSelector of usernameSelectors) {
+            try {
+                await page.fill(uSelector, username);
+                console.log(`   ✅ Filled username using: ${uSelector}`);
+                filled = true;
+                break;
+            } catch (e) {
+                // Try next selector
+            }
+        }
+        
+        if (!filled) {
+            throw new Error('Could not fill username field');
+        }
+        
+        filled = false;
+        for (const pSelector of passwordSelectors) {
+            try {
+                await page.fill(pSelector, password);
+                console.log(`   ✅ Filled password using: ${pSelector}`);
+                filled = true;
+                break;
+            } catch (e) {
+                // Try next selector
+            }
+        }
+        
+        if (!filled) {
+            throw new Error('Could not fill password field');
+        }
+        
+        // Click the login button and wait for navigation - try multiple selectors
+        const submitSelectors = [
+            '.uk-card button[data-test="submit"]',
+            'button[data-test="submit"]',
+            'button[type="submit"]',
+            '.uk-card button[type="submit"]',
+        ];
+        
+        let submitClicked = false;
+        for (const submitSelector of submitSelectors) {
+            try {
+                await Promise.all([
+                    page.waitForNavigation({ timeout: 15000 }).catch(() => {
+                        console.log('⚠️  No navigation detected after login, but continuing...');
+                    }),
+                    page.click(submitSelector)
+                ]);
+                console.log(`   ✅ Clicked submit button using: ${submitSelector}`);
+                submitClicked = true;
+                break;
+            } catch (e) {
+                console.log(`   ⚠️  Could not click submit with ${submitSelector}, trying next...`);
+            }
+        }
+        
+        if (!submitClicked) {
+            throw new Error('Could not click submit button');
+        }
         
         console.log('✅ Logged in successfully');
         

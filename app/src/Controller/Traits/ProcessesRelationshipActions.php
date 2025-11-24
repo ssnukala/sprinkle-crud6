@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Controller\Traits;
 
 use Carbon\Carbon;
+use Illuminate\Database\Connection;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 /**
@@ -17,6 +18,10 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
  * - on_create: Triggered after creating a record
  * - on_update: Triggered after updating a record
  * - on_delete: Triggered before deleting a record
+ * 
+ * This trait uses direct pivot table operations (via DB::table()) instead of
+ * Eloquent relationship methods, since CRUD6Model is dynamic and does not have
+ * pre-defined relationship methods like roles(), permissions(), etc.
  */
 trait ProcessesRelationshipActions
 {
@@ -92,10 +97,37 @@ trait ProcessesRelationshipActions
     }
 
     /**
+     * Find relationship configuration by name in the schema.
+     * 
+     * Searches through the schema's relationships array to find the configuration
+     * for a specific relationship by name.
+     * 
+     * @param array  $schema       The schema configuration
+     * @param string $relationName The name of the relationship to find
+     * 
+     * @return array|null The relationship configuration, or null if not found
+     */
+    protected function findRelationshipConfig(array $schema, string $relationName): ?array
+    {
+        if (!isset($schema['relationships']) || !is_array($schema['relationships'])) {
+            return null;
+        }
+
+        foreach ($schema['relationships'] as $relationship) {
+            if (($relationship['name'] ?? null) === $relationName) {
+                return $relationship;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Process attach action to add related records.
      * 
-     * Attaches one or more related records to the model's relationship,
-     * optionally with additional pivot table data.
+     * Attaches one or more related records to the model's relationship
+     * by inserting directly into the pivot table. Uses direct DB operations
+     * since CRUD6Model doesn't have pre-defined relationship methods.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -112,6 +144,37 @@ trait ProcessesRelationshipActions
         array $attachConfig,
         string $event
     ): void {
+        // Get relationship configuration from schema
+        $relationConfig = $this->findRelationshipConfig($schema, $relationName);
+        if (!$relationConfig) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Relationship config not found", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+                'event' => $event,
+            ]);
+            return;
+        }
+
+        // Get pivot table configuration
+        $pivotTable = $relationConfig['pivot_table'] ?? null;
+        $foreignKey = $relationConfig['foreign_key'] ?? null;
+        $relatedKey = $relationConfig['related_key'] ?? null;
+
+        if (!$pivotTable || !$foreignKey || !$relatedKey) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+                'pivot_table' => $pivotTable,
+                'foreign_key' => $foreignKey,
+                'related_key' => $relatedKey,
+            ]);
+            return;
+        }
+
+        // Get the model's primary key value
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $modelId = $model->{$primaryKey};
+
         foreach ($attachConfig as $attachItem) {
             if (!is_array($attachItem) || !isset($attachItem['related_id'])) {
                 $this->logger->warning("CRUD6 [RelationshipActions] Invalid attach configuration", [
@@ -128,13 +191,21 @@ trait ProcessesRelationshipActions
             // Process special values in pivot data
             $pivotData = $this->processPivotData($pivotData);
 
-            // Attach the related record
-            $model->{$relationName}()->attach($relatedId, $pivotData);
+            // Build insert data: foreign key, related key, plus any extra pivot data
+            $insertData = array_merge([
+                $foreignKey => $modelId,
+                $relatedKey => $relatedId,
+            ], $pivotData);
+
+            // Insert directly into pivot table using the DB connection
+            $this->db->table($pivotTable)->insert($insertData);
 
             $this->debugLog("CRUD6 [RelationshipActions] Attached relationship", [
                 'event' => $event,
                 'model' => $schema['model'],
                 'relationship' => $relationName,
+                'pivot_table' => $pivotTable,
+                'model_id' => $modelId,
                 'related_id' => $relatedId,
                 'pivot_data' => $pivotData,
             ]);
@@ -146,7 +217,8 @@ trait ProcessesRelationshipActions
      * 
      * Synchronizes the model's relationship with the IDs provided in the
      * request data. This will attach new records, keep existing ones, and
-     * detach any that are not in the provided list.
+     * detach any that are not in the provided list. Uses direct DB operations
+     * since CRUD6Model doesn't have pre-defined relationship methods.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -176,16 +248,68 @@ trait ProcessesRelationshipActions
             return;
         }
 
+        // Get relationship configuration from schema
+        $relationConfig = $this->findRelationshipConfig($schema, $relationName);
+        if (!$relationConfig) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Relationship config not found for sync", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+            ]);
+            return;
+        }
+
+        // Get pivot table configuration
+        $pivotTable = $relationConfig['pivot_table'] ?? null;
+        $foreignKey = $relationConfig['foreign_key'] ?? null;
+        $relatedKey = $relationConfig['related_key'] ?? null;
+
+        if (!$pivotTable || !$foreignKey || !$relatedKey) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration for sync", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+            ]);
+            return;
+        }
+
+        // Get the model's primary key value
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $modelId = $model->{$primaryKey};
+
         // Get related IDs from data (ensure array format)
         $relatedIds = is_array($data[$fieldName]) ? $data[$fieldName] : [$data[$fieldName]];
 
-        // Filter out empty values
-        $relatedIds = array_filter($relatedIds, function ($id) {
+        // Filter out empty values and convert to integers
+        $relatedIds = array_values(array_filter($relatedIds, function ($id) {
             return $id !== null && $id !== '';
-        });
+        }));
 
-        // Sync the relationship
-        $model->{$relationName}()->sync($relatedIds);
+        // Get current related IDs from pivot table
+        $currentIds = $this->db->table($pivotTable)
+            ->where($foreignKey, $modelId)
+            ->pluck($relatedKey)
+            ->toArray();
+
+        // Calculate IDs to attach (new ones not currently in pivot)
+        $idsToAttach = array_diff($relatedIds, $currentIds);
+
+        // Calculate IDs to detach (current ones not in new list)
+        $idsToDetach = array_diff($currentIds, $relatedIds);
+
+        // Detach records that are no longer needed
+        if (!empty($idsToDetach)) {
+            $this->db->table($pivotTable)
+                ->where($foreignKey, $modelId)
+                ->whereIn($relatedKey, $idsToDetach)
+                ->delete();
+        }
+
+        // Attach new records
+        foreach ($idsToAttach as $relatedId) {
+            $this->db->table($pivotTable)->insert([
+                $foreignKey => $modelId,
+                $relatedKey => $relatedId,
+            ]);
+        }
 
         $this->debugLog("CRUD6 [RelationshipActions] Synced relationship", [
             'model' => $schema['model'],
@@ -199,7 +323,8 @@ trait ProcessesRelationshipActions
      * Process detach action to remove related records.
      * 
      * Detaches related records from the model's relationship. Can detach
-     * all records or specific ones by ID.
+     * all records or specific ones by ID. Uses direct DB operations
+     * since CRUD6Model doesn't have pre-defined relationship methods.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -216,23 +341,60 @@ trait ProcessesRelationshipActions
         mixed $detachConfig,
         string $event
     ): void {
+        // Get relationship configuration from schema
+        $relationConfig = $this->findRelationshipConfig($schema, $relationName);
+        if (!$relationConfig) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Relationship config not found for detach", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+                'event' => $event,
+            ]);
+            return;
+        }
+
+        // Get pivot table configuration
+        $pivotTable = $relationConfig['pivot_table'] ?? null;
+        $foreignKey = $relationConfig['foreign_key'] ?? null;
+        $relatedKey = $relationConfig['related_key'] ?? null;
+
+        if (!$pivotTable || !$foreignKey) {
+            $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration for detach", [
+                'model' => $schema['model'],
+                'relationship' => $relationName,
+            ]);
+            return;
+        }
+
+        // Get the model's primary key value
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $modelId = $model->{$primaryKey};
+
         if ($detachConfig === 'all') {
             // Detach all related records
-            $model->{$relationName}()->detach();
+            $this->db->table($pivotTable)
+                ->where($foreignKey, $modelId)
+                ->delete();
 
             $this->debugLog("CRUD6 [RelationshipActions] Detached all relationships", [
                 'event' => $event,
                 'model' => $schema['model'],
                 'relationship' => $relationName,
+                'pivot_table' => $pivotTable,
+                'model_id' => $modelId,
             ]);
         } elseif (is_array($detachConfig)) {
             // Detach specific IDs
-            $model->{$relationName}()->detach($detachConfig);
+            $this->db->table($pivotTable)
+                ->where($foreignKey, $modelId)
+                ->whereIn($relatedKey, $detachConfig)
+                ->delete();
 
             $this->debugLog("CRUD6 [RelationshipActions] Detached specific relationships", [
                 'event' => $event,
                 'model' => $schema['model'],
                 'relationship' => $relationName,
+                'pivot_table' => $pivotTable,
+                'model_id' => $modelId,
                 'related_ids' => $detachConfig,
             ]);
         } else {

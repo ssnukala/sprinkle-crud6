@@ -14,6 +14,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Database\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use UserFrosting\Sprinkle\Core\Database\Models\Model;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
@@ -31,6 +32,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
  * - Schema-based field casting
  * - Soft delete support when enabled in schema
  * - Timestamp management based on schema configuration
+ * - Dynamic relationship methods based on schema (e.g., roles(), permissions())
  *
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
@@ -67,6 +69,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     protected $deleted_at = null;
 
     /**
+     * @var array<string, array> Dynamic relationship configurations from schema.
+     * Keyed by relationship name (e.g., 'roles' => [...config...])
+     */
+    protected array $dynamicRelationships = [];
+
+    /**
      * Configure the model with schema information
      *
      * @param array $schema The JSON schema configuration
@@ -94,7 +102,129 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         // Set fillable attributes and casts based on schema fields
         $this->configureFillableAndCasts($schema);
 
+        // Configure dynamic relationships from schema
+        $this->configureRelationships($schema);
+
         return $this;
+    }
+
+    /**
+     * Configure dynamic relationships from schema.
+     *
+     * Reads the 'relationships' array from the schema and stores each relationship
+     * configuration indexed by name. This allows the __call magic method to create
+     * Eloquent relationship methods dynamically (e.g., $model->roles()).
+     *
+     * @param array $schema The JSON schema configuration
+     * @return void
+     */
+    protected function configureRelationships(array $schema): void
+    {
+        $this->dynamicRelationships = [];
+
+        if (!isset($schema['relationships']) || !is_array($schema['relationships'])) {
+            return;
+        }
+
+        foreach ($schema['relationships'] as $relationship) {
+            $name = $relationship['name'] ?? null;
+            if ($name) {
+                $this->dynamicRelationships[$name] = $relationship;
+            }
+        }
+    }
+
+    /**
+     * Get the configuration for a dynamic relationship.
+     *
+     * @param string $name The relationship name
+     * @return array|null The relationship configuration, or null if not found
+     */
+    public function getRelationshipConfig(string $name): ?array
+    {
+        return $this->dynamicRelationships[$name] ?? null;
+    }
+
+    /**
+     * Check if a dynamic relationship exists.
+     *
+     * @param string $name The relationship name
+     * @return bool True if the relationship is configured
+     */
+    public function hasRelationship(string $name): bool
+    {
+        return isset($this->dynamicRelationships[$name]);
+    }
+
+    /**
+     * Handle dynamic method calls for relationships.
+     *
+     * When a method like roles() is called on this model, this magic method
+     * checks if it's a configured dynamic relationship and returns the
+     * appropriate Eloquent BelongsToMany relationship.
+     *
+     * @param string $method The method name being called
+     * @param array  $parameters The parameters passed to the method
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        // Check if this is a dynamic relationship call
+        if ($this->hasRelationship($method)) {
+            return $this->getDynamicRelationship($method);
+        }
+
+        // Fall back to parent __call for other dynamic methods
+        return parent::__call($method, $parameters);
+    }
+
+    /**
+     * Create and return a dynamic BelongsToMany relationship.
+     *
+     * Uses the relationship configuration from the schema to create an Eloquent
+     * BelongsToMany relationship that can be used for attach/sync/detach operations.
+     *
+     * @param string $name The relationship name
+     * @return BelongsToMany
+     * @throws \InvalidArgumentException If relationship type is not supported
+     */
+    protected function getDynamicRelationship(string $name): BelongsToMany
+    {
+        $config = $this->dynamicRelationships[$name];
+        $type = $config['type'] ?? 'many_to_many';
+
+        if ($type !== 'many_to_many') {
+            throw new \InvalidArgumentException(
+                "Dynamic relationship '{$name}' has unsupported type '{$type}'. " .
+                "Only 'many_to_many' relationships are supported for attach/sync/detach operations."
+            );
+        }
+
+        // For many_to_many relationships, we use belongsToMany with a generic model
+        // The related table doesn't need a specific model class - we just need the pivot table
+        $pivotTable = $config['pivot_table'] ?? null;
+        $foreignKey = $config['foreign_key'] ?? null;
+        $relatedKey = $config['related_key'] ?? null;
+
+        if (!$pivotTable || !$foreignKey || !$relatedKey) {
+            throw new \InvalidArgumentException(
+                "Dynamic relationship '{$name}' is missing required configuration: " .
+                "pivot_table, foreign_key, or related_key."
+            );
+        }
+
+        // Create a generic relationship using self (CRUD6Model)
+        // We configure it with just the pivot table information
+        // The related model is the same class but we only use the pivot operations
+        return $this->belongsToMany(
+            static::class,   // Related model (self - we just need pivot operations)
+            $pivotTable,     // Pivot table name
+            $foreignKey,     // Foreign key in pivot table (points to this model)
+            $relatedKey,     // Related key in pivot table (points to related model)
+            null,            // Local key (default: primary key)
+            null,            // Related key on related model (default: primary key)
+            $name            // Relation name
+        );
     }
 
     /**

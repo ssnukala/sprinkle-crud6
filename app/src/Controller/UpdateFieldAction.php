@@ -21,7 +21,6 @@ use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -288,11 +287,7 @@ class UpdateFieldAction extends Base
                 'message' => $message,
             ]);
 
-            // Write response following UserFrosting 6 pattern
-            $payload = new ApiResponse($message);
-            $response->getBody()->write((string) $payload);
-            
-            return $response->withHeader('Content-Type', 'application/json');
+            return $this->jsonResponse($response, $message);
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

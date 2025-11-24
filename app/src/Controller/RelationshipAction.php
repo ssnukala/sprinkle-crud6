@@ -15,7 +15,6 @@ use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -175,11 +174,7 @@ class RelationshipAction extends Base
             'count'    => count($relatedIds),
         ]);
 
-        // Write response following UserFrosting 6 pattern
-        $payload = new ApiResponse($message);
-        $response->getBody()->write((string) $payload);
-        
-        return $response->withHeader('Content-Type', 'application/json');
+        return $this->jsonResponse($response, $message);
     }
 
     /**

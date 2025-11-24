@@ -21,7 +21,6 @@ use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
@@ -92,7 +91,6 @@ class CreateAction extends Base
             // Write response with title and description
             $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
             $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
-            $payload = new ApiResponse($title, $description);
             
             $this->debugLog("CRUD6 [CreateAction] Response prepared successfully", [
                 'model' => $crudSchema['model'],
@@ -101,9 +99,7 @@ class CreateAction extends Base
                 'status' => 201,
             ]);
 
-            $response->getBody()->write((string) $payload);
-
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+            return $this->jsonResponseWithTitle($response, $title, $description, 201);
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [CreateAction] ===== CREATE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

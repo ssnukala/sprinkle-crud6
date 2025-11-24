@@ -278,7 +278,7 @@ trait ProcessesRelationshipActions
         // Get related IDs from data (ensure array format)
         $relatedIds = is_array($data[$fieldName]) ? $data[$fieldName] : [$data[$fieldName]];
 
-        // Filter out empty values and convert to integers
+        // Filter out empty values
         $relatedIds = array_values(array_filter($relatedIds, function ($id) {
             return $id !== null && $id !== '';
         }));
@@ -357,19 +357,20 @@ trait ProcessesRelationshipActions
         $foreignKey = $relationConfig['foreign_key'] ?? null;
         $relatedKey = $relationConfig['related_key'] ?? null;
 
-        if (!$pivotTable || !$foreignKey) {
-            $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration for detach", [
-                'model' => $schema['model'],
-                'relationship' => $relationName,
-            ]);
-            return;
-        }
-
         // Get the model's primary key value
         $primaryKey = $schema['primary_key'] ?? 'id';
         $modelId = $model->{$primaryKey};
 
         if ($detachConfig === 'all') {
+            // For detach all, we only need pivot_table and foreign_key
+            if (!$pivotTable || !$foreignKey) {
+                $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration for detach all", [
+                    'model' => $schema['model'],
+                    'relationship' => $relationName,
+                ]);
+                return;
+            }
+
             // Detach all related records
             $this->db->table($pivotTable)
                 ->where($foreignKey, $modelId)
@@ -383,6 +384,18 @@ trait ProcessesRelationshipActions
                 'model_id' => $modelId,
             ]);
         } elseif (is_array($detachConfig)) {
+            // For detach specific IDs, we also need related_key
+            if (!$pivotTable || !$foreignKey || !$relatedKey) {
+                $this->logger->warning("CRUD6 [RelationshipActions] Incomplete pivot configuration for detach specific IDs", [
+                    'model' => $schema['model'],
+                    'relationship' => $relationName,
+                    'pivot_table' => $pivotTable,
+                    'foreign_key' => $foreignKey,
+                    'related_key' => $relatedKey,
+                ]);
+                return;
+            }
+
             // Detach specific IDs
             $this->db->table($pivotTable)
                 ->where($foreignKey, $modelId)

@@ -278,16 +278,16 @@ trait ProcessesRelationshipActions
         // Get related IDs from data (ensure array format)
         $relatedIds = is_array($data[$fieldName]) ? $data[$fieldName] : [$data[$fieldName]];
 
-        // Filter out empty values
-        $relatedIds = array_values(array_filter($relatedIds, function ($id) {
+        // Filter out empty values and convert to strings for consistent comparison
+        $relatedIds = array_values(array_map('strval', array_filter($relatedIds, function ($id) {
             return $id !== null && $id !== '';
-        }));
+        })));
 
-        // Get current related IDs from pivot table
-        $currentIds = $this->db->table($pivotTable)
+        // Get current related IDs from pivot table and convert to strings for consistent comparison
+        $currentIds = array_map('strval', $this->db->table($pivotTable)
             ->where($foreignKey, $modelId)
             ->pluck($relatedKey)
-            ->toArray();
+            ->toArray());
 
         // Calculate IDs to attach (new ones not currently in pivot)
         $idsToAttach = array_diff($relatedIds, $currentIds);
@@ -303,12 +303,16 @@ trait ProcessesRelationshipActions
                 ->delete();
         }
 
-        // Attach new records
-        foreach ($idsToAttach as $relatedId) {
-            $this->db->table($pivotTable)->insert([
-                $foreignKey => $modelId,
-                $relatedKey => $relatedId,
-            ]);
+        // Attach new records using bulk insert for efficiency
+        if (!empty($idsToAttach)) {
+            $insertData = [];
+            foreach ($idsToAttach as $relatedId) {
+                $insertData[] = [
+                    $foreignKey => $modelId,
+                    $relatedKey => $relatedId,
+                ];
+            }
+            $this->db->table($pivotTable)->insert($insertData);
         }
 
         $this->debugLog("CRUD6 [RelationshipActions] Synced relationship", [

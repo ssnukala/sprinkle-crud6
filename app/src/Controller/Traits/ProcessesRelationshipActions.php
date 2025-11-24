@@ -214,9 +214,9 @@ trait ProcessesRelationshipActions
         // Get related IDs from data (ensure array format)
         $relatedIds = is_array($data[$fieldName]) ? $data[$fieldName] : [$data[$fieldName]];
 
-        // Filter out empty values
+        // Filter out empty values and validate that IDs are numeric
         $relatedIds = array_values(array_filter($relatedIds, function ($id) {
-            return $id !== null && $id !== '';
+            return $id !== null && $id !== '' && (is_numeric($id) || is_string($id));
         }));
 
         // Use Eloquent's sync method via dynamic relationship

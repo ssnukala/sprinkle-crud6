@@ -183,6 +183,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      *
      * Uses the relationship configuration from the schema to create an Eloquent
      * BelongsToMany relationship that can be used for attach/sync/detach operations.
+     * 
+     * Note: We use `static::class` as the related model because we only need the pivot
+     * table operations (attach/sync/detach). The BelongsToMany relationship doesn't
+     * actually need to know about the related model's table - it only needs the pivot
+     * table configuration. Using self-reference allows pivot operations to work without
+     * requiring the related entity to have a specific model class.
      *
      * @param string $name The relationship name
      * @return BelongsToMany
@@ -213,9 +219,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
             );
         }
 
-        // Create a generic relationship using self (CRUD6Model)
-        // We configure it with just the pivot table information
-        // The related model is the same class but we only use the pivot operations
+        // Create a generic relationship using self (CRUD6Model) as the related model.
+        // This works because BelongsToMany only uses the related model for eager loading
+        // and returning related records. For pivot operations (attach/sync/detach),
+        // only the pivot table configuration matters. The self-reference allows us to
+        // use standard Eloquent pivot operations without needing a concrete model class
+        // for the related entity.
         return $this->belongsToMany(
             static::class,   // Related model (self - we just need pivot operations)
             $pivotTable,     // Pivot table name

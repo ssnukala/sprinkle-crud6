@@ -83,6 +83,25 @@ const editableFields = computed(() => {
 const isLoading = computed(() => apiLoading.value || (!props.schema && schemaLoading.value))
 
 /**
+ * Computed property for form layout configuration
+ * Returns the appropriate UIKit grid class based on schema configuration
+ * Defaults to 2-column layout for better space utilization
+ */
+const formLayoutClass = computed(() => {
+    const layout = schema.value?.form_layout || '2-column'
+    
+    switch (layout) {
+        case '1-column':
+            return 'uk-child-width-1-1'
+        case '3-column':
+            return 'uk-child-width-1-1 uk-child-width-1-2@s uk-child-width-1-3@m'
+        case '2-column':
+        default:
+            return 'uk-child-width-1-1 uk-child-width-1-2@s'
+    }
+})
+
+/**
  * Watchers - Watch for changes in the crud6 prop and update formData
  * accordingly. Useful when the crud6 prop is updated from the parent component,
  * or the modal is reused.
@@ -291,20 +310,22 @@ function getLookupAttributes(field: any) {
     <!-- Dynamic form based on schema -->
     <form v-else-if="schema" v-on:submit.prevent="submitForm()">
         <fieldset class="uk-fieldset uk-form-stacked">
-            <!-- Dynamic fields based on schema -->
-            <div 
-                v-for="[fieldKey, field] in Object.entries(editableFields)" 
-                :key="fieldKey"
-                class="uk-margin">
+            <!-- Dynamic fields grid based on schema layout configuration -->
+            <div class="uk-grid-small" :class="formLayoutClass" uk-grid>
+                <!-- Dynamic fields based on schema -->
+                <div 
+                    v-for="[fieldKey, field] in Object.entries(editableFields)" 
+                    :key="fieldKey"
+                    class="uk-margin">
                 
-                <label class="uk-form-label" :for="getFieldId(fieldKey)">
-                    {{ field.label || fieldKey }}
-                    <span v-if="field.required" class="uk-text-danger">*</span>
-                </label>
-                
-                <span v-if="field.description" class="uk-text-meta">{{ field.description }}</span>
-                
-                <div class="uk-inline uk-width-1-1">
+                    <label class="uk-form-label" :for="getFieldId(fieldKey)">
+                        {{ field.label || fieldKey }}
+                        <span v-if="field.required" class="uk-text-danger">*</span>
+                    </label>
+                    
+                    <span v-if="field.description" class="uk-text-meta">{{ field.description }}</span>
+                    
+                    <div class="uk-inline uk-width-1-1">
                     <!-- Field icon -->
                     <font-awesome-icon 
                         class="fa-form-icon" 
@@ -481,6 +502,7 @@ function getLookupAttributes(field: any) {
                     <!-- Validation errors -->
                     <UFFormValidationError :errors="(r$ && r$.$errors && r$.$errors[fieldKey]) || []" />
                 </div>
+            </div>
             </div>
 
             <!-- Form actions -->

@@ -329,41 +329,37 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     /**
      * Get the fillable attributes
      * 
-     * Returns fillable from instance property, or falls back to static storage
-     * for hydrated instances.
+     * Returns fillable from static storage (keyed by table name) if available,
+     * otherwise falls back to the instance property.
      *
      * @return array
      */
     public function getFillable(): array
     {
-        // If instance has fillable set, use it
-        if (!empty($this->fillable)) {
-            return $this->fillable;
-        }
-
-        // Fall back to static storage for hydrated instances
+        // Use static storage when available (this is the primary source for configured models)
         if ($this->table && isset(static::$staticSchemaConfig[$this->table]['fillable'])) {
             return static::$staticSchemaConfig[$this->table]['fillable'];
         }
 
-        return [];
+        // Fall back to instance property
+        return $this->fillable;
     }
 
     /**
      * Get the casts array.
      * 
-     * Returns casts from instance property merged with static storage
-     * for hydrated instances.
+     * Returns casts from static storage merged with instance property.
      *
      * @return array
      */
     public function getCasts(): array
     {
+        // Start with instance casts
         $casts = $this->casts;
 
-        // Merge with static storage for hydrated instances
+        // Merge with static storage (static takes precedence for configured fields)
         if ($this->table && isset(static::$staticSchemaConfig[$this->table]['casts'])) {
-            $casts = array_merge(static::$staticSchemaConfig[$this->table]['casts'], $casts);
+            $casts = array_merge($casts, static::$staticSchemaConfig[$this->table]['casts']);
         }
 
         return $casts;
@@ -474,8 +470,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeWithoutSoftDeleted(Builder $query): Builder
     {
-        if ($this->hasSoftDeletes()) {
-            return $query->whereNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            return $query->whereNull($deletedAtColumn);
         }
 
         return $query;
@@ -489,8 +486,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeOnlySoftDeleted(Builder $query): Builder
     {
-        if ($this->hasSoftDeletes()) {
-            return $query->whereNotNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            return $query->whereNotNull($deletedAtColumn);
         }
 
         return $query;
@@ -515,8 +513,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function softDelete(): bool
     {
-        if ($this->hasSoftDeletes()) {
-            $this->{$this->getDeletedAtColumn()} = date('Y-m-d H:i:s');
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $this->{$deletedAtColumn} = date('Y-m-d H:i:s');
             return $this->save();
         }
 
@@ -530,8 +529,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function restore(): bool
     {
-        if ($this->hasSoftDeletes()) {
-            $this->{$this->getDeletedAtColumn()} = null;
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $this->{$deletedAtColumn} = null;
             return $this->save();
         }
 
@@ -545,11 +545,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function isSoftDeleted(): bool
     {
-        if (!$this->hasSoftDeletes()) {
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn === null) {
             return false;
         }
 
-        return !is_null($this->{$this->getDeletedAtColumn()});
+        return !is_null($this->{$deletedAtColumn});
     }
 
     /**
@@ -575,8 +576,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $query = parent::newQuery();
 
         // Automatically apply soft delete filter if enabled (but only if deleted_at column exists)
-        if ($this->hasSoftDeletes()) {
-            $query->whereNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $query->whereNull($deletedAtColumn);
         }
 
         return $query;

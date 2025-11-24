@@ -147,7 +147,11 @@ class CustomActionController extends Base
                 'action_key' => $actionKey,
             ]);
 
-            return ApiResponse::success($response, $description, $result ?? []);
+            // Write response following UserFrosting 6 pattern
+            $payload = new ApiResponse($description);
+            $response->getBody()->write((string) $payload);
+            
+            return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

@@ -288,7 +288,11 @@ class UpdateFieldAction extends Base
                 'message' => $message,
             ]);
 
-            return ApiResponse::success($response, $message, $recordData);
+            // Write response following UserFrosting 6 pattern
+            $payload = new ApiResponse($message);
+            $response->getBody()->write((string) $payload);
+            
+            return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

@@ -175,7 +175,11 @@ class RelationshipAction extends Base
             'count'    => count($relatedIds),
         ]);
 
-        return ApiResponse::success($response, $message);
+        // Write response following UserFrosting 6 pattern
+        $payload = new ApiResponse($message);
+        $response->getBody()->write((string) $payload);
+        
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     /**

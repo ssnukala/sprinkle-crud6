@@ -1,0 +1,100 @@
+{
+  "model": "products",
+  "title": "Product Management (2-Column Layout - Default)",
+  "singular_title": "Product",
+  "description": "Manage your product catalog with 2-column form layout (default)",
+  "table": "products",
+  "form_layout": "2-column",
+  "permissions": {
+    "read": "view_products",
+    "create": "create_product",
+    "update": "edit_product",
+    "delete": "delete_product"
+  },
+  "default_sort": {
+    "name": "asc"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "readonly": true,
+      "sortable": true,
+      "filterable": false,
+      "listable": true
+    },
+    "name": {
+      "type": "string",
+      "label": "Product Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 255
+        }
+      }
+    },
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "unique": true
+      }
+    },
+    "price": {
+      "type": "decimal",
+      "label": "Price",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "numeric": true,
+        "min": 0
+      }
+    },
+    "category_id": {
+      "type": "integer",
+      "label": "Category",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true
+    },
+    "tags": {
+      "type": "string",
+      "label": "Tags",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "label": "Active",
+      "default": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true
+    }
+  }
+}

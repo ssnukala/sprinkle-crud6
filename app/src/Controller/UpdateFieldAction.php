@@ -57,6 +57,7 @@ class UpdateFieldAction extends Base
         protected Connection $db,
         protected Hasher $hasher,
         protected ServerSideValidator $validator,
+        protected RequestDataTransformer $transformer,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -169,9 +170,8 @@ class UpdateFieldAction extends Base
                 'field' => $fieldName,
             ]);
 
-            // Transform data
-            $transformer = new RequestDataTransformer($validationSchema);
-            $data = $transformer->transform($params);
+            // Transform data using injected transformer
+            $data = $this->transformer->transform($validationSchema, $params);
             
             // For fields with no validation rules (especially booleans), ensure the field is in the data
             // RequestDataTransformer may skip fields with empty validation schemas

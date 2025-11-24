@@ -27,7 +27,7 @@
           "method": "POST",
           "path": "/api/crud6/users",
           "description": "Create new user via CRUD6 API",
-          "expected_status": 200,
+          "expected_status": 201,
           "validation": {
             "type": "json",
             "contains": ["data", "id"]
@@ -155,7 +155,7 @@
           "method": "POST",
           "path": "/api/crud6/groups",
           "description": "Create new group via CRUD6 API",
-          "expected_status": 200,
+          "expected_status": 201,
           "validation": {
             "type": "json",
             "contains": ["data", "id"]
@@ -200,15 +200,17 @@
             "type": "json"
           }
         },
-        "groups_delete": {
+        "groups_delete_DISABLED": {
           "method": "DELETE",
           "path": "/api/crud6/groups/1",
-          "description": "Delete group via CRUD6 API",
+          "description": "Delete group via CRUD6 API (DISABLED - ID 1 may be core system data)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "requires_permission": "delete_group"
+          "requires_permission": "delete_group",
+          "disabled": true,
+          "note": "Disabled to prevent deleting core system data. Use api_test_group created by tests instead."
         },
         "roles_schema": {
           "method": "GET",
@@ -234,7 +236,7 @@
           "method": "POST",
           "path": "/api/crud6/roles",
           "description": "Create new role via CRUD6 API",
-          "expected_status": 200,
+          "expected_status": 201,
           "validation": {
             "type": "json",
             "contains": ["data", "id"]
@@ -287,15 +289,17 @@
             "type": "json"
           }
         },
-        "roles_delete": {
+        "roles_delete_DISABLED": {
           "method": "DELETE",
           "path": "/api/crud6/roles/1",
-          "description": "Delete role via CRUD6 API",
+          "description": "Delete role via CRUD6 API (DISABLED - ID 1 may be core system data)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "requires_permission": "delete_role"
+          "requires_permission": "delete_role",
+          "disabled": true,
+          "note": "Disabled to prevent deleting core system data. Use api_test_role created by tests instead."
         },
         "permissions_schema": {
           "method": "GET",
@@ -321,7 +325,7 @@
           "method": "POST",
           "path": "/api/crud6/permissions",
           "description": "Create new permission via CRUD6 API",
-          "expected_status": 200,
+          "expected_status": 201,
           "validation": {
             "type": "json",
             "contains": ["data", "id"]
@@ -361,15 +365,17 @@
             "type": "json"
           }
         },
-        "permissions_delete": {
+        "permissions_delete_DISABLED": {
           "method": "DELETE",
           "path": "/api/crud6/permissions/1",
-          "description": "Delete permission via CRUD6 API",
+          "description": "Delete permission via CRUD6 API (DISABLED - ID 1 may be core system data)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "requires_permission": "delete_permission"
+          "requires_permission": "delete_permission",
+          "disabled": true,
+          "note": "Disabled to prevent deleting core system data. Use api_test_permission created by tests instead."
         },
         "activities_schema": {
           "method": "GET",

@@ -59,21 +59,23 @@ class ErrorTracker {
     }
 
     /**
-     * Add a network error
+     * Add a network error with detailed information
      */
-    addNetworkError(url, status, method) {
+    addNetworkError(url, status, method, errorDetails = null) {
         this.networkErrors.push({
             type: 'network',
             url,
             status,
             method,
+            errorDetails,
             timestamp: Date.now()
         });
         this.errors.push({
             type: 'Network Error',
             message: `${method} ${url} returned ${status}`,
             url,
-            status
+            status,
+            errorDetails
         });
     }
 
@@ -184,6 +186,42 @@ class ErrorTracker {
             this.networkErrors.forEach((error, idx) => {
                 report += `\n${idx + 1}. ${error.method} ${error.url}\n`;
                 report += `   Status: ${error.status}\n`;
+                
+                // Add detailed error information if available (for 5xx errors)
+                if (error.errorDetails) {
+                    if (error.errorDetails.message) {
+                        report += `   💥 Error Message: ${error.errorDetails.message}\n`;
+                    }
+                    if (error.errorDetails.exception) {
+                        report += `   💥 Exception Type: ${error.errorDetails.exception}\n`;
+                    }
+                    if (error.errorDetails.file && error.errorDetails.line) {
+                        report += `   📂 Location: ${error.errorDetails.file}:${error.errorDetails.line}\n`;
+                    }
+                    if (error.errorDetails.possibleSqlError || error.errorDetails.isSqlError) {
+                        report += `   🗄️  POSSIBLE SQL ERROR DETECTED\n`;
+                    }
+                    if (error.errorDetails.trace) {
+                        report += `   📚 Stack Trace (top 3 frames):\n`;
+                        if (typeof error.errorDetails.trace === 'string') {
+                            const lines = error.errorDetails.trace.split('\n');
+                            lines.forEach(line => {
+                                if (line.trim()) report += `      ${line}\n`;
+                            });
+                        } else if (Array.isArray(error.errorDetails.trace)) {
+                            error.errorDetails.trace.forEach((frame, i) => {
+                                report += `      ${i + 1}. ${frame.file || 'unknown'}:${frame.line || '?'}\n`;
+                                if (frame.class && frame.function) {
+                                    report += `         ${frame.class}::${frame.function}()\n`;
+                                }
+                            });
+                        }
+                    }
+                    if (error.errorDetails.rawError) {
+                        report += `   📝 Raw Error (first 500 chars):\n`;
+                        report += `      ${error.errorDetails.rawError}\n`;
+                    }
+                }
             });
             report += '\n';
         }
@@ -266,14 +304,54 @@ async function setupErrorMonitoring(page, errorTracker, pageName) {
         
         // Check for error status codes (4xx, 5xx)
         if (status >= 400) {
-            // Only track API errors, not expected 401/403 for unauth requests
-            if (url.includes('/api/') && ![401, 403, 404].includes(status)) {
-                console.error(`   ❌ Network Error on ${pageName}: ${method} ${url} returned ${status}`);
-                errorTracker.addNetworkError(url, status, method);
-            } else if (status >= 500) {
-                // Always track 5xx errors
+            let errorDetails = null;
+            
+            // For 5xx errors, try to capture detailed error information
+            if (status >= 500) {
+                try {
+                    const responseText = await response.text();
+                    if (responseText) {
+                        try {
+                            const data = JSON.parse(responseText);
+                            errorDetails = {
+                                message: data.message || null,
+                                exception: data.exception || null,
+                                file: data.file || null,
+                                line: data.line || null,
+                                trace: data.trace ? (Array.isArray(data.trace) ? data.trace.slice(0, 3) : data.trace.split('\n').slice(0, 5).join('\n')) : null
+                            };
+                            
+                            // Check for SQL errors
+                            const errorStr = JSON.stringify(data).toLowerCase();
+                            if (errorStr.includes('sql') || errorStr.includes('database') || errorStr.includes('query')) {
+                                errorDetails.possibleSqlError = true;
+                            }
+                        } catch (parseError) {
+                            // Not JSON, store raw text (limited)
+                            errorDetails = {
+                                rawError: responseText.substring(0, 500),
+                                isSqlError: responseText.toLowerCase().includes('sql') || responseText.toLowerCase().includes('database')
+                            };
+                        }
+                    }
+                } catch (error) {
+                    // Could not read response
+                    errorDetails = { error: 'Could not read response body' };
+                }
+                
+                // Always track 5xx errors with details
                 console.error(`   ❌ Server Error on ${pageName}: ${method} ${url} returned ${status}`);
-                errorTracker.addNetworkError(url, status, method);
+                if (errorDetails && errorDetails.message) {
+                    console.error(`      Error: ${errorDetails.message}`);
+                }
+                if (errorDetails && errorDetails.possibleSqlError) {
+                    console.error(`      🗄️  POSSIBLE SQL ERROR DETECTED`);
+                }
+                errorTracker.addNetworkError(url, status, method, errorDetails);
+            } else if (url.includes('/api/') && ![401, 403, 404].includes(status)) {
+                // Only track API errors, not expected 401/403 for unauth requests
+                console.error(`   ❌ Network Error on ${pageName}: ${method} ${url} returned ${status}`);
+                errorTracker.addNetworkError(url, status, method, errorDetails);
             }
         }
     });

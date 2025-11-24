@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Controller\Traits;
 
+use Carbon\Carbon;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 /**
@@ -262,12 +263,12 @@ trait ProcessesRelationshipActions
 
         foreach ($pivotData as $key => $value) {
             if ($value === 'now') {
-                $processed[$key] = date('Y-m-d H:i:s');
+                $processed[$key] = Carbon::now()->toDateTimeString();
             } elseif ($value === 'current_user') {
                 $currentUser = $this->authenticator->user();
                 $processed[$key] = $currentUser ? $currentUser->id : null;
             } elseif ($value === 'current_date') {
-                $processed[$key] = date('Y-m-d');
+                $processed[$key] = Carbon::now()->toDateString();
             } else {
                 $processed[$key] = $value;
             }

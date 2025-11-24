@@ -12,6 +12,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
 - **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
+- **Multi-Column Form Layouts**: Configurable 1, 2, or 3 column form layouts with 2-column as default for better space utilization
 - **AutoLookup Component**: Generic searchable auto-complete for selecting records from any model
 - **Master-Detail Data Entry**: Create and edit master records with their detail records in a single form
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
@@ -25,6 +26,7 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **Type System**: Support for various field types (string, integer, boolean, date, json, password with automatic hashing, etc.)
 - **Pagination**: Built-in pagination support
 - **Eloquent ORM Integration**: Full Eloquent ORM support with dynamic model configuration
+- **Responsive Design**: All forms and layouts are fully responsive and mobile-friendly
 
 ## Installation
 

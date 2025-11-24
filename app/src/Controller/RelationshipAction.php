@@ -153,6 +153,7 @@ class RelationshipAction extends Base
                 "User {$currentUser->user_name} {$action} {$relationName} for {$crudSchema['model']} {$crudModel->id}.",
                 [
                     'type'     => 'relationship_' . $action,
+                    'user_id'  => $currentUser->id,
                     'model'    => $crudSchema['model'],
                     'id'       => $crudModel->id,
                     'relation' => $relationName,

@@ -237,6 +237,7 @@ class UpdateFieldAction extends Base
                     "User {$currentUser->user_name} updated field '{$fieldName}' for {$crudSchema['model']} {$crudModel->id}.",
                     [
                         'type'    => 'update_field',
+                        'user_id' => $currentUser->id,
                         'model'   => $crudSchema['model'],
                         'id'      => $crudModel->id,
                         'field'   => $fieldName,

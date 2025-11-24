@@ -56,6 +56,7 @@ class UpdateFieldAction extends Base
         protected UserActivityLogger $userActivityLogger,
         protected Connection $db,
         protected Hasher $hasher,
+        protected ServerSideValidator $validator,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -149,16 +150,16 @@ class UpdateFieldAction extends Base
             ]);
 
             // Validate the single field
-            $validator = new ServerSideValidator($validationSchema, $this->translator);
-            if ($validator->validate($params) === false) {
+            $errors = $this->validator->validate($validationSchema, $params);
+            if (count($errors) !== 0) {
                 $this->logger->error("CRUD6 [UpdateFieldAction] Validation failed", [
                     'model' => $crudSchema['model'],
                     'field' => $fieldName,
-                    'errors' => $validator->errors(),
+                    'errors' => $errors,
                 ]);
 
                 $e = new ValidationException();
-                $e->addErrors($validator->errors());
+                $e->addErrors($errors);
 
                 throw $e;
             }

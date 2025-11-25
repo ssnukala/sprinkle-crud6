@@ -197,9 +197,9 @@ function resetForm() {
 </script>
 
 <template>
-    <!-- Trigger button with slot for custom content -->
+    <!-- Trigger link styled as button for UIKit modal toggle -->
     <slot name="trigger" :modal-id="modalId">
-        <button
+        <a
             :href="`#${modalId}`"
             uk-toggle
             :data-test="`btn-action-${action.key}`"
@@ -212,7 +212,7 @@ function resetForm() {
             ]">
             <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
             {{ actionLabel }}
-        </button>
+        </a>
     </slot>
 
     <!-- Field Input Modal -->

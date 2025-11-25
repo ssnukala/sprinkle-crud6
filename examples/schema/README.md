@@ -31,6 +31,160 @@ These schemas are from the sprinkle-c6admin project and demonstrate integration 
 - `c6admin-permissions.json` - Permission management
 - `c6admin-activities.json` - User activity log
 
+## Modal Button Configurations
+
+CRUD6 supports schema-driven modal button combinations. You can configure buttons using presets or custom configurations.
+
+### Smart Defaults
+
+Button combinations are automatically determined based on modal type:
+
+| Modal Type | Default Buttons | Use Case |
+|------------|-----------------|----------|
+| `confirm` | Yes / No | Confirmation dialogs |
+| `input` | Cancel / Save | Field input forms |
+| `form` | Cancel / Save | Full CRUD forms |
+| `message` | Cancel / OK | Information display |
+
+This means you often don't need to specify buttons at all:
+
+```json
+{
+  "actions": [
+    {
+      "key": "reset_password",
+      "type": "api_call",
+      "confirm": "Send password reset email?",
+      "modal_config": {
+        "type": "confirm"
+      }
+    },
+    {
+      "key": "change_password",
+      "type": "field_update",
+      "field": "password",
+      "modal_config": {
+        "type": "input",
+        "fields": ["password"]
+      }
+    }
+  ]
+}
+```
+
+### Button Presets
+
+If you need to override the defaults, use these preset strings in `modal_config.buttons`:
+
+| Preset | Buttons | Use Case |
+|--------|---------|----------|
+| `yes_no` | No / Yes | Simple confirmations |
+| `save_cancel` | Cancel / Save | Form submissions |
+| `ok_cancel` | Cancel / OK | Acknowledgments |
+| `confirm_cancel` | Cancel / [Action Label] | Uses action's label |
+
+### Preset Example
+
+```json
+{
+  "actions": [
+    {
+      "key": "archive_record",
+      "type": "api_call",
+      "label": "Archive",
+      "icon": "box-archive",
+      "style": "warning",
+      "confirm": "Are you sure you want to archive {{name}}?",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": "ok_cancel"
+      }
+    }
+  ]
+}
+```
+
+### Custom Buttons
+
+For full control, provide an array of `ModalButtonConfig` objects:
+
+```json
+{
+  "actions": [
+    {
+      "key": "submit_for_review",
+      "type": "api_call",
+      "label": "Submit for Review",
+      "confirm": "This will send {{name}} for approval. Continue?",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": [
+          {
+            "label": "Not Now",
+            "icon": "clock",
+            "style": "default",
+            "action": "cancel",
+            "closeModal": true
+          },
+          {
+            "label": "Submit",
+            "icon": "paper-plane",
+            "style": "primary",
+            "action": "confirm",
+            "closeModal": true
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+### Button Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Button text (translation key or plain text) |
+| `icon` | string | FontAwesome icon name |
+| `style` | string | `primary`, `secondary`, `danger`, `warning`, `default` |
+| `action` | string | `confirm`, `cancel`, `submit`, `close` |
+| `closeModal` | boolean | Close modal after action |
+
+### Modal Types
+
+The `modal_config.type` determines what content is rendered:
+
+| Type | Description |
+|------|-------------|
+| `confirm` | Message only with confirmation buttons |
+| `input` | Single or multiple input fields |
+| `form` | Full CRUD6 form (planned) |
+| `message` | Information display only |
+
+### Input Modal Example
+
+For password changes, the modal automatically shows a confirmation field when the field has `validation.match: true`:
+
+```json
+{
+  "actions": [
+    {
+      "key": "change_password",
+      "type": "field_update",
+      "label": "Change Password",
+      "icon": "key",
+      "field": "password",
+      "style": "warning",
+      "confirm": "Enter a new password for <strong>{{user_name}}</strong>.",
+      "modal_config": {
+        "type": "input",
+        "fields": ["password"]
+      }
+    }
+  ]
+}
+```
+
 ## Boolean Field Types
 
 CRUD6 supports three different boolean field rendering options:

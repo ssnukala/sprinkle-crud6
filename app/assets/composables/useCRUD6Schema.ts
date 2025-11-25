@@ -35,6 +35,36 @@ export interface DetailEditableConfig {
 /**
  * Custom action configuration for buttons and operations
  */
+/**
+ * Modal button configuration for schema-driven modals
+ */
+export interface ModalButtonConfig {
+    /** Button label (translation key or text) */
+    label: string
+    /** Button icon (FontAwesome icon name) */
+    icon?: string
+    /** Button style (primary, secondary, danger, warning, default) */
+    style?: 'primary' | 'secondary' | 'danger' | 'warning' | 'default'
+    /** Button action type */
+    action: 'confirm' | 'cancel' | 'submit' | 'close'
+    /** Close modal after action */
+    closeModal?: boolean
+}
+
+/**
+ * Modal configuration for schema-driven modals
+ */
+export interface ModalConfig {
+    /** Modal title (translation key or text) */
+    title?: string
+    /** Modal type determines content rendering */
+    type?: 'confirm' | 'input' | 'form' | 'message'
+    /** Fields to render in modal (for input/form types) */
+    fields?: string[]
+    /** Button combination preset or custom buttons */
+    buttons?: 'yes_no' | 'save_cancel' | 'ok_cancel' | 'confirm_cancel' | ModalButtonConfig[]
+}
+
 export interface ActionConfig {
     /** Unique key for the action */
     key: string
@@ -70,6 +100,8 @@ export interface ActionConfig {
     requires_password_input?: boolean
     /** For password_update: field to update with new password */
     password_field?: string
+    /** Modal configuration for schema-driven modal rendering */
+    modal_config?: ModalConfig
 }
 
 export interface CRUD6Schema {

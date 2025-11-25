@@ -8,6 +8,9 @@ import CRUD6DetailGrid from './DetailGrid.vue'
 import CRUD6MasterDetailForm from './MasterDetailForm.vue'
 import CRUD6AutoLookup from './AutoLookup.vue'
 import CRUD6ToggleSwitch from './ToggleSwitch.vue'
+import CRUD6ActionModal from './ActionModal.vue'
+import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
+import CRUD6FieldEditModal from './FieldEditModal.vue'
 
 export {
     CRUD6CreateModal,
@@ -19,5 +22,8 @@ export {
     CRUD6DetailGrid,
     CRUD6MasterDetailForm,
     CRUD6AutoLookup,
-    CRUD6ToggleSwitch
+    CRUD6ToggleSwitch,
+    CRUD6ActionModal,
+    CRUD6ConfirmActionModal,
+    CRUD6FieldEditModal
 }

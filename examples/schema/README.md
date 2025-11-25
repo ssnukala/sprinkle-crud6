@@ -149,8 +149,6 @@ The `modal_config.type` determines what content is rendered:
 
 CRUD6 supports three different boolean field rendering options:
 
-CRUD6 supports three different boolean field rendering options:
-
 ### 1. Standard Checkbox - `type: "boolean"`
 
 Traditional checkbox with label next to it.

@@ -143,7 +143,7 @@ const resolvedButtons = computed((): ModalButtonConfig[] => {
                 { 
                     label: props.action.label || 'CONFIRM', 
                     icon: props.action.icon, 
-                    style: (props.action.style as any) || 'primary', 
+                    style: (props.action.style as 'primary' | 'secondary' | 'danger' | 'warning' | 'default') || 'primary', 
                     action: 'confirm', 
                     closeModal: true 
                 }
@@ -239,8 +239,8 @@ const isFormValid = computed(() => {
         const value = fieldValues.value[field.key]
         const config = field.config
         
-        // Check required
-        if (!value) return false
+        // Check required - allow 0 and false as valid values
+        if (value === undefined || value === null || value === '') return false
         
         // Check min length
         const minLen = getMinLength(config)

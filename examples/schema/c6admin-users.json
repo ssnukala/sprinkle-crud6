@@ -70,6 +70,8 @@
     "actions": [
         {
             "key": "toggle_enabled",
+            "label": "Toggle Enabled",
+            "icon": "toggle-on",
             "type": "field_update",
             "field": "flag_enabled",
             "toggle": true,
@@ -77,6 +79,8 @@
         },
         {
             "key": "toggle_verified",
+            "label": "Toggle Verified",
+            "icon": "check-circle",
             "type": "field_update",
             "field": "flag_verified",
             "toggle": true,
@@ -84,32 +88,62 @@
         },
         {
             "key": "reset_password",
+            "label": "USER.ADMIN.SEND_PASSWORD_RESET",
+            "icon": "envelope",
             "type": "api_call",
             "method": "POST",
+            "style": "secondary",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM"
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
+            "modal_config": {
+                "type": "confirm",
+                "buttons": "yes_no"
+            }
         },
         {
             "key": "password_action",
+            "label": "USER.ADMIN.CHANGE_PASSWORD",
+            "icon": "key",
             "type": "field_update",
+            "field": "password",
+            "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM"
+            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "modal_config": {
+                "type": "input",
+                "fields": ["password"],
+                "buttons": "save_cancel"
+            }
         },
         {
             "key": "disable_user",
+            "label": "USER.DISABLE",
+            "icon": "user-slash",
             "type": "field_update",
             "field": "flag_enabled",
             "value": false,
+            "style": "danger",
             "permission": "update_user_field",
-            "confirm": "USER.DISABLE_CONFIRM"
+            "confirm": "USER.DISABLE_CONFIRM",
+            "modal_config": {
+                "type": "confirm",
+                "buttons": "yes_no"
+            }
         },
         {
             "key": "enable_user",
+            "label": "USER.ENABLE",
+            "icon": "user-check",
             "type": "field_update",
             "field": "flag_enabled",
             "value": true,
+            "style": "primary",
             "permission": "update_user_field",
-            "confirm": "USER.ENABLE_CONFIRM"
+            "confirm": "USER.ENABLE_CONFIRM",
+            "modal_config": {
+                "type": "confirm",
+                "buttons": "yes_no"
+            }
         }
     ],
     "fields": {

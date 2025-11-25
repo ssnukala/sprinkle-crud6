@@ -36,35 +36,79 @@
   "actions": [
     {
       "key": "flag_enabled_action",
+      "label": "Toggle Enabled",
+      "icon": "toggle-on",
       "type": "field_update",
+      "field": "flag_enabled",
       "toggle": true,
       "permission": "update_user_field"
     },
     {
       "key": "flag_verified_action",
+      "label": "Toggle Verified",
+      "icon": "check-circle",
       "type": "field_update",
+      "field": "flag_verified",
       "toggle": true,
       "permission": "update_user_field"
     },
     {
       "key": "password_action",
+      "label": "Change Password",
+      "icon": "key",
       "type": "field_update",
-      "permission": "update_user_field"
+      "field": "password",
+      "style": "warning",
+      "permission": "update_user_field",
+      "confirm": "Enter a new password for <strong>{{user_name}}</strong>.",
+      "modal_config": {
+        "type": "input",
+        "fields": ["password"],
+        "buttons": "save_cancel"
+      }
     },
     {
       "key": "reset_password",
+      "label": "Send Password Reset",
+      "icon": "envelope",
       "type": "api_call",
       "method": "POST",
+      "style": "secondary",
       "permission": "update_user_field",
-      "confirm": "Are you sure you want to send a password reset email to this user?"
+      "confirm": "Are you sure you want to send a password reset email to <strong>{{user_name}}</strong>?",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": "yes_no"
+      }
     },
     {
       "key": "disable_user",
+      "label": "Disable User",
+      "icon": "user-slash",
       "type": "field_update",
       "field": "flag_enabled",
       "value": false,
+      "style": "danger",
       "permission": "update_user_field",
-      "confirm": "Are you sure you want to disable this user?"
+      "confirm": "Are you sure you want to disable <strong>{{user_name}}</strong>? They will no longer be able to log in.",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": [
+          {
+            "label": "Cancel",
+            "style": "default",
+            "action": "cancel",
+            "closeModal": true
+          },
+          {
+            "label": "Disable User",
+            "icon": "user-slash",
+            "style": "danger",
+            "action": "confirm",
+            "closeModal": true
+          }
+        ]
+      }
     }
   ],
   "fields": {

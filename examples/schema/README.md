@@ -35,16 +35,53 @@ These schemas are from the sprinkle-c6admin project and demonstrate integration 
 
 CRUD6 supports schema-driven modal button combinations. You can configure buttons using presets or custom configurations.
 
+### Smart Defaults
+
+Button combinations are automatically determined based on modal type:
+
+| Modal Type | Default Buttons | Use Case |
+|------------|-----------------|----------|
+| `confirm` | Yes / No | Confirmation dialogs |
+| `input` | Cancel / Save | Field input forms |
+| `form` | Cancel / Save | Full CRUD forms |
+| `message` | Cancel / OK | Information display |
+
+This means you often don't need to specify buttons at all:
+
+```json
+{
+  "actions": [
+    {
+      "key": "reset_password",
+      "type": "api_call",
+      "confirm": "Send password reset email?",
+      "modal_config": {
+        "type": "confirm"
+      }
+    },
+    {
+      "key": "change_password",
+      "type": "field_update",
+      "field": "password",
+      "modal_config": {
+        "type": "input",
+        "fields": ["password"]
+      }
+    }
+  ]
+}
+```
+
 ### Button Presets
 
-Use these preset strings in `modal_config.buttons`:
+If you need to override the defaults, use these preset strings in `modal_config.buttons`:
 
 | Preset | Buttons | Use Case |
 |--------|---------|----------|
 | `yes_no` | No / Yes | Simple confirmations |
 | `save_cancel` | Cancel / Save | Form submissions |
 | `ok_cancel` | Cancel / OK | Acknowledgments |
-| `confirm_cancel` | Cancel / [Action Label] | Default, uses action's label |
+| `confirm_cancel` | Cancel / [Action Label] | Uses action's label |
 
 ### Preset Example
 
@@ -60,7 +97,7 @@ Use these preset strings in `modal_config.buttons`:
       "confirm": "Are you sure you want to archive {{name}}?",
       "modal_config": {
         "type": "confirm",
-        "buttons": "yes_no"
+        "buttons": "ok_cancel"
       }
     }
   ]
@@ -126,19 +163,22 @@ The `modal_config.type` determines what content is rendered:
 
 ### Input Modal Example
 
+For password changes, the modal automatically shows a confirmation field when the field has `validation.match: true`:
+
 ```json
 {
   "actions": [
     {
-      "key": "update_password",
+      "key": "change_password",
       "type": "field_update",
       "label": "Change Password",
+      "icon": "key",
       "field": "password",
-      "confirm": "Enter a new password for {{user_name}}",
+      "style": "warning",
+      "confirm": "Enter a new password for <strong>{{user_name}}</strong>.",
       "modal_config": {
         "type": "input",
-        "fields": ["password"],
-        "buttons": "save_cancel"
+        "fields": ["password"]
       }
     }
   ]

@@ -59,14 +59,37 @@ const modalId = computed(() => {
 
 /**
  * Computed - Modal configuration with defaults
+ * Smart defaults for button combinations based on modal type:
+ * - 'confirm' type → defaults to 'yes_no'
+ * - 'input'/'form' type → defaults to 'save_cancel'
+ * - 'message' type → defaults to 'ok_cancel'
  */
 const modalConfig = computed((): ModalConfig => {
     const config = props.action.modal_config || {}
+    const modalType = config.type || (props.action.confirm ? 'confirm' : 'input')
+    
+    // Determine default buttons based on modal type if not explicitly set
+    let defaultButtons: ModalConfig['buttons']
+    switch (modalType) {
+        case 'confirm':
+            defaultButtons = 'yes_no'
+            break
+        case 'input':
+        case 'form':
+            defaultButtons = 'save_cancel'
+            break
+        case 'message':
+            defaultButtons = 'ok_cancel'
+            break
+        default:
+            defaultButtons = 'confirm_cancel'
+    }
+    
     return {
-        type: config.type || (props.action.confirm ? 'confirm' : 'input'),
+        type: modalType,
         title: config.title || props.action.label,
         fields: config.fields || (props.action.field ? [props.action.field] : []),
-        buttons: config.buttons || 'confirm_cancel'
+        buttons: config.buttons || defaultButtons
     }
 })
 

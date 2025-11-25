@@ -96,8 +96,7 @@
             "permission": "update_user_field",
             "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
-                "type": "confirm",
-                "buttons": "yes_no"
+                "type": "confirm"
             }
         },
         {
@@ -111,8 +110,7 @@
             "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
             "modal_config": {
                 "type": "input",
-                "fields": ["password"],
-                "buttons": "save_cancel"
+                "fields": ["password"]
             }
         },
         {
@@ -126,8 +124,7 @@
             "permission": "update_user_field",
             "confirm": "USER.DISABLE_CONFIRM",
             "modal_config": {
-                "type": "confirm",
-                "buttons": "yes_no"
+                "type": "confirm"
             }
         },
         {
@@ -141,8 +138,7 @@
             "permission": "update_user_field",
             "confirm": "USER.ENABLE_CONFIRM",
             "modal_config": {
-                "type": "confirm",
-                "buttons": "yes_no"
+                "type": "confirm"
             }
         }
     ],

@@ -276,6 +276,17 @@ const isFormValid = computed(() => {
 })
 
 /**
+ * Check if a button should be disabled
+ */
+function shouldDisableButton(button: ModalButtonConfig): boolean {
+    // Only disable confirm/submit buttons when form has fields and is invalid
+    if (button.action === 'confirm' || button.action === 'submit') {
+        return fieldsToRender.value.length > 0 && !isFormValid.value
+    }
+    return false
+}
+
+/**
  * Handle button click
  */
 function handleButtonClick(button: ModalButtonConfig) {
@@ -467,7 +478,7 @@ function resetForm() {
                         { 'uk-modal-close': button.closeModal }
                     ]"
                     type="button"
-                    :disabled="(button.action === 'confirm' || button.action === 'submit') && fieldsToRender.length > 0 && !isFormValid"
+                    :disabled="shouldDisableButton(button)"
                     @click="handleButtonClick(button)"
                     :data-test="`btn-${button.action}-${action.key}`">
                     <font-awesome-icon v-if="button.icon" :icon="button.icon" fixed-width />

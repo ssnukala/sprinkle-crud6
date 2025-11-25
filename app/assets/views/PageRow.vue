@@ -134,13 +134,16 @@ const flattenedSchema = computed(() => {
         debugLog('[PageRow] Multi-context schema detected, flattening...')
         
         // Start with base schema properties
-        const flattened = {
+        const flattened: Record<string, any> = {
             model: schema.value.model,
             title: schema.value.title,
             singular_title: schema.value.singular_title,
             description: schema.value.description,
             primary_key: schema.value.primary_key,
             permissions: schema.value.permissions,
+            // Preserve contexts for child components that need access to all fields
+            // (e.g., Info.vue needs form context fields for action modals like password change)
+            contexts: schema.value.contexts,
         }
         
         // Merge 'detail' context data if present (for detail view display)

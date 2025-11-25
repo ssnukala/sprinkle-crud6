@@ -122,13 +122,36 @@ const modalTitle = computed(() => {
  * Computed - Fields to render in modal
  */
 const fieldsToRender = computed(() => {
-    if (!modalConfig.value.fields || !props.schemaFields) return []
-    return modalConfig.value.fields
-        .map(fieldKey => ({
-            key: fieldKey,
-            config: props.schemaFields?.[fieldKey]
-        }))
+    const fields = modalConfig.value.fields
+    const schemaFields = props.schemaFields
+    
+    // Debug: log what we're receiving
+    console.log('[ActionModal] fieldsToRender check:', {
+        actionKey: props.action.key,
+        modalConfigType: modalConfig.value.type,
+        modalConfigFields: fields,
+        hasSchemaFields: !!schemaFields,
+        schemaFieldsKeys: schemaFields ? Object.keys(schemaFields) : []
+    })
+    
+    if (!fields || !schemaFields) {
+        console.log('[ActionModal] Returning empty - missing fields or schemaFields')
+        return []
+    }
+    
+    const result = fields
+        .map(fieldKey => {
+            const config = schemaFields[fieldKey]
+            console.log('[ActionModal] Field lookup:', fieldKey, '-> config:', config ? 'found' : 'not found')
+            return {
+                key: fieldKey,
+                config
+            }
+        })
         .filter(f => f.config)
+    
+    console.log('[ActionModal] fieldsToRender result:', result.length, 'fields')
+    return result
 })
 
 /**

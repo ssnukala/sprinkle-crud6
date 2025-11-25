@@ -113,9 +113,17 @@
         },
         {
             "key": "password_action",
+            "label": "USER.ADMIN.CHANGE_PASSWORD",
+            "icon": "key",
             "type": "field_update",
+            "field": "password",
+            "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM"
+            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "modal_config": {
+                "type": "input",
+                "fields": ["password"]
+            }
         },
         {
             "key": "disable_user",

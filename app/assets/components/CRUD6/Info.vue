@@ -57,6 +57,14 @@ const hasUpdatePermission = computed(() => hasPermission('update'))
 const hasDeletePermission = computed(() => hasPermission('delete'))
 const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 
+// Schema fields for ActionModal - explicitly computed to ensure proper reactivity
+// Direct template access to finalSchema?.fields can cause issues when the schema
+// is loaded asynchronously, as the optional chaining may return undefined before
+// the schema is fully loaded. This computed property ensures consistent behavior.
+const schemaFieldsForModal = computed(() => {
+    return finalSchema.value?.fields || {}
+})
+
 // Model label for buttons - prioritize singular_title over model name
 // Support translation keys (e.g., "USER.SINGULAR") or plain text
 const modelLabel = computed(() => {
@@ -273,7 +281,7 @@ const customActions = computed(() => {
                     v-if="requiresModal(action)"
                     :action="action"
                     :record="crud6"
-                    :schema-fields="finalSchema?.fields"
+                    :schema-fields="schemaFieldsForModal"
                     :model="model"
                     @confirmed="handleActionClick(action, $event)" />
                 

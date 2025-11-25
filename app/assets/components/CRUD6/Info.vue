@@ -7,8 +7,7 @@ import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6EditModal from './EditModal.vue'
 import CRUD6DeleteModal from './DeleteModal.vue'
-import CRUD6ConfirmActionModal from './ConfirmActionModal.vue'
-import CRUD6FieldEditModal from './FieldEditModal.vue'
+import CRUD6ActionModal from './ActionModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInference'
 
@@ -110,9 +109,9 @@ function formatFieldValue(value: any, field: any): string {
 }
 
 // Handle custom action execution (called after modal confirmation)
-async function handleActionClick(action: ActionConfig, passwordData?: { password: string }) {
-    // For password actions, merge password data with record
-    const recordData = passwordData ? { ...crud6, ...passwordData } : crud6
+async function handleActionClick(action: ActionConfig, actionData?: Record<string, any>) {
+    // For actions with input data (password, field updates, etc.), merge with record
+    const recordData = actionData ? { ...crud6, ...actionData } : crud6
     
     const success = await executeActionWithoutConfirm(action, crud6.id, recordData)
     if (success && (action.type === 'field_update' || action.type === 'password_update')) {
@@ -121,32 +120,32 @@ async function handleActionClick(action: ActionConfig, passwordData?: { password
     }
 }
 
-// Check if action requires field input modal
-function requiresFieldInput(action: ActionConfig): boolean {
-    // Check if it's a deprecated password_update type or has requires_password_input flag
+// Check if action requires a modal (either for confirmation or input)
+function requiresModal(action: ActionConfig): boolean {
+    // Action has confirmation message
+    if (action.confirm) {
+        return true
+    }
+    
+    // Action has modal_config with input type
+    if (action.modal_config?.type === 'input' || action.modal_config?.type === 'form') {
+        return true
+    }
+    
+    // Legacy: password_update type or requires_password_input flag
     if (action.type === 'password_update' || action.requires_password_input === true) {
         return true
     }
     
-    // Check if it's a field_update with validation.match (requires confirmation input)
+    // Field update with validation.match (requires confirmation input)
     if (action.type === 'field_update' && action.field && finalSchema.value?.fields) {
         const fieldConfig = finalSchema.value.fields[action.field]
-        // Show field edit modal if field has match validation (needs confirmation)
         if (fieldConfig?.validation?.match === true) {
             return true
         }
     }
     
     return false
-}
-
-// Get field configuration for an action
-function getFieldConfig(action: ActionConfig): any {
-    const field = action.field || inferFieldFromKey(action.key)
-    if (field && finalSchema.value?.fields) {
-        return finalSchema.value.fields[field]
-    }
-    return null
 }
 
 // Get action label with proper fallback logic
@@ -159,7 +158,8 @@ function getActionLabel(action: ActionConfig): string {
         if (translated === action.label && action.label.startsWith('CRUD6.ACTION.EDIT_')) {
             // This is an auto-generated translation key that doesn't exist
             // Fallback to field label
-            const fieldConfig = getFieldConfig(action)
+            const field = action.field || inferFieldFromKey(action.key)
+            const fieldConfig = field && finalSchema.value?.fields ? finalSchema.value.fields[field] : null
             if (fieldConfig?.label) {
                 return translator.translate(fieldConfig.label) || fieldConfig.label
             }
@@ -266,26 +266,18 @@ const customActions = computed(() => {
             <!-- Action buttons with dynamic permissions -->
             
             <!-- Custom action buttons from schema -->
-            <!-- Use FieldEditModal for fields with match validation, ConfirmActionModal for confirmations, or direct button -->
+            <!-- Unified ActionModal handles all cases: confirmation, input, or both -->
             <template v-for="action in customActions" :key="action.key">
-                <!-- Field edit action - use field edit modal (for fields requiring confirmation input) -->
-                <CRUD6FieldEditModal
-                    v-if="requiresFieldInput(action)"
+                <!-- Actions requiring modal (confirmation or input) -->
+                <CRUD6ActionModal
+                    v-if="requiresModal(action)"
                     :action="action"
                     :record="crud6"
-                    :field-config="getFieldConfig(action)"
+                    :schema-fields="finalSchema?.fields"
                     :model="model"
                     @confirmed="handleActionClick(action, $event)" />
                 
-                <!-- Action with confirmation - use confirm modal -->
-                <CRUD6ConfirmActionModal
-                    v-else-if="action.confirm"
-                    :action="action"
-                    :record="crud6"
-                    :model="model"
-                    @confirmed="handleActionClick(action)" />
-                
-                <!-- Action without confirmation - direct button -->
+                <!-- Action without modal - direct button -->
                 <button
                     v-else
                     @click="handleActionClick(action)"

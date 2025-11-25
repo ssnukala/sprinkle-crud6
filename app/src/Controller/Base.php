@@ -21,6 +21,8 @@ use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\Core\Util\ApiResponse;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\HandlesErrorLogging;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -38,6 +40,8 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 abstract class Base
 {
+    use HandlesErrorLogging;
+
     /**
      * @var array<string, array> Cache of loaded schemas by model name
      */
@@ -576,5 +580,67 @@ abstract class Base
     protected function getSchemaFromRequest(ServerRequestInterface $request): array
     {
         return $this->getParameter($request, 'crudSchema'); // to set routeParams if not already set
+    }
+
+    /**
+     * Create a JSON success response following UserFrosting 6 pattern.
+     * 
+     * This method creates a standardized JSON response using ApiResponse class.
+     * Use this for successful API operations that return a message to the client.
+     * 
+     * @param ResponseInterface $response The HTTP response object
+     * @param string            $message  The success message (used as description)
+     * @param int               $status   HTTP status code (default: 200)
+     * 
+     * @return ResponseInterface The response with JSON body and headers
+     * 
+     * @see \UserFrosting\Sprinkle\Core\Util\ApiResponse
+     */
+    protected function jsonResponse(ResponseInterface $response, string $message, int $status = 200): ResponseInterface
+    {
+        $payload = new ApiResponse($message);
+        $response->getBody()->write((string) $payload);
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
+    }
+
+    /**
+     * Create a JSON success response with title and description.
+     * 
+     * Use this for operations that need both a title and description in the response,
+     * such as create/update operations that display success modals.
+     * 
+     * @param ResponseInterface $response    The HTTP response object
+     * @param string            $title       The response title
+     * @param string            $description The response description
+     * @param int               $status      HTTP status code (default: 200)
+     * 
+     * @return ResponseInterface The response with JSON body and headers
+     */
+    protected function jsonResponseWithTitle(ResponseInterface $response, string $title, string $description, int $status = 200): ResponseInterface
+    {
+        $payload = new ApiResponse($title, $description);
+        $response->getBody()->write((string) $payload);
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
+    }
+
+    /**
+     * Create a JSON response with custom data.
+     * 
+     * Use this for API endpoints that need to return custom data structures
+     * beyond the standard ApiResponse format (e.g., Sprunje results, record data).
+     * 
+     * @param ResponseInterface $response The HTTP response object
+     * @param array             $data     The data to encode as JSON
+     * @param int               $status   HTTP status code (default: 200)
+     * 
+     * @return ResponseInterface The response with JSON body and headers
+     */
+    protected function jsonDataResponse(ResponseInterface $response, array $data, int $status = 200): ResponseInterface
+    {
+        $response->getBody()->write(json_encode($data, JSON_THROW_ON_ERROR));
+        
+        return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
     }
 }

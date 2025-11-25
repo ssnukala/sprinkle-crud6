@@ -15,7 +15,6 @@ use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -153,6 +152,7 @@ class RelationshipAction extends Base
                 "User {$currentUser->user_name} {$action} {$relationName} for {$crudSchema['model']} {$crudModel->id}.",
                 [
                     'type'     => 'relationship_' . $action,
+                    'user_id'  => $currentUser->id,
                     'model'    => $crudSchema['model'],
                     'id'       => $crudModel->id,
                     'relation' => $relationName,
@@ -174,7 +174,7 @@ class RelationshipAction extends Base
             'count'    => count($relatedIds),
         ]);
 
-        return ApiResponse::success($response, $message);
+        return $this->jsonResponse($response, $message);
     }
 
     /**

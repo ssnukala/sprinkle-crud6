@@ -21,7 +21,6 @@ use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -57,6 +56,7 @@ class UpdateFieldAction extends Base
         protected Connection $db,
         protected Hasher $hasher,
         protected ServerSideValidator $validator,
+        protected RequestDataTransformer $transformer,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -169,9 +169,8 @@ class UpdateFieldAction extends Base
                 'field' => $fieldName,
             ]);
 
-            // Transform data
-            $transformer = new RequestDataTransformer($validationSchema);
-            $data = $transformer->transform($params);
+            // Transform data using injected transformer
+            $data = $this->transformer->transform($validationSchema, $params);
             
             // For fields with no validation rules (especially booleans), ensure the field is in the data
             // RequestDataTransformer may skip fields with empty validation schemas
@@ -237,6 +236,7 @@ class UpdateFieldAction extends Base
                     "User {$currentUser->user_name} updated field '{$fieldName}' for {$crudSchema['model']} {$crudModel->id}.",
                     [
                         'type'    => 'update_field',
+                        'user_id' => $currentUser->id,
                         'model'   => $crudSchema['model'],
                         'id'      => $crudModel->id,
                         'field'   => $fieldName,
@@ -287,7 +287,7 @@ class UpdateFieldAction extends Base
                 'message' => $message,
             ]);
 
-            return ApiResponse::success($response, $message, $recordData);
+            return $this->jsonResponse($response, $message);
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

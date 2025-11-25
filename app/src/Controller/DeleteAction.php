@@ -14,7 +14,6 @@ use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
@@ -78,7 +77,6 @@ class DeleteAction extends Base
             // Write response with title and description
             $title = $this->translator->translate('CRUD6.DELETE.SUCCESS_TITLE');
             $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
-            $payload = new ApiResponse($title, $description);
             
             $this->debugLog("CRUD6 [DeleteAction] Delete response prepared", [
                 'model' => $crudSchema['model'],
@@ -87,9 +85,7 @@ class DeleteAction extends Base
                 'description' => $description,
             ]);
 
-            $response->getBody()->write((string) $payload);
-
-            return $response->withHeader('Content-Type', 'application/json');
+            return $this->jsonResponseWithTitle($response, $title, $description);
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
@@ -27,19 +27,6 @@ const emits = defineEmits(['crud6Updated'])
 
 // Get model from route parameter for schema loading
 const model = computed(() => route.params.model as string)
-
-// Lazy loading state for modals (following PageList pattern)
-const showEditModal = ref(false)
-const showDeleteModal = ref(false)
-
-// Helper functions to lazily load modals
-function requestEditModal() {
-    showEditModal.value = true
-}
-
-function requestDeleteModal() {
-    showDeleteModal.value = true
-}
 
 // Conditional composable usage - only when no schema prop provided
 // This prevents the automatic schema loading that happens in useCRUD6Schema initialization
@@ -219,7 +206,7 @@ const customActions = computed(() => {
 
 // Schema loading is completely handled by parent PageRow component and passed as a prop
 // When schema prop is provided, we don't use the composable for loading at all to avoid redundant API calls
-// The lazy loading pattern prevents modal components from being instantiated until user interaction
+// Modal components (EditModal, DeleteModal) include their own trigger buttons and use UIKit modals
 </script>
 
 <template>
@@ -276,7 +263,7 @@ const customActions = computed(() => {
             
             <hr />
             
-            <!-- Action buttons with dynamic permissions - Lazy Loading Pattern -->
+            <!-- Action buttons with dynamic permissions -->
             
             <!-- Custom action buttons from schema -->
             <!-- Use FieldEditModal for fields with match validation, ConfirmActionModal for confirmations, or direct button -->
@@ -316,36 +303,18 @@ const customActions = computed(() => {
                 </button>
             </template>
             
-            <!-- Edit button - shows modal only after user clicks -->
-            <button
-                v-if="hasUpdatePermission && !showEditModal"
-                @click="requestEditModal()"
-                data-test="btn-edit"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small">
-                <font-awesome-icon icon="pen-to-square" fixed-width /> {{ $t('CRUD6.EDIT', { model: modelLabel }) }}
-            </button>
-            
-            <!-- Edit Modal - only rendered after user requests it -->
+            <!-- Edit Modal - renders trigger button and modal together (UIKit handles visibility) -->
             <CRUD6EditModal
-                v-if="hasUpdatePermission && showEditModal"
+                v-if="hasUpdatePermission"
                 :crud6="crud6"
                 :model="model"
                 :schema="finalSchema"
                 @saved="emits('crud6Updated')"
                 class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small" />
             
-            <!-- Delete button - shows modal only after user clicks -->
-            <button
-                v-if="hasDeletePermission && !showDeleteModal"
-                @click="requestDeleteModal()"
-                data-test="btn-delete"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small">
-                <font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}
-            </button>
-            
-            <!-- Delete Modal - only rendered after user requests it -->
+            <!-- Delete Modal - renders trigger button and modal together (UIKit handles visibility) -->
             <CRUD6DeleteModal
-                v-if="hasDeletePermission && showDeleteModal"
+                v-if="hasDeletePermission"
                 :crud6="crud6"
                 :model="model"
                 :schema="finalSchema"

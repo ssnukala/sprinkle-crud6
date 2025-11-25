@@ -22,7 +22,6 @@ use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
-use UserFrosting\Sprinkle\Core\Util\ApiResponse;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -147,7 +146,7 @@ class CustomActionController extends Base
                 'action_key' => $actionKey,
             ]);
 
-            return ApiResponse::success($response, $description, $result ?? []);
+            return $this->jsonResponse($response, $description);
         } catch (\Exception $e) {
             $this->logger->error("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

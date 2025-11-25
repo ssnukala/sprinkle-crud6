@@ -14,6 +14,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Database\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use UserFrosting\Sprinkle\Core\Database\Models\Model;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
@@ -31,6 +32,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
  * - Schema-based field casting
  * - Soft delete support when enabled in schema
  * - Timestamp management based on schema configuration
+ * - Dynamic relationship methods based on schema (e.g., roles(), permissions())
  *
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
@@ -67,6 +69,24 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     protected $deleted_at = null;
 
     /**
+     * @var array<string, array<string, array>> Static storage for relationship configurations.
+     * Keyed by table name, then by relationship name. This allows all model instances
+     * (including hydrated ones) to access relationship configurations.
+     * 
+     * Structure: ['table_name' => ['roles' => [...config...], 'permissions' => [...config...]]]
+     */
+    protected static array $staticRelationships = [];
+
+    /**
+     * @var array<string, array> Static storage for schema configurations keyed by table name.
+     * Stores fillable, casts, timestamps, and soft_delete settings so hydrated instances
+     * can access them.
+     * 
+     * Structure: ['table_name' => ['fillable' => [...], 'casts' => [...], 'timestamps' => bool, 'deleted_at' => string|null]]
+     */
+    protected static array $staticSchemaConfig = [];
+
+    /**
      * Configure the model with schema information
      *
      * @param array $schema The JSON schema configuration
@@ -74,7 +94,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function configureFromSchema(array $schema): static
     {
-        // Set table name
+        // Set table name first (needed for static storage keys)
         if (isset($schema['table'])) {
             $this->table = $schema['table'];
         }
@@ -87,14 +107,199 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $this->timestamps = $schema['timestamps'] ?? false;
 
         // Configure soft deletes
-        if ($schema['soft_delete'] ?? false) {
-            $this->deleted_at = 'deleted_at';
-        }
+        $this->deleted_at = ($schema['soft_delete'] ?? false) ? 'deleted_at' : null;
 
         // Set fillable attributes and casts based on schema fields
         $this->configureFillableAndCasts($schema);
 
+        // Configure dynamic relationships from schema
+        $this->configureRelationships($schema);
+
+        // Store schema config in static property for hydrated instances
+        if ($this->table && $this->table !== 'CRUD6_NOT_SET') {
+            static::$staticSchemaConfig[$this->table] = [
+                'fillable' => $this->fillable,
+                'casts' => $this->casts,
+                'timestamps' => $this->timestamps,
+                'deleted_at' => $this->deleted_at,
+            ];
+        }
+
         return $this;
+    }
+
+    /**
+     * Configure dynamic relationships from schema.
+     *
+     * Reads the 'relationships' array from the schema and stores each relationship
+     * configuration in a static property keyed by table name. This allows the __call 
+     * magic method to create Eloquent relationship methods dynamically (e.g., $model->roles()).
+     * 
+     * Using static storage ensures that all model instances (including those hydrated by
+     * Eloquent when retrieving records from the database) can access the relationship 
+     * configurations as long as configureFromSchema() was called once for that table.
+     *
+     * @param array $schema The JSON schema configuration
+     * @return void
+     */
+    protected function configureRelationships(array $schema): void
+    {
+        if (!isset($schema['relationships']) || !is_array($schema['relationships'])) {
+            return;
+        }
+
+        // Build relationships array for this table
+        $relationships = [];
+        foreach ($schema['relationships'] as $relationship) {
+            $name = $relationship['name'] ?? null;
+            if ($name) {
+                $relationships[$name] = $relationship;
+            }
+        }
+
+        // Store in static property keyed by table name
+        if ($this->table && $this->table !== 'CRUD6_NOT_SET') {
+            static::$staticRelationships[$this->table] = $relationships;
+        }
+    }
+
+    /**
+     * Get the configuration for a dynamic relationship.
+     * 
+     * Retrieves the relationship configuration from static storage using the table name.
+     *
+     * @param string $name The relationship name
+     * @return array|null The relationship configuration, or null if not found
+     */
+    public function getRelationshipConfig(string $name): ?array
+    {
+        if ($this->table && isset(static::$staticRelationships[$this->table][$name])) {
+            return static::$staticRelationships[$this->table][$name];
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a dynamic relationship exists.
+     * 
+     * Checks the static storage (keyed by table name) for the relationship configuration.
+     *
+     * @param string $name The relationship name
+     * @return bool True if the relationship is configured
+     */
+    public function hasRelationship(string $name): bool
+    {
+        return $this->table && isset(static::$staticRelationships[$this->table][$name]);
+    }
+
+    /**
+     * Clear static configurations (relationships and schema config).
+     * 
+     * Useful for testing or when switching between different schemas.
+     * Can clear all static data or just those for a specific table.
+     *
+     * @param string|null $table Optional table name to clear. If null, clears all.
+     * @return void
+     */
+    public static function clearStaticConfig(?string $table = null): void
+    {
+        if ($table === null) {
+            static::$staticRelationships = [];
+            static::$staticSchemaConfig = [];
+        } else {
+            unset(static::$staticRelationships[$table]);
+            unset(static::$staticSchemaConfig[$table]);
+        }
+    }
+
+    /**
+     * Handle dynamic method calls for relationships.
+     *
+     * When a method like roles() is called on this model, this magic method
+     * checks if it's a configured dynamic relationship and returns the
+     * appropriate Eloquent BelongsToMany relationship.
+     *
+     * @param string $method The method name being called
+     * @param array  $parameters The parameters passed to the method
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        // Check if this is a dynamic relationship call
+        if ($this->hasRelationship($method)) {
+            return $this->getDynamicRelationship($method);
+        }
+
+        // Fall back to parent __call for other dynamic methods
+        return parent::__call($method, $parameters);
+    }
+
+    /**
+     * Create and return a dynamic BelongsToMany relationship.
+     *
+     * Uses the relationship configuration from the schema to create an Eloquent
+     * BelongsToMany relationship that can be used for attach/sync/detach operations.
+     * 
+     * Note: We use `static::class` as the related model because we only need the pivot
+     * table operations (attach/sync/detach). The BelongsToMany relationship doesn't
+     * actually need to know about the related model's table - it only needs the pivot
+     * table configuration. Using self-reference allows pivot operations to work without
+     * requiring the related entity to have a specific model class.
+     *
+     * @param string $name The relationship name
+     * @return BelongsToMany
+     * @throws \InvalidArgumentException If relationship type is not supported
+     */
+    protected function getDynamicRelationship(string $name): BelongsToMany
+    {
+        // Use getRelationshipConfig() to check both instance and static storage
+        $config = $this->getRelationshipConfig($name);
+        
+        if ($config === null) {
+            throw new \InvalidArgumentException(
+                "Dynamic relationship '{$name}' not found. " .
+                "Ensure configureFromSchema() was called before accessing relationships."
+            );
+        }
+        
+        $type = $config['type'] ?? 'many_to_many';
+
+        if ($type !== 'many_to_many') {
+            throw new \InvalidArgumentException(
+                "Dynamic relationship '{$name}' has unsupported type '{$type}'. " .
+                "Only 'many_to_many' relationships are supported for attach/sync/detach operations."
+            );
+        }
+
+        // For many_to_many relationships, we use belongsToMany with a generic model
+        // The related table doesn't need a specific model class - we just need the pivot table
+        $pivotTable = $config['pivot_table'] ?? null;
+        $foreignKey = $config['foreign_key'] ?? null;
+        $relatedKey = $config['related_key'] ?? null;
+
+        if (!$pivotTable || !$foreignKey || !$relatedKey) {
+            throw new \InvalidArgumentException(
+                "Dynamic relationship '{$name}' is missing required configuration: " .
+                "pivot_table, foreign_key, or related_key."
+            );
+        }
+
+        // Create a generic relationship using self (CRUD6Model) as the related model.
+        // This works because BelongsToMany only uses the related model for eager loading
+        // and returning related records. For pivot operations (attach/sync/detach),
+        // only the pivot table configuration matters. The self-reference allows us to
+        // use standard Eloquent pivot operations without needing a concrete model class
+        // for the related entity.
+        return $this->belongsToMany(
+            static::class,   // Related model (self - we just need pivot operations)
+            $pivotTable,     // Pivot table name
+            $foreignKey,     // Foreign key in pivot table (points to this model)
+            $relatedKey,     // Related key in pivot table (points to related model)
+            null,            // Local key (default: primary key)
+            null,            // Related key on related model (default: primary key)
+            $name            // Relation name
+        );
     }
 
     /**
@@ -123,12 +328,58 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
     /**
      * Get the fillable attributes
+     * 
+     * Returns fillable from static storage (keyed by table name) if available,
+     * otherwise falls back to the instance property.
      *
      * @return array
      */
     public function getFillable(): array
     {
+        // Use static storage when available (this is the primary source for configured models)
+        if ($this->table && isset(static::$staticSchemaConfig[$this->table]['fillable'])) {
+            return static::$staticSchemaConfig[$this->table]['fillable'];
+        }
+
+        // Fall back to instance property
         return $this->fillable;
+    }
+
+    /**
+     * Get the casts array.
+     * 
+     * Returns casts from static storage merged with instance property.
+     *
+     * @return array
+     */
+    public function getCasts(): array
+    {
+        // Start with instance casts
+        $casts = $this->casts;
+
+        // Merge with static storage (static takes precedence for configured fields)
+        if ($this->table && isset(static::$staticSchemaConfig[$this->table]['casts'])) {
+            $casts = array_merge($casts, static::$staticSchemaConfig[$this->table]['casts']);
+        }
+
+        return $casts;
+    }
+
+    /**
+     * Determine if the model uses timestamps.
+     * 
+     * Checks static storage for hydrated instances.
+     *
+     * @return bool
+     */
+    public function usesTimestamps(): bool
+    {
+        // Check static storage for hydrated instances
+        if ($this->table && isset(static::$staticSchemaConfig[$this->table]['timestamps'])) {
+            return static::$staticSchemaConfig[$this->table]['timestamps'];
+        }
+
+        return $this->timestamps;
     }
 
     /**
@@ -219,8 +470,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeWithoutSoftDeleted(Builder $query): Builder
     {
-        if ($this->deleted_at) {
-            return $query->whereNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            return $query->whereNull($deletedAtColumn);
         }
 
         return $query;
@@ -234,8 +486,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function scopeOnlySoftDeleted(Builder $query): Builder
     {
-        if ($this->deleted_at) {
-            return $query->whereNotNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            return $query->whereNotNull($deletedAtColumn);
         }
 
         return $query;
@@ -260,8 +513,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function softDelete(): bool
     {
-        if ($this->deleted_at) {
-            $this->{$this->getDeletedAtColumn()} = date('Y-m-d H:i:s');
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $this->{$deletedAtColumn} = date('Y-m-d H:i:s');
             return $this->save();
         }
 
@@ -275,8 +529,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function restore(): bool
     {
-        if ($this->deleted_at) {
-            $this->{$this->getDeletedAtColumn()} = null;
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $this->{$deletedAtColumn} = null;
             return $this->save();
         }
 
@@ -290,11 +545,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function isSoftDeleted(): bool
     {
-        if (!$this->deleted_at) {
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn === null) {
             return false;
         }
 
-        return !is_null($this->{$this->getDeletedAtColumn()});
+        return !is_null($this->{$deletedAtColumn});
     }
 
     /**
@@ -320,8 +576,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $query = parent::newQuery();
 
         // Automatically apply soft delete filter if enabled (but only if deleted_at column exists)
-        if ($this->deleted_at) {
-            $query->whereNull($this->getDeletedAtColumn());
+        $deletedAtColumn = $this->getDeletedAtColumn();
+        if ($deletedAtColumn !== null) {
+            $query->whereNull($deletedAtColumn);
         }
 
         return $query;
@@ -329,12 +586,34 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
     /**
      * Get the name of the "deleted at" column.
+     * 
+     * Checks static storage for hydrated instances.
      *
-     * @return string
+     * @return string|null
      */
-    public function getDeletedAtColumn(): string
+    public function getDeletedAtColumn(): ?string
     {
-        return $this->deleted_at ?? 'deleted_at';
+        // Check instance property first
+        if ($this->deleted_at !== null) {
+            return $this->deleted_at;
+        }
+
+        // Fall back to static storage for hydrated instances
+        if ($this->table && isset(static::$staticSchemaConfig[$this->table]['deleted_at'])) {
+            return static::$staticSchemaConfig[$this->table]['deleted_at'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if soft deletes are enabled for this model.
+     * 
+     * @return bool
+     */
+    public function hasSoftDeletes(): bool
+    {
+        return $this->getDeletedAtColumn() !== null;
     }
 
     /**

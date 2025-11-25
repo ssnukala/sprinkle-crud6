@@ -17,6 +17,11 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
  * - on_create: Triggered after creating a record
  * - on_update: Triggered after updating a record
  * - on_delete: Triggered before deleting a record
+ * 
+ * This trait uses Eloquent's BelongsToMany relationship methods (attach/sync/detach)
+ * which are dynamically created on CRUD6Model based on schema configuration.
+ * When configureFromSchema() is called, relationships defined in the schema become
+ * available as methods (e.g., $model->roles() for a 'roles' relationship).
  */
 trait ProcessesRelationshipActions
 {
@@ -92,10 +97,38 @@ trait ProcessesRelationshipActions
     }
 
     /**
+     * Find relationship configuration by name in the schema.
+     * 
+     * Searches through the schema's relationships array to find the configuration
+     * for a specific relationship by name.
+     * 
+     * @param array  $schema       The schema configuration
+     * @param string $relationName The name of the relationship to find
+     * 
+     * @return array|null The relationship configuration, or null if not found
+     */
+    protected function findRelationshipConfig(array $schema, string $relationName): ?array
+    {
+        if (!isset($schema['relationships']) || !is_array($schema['relationships'])) {
+            return null;
+        }
+
+        foreach ($schema['relationships'] as $relationship) {
+            if (($relationship['name'] ?? null) === $relationName) {
+                return $relationship;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Process attach action to add related records.
      * 
-     * Attaches one or more related records to the model's relationship,
-     * optionally with additional pivot table data.
+     * Attaches one or more related records to the model's relationship
+     * using Eloquent's BelongsToMany::attach() method. The relationship
+     * method (e.g., roles()) is dynamically available on the model after
+     * configureFromSchema() has been called.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -128,7 +161,8 @@ trait ProcessesRelationshipActions
             // Process special values in pivot data
             $pivotData = $this->processPivotData($pivotData);
 
-            // Attach the related record
+            // Use Eloquent's attach method via dynamic relationship
+            // e.g., $model->roles()->attach($relatedId, $pivotData)
             $model->{$relationName}()->attach($relatedId, $pivotData);
 
             $this->debugLog("CRUD6 [RelationshipActions] Attached relationship", [
@@ -145,8 +179,9 @@ trait ProcessesRelationshipActions
      * Process sync action to synchronize related records.
      * 
      * Synchronizes the model's relationship with the IDs provided in the
-     * request data. This will attach new records, keep existing ones, and
-     * detach any that are not in the provided list.
+     * request data using Eloquent's BelongsToMany::sync() method. This will
+     * attach new records, keep existing ones, and detach any that are not
+     * in the provided list.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -179,12 +214,13 @@ trait ProcessesRelationshipActions
         // Get related IDs from data (ensure array format)
         $relatedIds = is_array($data[$fieldName]) ? $data[$fieldName] : [$data[$fieldName]];
 
-        // Filter out empty values
-        $relatedIds = array_filter($relatedIds, function ($id) {
-            return $id !== null && $id !== '';
-        });
+        // Filter out empty values and validate that IDs are numeric
+        $relatedIds = array_values(array_filter($relatedIds, function ($id) {
+            return $id !== null && $id !== '' && (is_numeric($id) || is_string($id));
+        }));
 
-        // Sync the relationship
+        // Use Eloquent's sync method via dynamic relationship
+        // e.g., $model->roles()->sync($relatedIds)
         $model->{$relationName}()->sync($relatedIds);
 
         $this->debugLog("CRUD6 [RelationshipActions] Synced relationship", [
@@ -198,8 +234,8 @@ trait ProcessesRelationshipActions
     /**
      * Process detach action to remove related records.
      * 
-     * Detaches related records from the model's relationship. Can detach
-     * all records or specific ones by ID.
+     * Detaches related records from the model's relationship using Eloquent's
+     * BelongsToMany::detach() method. Can detach all records or specific ones by ID.
      * 
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
@@ -217,7 +253,8 @@ trait ProcessesRelationshipActions
         string $event
     ): void {
         if ($detachConfig === 'all') {
-            // Detach all related records
+            // Detach all related records using Eloquent's detach() with no arguments
+            // e.g., $model->roles()->detach()
             $model->{$relationName}()->detach();
 
             $this->debugLog("CRUD6 [RelationshipActions] Detached all relationships", [
@@ -226,7 +263,8 @@ trait ProcessesRelationshipActions
                 'relationship' => $relationName,
             ]);
         } elseif (is_array($detachConfig)) {
-            // Detach specific IDs
+            // Detach specific IDs using Eloquent's detach() with IDs array
+            // e.g., $model->roles()->detach([1, 2, 3])
             $model->{$relationName}()->detach($detachConfig);
 
             $this->debugLog("CRUD6 [RelationshipActions] Detached specific relationships", [

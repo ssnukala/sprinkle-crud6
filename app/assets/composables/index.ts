@@ -13,7 +13,7 @@ export { useCRUD6RegleAdapter, convertCRUD6ToRegleRules } from './useCRUD6Valida
 export { useCRUD6ToUFSchemaConverter, convertCRUD6ToUFValidatorFormat } from './useCRUD6ValidationAdapter'
 
 // Export schema types for external use
-export type { CRUD6Schema, SchemaField, DetailConfig, DetailEditableConfig, ActionConfig } from './useCRUD6Schema'
+export type { CRUD6Schema, SchemaField, DetailConfig, DetailEditableConfig, ActionConfig, ModalConfig, ModalButtonConfig } from './useCRUD6Schema'
 
 // Export master-detail types
 export type { DetailRecord, MasterDetailSaveRequest, MasterDetailSaveResponse } from './useMasterDetail'

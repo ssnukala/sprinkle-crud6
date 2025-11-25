@@ -57,12 +57,35 @@ const hasUpdatePermission = computed(() => hasPermission('update'))
 const hasDeletePermission = computed(() => hasPermission('delete'))
 const hasViewFieldPermission = computed(() => hasPermission('view_field'))
 
-// Schema fields for ActionModal - explicitly computed to ensure proper reactivity
-// Direct template access to finalSchema?.fields can cause issues when the schema
-// is loaded asynchronously, as the optional chaining may return undefined before
-// the schema is fully loaded. This computed property ensures consistent behavior.
+// Schema fields for ActionModal - merge fields from all contexts to ensure
+// action modals can access fields like 'password' that may only be in 'form' context
+// Direct template access to finalSchema?.fields only returns context-filtered fields
 const schemaFieldsForModal = computed(() => {
-    return finalSchema.value?.fields || {}
+    const schema = providedSchema || finalSchema.value
+    if (!schema) return {}
+    
+    // Start with base fields (from detail context usually)
+    let allFields = { ...(schema.fields || {}) }
+    
+    // If schema has contexts (multi-context response), merge fields from all contexts
+    // This ensures action modals can access fields from 'form' context (like password)
+    // that may not be in 'detail' context
+    if (schema.contexts) {
+        // Merge form context fields (includes create/edit fields like password)
+        if (schema.contexts.form?.fields) {
+            allFields = { ...allFields, ...schema.contexts.form.fields }
+        }
+        // Also check create and edit contexts specifically
+        if (schema.contexts.create?.fields) {
+            allFields = { ...allFields, ...schema.contexts.create.fields }
+        }
+        if (schema.contexts.edit?.fields) {
+            allFields = { ...allFields, ...schema.contexts.edit.fields }
+        }
+    }
+    
+    debugLog('[Info] schemaFieldsForModal - total fields:', Object.keys(allFields).length, 'keys:', Object.keys(allFields))
+    return allFields
 })
 
 // Model label for buttons - prioritize singular_title over model name

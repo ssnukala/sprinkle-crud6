@@ -31,26 +31,17 @@ export async function initDebugMode(): Promise<void> {
         return; // Already initialized this page load
     }
     
-    console.log('[CRUD6 Debug] Fetching config from /api/crud6/config...');
-    
     try {
         const response = await fetch('/api/crud6/config');
-        console.log('[CRUD6 Debug] Config response status:', response.status);
-        
         if (response.ok) {
             const config = await response.json();
-            console.log('[CRUD6 Debug] Config response data:', config);
             debugMode = config.debug_mode === true;
-            initialized = true;
-            console.log('[CRUD6 Debug] Debug mode set to:', debugMode);
-        } else {
-            console.warn('[CRUD6 Debug] Config fetch failed with status:', response.status);
-            initialized = true;
         }
     } catch (error) {
-        console.warn('[CRUD6 Debug] Failed to fetch config:', error);
-        initialized = true; // Mark as initialized even on failure to avoid repeated attempts
+        // Silently fail - debug mode will remain false
     }
+    
+    initialized = true;
 }
 
 /**
@@ -59,7 +50,6 @@ export async function initDebugMode(): Promise<void> {
 export function setDebugMode(enabled: boolean): void {
     debugMode = enabled;
     initialized = true;
-    console.log('[CRUD6 Debug] Debug mode manually set to:', enabled);
 }
 
 /**

@@ -2,6 +2,9 @@ import type { App } from 'vue'
 import axios from 'axios'
 import { debugLog, debugError, initDebugMode } from '../utils/debug'
 
+// Log when this module is loaded (before plugin install)
+console.log('[CRUD6 Plugin] Module loaded')
+
 /**
  * CRUD6 Sprinkle Plugin
  * 
@@ -15,6 +18,8 @@ import { debugLog, debugError, initDebugMode } from '../utils/debug'
  */
 export default {
     install: (app: App) => {
+        console.log('[CRUD6 Plugin] Install called')
+        
         // Initialize debug mode from backend config
         // This runs asynchronously and updates debug mode when ready
         // The initDebugMode() promise is stored so subsequent calls can await it

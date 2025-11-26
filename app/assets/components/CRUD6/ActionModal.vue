@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
+import { debugLog } from '../../utils/debug'
 
 /**
  * Unified Action Modal for CRUD6
@@ -126,7 +127,7 @@ const fieldsToRender = computed(() => {
     const schemaFields = props.schemaFields
     
     // Debug: log what we're receiving
-    console.log('[ActionModal] fieldsToRender check:', {
+    debugLog('[ActionModal] fieldsToRender check:', {
         actionKey: props.action.key,
         modalConfigType: modalConfig.value.type,
         modalConfigFields: fields,
@@ -135,14 +136,14 @@ const fieldsToRender = computed(() => {
     })
     
     if (!fields || !schemaFields) {
-        console.log('[ActionModal] Returning empty - missing fields or schemaFields')
+        debugLog('[ActionModal] Returning empty - missing fields or schemaFields')
         return []
     }
     
     const result = fields
         .map(fieldKey => {
             const config = schemaFields[fieldKey]
-            console.log('[ActionModal] Field lookup:', fieldKey, '-> config:', config ? 'found' : 'not found')
+            debugLog('[ActionModal] Field lookup:', fieldKey, '-> config:', config ? 'found' : 'not found')
             return {
                 key: fieldKey,
                 config
@@ -150,7 +151,7 @@ const fieldsToRender = computed(() => {
         })
         .filter(f => f.config)
     
-    console.log('[ActionModal] fieldsToRender result:', result.length, 'fields')
+    debugLog('[ActionModal] fieldsToRender result:', result.length, 'fields')
     return result
 })
 

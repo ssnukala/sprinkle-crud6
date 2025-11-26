@@ -20,6 +20,7 @@ export default {
         initDebugMode().catch(error => {
             console.error('[CRUD6 Plugin] Failed to initialize debug mode:', error)
         })
+        
         // Add axios request interceptor for CRUD6 debugging
         axios.interceptors.request.use(
             (config) => {

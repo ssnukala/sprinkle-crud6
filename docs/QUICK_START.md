@@ -126,15 +126,22 @@ In your Vue application:
     <UFCRUD6CreateModal 
       :model="'products'" 
       :schema="schema" 
-      @saved="refreshList" 
+      @saved="onSaved" 
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 
 const { schema, loadSchema } = useCRUD6Schema()
+
+// Called when a record is saved
+function onSaved() {
+  // Reload data or perform other actions
+  console.log('Record saved successfully')
+}
 
 onMounted(async () => {
   await loadSchema('products')

@@ -326,22 +326,32 @@ Add action grouping to schema:
 }
 ```
 
-### 3.3 Simplify Visibility Flags Further
+### 3.3 Visibility Flags - Keep as Primary Pattern
 
 **Current State:**
-Both `show_in` array and legacy flags (`listable`, `editable`, `viewable`) are supported.
+Both `show_in` array and visibility flags (`listable`, `editable`, `viewable`) are supported.
+The visibility flags are the **primary pattern** actively used throughout the codebase in:
+- PHP controllers (`Base.php` - `getListableFields()`, `getEditableFields()`)
+- Vue components (`Form.vue`, `MasterDetailForm.vue`, `PageRow.vue`)
+- JSON schemas (all example schemas use these flags)
 
 **Recommendation:**
-Phase out legacy flags in favor of `show_in` only:
+Keep visibility flags as the primary pattern. The `show_in` array provides an alternative
+for more granular control but should NOT replace the existing flags:
 
 ```json
 {
   "password": {
     "type": "password",
-    "show_in": ["create", "edit"]
+    "listable": false,
+    "viewable": false,
+    "editable": true
   }
 }
 ```
+
+The `show_in` array (`["list", "form", "detail"]`) is available for advanced use cases
+but the individual flags remain the recommended approach for most schemas.
 
 ---
 
@@ -364,7 +374,7 @@ Phase out legacy flags in favor of `show_in` only:
 ### Sprint 3 (Future) - Advanced Features
 1. [ ] Schema-level action defaults
 2. [ ] Action group support
-3. [ ] Phase out legacy visibility flags
+3. [ ] Improved `show_in` array as optional alternative (keep visibility flags as primary)
 
 ---
 
@@ -400,8 +410,8 @@ Phase out legacy flags in favor of `show_in` only:
 - None. New features only.
 
 ### Future Sprint 3
-- Potential deprecation of legacy visibility flags (`listable`, `editable`, `viewable`)
-- Will require migration period with warnings
+- Schema-level action defaults
+- Action group support for organizing many actions on detail pages
 
 ---
 

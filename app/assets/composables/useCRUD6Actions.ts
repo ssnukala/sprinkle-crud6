@@ -24,6 +24,28 @@ function stripHtmlTags(html: string): string {
 }
 
 /**
+ * Check if an action represents a password field update.
+ * 
+ * Password fields are detected by:
+ * 1. Explicitly marked with requires_password_input flag
+ * 2. Field name is 'password' or matches password_field property
+ * 3. Legacy password_update type (deprecated)
+ * 
+ * This helper function centralizes password field detection logic
+ * to ensure consistency across different parts of the action system.
+ * 
+ * @param action The action configuration
+ * @param field The resolved field name (may be inferred from action key)
+ * @returns True if this is a password field update
+ */
+export function isPasswordFieldAction(action: ActionConfig, field?: string | null): boolean {
+    return action.requires_password_input === true ||
+           field === 'password' ||
+           (!!action.password_field && action.password_field === field) ||
+           action.type === 'password_update'
+}
+
+/**
  * Vue composable for executing custom CRUD6 actions.
  * 
  * Provides methods to execute schema-defined custom actions like
@@ -99,9 +121,12 @@ export function useCRUD6Actions(model?: string) {
         error.value = null
 
         try {
-            // Enrich action with inferred properties (field, icon, label, style)
-            // This ensures consistent behavior whether properties are explicit or inferred
-            const enrichedAction = getEnrichedAction(action)
+            // Enrich action with inferred properties (field, icon, label, style, permission)
+            // Pass model for permission inference. Field config would need to be passed from 
+            // schema context, which happens in the Info.vue component before calling this.
+            // For executions that go through Info.vue, the action is already enriched.
+            // This additional enrichment ensures consistent behavior for direct calls.
+            const enrichedAction = getEnrichedAction(action, undefined, model)
             
             switch (enrichedAction.type) {
                 case 'field_update':
@@ -154,10 +179,8 @@ export function useCRUD6Actions(model?: string) {
      * - Password fields (requires password data in currentRecord.password)
      * - Legacy password_update type (now unified into field_update)
      * 
-     * Password field detection:
-     * - Automatically detected if action.field === 'password'
-     * - Explicitly specified via action.requires_password_input === true
-     * - Legacy password_update type (deprecated)
+     * Password field detection uses the isPasswordFieldAction() helper for consistency.
+     * @see isPasswordFieldAction
      */
     async function executeFieldUpdate(
         action: ActionConfig,
@@ -174,15 +197,8 @@ export function useCRUD6Actions(model?: string) {
 
         let newValue: any
 
-        // Check if this is a password field update
-        // Password fields can be:
-        // 1. Explicitly marked with requires_password_input
-        // 2. Field name is 'password' or matches password_field
-        // 3. Legacy password_update type (deprecated)
-        const isPasswordField = action.requires_password_input === true ||
-                                field === 'password' ||
-                                action.password_field === field ||
-                                action.type === 'password_update'
+        // Use helper function for password field detection
+        const isPasswordField = isPasswordFieldAction(action, field)
 
         if (isPasswordField && currentRecord?.password) {
             // Password update - value comes from PasswordInputModal

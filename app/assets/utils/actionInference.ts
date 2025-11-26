@@ -297,21 +297,24 @@ export function inferPermission(action: ActionConfig, model?: string): string | 
         return action.permission
     }
     
-    // Define permission patterns by action type
-    const permissionPatterns: Record<string, { withModel: string; fallback: string }> = {
-        'field_update': { withModel: `update_${model}_field`, fallback: 'update_field' },
-        'password_update': { withModel: `update_${model}_field`, fallback: 'update_field' },
-        'api_call': { withModel: `update_${model}_field`, fallback: 'update_field' },
-        'modal': { withModel: `update_${model}`, fallback: 'update' },
-        'route': { withModel: `view_${model}`, fallback: 'view' },
+    // Define permission pattern generators by action type
+    // Each pattern has a function that generates permission with model, and a fallback
+    const getPermission = (actionType: string): string | undefined => {
+        switch (actionType) {
+            case 'field_update':
+            case 'password_update':
+            case 'api_call':
+                return model ? `update_${model}_field` : 'update_field'
+            case 'modal':
+                return model ? `update_${model}` : 'update'
+            case 'route':
+                return model ? `view_${model}` : 'view'
+            default:
+                return undefined
+        }
     }
     
-    const pattern = permissionPatterns[action.type]
-    if (pattern) {
-        return model ? pattern.withModel : pattern.fallback
-    }
-    
-    return undefined
+    return getPermission(action.type)
 }
 
 /**

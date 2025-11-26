@@ -4,7 +4,7 @@ export { useCRUD6sApi } from './useCRUD6sApi'
 export { useCRUD6Schema } from './useCRUD6Schema'
 export { useCRUD6Relationships } from './useCRUD6Relationships'
 export { useMasterDetail } from './useMasterDetail'
-export { useCRUD6Actions } from './useCRUD6Actions'
+export { useCRUD6Actions, isPasswordFieldAction } from './useCRUD6Actions'
 export { useCRUD6FieldRenderer } from './useCRUD6FieldRenderer'
 
 // CRUD6 Validation Adapters

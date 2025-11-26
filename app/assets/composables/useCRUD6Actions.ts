@@ -6,6 +6,7 @@ import type { ActionConfig } from './useCRUD6Schema'
 import { Severity, type ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import { useAlertsStore, useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { getEnrichedAction, inferFieldFromKey } from '../utils/actionInference'
 
 /**
  * Strip HTML tags from a string.
@@ -98,18 +99,25 @@ export function useCRUD6Actions(model?: string) {
         error.value = null
 
         try {
-            switch (action.type) {
+            // Enrich action with inferred properties (field, icon, label, style)
+            // This ensures consistent behavior whether properties are explicit or inferred
+            const enrichedAction = getEnrichedAction(action)
+            
+            switch (enrichedAction.type) {
                 case 'field_update':
-                    return await executeFieldUpdate(action, recordId, currentRecord)
+                    return await executeFieldUpdate(enrichedAction, recordId, currentRecord)
                 
                 case 'password_update':
-                    return await executePasswordUpdate(action, recordId, currentRecord)
+                    // DEPRECATED: password_update is now handled by field_update with requires_password_input flag
+                    // This case is maintained for backward compatibility only
+                    debugWarn('[useCRUD6Actions] DEPRECATED: "password_update" type is deprecated. Use "field_update" with "requires_password_input: true" instead.')
+                    return await executeFieldUpdate(enrichedAction, recordId, currentRecord)
                 
                 case 'route':
-                    return executeRouteNavigation(action, recordId)
+                    return executeRouteNavigation(enrichedAction, recordId)
                 
                 case 'api_call':
-                    return await executeApiCall(action, recordId)
+                    return await executeApiCall(enrichedAction, recordId)
                 
                 case 'modal':
                     // Modal handling would be done by the parent component
@@ -117,7 +125,7 @@ export function useCRUD6Actions(model?: string) {
                     return true
                 
                 default:
-                    debugError('Unknown action type:', action.type)
+                    debugError('Unknown action type:', enrichedAction.type)
                     return false
             }
         } catch (err: any) {
@@ -139,27 +147,50 @@ export function useCRUD6Actions(model?: string) {
 
     /**
      * Execute a field update action
+     * 
+     * Handles all field updates including:
+     * - Boolean toggle fields
+     * - Explicit value updates
+     * - Password fields (requires password data in currentRecord.password)
+     * - Legacy password_update type (now unified into field_update)
+     * 
+     * Password field detection:
+     * - Automatically detected if action.field === 'password'
+     * - Explicitly specified via action.requires_password_input === true
+     * - Legacy password_update type (deprecated)
      */
     async function executeFieldUpdate(
         action: ActionConfig,
         recordId: string | number,
         currentRecord?: any
     ): Promise<boolean> {
-        if (!action.field) {
-            debugError('Field update action requires a field property')
+        // Infer field from action key if not specified (e.g., "password_action" -> "password")
+        const field = action.field || inferFieldFromKey(action.key)
+        
+        if (!field) {
+            debugError('Field update action requires a field property or inferrable key pattern')
             return false
         }
 
         let newValue: any
 
-        // Check if this is a field update with password data from PasswordInputModal
-        // The modal passes the password in currentRecord.password
-        if (currentRecord && currentRecord.password && 
-            (action.field === 'password' || currentRecord[action.field] === undefined)) {
+        // Check if this is a password field update
+        // Password fields can be:
+        // 1. Explicitly marked with requires_password_input
+        // 2. Field name is 'password' or matches password_field
+        // 3. Legacy password_update type (deprecated)
+        const isPasswordField = action.requires_password_input === true ||
+                                field === 'password' ||
+                                action.password_field === field ||
+                                action.type === 'password_update'
+
+        if (isPasswordField && currentRecord?.password) {
+            // Password update - value comes from PasswordInputModal
             newValue = currentRecord.password
+            debugLog('[useCRUD6Actions] Executing password field update for field:', field)
         } else if (action.toggle && currentRecord) {
             // Toggle boolean field - handle null/undefined values
-            const currentValue = currentRecord[action.field]
+            const currentValue = currentRecord[field]
             
             // If field doesn't exist or is null/undefined, default to false then toggle to true
             if (currentValue === null || currentValue === undefined) {
@@ -167,11 +198,18 @@ export function useCRUD6Actions(model?: string) {
             } else {
                 newValue = !currentValue
             }
+            debugLog('[useCRUD6Actions] Toggling boolean field:', field, 'from', currentValue, 'to', newValue)
         } else if (action.value !== undefined) {
             // Set specific value
             newValue = action.value
-        } else {
+            debugLog('[useCRUD6Actions] Setting field:', field, 'to value:', newValue)
+        } else if (!isPasswordField) {
+            // Only error if not a password field waiting for input
             debugError('Field update action requires either toggle, value, or password property')
+            return false
+        } else {
+            // Password field but no password provided
+            debugError('Password field update requires password in currentRecord')
             return false
         }
 
@@ -181,12 +219,13 @@ export function useCRUD6Actions(model?: string) {
         }
 
         try {
-            await updateField(String(recordId), action.field, newValue)
+            await updateField(String(recordId), field, newValue)
             
             // Show success message - translate if it's a translation key
+            const actionLabel = action.label || `Update ${field}`
             const successMsg = action.success_message 
                 ? translator.translate(action.success_message) 
-                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
+                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(actionLabel) })
             alertsStore.push({
                 title: translator.translate('CRUD6.ACTION.SUCCESS_TITLE') || 'Success',
                 description: successMsg,
@@ -280,8 +319,18 @@ export function useCRUD6Actions(model?: string) {
     /**
      * Execute a password update action.
      * 
-     * This method updates a password field. The password value should be provided
-     * in the currentRecord parameter (typically from PasswordInputModal).
+     * @deprecated Use executeFieldUpdate with action.requires_password_input = true instead.
+     * This method is maintained for backward compatibility only.
+     * 
+     * New schema format:
+     * ```json
+     * {
+     *   "key": "password_action",
+     *   "type": "field_update",
+     *   "field": "password",
+     *   "requires_password_input": true
+     * }
+     * ```
      * 
      * @param action The action configuration
      * @param recordId The record ID
@@ -293,36 +342,17 @@ export function useCRUD6Actions(model?: string) {
         recordId: string | number,
         currentRecord?: any
     ): Promise<boolean> {
-        const passwordField = action.password_field || 'password'
+        debugWarn('[useCRUD6Actions] DEPRECATED: executePasswordUpdate() is deprecated. Use executeFieldUpdate() with requires_password_input: true instead.')
         
-        if (!currentRecord || !currentRecord.password) {
-            debugError('Password update action requires password in currentRecord')
-            return false
+        // Convert to field_update format and delegate
+        const fieldUpdateAction: ActionConfig = {
+            ...action,
+            type: 'field_update',
+            field: action.password_field || action.field || 'password',
+            requires_password_input: true
         }
-
-        if (!updateField) {
-            debugError('updateField function not available')
-            return false
-        }
-
-        try {
-            await updateField(String(recordId), passwordField, currentRecord.password)
-            
-            // Show success message - translate if it's a translation key
-            const successMsg = action.success_message 
-                ? translator.translate(action.success_message) 
-                : translator.translate('CRUD6.ACTION.SUCCESS', { action: translator.translate(action.label) })
-            alertsStore.push({
-                title: translator.translate('CRUD6.ACTION.SUCCESS_TITLE') || 'Success',
-                description: successMsg,
-                style: Severity.Success
-            })
-            
-            return true
-        } catch (err) {
-            debugError('Password update failed:', err)
-            throw err
-        }
+        
+        return executeFieldUpdate(fieldUpdateAction, recordId, currentRecord)
     }
 
     return {
@@ -331,6 +361,7 @@ export function useCRUD6Actions(model?: string) {
         executeAction,
         executeActionWithoutConfirm,
         executeFieldUpdate,
+        /** @deprecated Use executeFieldUpdate with requires_password_input: true instead */
         executePasswordUpdate,
         executeRouteNavigation,
         executeApiCall

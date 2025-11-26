@@ -10,7 +10,7 @@ These are low-effort, high-impact improvements that can be implemented immediate
 
 ### Code Fixes
 
-- [ ] **Remove hardcoded Sprunje defaults**
+- [x] **Remove hardcoded Sprunje defaults** ✅
   - File: `app/src/Sprunje/CRUD6Sprunje.php` (Line 42)
   - Change: `protected array $sortable = ["name"];` → `protected array $sortable = [];`
   - Impact: Eliminates potential bugs when models don't have a `name` field
@@ -39,7 +39,7 @@ These improvements require more effort but provide significant value.
 
 ### PHP Backend
 
-- [ ] **Extract common controller logic to traits**
+- [x] **Extract common controller logic to traits** ✅
   - Create: `app/src/Controller/Traits/TransformsData.php`
   - Refactor: CreateAction, EditAction, UpdateFieldAction
   - Benefits: ~30% code reduction, easier testing
@@ -59,7 +59,7 @@ These improvements require more effort but provide significant value.
   }
   ```
 
-- [ ] **Create centralized CRUD6Config class**
+- [x] **Create centralized CRUD6Config class** ✅
   - Create: `app/src/Config/CRUD6Config.php`
   - Purpose: Centralize all config access with type-safe methods
   - Effort: 2-3 hours
@@ -82,7 +82,7 @@ These improvements require more effort but provide significant value.
 
 ### Vue Frontend
 
-- [ ] **Create shared API client**
+- [x] **Create shared API client** ✅
   - Create: `app/assets/utils/apiClient.ts`
   - Centralize axios configuration and error handling
   - Effort: 2-3 hours
@@ -205,13 +205,13 @@ These are significant features for future consideration.
 ## 🎯 Recommended Starting Points
 
 1. **Immediate** (can do right now):
-   - Remove hardcoded `$sortable` in Sprunje
+   - ~~Remove hardcoded `$sortable` in Sprunje~~ ✅ Done
    - Add JSDoc examples to composables
 
 2. **This Sprint**:
-   - Create `TransformsData` trait
-   - Create shared API client
-   - Create `CRUD6Config` class
+   - ~~Create `TransformsData` trait~~ ✅ Done
+   - ~~Create shared API client~~ ✅ Done
+   - ~~Create `CRUD6Config` class~~ ✅ Done
 
 3. **Next Sprint**:
    - Add PSR-16 cache support

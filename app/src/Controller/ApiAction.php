@@ -107,7 +107,10 @@ class ApiAction extends Base
             $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
         }
 
-        $this->debugLog("CRUD6 [ApiAction] Schema filtered", [
+        // Translate all translatable fields in the schema (labels, titles, etc.)
+        $filteredSchema = $this->schemaService->translateSchema($filteredSchema);
+
+        $this->debugLog("CRUD6 [ApiAction] Schema filtered and translated", [
             'field_count' => count($filteredSchema['fields'] ?? []),
             'has_contexts' => isset($filteredSchema['contexts']) ? 'yes' : 'no',
             'has_related_schemas' => isset($filteredSchema['related_schemas']) ? 'yes' : 'no',

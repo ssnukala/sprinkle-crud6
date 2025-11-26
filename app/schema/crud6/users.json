@@ -92,7 +92,7 @@
     "actions": [
         {
             "key": "toggle_enabled",
-            "label": "USER.ADMIN.TOGGLE_ENABLED",
+            "label": "Toggle Enabled",
             "icon": "toggle-on",
             "type": "field_update",
             "field": "flag_enabled",
@@ -101,7 +101,7 @@
         },
         {
             "key": "toggle_verified",
-            "label": "USER.ADMIN.TOGGLE_VERIFIED",
+            "label": "Toggle Verified",
             "icon": "check-circle",
             "type": "field_update",
             "field": "flag_verified",
@@ -110,7 +110,7 @@
         },
         {
             "key": "reset_password",
-            "label": "USER.ADMIN.SEND_PASSWORD_RESET",
+            "label": "Send Password Reset",
             "icon": "envelope",
             "type": "api_call",
             "method": "POST",
@@ -129,7 +129,7 @@
             "field": "password",
             "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
                 "type": "input",
                 "fields": ["password"]

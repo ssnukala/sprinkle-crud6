@@ -88,7 +88,7 @@
         },
         {
             "key": "reset_password",
-            "label": "USER.ADMIN.SEND_PASSWORD_RESET",
+            "label": "Send Password Reset",
             "icon": "envelope",
             "type": "api_call",
             "method": "POST",
@@ -107,7 +107,7 @@
             "field": "password",
             "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
                 "type": "input",
                 "fields": ["password"]

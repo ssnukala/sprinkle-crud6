@@ -51,12 +51,22 @@
     "details": [
         {
             "model": "users",
-            "list_fields": ["user_name", "first_name", "last_name", "email", "flag_enabled"],
+            "list_fields": [
+                "user_name",
+                "first_name",
+                "last_name",
+                "email",
+                "flag_enabled"
+            ],
             "title": "ROLE.USERS"
         },
         {
             "model": "permissions",
-            "list_fields": ["slug", "name", "description"],
+            "list_fields": [
+                "slug",
+                "name",
+                "description"
+            ],
             "title": "ROLE.PERMISSIONS"
         }
     ],
@@ -66,13 +76,18 @@
             "label": "ID",
             "auto_increment": true,
             "readonly": true,
-            "show_in": ["detail"]
+            "show_in": [
+                "detail"
+            ]
         },
         "slug": {
             "type": "string",
             "label": "Slug",
             "required": true,
-            "show_in": ["form", "detail"],
+            "show_in": [
+                "form",
+                "detail"
+            ],
             "validation": {
                 "required": true,
                 "unique": true,
@@ -88,7 +103,11 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "show_in": ["list", "form", "detail"],
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
             "validation": {
                 "required": true,
                 "length": {
@@ -105,7 +124,11 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "show_in": ["list", "form", "detail"]
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
         },
         "permission_ids": {
             "type": "multiselect",
@@ -117,20 +140,26 @@
                 "desc": "name"
             },
             "required": false,
-            "show_in": ["form"]
+            "show_in": [
+                "form"
+            ]
         },
         "created_at": {
             "type": "datetime",
             "label": "Created At",
             "readonly": true,
-            "show_in": ["detail"],
+            "show_in": [
+                "detail"
+            ],
             "date_format": "Y-m-d H:i:s"
         },
         "updated_at": {
             "type": "datetime",
             "label": "Updated At",
             "readonly": true,
-            "show_in": ["detail"],
+            "show_in": [
+                "detail"
+            ],
             "date_format": "Y-m-d H:i:s"
         }
     }

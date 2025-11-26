@@ -20,13 +20,18 @@
             "label": "ID",
             "auto_increment": true,
             "readonly": true,
-            "show_in": ["detail"]
+            "show_in": [
+                "detail"
+            ]
         },
         "ip_address": {
             "type": "string",
             "label": "IP Address",
             "required": false,
-            "show_in": ["form", "detail"],
+            "show_in": [
+                "form",
+                "detail"
+            ],
             "validation": {
                 "length": {
                     "max": 45
@@ -37,13 +42,19 @@
             "type": "integer",
             "label": "User ID",
             "required": true,
-            "show_in": ["form", "detail"]
+            "show_in": [
+                "form",
+                "detail"
+            ]
         },
         "type": {
             "type": "string",
             "label": "Type",
             "required": true,
-            "show_in": ["form", "detail"],
+            "show_in": [
+                "form",
+                "detail"
+            ],
             "validation": {
                 "required": true,
                 "length": {
@@ -57,7 +68,11 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "show_in": ["list", "form", "detail"],
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
             "date_format": "Y-m-d H:i:s"
         },
         "description": {
@@ -66,7 +81,11 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "show_in": ["list", "form", "detail"]
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
         }
     }
 }

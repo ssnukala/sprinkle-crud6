@@ -18,7 +18,13 @@
         {
             "model": "users",
             "foreign_key": "group_id",
-            "list_fields": ["user_name", "first_name", "last_name", "email", "flag_enabled"],
+            "list_fields": [
+                "user_name",
+                "first_name",
+                "last_name",
+                "email",
+                "flag_enabled"
+            ],
             "title": "GROUP.USERS"
         }
     ],
@@ -28,13 +34,18 @@
             "label": "ID",
             "auto_increment": true,
             "readonly": true,
-            "show_in": ["detail"]
+            "show_in": [
+                "detail"
+            ]
         },
         "slug": {
             "type": "string",
             "label": "Slug",
             "required": true,
-            "show_in": ["form", "detail"],
+            "show_in": [
+                "form",
+                "detail"
+            ],
             "validation": {
                 "required": true,
                 "unique": true,
@@ -50,7 +61,11 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "show_in": ["list", "form", "detail"],
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
             "validation": {
                 "required": true,
                 "length": {
@@ -67,13 +82,20 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "show_in": ["list", "form", "detail"]
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
         },
         "icon": {
             "type": "string",
             "label": "Icon",
             "required": false,
-            "show_in": ["form", "detail"],
+            "show_in": [
+                "form",
+                "detail"
+            ],
             "validation": {
                 "length": {
                     "max": 100
@@ -84,14 +106,18 @@
             "type": "datetime",
             "label": "Created At",
             "readonly": true,
-            "show_in": ["detail"],
+            "show_in": [
+                "detail"
+            ],
             "date_format": "Y-m-d H:i:s"
         },
         "updated_at": {
             "type": "datetime",
             "label": "Updated At",
             "readonly": true,
-            "show_in": ["detail"],
+            "show_in": [
+                "detail"
+            ],
             "date_format": "Y-m-d H:i:s"
         }
     }

@@ -25,6 +25,6 @@ return [
          * 
          * @var bool
          */
-        'debug_mode' => true,
+        'debug_mode' => false,
     ]
 ];

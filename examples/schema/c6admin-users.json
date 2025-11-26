@@ -70,7 +70,7 @@
     "actions": [
         {
             "key": "toggle_enabled",
-            "label": "Toggle Enabled",
+            "label": "CRUD6.ACTION.TOGGLE_ENABLED",
             "icon": "toggle-on",
             "type": "field_update",
             "field": "flag_enabled",
@@ -79,7 +79,7 @@
         },
         {
             "key": "toggle_verified",
-            "label": "Toggle Verified",
+            "label": "CRUD6.ACTION.TOGGLE_VERIFIED",
             "icon": "check-circle",
             "type": "field_update",
             "field": "flag_verified",
@@ -88,7 +88,7 @@
         },
         {
             "key": "reset_password",
-            "label": "USER.ADMIN.SEND_PASSWORD_RESET",
+            "label": "CRUD6.ACTION.RESET_PASSWORD",
             "icon": "envelope",
             "type": "api_call",
             "method": "POST",
@@ -101,13 +101,13 @@
         },
         {
             "key": "password_action",
-            "label": "USER.ADMIN.CHANGE_PASSWORD",
+            "label": "CRUD6.ACTION.CHANGE_PASSWORD",
             "icon": "key",
             "type": "field_update",
             "field": "password",
             "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
+            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
                 "type": "input",
                 "fields": ["password"]
@@ -115,7 +115,7 @@
         },
         {
             "key": "disable_user",
-            "label": "USER.DISABLE",
+            "label": "CRUD6.ACTION.DISABLE_USER",
             "icon": "user-slash",
             "type": "field_update",
             "field": "flag_enabled",
@@ -129,7 +129,7 @@
         },
         {
             "key": "enable_user",
-            "label": "USER.ENABLE",
+            "label": "CRUD6.ACTION.ENABLE_USER",
             "icon": "user-check",
             "type": "field_update",
             "field": "flag_enabled",

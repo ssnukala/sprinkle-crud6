@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
 use UserFrosting\Config\Config;
+use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
@@ -52,14 +53,16 @@ class SchemaService
     /**
      * Constructor for SchemaService.
      * 
-     * @param ResourceLocatorInterface  $locator Resource locator for finding schema files
-     * @param Config                    $config  Configuration repository
-     * @param DebugLoggerInterface|null $logger  Debug logger for diagnostics (optional)
+     * @param ResourceLocatorInterface  $locator    Resource locator for finding schema files
+     * @param Config                    $config     Configuration repository
+     * @param DebugLoggerInterface|null $logger     Debug logger for diagnostics (optional)
+     * @param Translator|null           $translator Translator for i18n (optional)
      */
     public function __construct(
         protected ResourceLocatorInterface $locator,
         protected Config $config,
-        protected ?DebugLoggerInterface $logger = null
+        protected ?DebugLoggerInterface $logger = null,
+        protected ?Translator $translator = null
     ) {
     }
 
@@ -1243,5 +1246,155 @@ class SchemaService
         }
 
         return $filtered;
+    }
+
+    /**
+     * Translate all translatable fields in a schema.
+     * 
+     * This method recursively processes the schema and translates:
+     * - title, singular_title, description (top-level)
+     * - Field labels and descriptions
+     * - Action labels and confirm messages
+     * - Relationship titles
+     * - Detail titles
+     * 
+     * Translation keys are identified by checking if the value looks like a 
+     * translation key (contains only uppercase letters, numbers, dots, and underscores).
+     * 
+     * @param array $schema The schema to translate
+     * 
+     * @return array The translated schema
+     */
+    public function translateSchema(array $schema): array
+    {
+        if ($this->translator === null) {
+            $this->debugLog("[CRUD6 SchemaService] No translator available, returning untranslated schema");
+            return $schema;
+        }
+
+        $this->debugLog("[CRUD6 SchemaService] translateSchema() called", [
+            'model' => $schema['model'] ?? 'unknown',
+        ]);
+
+        // Translate top-level translatable fields
+        $translatableTopLevel = ['title', 'singular_title', 'description'];
+        foreach ($translatableTopLevel as $field) {
+            if (isset($schema[$field])) {
+                $schema[$field] = $this->translateValue($schema[$field]);
+            }
+        }
+
+        // Translate field labels and descriptions
+        if (isset($schema['fields']) && is_array($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldKey => $field) {
+                if (isset($field['label'])) {
+                    $schema['fields'][$fieldKey]['label'] = $this->translateValue($field['label']);
+                }
+                if (isset($field['description'])) {
+                    $schema['fields'][$fieldKey]['description'] = $this->translateValue($field['description']);
+                }
+                if (isset($field['placeholder'])) {
+                    $schema['fields'][$fieldKey]['placeholder'] = $this->translateValue($field['placeholder']);
+                }
+            }
+        }
+
+        // Translate actions
+        if (isset($schema['actions']) && is_array($schema['actions'])) {
+            foreach ($schema['actions'] as $index => $action) {
+                if (isset($action['label'])) {
+                    $schema['actions'][$index]['label'] = $this->translateValue($action['label']);
+                }
+                if (isset($action['confirm'])) {
+                    $schema['actions'][$index]['confirm'] = $this->translateValue($action['confirm']);
+                }
+                if (isset($action['success_message'])) {
+                    $schema['actions'][$index]['success_message'] = $this->translateValue($action['success_message']);
+                }
+            }
+        }
+
+        // Translate relationships
+        if (isset($schema['relationships']) && is_array($schema['relationships'])) {
+            foreach ($schema['relationships'] as $index => $rel) {
+                if (isset($rel['title'])) {
+                    $schema['relationships'][$index]['title'] = $this->translateValue($rel['title']);
+                }
+            }
+        }
+
+        // Translate details
+        if (isset($schema['details']) && is_array($schema['details'])) {
+            foreach ($schema['details'] as $index => $detail) {
+                if (isset($detail['title'])) {
+                    $schema['details'][$index]['title'] = $this->translateValue($detail['title']);
+                }
+            }
+        }
+
+        // Translate contexts if present (multi-context response)
+        if (isset($schema['contexts']) && is_array($schema['contexts'])) {
+            foreach ($schema['contexts'] as $contextName => $contextData) {
+                if (isset($contextData['fields']) && is_array($contextData['fields'])) {
+                    foreach ($contextData['fields'] as $fieldKey => $field) {
+                        if (isset($field['label'])) {
+                            $schema['contexts'][$contextName]['fields'][$fieldKey]['label'] = $this->translateValue($field['label']);
+                        }
+                        if (isset($field['description'])) {
+                            $schema['contexts'][$contextName]['fields'][$fieldKey]['description'] = $this->translateValue($field['description']);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Translate related_schemas if present
+        if (isset($schema['related_schemas']) && is_array($schema['related_schemas'])) {
+            foreach ($schema['related_schemas'] as $modelName => $relatedSchema) {
+                $schema['related_schemas'][$modelName] = $this->translateSchema($relatedSchema);
+            }
+        }
+
+        $this->debugLog("[CRUD6 SchemaService] Schema translation complete", [
+            'model' => $schema['model'] ?? 'unknown',
+        ]);
+
+        return $schema;
+    }
+
+    /**
+     * Translate a value if it looks like a translation key.
+     * 
+     * A translation key is identified by:
+     * - Contains only uppercase letters, numbers, dots, and underscores
+     * - Contains at least one dot (e.g., "USER.1", "CRUD6.ACTION.TOGGLE_ENABLED")
+     * 
+     * Values that don't match this pattern are returned as-is (plain text labels).
+     * 
+     * @param string $value The value to potentially translate
+     * 
+     * @return string The translated value, or original if not a translation key
+     */
+    protected function translateValue(string $value): string
+    {
+        // Check if value looks like a translation key
+        // Translation keys: contain uppercase letters, dots, underscores, numbers
+        // Must contain at least one dot to distinguish from plain text
+        if (preg_match('/^[A-Z][A-Z0-9_.]+\.[A-Z0-9_.]+$/', $value)) {
+            $translated = $this->translator->translate($value);
+            
+            // If translation returns the same key, the key doesn't exist
+            // In this case, return the original value
+            if ($translated === $value) {
+                $this->debugLog("[CRUD6 SchemaService] Translation key not found", [
+                    'key' => $value,
+                ]);
+            }
+            
+            return $translated;
+        }
+        
+        // Not a translation key, return as-is
+        return $value;
     }
 }

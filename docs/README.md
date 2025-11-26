@@ -10,6 +10,7 @@ For primary documentation, see the [main README.md](../README.md) in the root di
 
 - **[Quick Start Guide](QUICK_START.md)** - Get up and running with CRUD6 in 5 minutes
 - **[Comprehensive Review](COMPREHENSIVE_REVIEW.md)** - Architecture analysis, optimization recommendations, and comparative analysis
+- **[Improvements Checklist](IMPROVEMENTS_CHECKLIST.md)** - Prioritized list of actionable improvements
 
 ## Schema Caching (Latest Updates)
 

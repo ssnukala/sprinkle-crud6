@@ -9,15 +9,24 @@
  * - Infer icons from action/field type
  * - Infer labels from field configuration
  * - Infer styles from action pattern
+ * - Infer permissions from action type and model (NEW)
+ * 
+ * All inferred properties can be overridden by explicit values in the schema.
  */
 
 import type { ActionConfig } from '../composables/useCRUD6Schema'
 
 /**
  * Icon mapping for common action patterns and field types
+ * 
+ * Priority:
+ * 1. Explicit action.icon (if provided)
+ * 2. Match against action key patterns
+ * 3. Match against field type patterns
+ * 4. Default based on action type
  */
 const DEFAULT_ICONS: Record<string, string> = {
-    // Action key patterns
+    // Action key patterns - common CRUD operations
     'toggle': 'power-off',
     'password_action': 'key',
     'reset_password': 'envelope',
@@ -27,6 +36,30 @@ const DEFAULT_ICONS: Record<string, string> = {
     'disable': 'ban',
     'verify': 'check-circle',
     
+    // Action key patterns - common business operations
+    'approve': 'check-circle',
+    'reject': 'times-circle',
+    'archive': 'archive',
+    'restore': 'undo',
+    'export': 'file-export',
+    'import': 'file-import',
+    'send': 'paper-plane',
+    'sync': 'sync',
+    'refresh': 'sync-alt',
+    'print': 'print',
+    'download': 'download',
+    'upload': 'upload',
+    'search': 'search',
+    'filter': 'filter',
+    'sort': 'sort',
+    'copy': 'copy',
+    'duplicate': 'clone',
+    'lock': 'lock',
+    'unlock': 'unlock',
+    'suspend': 'pause',
+    'activate': 'play',
+    'deactivate': 'stop',
+    
     // Field type patterns
     'password': 'key',
     'email': 'envelope',
@@ -34,25 +67,75 @@ const DEFAULT_ICONS: Record<string, string> = {
     'date': 'calendar',
     'datetime': 'clock',
     'file': 'file',
-    'image': 'image'
+    'image': 'image',
+    'phone': 'phone',
+    'address': 'map-marker-alt',
+    'url': 'link',
+    'money': 'dollar-sign',
+    'currency': 'dollar-sign',
 }
 
 /**
  * Style mapping for common action patterns and field types
+ * 
+ * Maps action key patterns to UIkit button styles:
+ * - 'danger': Destructive actions (delete, disable, reject, etc.)
+ * - 'warning': Actions requiring caution (password, archive, etc.)
+ * - 'success': Positive actions (approve, verify, enable, etc.)
+ * - 'primary': Main actions (edit, update, etc.)
+ * - 'secondary': Neutral actions (export, download, etc.)
+ * - 'default': Default button style
  */
 const DEFAULT_STYLES: Record<string, string> = {
-    // Action key patterns
+    // Dangerous/destructive actions
     'delete': 'danger',
     'disable': 'danger',
-    'enable': 'primary',
-    'reset': 'secondary',
+    'reject': 'danger',
+    'revoke': 'danger',
+    'suspend': 'danger',
+    'deactivate': 'danger',
+    'remove': 'danger',
+    'terminate': 'danger',
+    'block': 'danger',
+    
+    // Warning/caution actions
     'password': 'warning',
-    'toggle': 'default',
+    'archive': 'warning',
+    'cancel': 'warning',
+    'lock': 'warning',
+    
+    // Success/positive actions
+    'enable': 'success',
+    'approve': 'success',
     'verify': 'success',
+    'activate': 'success',
+    'restore': 'success',
+    'confirm': 'success',
+    'accept': 'success',
+    'unlock': 'success',
+    
+    // Primary actions
+    'edit': 'primary',
+    'update': 'primary',
+    'save': 'primary',
+    'create': 'primary',
+    'add': 'primary',
+    
+    // Secondary/neutral actions
+    'reset': 'secondary',
+    'export': 'secondary',
+    'import': 'secondary',
+    'download': 'secondary',
+    'sync': 'secondary',
+    'refresh': 'secondary',
+    'copy': 'secondary',
+    'duplicate': 'secondary',
+    
+    // Default for toggles and other
+    'toggle': 'default',
     
     // Field type patterns
-    'password': 'warning',
-    'boolean': 'default'
+    'boolean': 'default',
 }
 
 /**
@@ -196,15 +279,56 @@ export function inferStyle(action: ActionConfig, fieldType?: string): string | u
 }
 
 /**
+ * Infer permission for action based on action type and optional model name
+ * 
+ * Permission patterns:
+ * - field_update: `update_{model}_field` or fallback to `update_field`
+ * - api_call: `update_{model}_field` or fallback to `update_field`
+ * - modal: `update_{model}` or fallback to `update`
+ * - route: `view_{model}` or fallback to `view`
+ * 
+ * @param action Action configuration
+ * @param model Optional model name for permission prefix
+ * @returns Permission string or undefined
+ */
+export function inferPermission(action: ActionConfig, model?: string): string | undefined {
+    // If permission explicitly set, use it
+    if (action.permission) {
+        return action.permission
+    }
+    
+    // Define permission pattern generators by action type
+    // Each pattern has a function that generates permission with model, and a fallback
+    const getPermission = (actionType: string): string | undefined => {
+        switch (actionType) {
+            case 'field_update':
+            case 'password_update':
+            case 'api_call':
+                return model ? `update_${model}_field` : 'update_field'
+            case 'modal':
+                return model ? `update_${model}` : 'update'
+            case 'route':
+                return model ? `view_${model}` : 'view'
+            default:
+                return undefined
+        }
+    }
+    
+    return getPermission(action.type)
+}
+
+/**
  * Get complete action configuration with inferred properties
  * 
  * @param action Base action configuration from schema
  * @param fieldConfig Field configuration (if action relates to a field)
+ * @param model Optional model name for permission inference
  * @returns Complete action configuration with inferred properties
  */
 export function getEnrichedAction(
     action: ActionConfig,
-    fieldConfig?: { type?: string; label?: string }
+    fieldConfig?: { type?: string; label?: string },
+    model?: string
 ): ActionConfig {
     // Infer field if not specified
     const field = action.field || inferFieldFromKey(action.key)
@@ -218,6 +342,7 @@ export function getEnrichedAction(
         field: field || action.field,
         icon: inferIcon(action, fieldType),
         label: inferLabel(action, fieldLabel, field || undefined),
-        style: inferStyle(action, fieldType)
+        style: inferStyle(action, fieldType),
+        permission: inferPermission(action, model)
     }
 }

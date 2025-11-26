@@ -68,15 +68,22 @@ export interface ModalConfig {
 export interface ActionConfig {
     /** Unique key for the action */
     key: string
-    /** Display label for the button */
-    label: string
-    /** Icon to display on the button */
+    /** Display label for the button (can be auto-inferred from key or field) */
+    label?: string
+    /** Icon to display on the button (can be auto-inferred from action type or field type) */
     icon?: string
-    /** Action type */
+    /** 
+     * Action type
+     * - 'field_update': Update a field value (including password fields with requires_password_input)
+     * - 'modal': Show a modal component
+     * - 'route': Navigate to a route
+     * - 'api_call': Make an API call
+     * @deprecated 'password_update' is deprecated. Use 'field_update' with requires_password_input: true instead.
+     */
     type: 'field_update' | 'modal' | 'route' | 'api_call' | 'password_update'
-    /** Permission required to see/use this action */
+    /** Permission required to see/use this action (can be auto-inferred from model and action type) */
     permission?: string
-    /** For field_update: field to update */
+    /** For field_update: field to update (can be auto-inferred from key pattern, e.g., "password_action" -> "password") */
     field?: string
     /** For field_update: value to set */
     value?: any
@@ -86,19 +93,24 @@ export interface ActionConfig {
     modal?: string
     /** For route: route name to navigate to */
     route?: string
-    /** For api_call: API endpoint to call */
+    /** For api_call: API endpoint to call (auto-generated if not specified: /api/crud6/{model}/{id}/a/{key}) */
     endpoint?: string
-    /** For api_call: HTTP method */
+    /** For api_call: HTTP method (default: POST) */
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-    /** Button style class (primary, secondary, danger, etc.) */
+    /** Button style class (can be auto-inferred from action pattern, e.g., "delete" -> "danger") */
     style?: string
     /** Confirmation message before executing action */
     confirm?: string
     /** Success message after action completes */
     success_message?: string
-    /** Requires password input with confirmation (for password_update type or password fields) */
+    /** 
+     * Requires password input with confirmation modal before execution.
+     * Use this for password field updates instead of the deprecated password_update type.
+     */
     requires_password_input?: boolean
-    /** For password_update: field to update with new password */
+    /** 
+     * @deprecated Use field instead. For password fields, use field: "password" with requires_password_input: true
+     */
     password_field?: string
     /** Modal configuration for schema-driven modal rendering */
     modal_config?: ModalConfig

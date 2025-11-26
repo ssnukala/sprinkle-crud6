@@ -17,9 +17,13 @@ export default {
     install: (app: App) => {
         // Initialize debug mode from backend config
         // This runs asynchronously and updates debug mode when ready
-        initDebugMode().catch(error => {
+        // The initDebugMode() promise is stored so subsequent calls can await it
+        initDebugMode().then(() => {
+            console.log('[CRUD6 Plugin] Debug mode initialization complete')
+        }).catch(error => {
             console.error('[CRUD6 Plugin] Failed to initialize debug mode:', error)
         })
+        
         // Add axios request interceptor for CRUD6 debugging
         axios.interceptors.request.use(
             (config) => {

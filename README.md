@@ -866,6 +866,29 @@ $model->configureFromSchema($schema);
 - **Mass Assignment Protection**: Fillable attributes automatically set from schema
 - **Timestamp Management**: Automatic handling of created_at/updated_at fields
 
+## Architecture & Code Analysis
+
+For a comprehensive analysis of the codebase, including optimization recommendations, documentation improvements, and comparative analysis with similar packages, see the [Comprehensive Review](docs/COMPREHENSIVE_REVIEW.md) document.
+
+### Key Architectural Highlights
+
+- **Controller Pattern**: Action-based controllers following UserFrosting 6 patterns from `sprinkle-admin`
+- **Service Layer**: `SchemaService` with in-memory caching for optimal performance
+- **Model System**: Dynamic Eloquent model (`CRUD6Model`) configured from JSON schemas
+- **Frontend**: Vue 3 composables and components with Pinia store for schema caching
+- **Middleware**: `CRUD6Injector` for automatic model and schema injection
+
+### Comparable Tools
+
+| Tool | Approach | Best For |
+|------|----------|----------|
+| **CRUD6** | JSON Schema-driven, full-stack | UserFrosting 6 applications |
+| **Laravel Nova** | Admin panel | Laravel enterprise apps |
+| **Filament** | Livewire-based admin | Laravel rapid development |
+| **Strapi** | Headless CMS | JavaScript/Node.js projects |
+
+See the [Comparative Analysis](docs/COMPREHENSIVE_REVIEW.md#comparative-analysis) for detailed comparison.
+
 ## Contributing
 
 1. Fork the repository
@@ -873,6 +896,14 @@ $model->configureFromSchema($schema);
 3. Make your changes
 4. Add tests for new functionality
 5. Submit a pull request
+
+### Development Guidelines
+
+- Follow [UserFrosting 6 patterns](https://learn.userfrosting.com/sprinkles/) for code organization
+- Maintain PSR-12 coding standards
+- Add PHPDoc/JSDoc comments for public methods
+- Update documentation when adding features
+- Run syntax validation: `find app/src -name "*.php" -exec php -l {} \;`
 
 ## License
 

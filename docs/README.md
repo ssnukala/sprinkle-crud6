@@ -6,6 +6,11 @@ This directory contains comprehensive documentation for the CRUD6 sprinkle.
 
 For primary documentation, see the [main README.md](../README.md) in the root directory and [CHANGELOG.md](../CHANGELOG.md) for version history.
 
+## 🚀 Getting Started
+
+- **[Quick Start Guide](QUICK_START.md)** - Get up and running with CRUD6 in 5 minutes
+- **[Comprehensive Review](COMPREHENSIVE_REVIEW.md)** - Architecture analysis, optimization recommendations, and comparative analysis
+
 ## Schema Caching (Latest Updates)
 
 ### Quick Start

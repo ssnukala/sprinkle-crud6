@@ -4,45 +4,53 @@
  * Provides conditional debug logging for frontend code based on configuration.
  * Matches the backend debug_mode functionality.
  * 
- * The debug mode is fetched from backend config on page load and stored in sessionStorage.
+ * The debug mode is fetched from backend config on each page load.
+ * Value is cached in memory until the page is refreshed.
  */
 
 /**
- * Session storage key for debug mode
+ * Debug mode configuration - cached in memory after fetching from backend
+ * Defaults to false until initialized
  */
-const DEBUG_MODE_KEY = 'crud6_debug_mode';
+let debugMode = false;
 
 /**
- * Debug mode configuration - read from sessionStorage on module load
+ * Track if initialization has been attempted
  */
-let debugMode = sessionStorage.getItem(DEBUG_MODE_KEY) === 'true';
+let initialized = false;
 
 /**
  * Initialize debug mode from backend configuration
  * 
- * Fetches debug_mode from /api/crud6/config and stores in sessionStorage.
- * Should be called on page load.
+ * Fetches debug_mode from /api/crud6/config on page load.
+ * Value is cached in memory until the page is refreshed.
+ * Should be called once on page load.
  */
 export async function initDebugMode(): Promise<void> {
+    if (initialized) {
+        return; // Already initialized this page load
+    }
+    
     try {
         const response = await fetch('/api/crud6/config');
         if (response.ok) {
             const config = await response.json();
             debugMode = config.debug_mode === true;
-            sessionStorage.setItem(DEBUG_MODE_KEY, String(debugMode));
+            initialized = true;
             console.log('[CRUD6 Debug] Initialized:', { debug_mode: debugMode });
         }
     } catch (error) {
         console.warn('[CRUD6 Debug] Failed to fetch config:', error);
+        initialized = true; // Mark as initialized even on failure to avoid repeated attempts
     }
 }
 
 /**
- * Set debug mode manually
+ * Set debug mode manually (for testing)
  */
 export function setDebugMode(enabled: boolean): void {
     debugMode = enabled;
-    sessionStorage.setItem(DEBUG_MODE_KEY, String(enabled));
+    initialized = true;
 }
 
 /**

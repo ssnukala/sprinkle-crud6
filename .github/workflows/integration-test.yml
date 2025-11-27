@@ -219,19 +219,179 @@ jobs:
           echo "Updated vite.config.ts:"
           cat vite.config.ts
 
-      - name: Create c6admin schemas
+      - name: Copy CRUD6 schema files from examples
         run: |
           cd userfrosting
+          echo "========================================="
+          echo "Copying CRUD6 Schema Files from Examples"
+          echo "========================================="
+          
+          # Create schema directory if it doesn't exist
           mkdir -p app/schema/crud6
-          # Copy all c6admin schema files from sprinkle-crud6
-          cp ../sprinkle-crud6/examples/schema/c6admin-*.json app/schema/crud6/
-          # Rename files to remove c6admin- prefix
-          for file in app/schema/crud6/c6admin-*.json; do
-            mv "$file" "${file/c6admin-/}"
+          
+          # Define the schema files needed for integration tests
+          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
+          
+          # Check that source directory exists
+          if [ ! -d "../sprinkle-crud6/examples/schema" ]; then
+            echo "❌ ERROR: Source schema directory not found: ../sprinkle-crud6/examples/schema"
+            exit 1
+          fi
+          
+          # Copy required schema files
+          echo ""
+          echo "Copying required schema files..."
+          for schema in $REQUIRED_SCHEMAS; do
+            if [ -f "../sprinkle-crud6/examples/schema/$schema" ]; then
+              cp "../sprinkle-crud6/examples/schema/$schema" "app/schema/crud6/"
+              echo "  ✅ Copied: $schema"
+            else
+              echo "  ⚠️  WARNING: Schema file not found: $schema"
+            fi
           done
+          
           # Verify schemas were copied
-          echo "Schemas copied:"
+          echo ""
+          echo "========================================="
+          echo "Schemas copied to app/schema/crud6/:"
+          echo "========================================="
           ls -la app/schema/crud6/
+          
+          # Validate all required schemas are present
+          echo ""
+          echo "Validating required schemas..."
+          MISSING=0
+          for schema in $REQUIRED_SCHEMAS; do
+            if [ ! -f "app/schema/crud6/$schema" ]; then
+              echo "  ❌ MISSING: $schema"
+              MISSING=1
+            fi
+          done
+          
+          if [ $MISSING -eq 1 ]; then
+            echo "❌ ERROR: Some required schema files are missing!"
+            exit 1
+          else
+            echo "✅ All required schema files are present"
+          fi
+
+      - name: Merge locale messages from examples
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Merging Locale Messages from Examples"
+          echo "========================================="
+          
+          # Create locale directory if it doesn't exist
+          mkdir -p app/locale/en_US
+          
+          # Check that source messages file exists
+          if [ ! -f "../sprinkle-crud6/examples/locale/en_US/messages.php" ]; then
+            echo "❌ ERROR: Source messages file not found: ../sprinkle-crud6/examples/locale/en_US/messages.php"
+            exit 1
+          fi
+          
+          # Check if destination messages file already exists in sprinkle-crud6's app/locale
+          if [ -f "../sprinkle-crud6/app/locale/en_US/messages.php" ]; then
+            echo "Found existing app/locale messages file, copying to userfrosting app..."
+            cp "../sprinkle-crud6/app/locale/en_US/messages.php" "app/locale/en_US/messages.php"
+            echo "  ✅ Copied: messages.php from sprinkle-crud6/app/locale"
+          fi
+          
+          # Now merge example messages (append model-specific translations)
+          echo ""
+          echo "Merging example messages (model-specific translations)..."
+          
+          # Create a PHP script to merge the message files
+          cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
+          <?php
+          /**
+           * Merge example messages with existing messages.php
+           * This adds model-specific translations for CRUD6 testing
+           */
+          
+          $examplesPath = $argv[1] ?? '';
+          $destPath = $argv[2] ?? '';
+          
+          if (empty($examplesPath) || empty($destPath)) {
+              echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
+              exit(1);
+          }
+          
+          // Load existing messages if they exist
+          $existingMessages = [];
+          if (file_exists($destPath)) {
+              $existingMessages = require $destPath;
+              echo "  Loaded existing messages from: $destPath\n";
+          }
+          
+          // Load example messages
+          if (!file_exists($examplesPath)) {
+              echo "  ❌ Examples messages file not found: $examplesPath\n";
+              exit(1);
+          }
+          $exampleMessages = require $examplesPath;
+          echo "  Loaded example messages from: $examplesPath\n";
+          
+          // Deep merge function
+          function deepMerge(array $base, array $override): array {
+              foreach ($override as $key => $value) {
+                  if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
+                      $base[$key] = deepMerge($base[$key], $value);
+                  } else {
+                      $base[$key] = $value;
+                  }
+              }
+              return $base;
+          }
+          
+          // Merge messages (example messages override existing)
+          $mergedMessages = deepMerge($existingMessages, $exampleMessages);
+          
+          // Generate the merged PHP file
+          $output = "<?php\n\n";
+          $output .= "/*\n";
+          $output .= " * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)\n";
+          $output .= " *\n";
+          $output .= " * @link      https://github.com/userfrosting/sprinkle-crud6\n";
+          $output .= " * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette\n";
+          $output .= " * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)\n";
+          $output .= " */\n\n";
+          $output .= "/**\n";
+          $output .= " * US English message token translations for the 'crud6' sprinkle.\n";
+          $output .= " * Merged from app/locale and examples/locale for integration testing.\n";
+          $output .= " *\n";
+          $output .= " * @author Alexander Weissman\n";
+          $output .= " */\n";
+          $output .= "return " . var_export($mergedMessages, true) . ";\n";
+          
+          // Write merged messages
+          file_put_contents($destPath, $output);
+          echo "  ✅ Merged messages written to: $destPath\n";
+          
+          // Verify the file is valid PHP
+          exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
+          if ($lintReturnCode !== 0) {
+              echo "  ❌ ERROR: Generated messages file has syntax errors!\n";
+              echo "  " . implode("\n  ", $lintOutput) . "\n";
+              exit(1);
+          }
+          echo "  ✅ Syntax validation passed\n";
+          MERGE_SCRIPT
+          
+          # Run the merge script
+          php /tmp/merge-messages.php \
+            "../sprinkle-crud6/examples/locale/en_US/messages.php" \
+            "app/locale/en_US/messages.php"
+          
+          echo ""
+          echo "========================================="
+          echo "Locale Messages Merge Complete"
+          echo "========================================="
+          echo ""
+          echo "Messages file content preview (first 50 lines):"
+          head -n 50 app/locale/en_US/messages.php
+          echo "..."
 
       - name: Setup environment
         run: |
@@ -355,7 +515,7 @@ jobs:
           php -r "
           require 'vendor/autoload.php';
 
-          // Test loading all c6admin schemas
+          // Test loading all CRUD6 schemas (copied from examples/schema)
           \$schemas = ['users', 'groups', 'roles', 'permissions', 'activities'];
 
           foreach (\$schemas as \$schemaName) {
@@ -376,7 +536,7 @@ jobs:
               echo '   Table: ' . \$schema['table'] . '\n';
           }
 
-          echo '\n✅ All c6admin schemas loaded successfully\n';
+          echo '\n✅ All CRUD6 schemas loaded successfully\n';
           "
 
       - name: Test database connection

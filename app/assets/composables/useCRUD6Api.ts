@@ -20,27 +20,90 @@ import { debugLog, debugWarn, debugError } from '../utils/debug'
 /**
  * Vue composable for CRUD6 CRUD operations.
  *
- * Endpoints:
- * - GET    /api/crud6/{model}/{id}        -> CRUD6Response
- * - POST   /api/crud6/{model}             -> CRUD6CreateResponse
- * - PUT    /api/crud6/{model}/{id}        -> CRUD6EditResponse
- * - PUT    /api/crud6/{model}/{id}/{field} -> CRUD6EditResponse
- * - DELETE /api/crud6/{model}/{id}        -> CRUD6DeleteResponse
+ * Provides reactive state and methods for performing Create, Read, Update, 
+ * and Delete operations on CRUD6 models. Integrates with the CRUD6 schema 
+ * system for automatic validation using Regle.
  *
- * Reactive state:
- * - apiLoading: boolean
- * - apiError: ApiErrorResponse | null
- * - formData: CRUD6CreateRequest
- * - r$: validation state from Regle for formData
+ * ## Endpoints
+ * - `GET    /api/crud6/{model}/{id}`        → CRUD6Response (single record)
+ * - `POST   /api/crud6/{model}`             → CRUD6CreateResponse (create)
+ * - `PUT    /api/crud6/{model}/{id}`        → CRUD6EditResponse (full update)
+ * - `PUT    /api/crud6/{model}/{id}/{field}` → CRUD6EditResponse (field update)
+ * - `DELETE /api/crud6/{model}/{id}`        → CRUD6DeleteResponse (delete)
  *
- * Methods:
- * - fetchRow(id: string): Promise<CRUD6Response>
- * - fetchRows(id: string): Promise<CRUD6Response> (alias for fetchRow)
- * - createRow(data: CRUD6CreateRequest): Promise<void>
- * - updateRow(id: string, data: CRUD6EditRequest): Promise<void>
- * - updateField(id: string, field: string, value: any): Promise<void>
- * - deleteRow(id: string): Promise<void>
- * - resetForm(): void
+ * ## Reactive State
+ * - `apiLoading` - Boolean indicating if an API call is in progress
+ * - `apiError` - Error response from the last failed API call, or null
+ * - `formData` - Reactive form data object for create/update operations
+ * - `r$` - Regle validation state for formData
+ * - `slugLocked` - Boolean controlling automatic slug generation from name
+ *
+ * @param modelName - Optional model name. If not provided, uses route.params.model
+ * @returns Object with reactive state and CRUD methods
+ *
+ * @example
+ * ```typescript
+ * // Basic usage in a Vue component
+ * import { useCRUD6Api } from '@/composables/useCRUD6Api'
+ * 
+ * const { 
+ *   fetchRow, 
+ *   createRow, 
+ *   updateRow, 
+ *   deleteRow, 
+ *   apiLoading, 
+ *   formData,
+ *   r$ 
+ * } = useCRUD6Api('users')
+ * 
+ * // Fetch a single record
+ * const user = await fetchRow('123')
+ * console.log(user.name, user.email)
+ * 
+ * // Create a new record
+ * formData.value = { name: 'John Doe', email: 'john@example.com' }
+ * await createRow(formData.value)
+ * 
+ * // Update an existing record
+ * await updateRow('123', { name: 'Jane Doe' })
+ * 
+ * // Update a single field
+ * await updateField('123', 'status', 'active')
+ * 
+ * // Delete a record
+ * await deleteRow('123')
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // With form validation
+ * const { formData, r$, createRow, apiLoading } = useCRUD6Api('products')
+ * 
+ * async function handleSubmit() {
+ *   // Validate form before submission
+ *   await r$.value.$validate()
+ *   
+ *   if (r$.value.$invalid) {
+ *     console.log('Form has validation errors')
+ *     return
+ *   }
+ *   
+ *   await createRow(formData.value)
+ * }
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Using with loading states in template
+ * // <template>
+ * //   <button :disabled="apiLoading" @click="handleSave">
+ * //     {{ apiLoading ? 'Saving...' : 'Save' }}
+ * //   </button>
+ * //   <div v-if="apiError" class="error">{{ apiError.description }}</div>
+ * // </template>
+ * 
+ * const { apiLoading, apiError, updateRow } = useCRUD6Api('orders')
+ * ```
  */
 export function useCRUD6Api(modelName?: string) {
     const defaultFormData = (): CRUD6CreateRequest => ({})

@@ -170,6 +170,82 @@ export interface CRUD6Schema {
  * Provides reactive access to schema data and methods to load schemas
  * from the API endpoints. Uses global Pinia store for caching to prevent
  * duplicate API calls across different component instances.
+ *
+ * ## Features
+ * - Automatic caching via Pinia store (prevents duplicate API calls)
+ * - Context filtering (list, form, detail, meta)
+ * - Related schema loading (batch loading of related model schemas)
+ * - Computed properties for common schema operations
+ *
+ * ## Reactive State
+ * - `schema` - The loaded schema object or null
+ * - `loading` - Boolean indicating if schema is being loaded
+ * - `error` - Error response from failed load, or null
+ * - `currentModel` - Name of the currently loaded model
+ *
+ * ## Computed Properties
+ * - `sortableFields` - Array of field names that are sortable
+ * - `filterableFields` - Array of field names that are filterable
+ * - `tableColumns` - Column configuration for data tables
+ * - `defaultSort` - Default sort configuration from schema
+ *
+ * @param modelName - Optional model name for auto-loading
+ * @returns Object with reactive state and schema methods
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - load schema on mount
+ * import { useCRUD6Schema } from '@/composables/useCRUD6Schema'
+ * 
+ * const { schema, loading, loadSchema, sortableFields } = useCRUD6Schema()
+ * 
+ * onMounted(async () => {
+ *   await loadSchema('users')
+ *   console.log('Fields:', Object.keys(schema.value?.fields || {}))
+ *   console.log('Sortable:', sortableFields.value)
+ * })
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Load with specific context (reduces payload size)
+ * const { loadSchema, schema } = useCRUD6Schema()
+ * 
+ * // Load only list fields (for table view)
+ * await loadSchema('products', false, 'list')
+ * 
+ * // Load only form fields (for create/edit forms)
+ * await loadSchema('products', false, 'form')
+ * 
+ * // Load full detail view with relationships
+ * await loadSchema('orders', false, 'detail', true)
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Use schema for table configuration
+ * const { schema, tableColumns, defaultSort } = useCRUD6Schema()
+ * 
+ * await loadSchema('invoices', false, 'list')
+ * 
+ * // Use in UFTable component
+ * // <UFTable
+ * //   :columns="tableColumns"
+ * //   :default-sort="defaultSort"
+ * //   :data="rows"
+ * // />
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Set schema directly without API call (when parent provides it)
+ * const { setSchema, schema } = useCRUD6Schema()
+ * 
+ * // Receive schema from parent component
+ * props.schema && setSchema(props.schema, 'users', 'detail')
+ * 
+ * // Now schema.value is available without additional API call
+ * ```
  */
 export function useCRUD6Schema(modelName?: string) {
     // Use global schema store for centralized caching

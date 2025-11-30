@@ -8,8 +8,6 @@ use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use UserFrosting\Config\Config;
-use UserFrosting\Fortress\RequestSchema;
-use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
@@ -17,11 +15,11 @@ use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
-use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
-use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\HashesPasswords;
 use UserFrosting\Sprinkle\CRUD6\Controller\Traits\ProcessesRelationshipActions;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\TransformsData;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -40,6 +38,8 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 class CreateAction extends Base
 {
     use ProcessesRelationshipActions;
+    use TransformsData;
+    use HashesPasswords;
     /**
      * Inject dependencies.
      */
@@ -133,22 +133,12 @@ class CreateAction extends Base
             'param_count' => count($params),
         ]);
 
-        // Load the request schema
-        $requestSchema = $this->getRequestSchema($schema);
-
-        // Whitelist and set parameter defaults
-        $data = $this->transformer->transform($requestSchema, $params);
+        // Transform and validate data using TransformsData trait
+        $data = $this->transformAndValidate($schema, $params);
         
-        $this->debugLog("CRUD6 [CreateAction] Data transformed", [
+        $this->debugLog("CRUD6 [CreateAction] Data transformed and validated", [
             'model' => $schema['model'],
-            'transformed_data' => $data,
-        ]);
-
-        // Validate request data
-        $this->validateData($requestSchema, $data);
-        
-        $this->debugLog("CRUD6 [CreateAction] Data validation passed", [
-            'model' => $schema['model'],
+            'data' => $data,
         ]);
 
         // Get current user. Won't be null, as AuthGuard prevent it
@@ -211,80 +201,5 @@ class CreateAction extends Base
         ]);
 
         return $record;
-    }
-
-    /**
-     * Load the request schema from the CRUD6 schema.
-     *
-     * @param array $schema The schema configuration
-     *
-     * @return RequestSchemaInterface
-     */
-    protected function getRequestSchema(array $schema): RequestSchemaInterface
-    {
-        $validationRules = $this->getValidationRules($schema);
-        $requestSchema = new RequestSchema($validationRules);
-
-        return $requestSchema;
-    }
-
-    /**
-     * Validate request POST data.
-     *
-     * @param RequestSchemaInterface $schema
-     * @param mixed[]                $data
-     */
-    protected function validateData(RequestSchemaInterface $schema, array $data): void
-    {
-        $this->debugLog("CRUD6 [CreateAction] Starting validation", [
-            'data' => $data,
-        ]);
-
-        $errors = $this->validator->validate($schema, $data);
-        if (count($errors) !== 0) {
-            $this->logger->error("CRUD6 [CreateAction] Validation failed", [
-                'errors' => $errors,
-                'error_count' => count($errors),
-            ]);
-
-            $e = new ValidationException();
-            $e->addErrors($errors);
-
-            throw $e;
-        }
-
-        $this->debugLog("CRUD6 [CreateAction] Validation successful", [
-            'data_validated' => true,
-        ]);
-    }
-
-    /**
-     * Hash password fields in the data.
-     * 
-     * Iterates through schema fields and hashes any field with type 'password'
-     * using UserFrosting's Hasher service before storing to database.
-     * 
-     * @param array $schema The schema configuration
-     * @param array $data   The input data
-     * 
-     * @return array The data with password fields hashed
-     */
-    protected function hashPasswordFields(array $schema, array $data): array
-    {
-        $fields = $schema['fields'] ?? [];
-        
-        foreach ($fields as $fieldName => $fieldConfig) {
-            // Check if field is a password type and has a value in the data
-            if (($fieldConfig['type'] ?? '') === 'password' && isset($data[$fieldName]) && !empty($data[$fieldName])) {
-                // Hash the password using UserFrosting's Hasher service
-                $data[$fieldName] = $this->hasher->hash($data[$fieldName]);
-                
-                $this->debugLog("CRUD6 [CreateAction] Password field hashed", [
-                    'field' => $fieldName,
-                ]);
-            }
-        }
-        
-        return $data;
     }
 }

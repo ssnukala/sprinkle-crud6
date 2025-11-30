@@ -7,8 +7,6 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 use Illuminate\Database\Connection;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use UserFrosting\Fortress\RequestSchema;
-use UserFrosting\Fortress\RequestSchema\RequestSchemaInterface;
 use UserFrosting\Fortress\Transformer\RequestDataTransformer;
 use UserFrosting\Fortress\Validator\ServerSideValidator;
 use UserFrosting\I18n\Translator;
@@ -17,10 +15,10 @@ use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
-use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
-use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\HashesPasswords;
+use UserFrosting\Sprinkle\CRUD6\Controller\Traits\TransformsData;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
@@ -42,6 +40,9 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  */
 class UpdateFieldAction extends Base
 {
+    use TransformsData;
+    use HashesPasswords;
+    
     /**
      * Inject dependencies.
      */
@@ -139,52 +140,10 @@ class UpdateFieldAction extends Base
                 'params' => $params,
             ]);
 
-            // For boolean fields without validation rules, ensure they pass through
-            // The RequestDataTransformer might skip fields with empty validation rules
-            $fieldType = $fieldConfig['type'] ?? 'string';
-            $validationRules = $fieldConfig['validation'] ?? [];
+            // Transform and validate single field using TransformsData trait
+            $data = $this->transformAndValidateField($fieldName, $fieldConfig, $params, $crudSchema);
             
-            // Create a validation schema for just this field
-            $validationSchema = new RequestSchema([
-                $fieldName => $validationRules
-            ]);
-
-            // Validate the single field
-            $errors = $this->validator->validate($validationSchema, $params);
-            if (count($errors) !== 0) {
-                $this->logger->error("CRUD6 [UpdateFieldAction] Validation failed", [
-                    'model' => $crudSchema['model'],
-                    'field' => $fieldName,
-                    'errors' => $errors,
-                ]);
-
-                $e = new ValidationException();
-                $e->addErrors($errors);
-
-                throw $e;
-            }
-            
-            $this->debugLog("CRUD6 [UpdateFieldAction] Validation passed", [
-                'model' => $crudSchema['model'],
-                'field' => $fieldName,
-            ]);
-
-            // Transform data using injected transformer
-            $data = $this->transformer->transform($validationSchema, $params);
-            
-            // For fields with no validation rules (especially booleans), ensure the field is in the data
-            // RequestDataTransformer may skip fields with empty validation schemas
-            if (!array_key_exists($fieldName, $data) && array_key_exists($fieldName, $params)) {
-                $data[$fieldName] = $params[$fieldName];
-                $this->debugLog("CRUD6 [UpdateFieldAction] Field added to data (no validation rules)", [
-                    'model' => $crudSchema['model'],
-                    'field' => $fieldName,
-                    'type' => $fieldType,
-                    'value' => $data[$fieldName],
-                ]);
-            }
-            
-            $this->debugLog("CRUD6 [UpdateFieldAction] Data transformed", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Data transformed and validated", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
                 'transformed_data' => $data,
@@ -199,10 +158,9 @@ class UpdateFieldAction extends Base
                     $oldValue = $crudModel->{$fieldName};
                     $newValue = $data[$fieldName];
                     
-                    // Hash password fields before saving
-                    $fieldConfig = $crudSchema['fields'][$fieldName] ?? [];
+                    // Hash password fields before saving using HashesPasswords trait helper
                     if (($fieldConfig['type'] ?? '') === 'password' && !empty($newValue)) {
-                        $newValue = $this->hasher->hash($newValue);
+                        $newValue = $this->hashPassword($newValue);
                         $this->debugLog("CRUD6 [UpdateFieldAction] Password field hashed", [
                             'field' => $fieldName,
                         ]);

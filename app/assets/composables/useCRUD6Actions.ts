@@ -51,9 +51,88 @@ export function isPasswordFieldAction(action: ActionConfig, field?: string | nul
  * Provides methods to execute schema-defined custom actions like
  * field updates, modal displays, route navigation, and API calls.
  * 
- * Supports i18n for confirm and success messages. Messages can be either:
- * - Translation keys (e.g., "CRUD6.ACTION.RESET_PASSWORD.CONFIRM")
- * - Plain text strings for backward compatibility
+ * ## Features
+ * - Automatic action enrichment (infers field, icon, label from key)
+ * - i18n support for confirm and success messages
+ * - Field toggle support for boolean fields
+ * - Password field handling with confirmation modal
+ * 
+ * ## Action Types
+ * - `field_update` - Update a field value (including toggles and password)
+ * - `modal` - Show a modal component
+ * - `route` - Navigate to a route
+ * - `api_call` - Make a custom API call
+ * 
+ * ## Reactive State
+ * - `loading` - Boolean indicating if an action is being executed
+ * - `error` - Error response from the last failed action, or null
+ *
+ * @param model - Optional model name for route navigation and API calls
+ * @returns Object with reactive state and action methods
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - execute a toggle action
+ * import { useCRUD6Actions } from '@/composables/useCRUD6Actions'
+ * 
+ * const { executeActionWithoutConfirm, loading } = useCRUD6Actions('users')
+ * 
+ * const toggleAction = {
+ *   key: 'toggle_enabled',
+ *   type: 'field_update',
+ *   field: 'enabled',
+ *   toggle: true
+ * }
+ * 
+ * await executeActionWithoutConfirm(toggleAction, '123', currentRecord)
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Password update with modal confirmation
+ * const { executeActionWithoutConfirm } = useCRUD6Actions('users')
+ * 
+ * const passwordAction = {
+ *   key: 'password_action',
+ *   type: 'field_update',
+ *   field: 'password',
+ *   requires_password_input: true
+ * }
+ * 
+ * // After PasswordInputModal provides the new password:
+ * await executeActionWithoutConfirm(passwordAction, '123', { password: 'newPassword123' })
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Navigate to a detail route
+ * const { executeActionWithoutConfirm } = useCRUD6Actions('orders')
+ * 
+ * const viewAction = {
+ *   key: 'view_details',
+ *   type: 'route',
+ *   route: 'order-detail'
+ * }
+ * 
+ * executeActionWithoutConfirm(viewAction, '456')
+ * // Navigates to: /orders/456/detail
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Custom API call action
+ * const { executeActionWithoutConfirm } = useCRUD6Actions('invoices')
+ * 
+ * const sendEmailAction = {
+ *   key: 'send_email',
+ *   type: 'api_call',
+ *   endpoint: '/api/invoices/{id}/send',
+ *   method: 'POST',
+ *   success_message: 'INVOICE.EMAIL_SENT'
+ * }
+ * 
+ * await executeActionWithoutConfirm(sendEmailAction, '789')
+ * ```
  * 
  * Note: Confirmation dialogs should be handled by components (e.g., ConfirmActionModal)
  * rather than using native browser confirm(). Use executeActionWithoutConfirm() when

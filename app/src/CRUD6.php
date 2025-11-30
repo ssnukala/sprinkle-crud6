@@ -20,6 +20,7 @@ use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\FieldTypeServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
@@ -104,6 +105,7 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
         return [
             CRUD6ModelService::class,
             SchemaServiceProvider::class,
+            FieldTypeServiceProvider::class,
         ];
     }
 }

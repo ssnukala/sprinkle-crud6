@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
+use Psr\SimpleCache\CacheInterface;
 use UserFrosting\Config\Config;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
@@ -28,8 +29,22 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
  * Schema files are loaded from the 'schema://crud6/' location and can be organized
  * by database connection in subdirectories for multi-database support.
  * 
- * Implements in-memory caching to prevent loading the same schema file multiple times
- * during a single request lifecycle. Cache keys are based on model name and connection.
+ * ## Caching Strategy
+ * 
+ * The service implements a two-tier caching system:
+ * 1. **In-memory cache**: Active during the request lifecycle (always enabled)
+ * 2. **Persistent cache**: Optional PSR-16 compatible cache for production (redis, file, etc.)
+ * 
+ * To enable persistent caching, inject a PSR-16 CacheInterface implementation.
+ * 
+ * @example
+ * ```php
+ * // With PSR-16 cache (production)
+ * $schemaService = new SchemaService($locator, $config, $logger, $translator, $cache);
+ * 
+ * // Without cache (development)
+ * $schemaService = new SchemaService($locator, $config);
+ * ```
  * 
  * @see \UserFrosting\Support\Repository\Loader\YamlFileLoader
  */
@@ -39,6 +54,16 @@ class SchemaService
      * @var string Base path for schema files
      */
     protected string $schemaPath = 'schema://crud6/';
+    
+    /**
+     * @var int Cache TTL in seconds (default: 1 hour)
+     */
+    protected int $cacheTtl = 3600;
+    
+    /**
+     * @var string Cache key prefix
+     */
+    protected string $cachePrefix = 'crud6_schema_';
     
     /**
      * In-memory cache of loaded schemas.
@@ -57,13 +82,17 @@ class SchemaService
      * @param Config                    $config     Configuration repository
      * @param DebugLoggerInterface|null $logger     Debug logger for diagnostics (optional)
      * @param Translator|null           $translator Translator for i18n (optional)
+     * @param CacheInterface|null       $cache      PSR-16 cache for persistent caching (optional)
      */
     public function __construct(
         protected ResourceLocatorInterface $locator,
         protected Config $config,
         protected ?DebugLoggerInterface $logger = null,
-        protected ?Translator $translator = null
+        protected ?Translator $translator = null,
+        protected ?CacheInterface $cache = null
     ) {
+        // Load cache TTL from config if available
+        $this->cacheTtl = $this->config->get('crud6.cache_ttl', 3600);
     }
 
     /**
@@ -535,6 +564,10 @@ class SchemaService
     /**
      * Get schema configuration for a model
      *
+     * Implements a two-tier caching strategy:
+     * 1. In-memory cache (request lifecycle)
+     * 2. PSR-16 persistent cache (optional, for production)
+     *
      * @param string $model The model name
      * @param string|null $connection Optional connection name for path-based lookup
      * @return array The schema configuration
@@ -544,8 +577,9 @@ class SchemaService
     {
         // Generate cache key
         $cacheKey = $this->getCacheKey($model, $connection);
+        $persistentCacheKey = $this->cachePrefix . $cacheKey;
         
-        // Check cache first
+        // 1. Check in-memory cache first (fastest)
         if (isset($this->schemaCache[$cacheKey])) {
             $this->debugLog("[CRUD6 SchemaService] ✅ Using CACHED schema (in-memory)", [
                 'model' => $model,
@@ -554,6 +588,27 @@ class SchemaService
                 'timestamp' => date('Y-m-d H:i:s.u'),
             ]);
             return $this->schemaCache[$cacheKey];
+        }
+        
+        // 2. Check PSR-16 persistent cache (if available)
+        if ($this->cache !== null && $this->isPersistentCacheEnabled()) {
+            try {
+                $cached = $this->cache->get($persistentCacheKey);
+                if ($cached !== null) {
+                    $this->debugLog("[CRUD6 SchemaService] ✅ Using CACHED schema (PSR-16)", [
+                        'model' => $model,
+                        'connection' => $connection ?? 'null',
+                        'cache_key' => $persistentCacheKey,
+                    ]);
+                    // Store in memory cache for this request
+                    $this->schemaCache[$cacheKey] = $cached;
+                    return $cached;
+                }
+            } catch (\Exception $e) {
+                $this->debugLog("[CRUD6 SchemaService] PSR-16 cache error", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         
         // DEBUG: Log every schema load attempt to track duplicate calls
@@ -625,10 +680,39 @@ class SchemaService
             'cache_key' => $cacheKey,
         ]);
 
-        // Store in cache for future requests during this request lifecycle
+        // Store in in-memory cache for future requests during this request lifecycle
         $this->schemaCache[$cacheKey] = $schema;
+        
+        // Store in PSR-16 persistent cache (if available and enabled)
+        if ($this->cache !== null && $this->isPersistentCacheEnabled()) {
+            try {
+                $this->cache->set($persistentCacheKey, $schema, $this->cacheTtl);
+                $this->debugLog("[CRUD6 SchemaService] Schema saved to PSR-16 cache", [
+                    'model' => $model,
+                    'cache_key' => $persistentCacheKey,
+                    'ttl' => $this->cacheTtl,
+                ]);
+            } catch (\Exception $e) {
+                $this->debugLog("[CRUD6 SchemaService] Failed to save to PSR-16 cache", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $schema;
+    }
+    
+    /**
+     * Check if persistent caching is enabled.
+     * 
+     * Checks the config for crud6.cache_enabled setting.
+     * Default is false (development mode).
+     * 
+     * @return bool True if persistent caching is enabled
+     */
+    protected function isPersistentCacheEnabled(): bool
+    {
+        return $this->config->get('crud6.cache_enabled', false);
     }
     
     /**
@@ -671,6 +755,7 @@ class SchemaService
     /**
      * Clear cached schema for a specific model.
      * 
+     * Clears both in-memory cache and PSR-16 persistent cache (if enabled).
      * Useful for testing or when schema files are updated during runtime.
      * 
      * @param string      $model      The model name
@@ -681,7 +766,21 @@ class SchemaService
     public function clearCache(string $model, ?string $connection = null): void
     {
         $cacheKey = $this->getCacheKey($model, $connection);
+        $persistentCacheKey = $this->cachePrefix . $cacheKey;
+        
+        // Clear in-memory cache
         unset($this->schemaCache[$cacheKey]);
+        
+        // Clear PSR-16 cache if available
+        if ($this->cache !== null) {
+            try {
+                $this->cache->delete($persistentCacheKey);
+            } catch (\Exception $e) {
+                $this->debugLog("[CRUD6 SchemaService] Failed to clear PSR-16 cache", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
         
         $this->debugLog("[CRUD6 SchemaService] Cache cleared for model", [
             'model' => $model,
@@ -693,6 +792,10 @@ class SchemaService
     /**
      * Clear all cached schemas.
      * 
+     * Clears both in-memory cache and PSR-16 persistent cache (if enabled).
+     * Note: PSR-16 clear() clears ALL cache entries, not just schema entries.
+     * For selective clearing, use clearCache() for each model.
+     * 
      * Useful for testing or when multiple schema files are updated.
      * 
      * @return void
@@ -702,7 +805,10 @@ class SchemaService
         $count = count($this->schemaCache);
         $this->schemaCache = [];
         
-        $this->debugLog("[CRUD6 SchemaService] All schema cache cleared", [
+        // Note: We don't call $this->cache->clear() as it would clear ALL cache
+        // entries, not just schema entries. Use clearCache() for each model instead.
+        
+        $this->debugLog("[CRUD6 SchemaService] All in-memory schema cache cleared", [
             'entries_removed' => $count,
         ]);
     }

@@ -7,6 +7,67 @@
  * This eliminates the need for components to have extensive conditional
  * logic for different field types.
  * 
+ * ## Features
+ * - Centralized field type detection
+ * - Automatic HTML input type mapping
+ * - Pattern validation extraction
+ * - Special component handling (smartlookup, address, boolean variants)
+ * - Accessibility attributes (aria-label, data-test)
+ *
+ * ## Supported Field Types
+ * - **Text**: string, email, url, phone, zip
+ * - **Numeric**: number, integer, decimal, float
+ * - **Special**: password, date, datetime, textarea
+ * - **Boolean**: boolean, boolean-yn, boolean-tgl, boolean-toggle
+ * - **Components**: smartlookup, address
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - get render configuration for a field
+ * import { useCRUD6FieldRenderer } from '@/composables/useCRUD6FieldRenderer'
+ * 
+ * const { getFieldRenderConfig } = useCRUD6FieldRenderer()
+ * 
+ * const field = { type: 'email', label: 'Email Address', required: true }
+ * const config = getFieldRenderConfig(field, 'email', '')
+ * 
+ * // config.element = 'input'
+ * // config.attributes.type = 'email'
+ * // config.attributes.required = true
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Render a smartlookup field with AutoLookup component
+ * const { getFieldRenderConfig } = useCRUD6FieldRenderer()
+ * 
+ * const field = {
+ *   type: 'smartlookup',
+ *   lookup_model: 'categories',
+ *   lookup_id: 'id',
+ *   lookup_desc: 'name'
+ * }
+ * 
+ * const config = getFieldRenderConfig(field, 'category_id', null, {
+ *   AutoLookup: AutoLookupComponent
+ * })
+ * 
+ * // config.component = AutoLookupComponent
+ * // config.attributes.model = 'categories'
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Get field attributes for a textarea
+ * const { getFieldAttributes } = useCRUD6FieldRenderer()
+ * 
+ * const field = { type: 'textarea-r5', label: 'Description' }
+ * const attrs = getFieldAttributes(field, 'description', '')
+ * 
+ * // attrs.rows = 5
+ * // attrs.class = 'uk-textarea'
+ * ```
+ * 
  * CENTRALIZED PROCESSING:
  * - All field type detection and attribute extraction happens here
  * - Components just pass field config and get back what to render

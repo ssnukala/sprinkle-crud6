@@ -26,10 +26,10 @@ These are low-effort, high-impact improvements that can be implemented immediate
   - File: `docs/COMPREHENSIVE_REVIEW.md`
   - Status: Completed
 
-- [ ] **Add inline JSDoc/PHPDoc examples**
+- [x] **Add inline JSDoc/PHPDoc examples** ✅
   - Files: `app/assets/composables/*.ts`
   - Add `@example` blocks to public functions
-  - Effort: 2-3 hours
+  - Status: Completed - Added comprehensive examples to useCRUD6Api, useCRUD6Schema, useCRUD6Actions, useCRUD6FieldRenderer, useCRUD6Relationships
 
 ---
 
@@ -75,10 +75,10 @@ These improvements require more effort but provide significant value.
   }
   ```
 
-- [ ] **Add PSR-16 cache support to SchemaService**
+- [x] **Add PSR-16 cache support to SchemaService** ✅
   - File: `app/src/ServicesProvider/SchemaService.php`
   - Add optional persistent cache for production
-  - Effort: 3-4 hours
+  - Status: Completed with two-tier caching (in-memory + PSR-16)
 
 ### Vue Frontend
 
@@ -100,10 +100,10 @@ These improvements require more effort but provide significant value.
   )
   ```
 
-- [ ] **Add API Reference documentation**
+- [x] **Add API Reference documentation** ✅
   - Create: `docs/API_REFERENCE.md`
   - Document all endpoints with request/response examples
-  - Effort: 4-6 hours
+  - Status: Completed with comprehensive endpoint documentation
 
 ---
 
@@ -210,11 +210,12 @@ These are significant features for future consideration.
 | Improvement | Impact | Effort | Priority | Status |
 |------------|--------|--------|----------|--------|
 | Remove hardcoded Sprunje defaults | Medium | Very Low | **P1** | ✅ Done |
-| Add JSDoc/PHPDoc examples | Medium | Low | **P1** | Pending |
+| Add JSDoc/PHPDoc examples | Medium | Low | **P1** | ✅ Done |
 | Extract controller traits | High | Medium | **P2** | ✅ Done |
 | Create shared API client | Medium | Low | **P2** | ✅ Done |
 | Create CRUD6Config class | Medium | Low | **P2** | ✅ Done |
-| Add PSR-16 cache support | Medium | Medium | **P2** | Pending |
+| Add PSR-16 cache support | Medium | Medium | **P2** | ✅ Done |
+| Add API Reference docs | Medium | Medium | **P2** | ✅ Done |
 | Implement FieldTypeRegistry | High | High | **P3** | ✅ Done |
 | Create HashesPasswords trait | Medium | Low | **P3** | ✅ Done |
 | Document comparable packages | Medium | Medium | **P3** | ✅ Done |
@@ -235,16 +236,19 @@ These are significant features for future consideration.
    - Implement FieldTypeRegistry
    - Create HashesPasswords trait
    - Document comparable packages
-
-2. **Next Priority**:
    - Add JSDoc examples to composables
-   - Add PSR-16 cache support
+   - Add PSR-16 cache support to SchemaService
    - Create API Reference documentation
 
-3. **Future Sprint**:
+2. **Next Priority**:
    - Add hook/event system for CRUD operations
    - Add OpenAPI documentation generation
    - Create Vue field renderer plugin system
+
+3. **Future Sprint**:
+   - Add GraphQL support
+   - Add real-time/WebSocket updates
+   - Schema generation from existing database
 
 ---
 

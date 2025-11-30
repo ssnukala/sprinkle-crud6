@@ -27,15 +27,17 @@ use UserFrosting\Sprinkle\CRUD6\FieldTypes\Types\CurrencyFieldType;
  * 
  * @example
  * ```php
+ * // In your custom sprinkle's service provider:
  * class MyFieldTypesServiceProvider implements ServicesProviderInterface
  * {
  *     public function register(): array
  *     {
  *         return [
- *             MyFieldTypesServiceProvider::class => function (FieldTypeRegistry $registry) {
+ *             // Use DI\decorate to extend the existing registry
+ *             FieldTypeRegistry::class => \DI\decorate(function (FieldTypeRegistry $registry) {
  *                 $registry->register(new MyCustomFieldType());
  *                 return $registry;
- *             }
+ *             })
  *         ];
  *     }
  * }

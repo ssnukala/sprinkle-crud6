@@ -38,6 +38,11 @@ namespace UserFrosting\Sprinkle\CRUD6\FieldTypes;
 class FieldTypeRegistry
 {
     /**
+     * @var string Regex pattern for textarea type variants (e.g., "textarea-r5c60")
+     */
+    private const TEXTAREA_PATTERN = '/^(?:text|textarea)(?:-r\d+)?(?:c\d+)?$/';
+
+    /**
      * @var array<string, FieldTypeInterface> Registered field type handlers
      */
     private array $types = [];
@@ -144,7 +149,7 @@ class FieldTypeRegistry
         }
 
         // Handle textarea with row/column specification (e.g., "textarea-r5c60")
-        if (preg_match('/^(?:text|textarea)(?:-r\d+)?(?:c\d+)?$/', $type)) {
+        if (preg_match(self::TEXTAREA_PATTERN, $type)) {
             return (string) $value;
         }
 
@@ -188,7 +193,7 @@ class FieldTypeRegistry
         }
 
         // Normalize type for textarea variants
-        if (preg_match('/^(?:text|textarea)(?:-r\d+)?(?:c\d+)?$/', $type)) {
+        if (preg_match(self::TEXTAREA_PATTERN, $type)) {
             return 'string';
         }
 
@@ -281,7 +286,18 @@ class FieldTypeRegistry
                 
             case 'json':
             case 'array':
-                return is_string($value) ? $value : json_encode($value);
+                // If already a string, check if it's valid JSON before returning
+                if (is_string($value)) {
+                    // Attempt to decode - if valid JSON, return as-is to avoid double-encoding
+                    json_decode($value);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        return $value;
+                    }
+                    // If not valid JSON, encode the raw string
+                    return json_encode($value);
+                }
+                // Encode non-string values (arrays, objects)
+                return json_encode($value);
                 
             case 'date':
             case 'datetime':

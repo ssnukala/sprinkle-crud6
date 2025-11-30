@@ -44,9 +44,13 @@ class CurrencyFieldType extends AbstractFieldType
     }
 
     /**
-     * Transform from dollars (float) to cents (int) for storage.
+     * Transform from dollars (float/string) to cents (int) for storage.
      * 
-     * @param mixed $value Dollar amount as float or string
+     * Uses string manipulation to avoid floating-point precision issues.
+     * The value is converted to a string, split on the decimal point,
+     * and then reconstructed as an integer in cents.
+     * 
+     * @param mixed $value Dollar amount as float, int, or string
      * 
      * @return int Amount in cents
      */
@@ -56,12 +60,36 @@ class CurrencyFieldType extends AbstractFieldType
             return 0;
         }
         
-        // Convert to float, multiply by 100, round to avoid floating point issues
-        return (int) round((float) $value * 100);
+        // Convert to string for precise manipulation
+        $stringValue = (string) $value;
+        
+        // Remove any non-numeric characters except decimal point and minus
+        $stringValue = preg_replace('/[^0-9.\-]/', '', $stringValue);
+        
+        // Handle negative values
+        $isNegative = str_starts_with($stringValue, '-');
+        $stringValue = ltrim($stringValue, '-');
+        
+        // Split on decimal point
+        $parts = explode('.', $stringValue);
+        $dollars = (int) ($parts[0] ?? 0);
+        
+        // Handle cents with proper padding/truncation
+        $centsStr = $parts[1] ?? '00';
+        $centsStr = str_pad(substr($centsStr, 0, 2), 2, '0');
+        $cents = (int) $centsStr;
+        
+        // Calculate total in cents
+        $totalCents = ($dollars * 100) + $cents;
+        
+        return $isNegative ? -$totalCents : $totalCents;
     }
 
     /**
      * Cast from cents (int) to dollars (float) for display.
+     * 
+     * For display purposes, floating-point is acceptable since we're
+     * outputting for the UI, not performing calculations.
      * 
      * @param mixed $value Amount in cents
      * 

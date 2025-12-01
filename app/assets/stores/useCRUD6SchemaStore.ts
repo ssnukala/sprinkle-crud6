@@ -107,6 +107,41 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     }
 
     /**
+     * Find a cached superset context for the requested context
+     * 
+     * For example:
+     * - If "list,detail,form" is cached and we request "list,form" → return "list,detail,form"
+     * - If "form" is cached and we request "list,form" → return null (not a superset)
+     */
+    function findCachedSupersetContext(model: string, context?: string): string | null {
+        if (!context) return null
+        
+        const requestedContexts = context.split(',').map(c => c.trim())
+        
+        for (const cacheKey of Object.keys(schemas.value)) {
+            const [cachedModel, cachedContext] = cacheKey.split(':')
+            if (cachedModel !== model) continue
+            if (!cachedContext || cachedContext === 'full') continue
+            
+            // Check if the cached context contains all requested contexts (is a superset)
+            const cachedContexts = cachedContext.split(',').map(c => c.trim())
+            const containsAll = requestedContexts.every(rc => cachedContexts.includes(rc))
+            
+            if (containsAll) {
+                debugLog('[useCRUD6SchemaStore] 🔍 Found cached superset context:', {
+                    requested: context,
+                    cached: cachedContext,
+                    cacheKey,
+                    message: 'Will use cached superset instead of making API call'
+                })
+                return cacheKey
+            }
+        }
+        
+        return null
+    }
+
+    /**
      * Load schema for a specific model
      * Returns cached schema if available, otherwise fetches from API
      * 
@@ -166,6 +201,22 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     }
                 }, 100)
             })
+        }
+
+        // Check if a superset context is already cached (e.g., "list,detail,form" cached when "list,form" requested)
+        // This avoids making an API call when the data is already available in a broader cached context
+        if (!force && context) {
+            const supersetCacheKey = findCachedSupersetContext(model, context)
+            if (supersetCacheKey) {
+                debugLog('[useCRUD6SchemaStore] ✅ Using cached SUPERSET schema - supersetKey:', supersetCacheKey, '(NO API CALL)')
+                // Return the superset schema - it contains all the data we need
+                // Also cache this for the exact context key for future lookups
+                const supersetSchema = schemas.value[supersetCacheKey]
+                if (supersetSchema) {
+                    schemas.value[cacheKey] = supersetSchema
+                    return supersetSchema
+                }
+            }
         }
 
         debugLog('[useCRUD6SchemaStore] 🌐 MAKING API CALL to load schema - cacheKey:', cacheKey, 'force:', force, 'context:', context || 'full')

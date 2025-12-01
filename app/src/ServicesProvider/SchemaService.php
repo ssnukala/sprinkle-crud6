@@ -1382,124 +1382,40 @@ class SchemaService
             'model' => $schema['model'] ?? 'unknown',
         ]);
 
-        // Translate top-level translatable fields
-        $translatableTopLevel = ['title', 'singular_title', 'description'];
-        foreach ($translatableTopLevel as $field) {
-            if (isset($schema[$field])) {
-                $schema[$field] = $this->translateValue($schema[$field]);
-            }
-        }
-
-        // Translate field labels and descriptions
-        if (isset($schema['fields']) && is_array($schema['fields'])) {
-            foreach ($schema['fields'] as $fieldKey => $field) {
-                if (isset($field['label'])) {
-                    $schema['fields'][$fieldKey]['label'] = $this->translateValue($field['label']);
-                }
-                if (isset($field['description'])) {
-                    $schema['fields'][$fieldKey]['description'] = $this->translateValue($field['description']);
-                }
-                if (isset($field['placeholder'])) {
-                    $schema['fields'][$fieldKey]['placeholder'] = $this->translateValue($field['placeholder']);
-                }
-            }
-        }
-
-        // Translate actions
-        if (isset($schema['actions']) && is_array($schema['actions'])) {
-            foreach ($schema['actions'] as $index => $action) {
-                if (isset($action['label'])) {
-                    $schema['actions'][$index]['label'] = $this->translateValue($action['label']);
-                }
-                if (isset($action['confirm'])) {
-                    $schema['actions'][$index]['confirm'] = $this->translateValue($action['confirm']);
-                }
-                if (isset($action['success_message'])) {
-                    $schema['actions'][$index]['success_message'] = $this->translateValue($action['success_message']);
-                }
-            }
-        }
-
-        // Translate relationships
-        if (isset($schema['relationships']) && is_array($schema['relationships'])) {
-            foreach ($schema['relationships'] as $index => $rel) {
-                if (isset($rel['title'])) {
-                    $schema['relationships'][$index]['title'] = $this->translateValue($rel['title']);
-                }
-            }
-        }
-
-        // Translate details
-        if (isset($schema['details']) && is_array($schema['details'])) {
-            foreach ($schema['details'] as $index => $detail) {
-                if (isset($detail['title'])) {
-                    $schema['details'][$index]['title'] = $this->translateValue($detail['title']);
-                }
-            }
-        }
-
-        // Translate contexts if present (multi-context response)
-        if (isset($schema['contexts']) && is_array($schema['contexts'])) {
-            foreach ($schema['contexts'] as $contextName => $contextData) {
-                // Translate fields in context
-                if (isset($contextData['fields']) && is_array($contextData['fields'])) {
-                    foreach ($contextData['fields'] as $fieldKey => $field) {
-                        if (isset($field['label'])) {
-                            $schema['contexts'][$contextName]['fields'][$fieldKey]['label'] = $this->translateValue($field['label']);
-                        }
-                        if (isset($field['description'])) {
-                            $schema['contexts'][$contextName]['fields'][$fieldKey]['description'] = $this->translateValue($field['description']);
-                        }
-                    }
-                }
-                
-                // Translate actions in context
-                if (isset($contextData['actions']) && is_array($contextData['actions'])) {
-                    foreach ($contextData['actions'] as $index => $action) {
-                        if (isset($action['label'])) {
-                            $schema['contexts'][$contextName]['actions'][$index]['label'] = $this->translateValue($action['label']);
-                        }
-                        if (isset($action['confirm'])) {
-                            $schema['contexts'][$contextName]['actions'][$index]['confirm'] = $this->translateValue($action['confirm']);
-                        }
-                        if (isset($action['success_message'])) {
-                            $schema['contexts'][$contextName]['actions'][$index]['success_message'] = $this->translateValue($action['success_message']);
-                        }
-                    }
-                }
-                
-                // Translate details in context
-                if (isset($contextData['details']) && is_array($contextData['details'])) {
-                    foreach ($contextData['details'] as $index => $detail) {
-                        if (isset($detail['title'])) {
-                            $schema['contexts'][$contextName]['details'][$index]['title'] = $this->translateValue($detail['title']);
-                        }
-                    }
-                }
-                
-                // Translate relationships in context
-                if (isset($contextData['relationships']) && is_array($contextData['relationships'])) {
-                    foreach ($contextData['relationships'] as $index => $rel) {
-                        if (isset($rel['title'])) {
-                            $schema['contexts'][$contextName]['relationships'][$index]['title'] = $this->translateValue($rel['title']);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Translate related_schemas if present
-        if (isset($schema['related_schemas']) && is_array($schema['related_schemas'])) {
-            foreach ($schema['related_schemas'] as $modelName => $relatedSchema) {
-                $schema['related_schemas'][$modelName] = $this->translateSchema($relatedSchema);
-            }
-        }
+        // Recursively translate all string values that look like translation keys
+        $schema = $this->translateArrayRecursive($schema);
 
         $this->debugLog("[CRUD6 SchemaService] Schema translation complete", [
             'model' => $schema['model'] ?? 'unknown',
         ]);
 
         return $schema;
+    }
+
+    /**
+     * Recursively translate all string values in an array that look like translation keys.
+     * 
+     * This method traverses the entire array structure and translates any string value
+     * that matches the translation key pattern (uppercase with dots).
+     * 
+     * @param array $data The array to translate
+     * 
+     * @return array The array with all translation keys translated
+     */
+    protected function translateArrayRecursive(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                // Recursively translate nested arrays
+                $data[$key] = $this->translateArrayRecursive($value);
+            } elseif (is_string($value)) {
+                // Translate string values that look like translation keys
+                $data[$key] = $this->translateValue($value);
+            }
+            // Non-string, non-array values are left as-is
+        }
+        
+        return $data;
     }
 
     /**

@@ -218,10 +218,12 @@ function isActionVisible(action: ActionConfig): boolean {
         for (const [field, expectedValue] of Object.entries(action.visible_when)) {
             const actualValue = crud6[field]
             
-            // Handle boolean comparisons (convert strings to booleans)
+            // Handle boolean comparisons - database values may be 0/1, '0'/'1', true/false, or null
             if (typeof expectedValue === 'boolean') {
-                // Convert truthy/falsy values to boolean for comparison
-                if (Boolean(actualValue) !== expectedValue) {
+                // Normalize database boolean values to JavaScript boolean
+                // Common representations: 0, 1, '0', '1', true, false, null, undefined
+                const normalizedActual = actualValue === 1 || actualValue === '1' || actualValue === true
+                if (normalizedActual !== expectedValue) {
                     return false
                 }
             } else if (actualValue !== expectedValue) {

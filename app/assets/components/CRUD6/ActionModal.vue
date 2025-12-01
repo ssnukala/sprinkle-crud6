@@ -86,9 +86,7 @@ const modalConfig = computed((): ModalConfig => {
             defaultButtons = 'confirm_cancel'
     }
     
-    // For 'confirm' type modals, don't auto-include action.field as input
-    // Only show input fields for 'input' or 'form' type modals
-    // This prevents confirmation dialogs from asking for field values
+    // Prevent confirm modals from auto-including action.field as input field
     let fields: string[] = []
     if (config.fields) {
         // Explicitly specified fields - always use them

@@ -14,6 +14,10 @@
  * 
  * These translations are copied from sprinkle-c6admin for testing purposes.
  * Schema files in examples/schema use these translation keys.
+ * 
+ * SYNC NOTE: To update these translations, copy from:
+ * https://github.com/ssnukala/sprinkle-c6admin/blob/main/app/locale/en_US/messages.php
+ * When c6admin updates translations, this file should be synchronized.
  *
  * @author Alexander Weissman
  * @author Srinivas Nukala

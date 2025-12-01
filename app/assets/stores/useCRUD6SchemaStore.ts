@@ -210,11 +210,12 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             if (supersetCacheKey) {
                 debugLog('[useCRUD6SchemaStore] ✅ Using cached SUPERSET schema - supersetKey:', supersetCacheKey, '(NO API CALL)')
                 // Return the superset schema - it contains all the data we need
-                // Also cache this for the exact context key for future lookups
+                // Create a shallow copy to avoid unintended mutations across cache entries
                 const supersetSchema = schemas.value[supersetCacheKey]
                 if (supersetSchema) {
-                    schemas.value[cacheKey] = supersetSchema
-                    return supersetSchema
+                    // Cache a shallow copy for this exact context key to prevent mutation issues
+                    schemas.value[cacheKey] = { ...supersetSchema }
+                    return schemas.value[cacheKey]
                 }
             }
         }

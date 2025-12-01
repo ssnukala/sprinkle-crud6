@@ -1441,6 +1441,7 @@ class SchemaService
         // Translate contexts if present (multi-context response)
         if (isset($schema['contexts']) && is_array($schema['contexts'])) {
             foreach ($schema['contexts'] as $contextName => $contextData) {
+                // Translate fields in context
                 if (isset($contextData['fields']) && is_array($contextData['fields'])) {
                     foreach ($contextData['fields'] as $fieldKey => $field) {
                         if (isset($field['label'])) {
@@ -1448,6 +1449,39 @@ class SchemaService
                         }
                         if (isset($field['description'])) {
                             $schema['contexts'][$contextName]['fields'][$fieldKey]['description'] = $this->translateValue($field['description']);
+                        }
+                    }
+                }
+                
+                // Translate actions in context
+                if (isset($contextData['actions']) && is_array($contextData['actions'])) {
+                    foreach ($contextData['actions'] as $index => $action) {
+                        if (isset($action['label'])) {
+                            $schema['contexts'][$contextName]['actions'][$index]['label'] = $this->translateValue($action['label']);
+                        }
+                        if (isset($action['confirm'])) {
+                            $schema['contexts'][$contextName]['actions'][$index]['confirm'] = $this->translateValue($action['confirm']);
+                        }
+                        if (isset($action['success_message'])) {
+                            $schema['contexts'][$contextName]['actions'][$index]['success_message'] = $this->translateValue($action['success_message']);
+                        }
+                    }
+                }
+                
+                // Translate details in context
+                if (isset($contextData['details']) && is_array($contextData['details'])) {
+                    foreach ($contextData['details'] as $index => $detail) {
+                        if (isset($detail['title'])) {
+                            $schema['contexts'][$contextName]['details'][$index]['title'] = $this->translateValue($detail['title']);
+                        }
+                    }
+                }
+                
+                // Translate relationships in context
+                if (isset($contextData['relationships']) && is_array($contextData['relationships'])) {
+                    foreach ($contextData['relationships'] as $index => $rel) {
+                        if (isset($rel['title'])) {
+                            $schema['contexts'][$contextName]['relationships'][$index]['title'] = $this->translateValue($rel['title']);
                         }
                     }
                 }

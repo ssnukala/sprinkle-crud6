@@ -185,6 +185,80 @@ For password changes, the modal automatically shows a confirmation field when th
 }
 ```
 
+## Conditional Action Visibility
+
+Actions can be conditionally shown or hidden based on the current record's field values using the `visible_when` property.
+
+### Basic Usage
+
+The `visible_when` property is an object where keys are field names and values are the expected values. The action is only visible when ALL conditions are met.
+
+```json
+{
+  "actions": [
+    {
+      "key": "disable_user",
+      "label": "Disable User",
+      "type": "field_update",
+      "field": "flag_enabled",
+      "value": false,
+      "style": "danger",
+      "confirm": "Are you sure you want to disable this user?",
+      "visible_when": {
+        "flag_enabled": true
+      }
+    },
+    {
+      "key": "enable_user",
+      "label": "Enable User",
+      "type": "field_update",
+      "field": "flag_enabled",
+      "value": true,
+      "style": "primary",
+      "confirm": "Are you sure you want to enable this user?",
+      "visible_when": {
+        "flag_enabled": false
+      }
+    }
+  ]
+}
+```
+
+### Multiple Conditions
+
+You can specify multiple conditions. All must be true for the action to be visible:
+
+```json
+{
+  "visible_when": {
+    "status": "pending",
+    "is_verified": true
+  }
+}
+```
+
+### Supported Comparisons
+
+| Field Type | Comparison | Example |
+|------------|------------|---------|
+| Boolean | Exact match | `"flag_enabled": true` |
+| String | Exact match | `"status": "active"` |
+| Number | Exact match | `"priority": 1` |
+| Null | Null check | `"deleted_at": null` |
+
+**Note:** Boolean comparisons handle truthy/falsy values (0, 1, "0", "1", etc.) correctly.
+
+### Use Cases
+
+| Pattern | Use Case |
+|---------|----------|
+| Show only when enabled | `"visible_when": { "flag_enabled": true }` |
+| Show only when disabled | `"visible_when": { "flag_enabled": false }` |
+| Show only for pending items | `"visible_when": { "status": "pending" }` |
+| Show only for verified users | `"visible_when": { "flag_verified": true }` |
+
+This feature helps reduce UI clutter by showing only relevant actions for the current record state.
+
 ## Boolean Field Types
 
 CRUD6 supports three different boolean field rendering options:

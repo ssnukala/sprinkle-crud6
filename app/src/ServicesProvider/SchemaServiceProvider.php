@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
+use Psr\Container\ContainerInterface;
 use Psr\SimpleCache\CacheInterface;
 use UserFrosting\Config\Config;
 use UserFrosting\I18n\Translator;
@@ -41,12 +42,25 @@ class SchemaServiceProvider implements ServicesProviderInterface
     public function register(): array
     {
         return [
-            SchemaService::class => \DI\autowire(SchemaService::class)
-                ->constructorParameter('locator', \DI\get(ResourceLocatorInterface::class))
-                ->constructorParameter('config', \DI\get(Config::class))
-                ->constructorParameter('logger', \DI\get(DebugLoggerInterface::class))
-                ->constructorParameter('translator', \DI\get(Translator::class))
-                ->constructorParameter('cache', \DI\get(CacheInterface::class)),
+            SchemaService::class => function (ContainerInterface $c) {
+                // Get required dependencies
+                $locator = $c->get(ResourceLocatorInterface::class);
+                $config = $c->get(Config::class);
+                $logger = $c->get(DebugLoggerInterface::class);
+                $translator = $c->get(Translator::class);
+                
+                // Cache is optional - try to get it but don't fail if not available
+                $cache = null;
+                if ($c->has(CacheInterface::class)) {
+                    try {
+                        $cache = $c->get(CacheInterface::class);
+                    } catch (\Exception $e) {
+                        // Cache not available, continue without it
+                    }
+                }
+                
+                return new SchemaService($locator, $config, $logger, $translator, $cache);
+            },
         ];
     }
 }

@@ -1,8 +1,8 @@
 {
     "model": "groups",
-    "title": "GROUP.PAGE",
-    "singular_title": "GROUP.1",
-    "description": "GROUP.PAGE_DESCRIPTION",
+    "title": "CRUD6.GROUP.PAGE",
+    "singular_title": "CRUD6.GROUP.1",
+    "description": "CRUD6.GROUP.PAGE_DESCRIPTION",
     "table": "groups",
     "primary_key": "id",
     "permissions": {
@@ -25,13 +25,13 @@
                 "email",
                 "flag_enabled"
             ],
-            "title": "GROUP.USERS"
+            "title": "CRUD6.GROUP.USERS"
         }
     ],
     "fields": {
         "id": {
             "type": "integer",
-            "label": "ID",
+            "label": "CRUD6.GROUP.ID",
             "auto_increment": true,
             "readonly": true,
             "show_in": [
@@ -40,7 +40,7 @@
         },
         "slug": {
             "type": "string",
-            "label": "Slug",
+            "label": "CRUD6.GROUP.SLUG",
             "required": true,
             "show_in": [
                 "form",
@@ -57,7 +57,7 @@
         },
         "name": {
             "type": "string",
-            "label": "Name",
+            "label": "CRUD6.GROUP.NAME",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -78,7 +78,7 @@
         },
         "description": {
             "type": "text",
-            "label": "Description",
+            "label": "CRUD6.GROUP.DESCRIPTION",
             "required": false,
             "sortable": false,
             "filterable": false,
@@ -90,7 +90,7 @@
         },
         "icon": {
             "type": "string",
-            "label": "Icon",
+            "label": "CRUD6.GROUP.ICON",
             "required": false,
             "show_in": [
                 "form",
@@ -104,7 +104,7 @@
         },
         "created_at": {
             "type": "datetime",
-            "label": "Created At",
+            "label": "CRUD6.GROUP.CREATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"
@@ -113,7 +113,7 @@
         },
         "updated_at": {
             "type": "datetime",
-            "label": "Updated At",
+            "label": "CRUD6.GROUP.UPDATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"

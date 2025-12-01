@@ -1,8 +1,8 @@
 {
     "model": "permissions",
-    "title": "PERMISSION.PAGE",
-    "singular_title": "PERMISSION.1",
-    "description": "PERMISSION.PAGE_DESCRIPTION",
+    "title": "CRUD6.PERMISSION.PAGE",
+    "singular_title": "CRUD6.PERMISSION.1",
+    "description": "CRUD6.PERMISSION.PAGE_DESCRIPTION",
     "table": "permissions",
     "primary_key": "id",
     "permissions": {
@@ -43,7 +43,7 @@
             "second_pivot_table": "role_users",
             "second_foreign_key": "role_id",
             "second_related_key": "user_id",
-            "title": "PERMISSION.USERS"
+            "title": "CRUD6.PERMISSION.USERS"
         }
     ],
     "details": [
@@ -55,7 +55,7 @@
                 "last_name",
                 "email"
             ],
-            "title": "PERMISSION.USERS"
+            "title": "CRUD6.PERMISSION.USERS"
         },
         {
             "model": "roles",
@@ -70,7 +70,7 @@
     "fields": {
         "id": {
             "type": "integer",
-            "label": "ID",
+            "label": "CRUD6.PERMISSION.ID",
             "auto_increment": true,
             "readonly": true,
             "show_in": [
@@ -79,7 +79,7 @@
         },
         "slug": {
             "type": "string",
-            "label": "Slug",
+            "label": "CRUD6.PERMISSION.SLUG",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -99,7 +99,7 @@
         },
         "name": {
             "type": "string",
-            "label": "Name",
+            "label": "CRUD6.PERMISSION.NAME",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -120,7 +120,7 @@
         },
         "conditions": {
             "type": "text",
-            "label": "Conditions",
+            "label": "CRUD6.PERMISSION.CONDITIONS",
             "required": false,
             "show_in": [
                 "form",
@@ -129,7 +129,7 @@
         },
         "description": {
             "type": "text",
-            "label": "Description",
+            "label": "CRUD6.PERMISSION.DESCRIPTION",
             "required": false,
             "sortable": false,
             "filterable": false,
@@ -141,7 +141,7 @@
         },
         "role_ids": {
             "type": "multiselect",
-            "label": "Roles",
+            "label": "CRUD6.PERMISSION.ROLES",
             "description": "Permission roles (used for sync on update)",
             "computed": true,
             "lookup": {
@@ -156,7 +156,7 @@
         },
         "created_at": {
             "type": "datetime",
-            "label": "Created At",
+            "label": "CRUD6.PERMISSION.CREATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"
@@ -165,7 +165,7 @@
         },
         "updated_at": {
             "type": "datetime",
-            "label": "Updated At",
+            "label": "CRUD6.PERMISSION.UPDATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"

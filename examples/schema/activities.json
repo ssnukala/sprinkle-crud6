@@ -1,8 +1,8 @@
 {
     "model": "activities",
-    "title": "ACTIVITY.PAGE",
-    "singular_title": "ACTIVITY.1",
-    "description": "ACTIVITY.PAGE_DESCRIPTION",
+    "title": "CRUD6.ACTIVITY.PAGE",
+    "singular_title": "CRUD6.ACTIVITY.1",
+    "description": "CRUD6.ACTIVITY.PAGE_DESCRIPTION",
     "table": "activities",
     "primary_key": "id",
     "permissions": {
@@ -17,7 +17,7 @@
     "fields": {
         "id": {
             "type": "integer",
-            "label": "ID",
+            "label": "CRUD6.ACTIVITY.ID",
             "auto_increment": true,
             "readonly": true,
             "show_in": [
@@ -26,7 +26,7 @@
         },
         "ip_address": {
             "type": "string",
-            "label": "IP Address",
+            "label": "CRUD6.ACTIVITY.IP_ADDRESS",
             "required": false,
             "show_in": [
                 "form",
@@ -40,7 +40,7 @@
         },
         "user_id": {
             "type": "integer",
-            "label": "User ID",
+            "label": "CRUD6.ACTIVITY.USER_ID",
             "required": true,
             "show_in": [
                 "form",
@@ -49,7 +49,7 @@
         },
         "type": {
             "type": "string",
-            "label": "Type",
+            "label": "CRUD6.ACTIVITY.TYPE",
             "required": true,
             "show_in": [
                 "form",
@@ -64,7 +64,7 @@
         },
         "occurred_at": {
             "type": "datetime",
-            "label": "Occurred At",
+            "label": "CRUD6.ACTIVITY.OCCURRED_AT",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -77,7 +77,7 @@
         },
         "description": {
             "type": "text",
-            "label": "Description",
+            "label": "CRUD6.ACTIVITY.DESCRIPTION",
             "required": false,
             "sortable": false,
             "filterable": false,

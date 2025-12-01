@@ -1,8 +1,8 @@
 {
     "model": "users",
-    "title": "USER.PAGE",
-    "singular_title": "USER.1",
-    "description": "USER.PAGE_DESCRIPTION",
+    "title": "CRUD6.USER.PAGE",
+    "singular_title": "CRUD6.USER.1",
+    "description": "CRUD6.USER.PAGE_DESCRIPTION",
     "table": "users",
     "primary_key": "id",
     "permissions": {
@@ -21,7 +21,7 @@
             "pivot_table": "role_users",
             "foreign_key": "user_id",
             "related_key": "role_id",
-            "title": "ROLE.2",
+            "title": "CRUD6.ROLE.2",
             "actions": {
                 "on_create": {
                     "attach": [
@@ -55,7 +55,7 @@
             "second_pivot_table": "permission_roles",
             "second_foreign_key": "role_id",
             "second_related_key": "permission_id",
-            "title": "PERMISSION.2"
+            "title": "CRUD6.PERMISSION.2"
         }
     ],
     "details": [
@@ -68,7 +68,7 @@
                 "description",
                 "ip_address"
             ],
-            "title": "ACTIVITY.2"
+            "title": "CRUD6.ACTIVITY.2"
         },
         {
             "model": "roles",
@@ -77,7 +77,7 @@
                 "slug",
                 "description"
             ],
-            "title": "ROLE.2"
+            "title": "CRUD6.ROLE.2"
         },
         {
             "model": "permissions",
@@ -86,13 +86,13 @@
                 "name",
                 "description"
             ],
-            "title": "PERMISSION.2"
+            "title": "CRUD6.PERMISSION.2"
         }
     ],
     "actions": [
         {
             "key": "toggle_enabled",
-            "label": "CRUD6.ACTION.TOGGLE_ENABLED",
+            "label": "CRUD6.USER.TOGGLE_ENABLED",
             "icon": "toggle-on",
             "type": "field_update",
             "field": "flag_enabled",
@@ -101,7 +101,7 @@
         },
         {
             "key": "toggle_verified",
-            "label": "CRUD6.ACTION.TOGGLE_VERIFIED",
+            "label": "CRUD6.USER.TOGGLE_VERIFIED",
             "icon": "check-circle",
             "type": "field_update",
             "field": "flag_verified",
@@ -110,26 +110,26 @@
         },
         {
             "key": "reset_password",
-            "label": "CRUD6.ACTION.RESET_PASSWORD",
+            "label": "CRUD6.USER.RESET_PASSWORD",
             "icon": "envelope",
             "type": "api_call",
             "method": "POST",
             "style": "secondary",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
+            "confirm": "CRUD6.USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
                 "type": "confirm"
             }
         },
         {
             "key": "password_action",
-            "label": "CRUD6.ACTION.CHANGE_PASSWORD",
+            "label": "CRUD6.USER.CHANGE_PASSWORD",
             "icon": "key",
             "type": "field_update",
             "field": "password",
             "style": "warning",
             "permission": "update_user_field",
-            "confirm": "USER.ADMIN.PASSWORD_RESET_CONFIRM",
+            "confirm": "CRUD6.USER.ADMIN.PASSWORD_RESET_CONFIRM",
             "modal_config": {
                 "type": "input",
                 "fields": [
@@ -139,28 +139,28 @@
         },
         {
             "key": "disable_user",
-            "label": "CRUD6.ACTION.DISABLE_USER",
+            "label": "CRUD6.USER.DISABLE_USER",
             "icon": "user-slash",
             "type": "field_update",
             "field": "flag_enabled",
             "value": false,
             "style": "danger",
             "permission": "update_user_field",
-            "confirm": "USER.DISABLE_CONFIRM",
+            "confirm": "CRUD6.USER.DISABLE_CONFIRM",
             "modal_config": {
                 "type": "confirm"
             }
         },
         {
             "key": "enable_user",
-            "label": "CRUD6.ACTION.ENABLE_USER",
+            "label": "CRUD6.USER.ENABLE_USER",
             "icon": "user-check",
             "type": "field_update",
             "field": "flag_enabled",
             "value": true,
             "style": "primary",
             "permission": "update_user_field",
-            "confirm": "USER.ENABLE_CONFIRM",
+            "confirm": "CRUD6.USER.ENABLE_CONFIRM",
             "modal_config": {
                 "type": "confirm"
             }
@@ -169,7 +169,7 @@
     "fields": {
         "id": {
             "type": "integer",
-            "label": "ID",
+            "label": "CRUD6.USER.ID",
             "auto_increment": true,
             "readonly": true,
             "show_in": [
@@ -178,7 +178,7 @@
         },
         "user_name": {
             "type": "string",
-            "label": "Username",
+            "label": "CRUD6.USER.USERNAME",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -201,7 +201,7 @@
         },
         "first_name": {
             "type": "string",
-            "label": "First Name",
+            "label": "CRUD6.USER.FIRST_NAME",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -222,7 +222,7 @@
         },
         "last_name": {
             "type": "string",
-            "label": "Last Name",
+            "label": "CRUD6.USER.LAST_NAME",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -243,7 +243,7 @@
         },
         "email": {
             "type": "email",
-            "label": "Email",
+            "label": "CRUD6.USER.EMAIL",
             "required": true,
             "sortable": true,
             "filterable": true,
@@ -265,7 +265,7 @@
         },
         "locale": {
             "type": "string",
-            "label": "Locale",
+            "label": "CRUD6.USER.LOCALE",
             "required": false,
             "show_in": [
                 "form",
@@ -280,7 +280,7 @@
         },
         "group_id": {
             "type": "integer",
-            "label": "Group",
+            "label": "CRUD6.USER.GROUP",
             "required": false,
             "show_in": [
                 "form",
@@ -290,7 +290,7 @@
         "flag_verified": {
             "type": "boolean",
             "ui": "toggle",
-            "label": "Verified",
+            "label": "CRUD6.USER.VERIFIED",
             "description": "Email verification status",
             "default": true,
             "sortable": true,
@@ -304,7 +304,7 @@
         "flag_enabled": {
             "type": "boolean",
             "ui": "toggle",
-            "label": "Enabled",
+            "label": "CRUD6.USER.ENABLED",
             "description": "Account enabled status",
             "default": true,
             "sortable": true,
@@ -317,7 +317,7 @@
         },
         "role_ids": {
             "type": "multiselect",
-            "label": "Roles",
+            "label": "CRUD6.USER.ROLES",
             "description": "User roles (used for sync on update)",
             "computed": true,
             "lookup": {
@@ -332,7 +332,7 @@
         },
         "password": {
             "type": "password",
-            "label": "Password",
+            "label": "CRUD6.USER.PASSWORD",
             "required": false,
             "show_in": [
                 "create",
@@ -347,14 +347,14 @@
         },
         "deleted_at": {
             "type": "datetime",
-            "label": "Deleted At",
+            "label": "CRUD6.USER.DELETED_AT",
             "readonly": true,
             "show_in": [],
             "date_format": "Y-m-d H:i:s"
         },
         "created_at": {
             "type": "datetime",
-            "label": "Created At",
+            "label": "CRUD6.USER.CREATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"
@@ -363,7 +363,7 @@
         },
         "updated_at": {
             "type": "datetime",
-            "label": "Updated At",
+            "label": "CRUD6.USER.UPDATED_AT",
             "readonly": true,
             "show_in": [
                 "detail"

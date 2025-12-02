@@ -203,11 +203,11 @@ const modelLabel = computed(() => {
 /**
  * Methods - Fetch record
  */
-function fetch() {
+async function fetch() {
     if (recordId.value && fetchRow) {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
-            fetchPromise.then((fetchedRow) => {
+            fetchPromise.then(async (fetchedRow) => {
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
@@ -218,7 +218,7 @@ function fetch() {
                     
                     // Update breadcrumbs with model title and record name
                     const listPath = `/crud6/${model.value}`
-                    setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                    await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
                 }
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
@@ -328,7 +328,7 @@ watch(model, async (newModel) => {
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
         
         // Update breadcrumbs with initial title (replace {{model}} placeholder)
-        updateBreadcrumbs(initialTitle)
+        await updateBreadcrumbs(initialTitle)
         
         currentModel = newModel
         // Request all contexts needed by detail page in one consolidated API call
@@ -352,7 +352,7 @@ watch(model, async (newModel) => {
                         : translator.translate('CRUD6.CREATE.SUCCESS', { model: modelLabel.value })
                     
                     // Update breadcrumbs for create mode
-                    updateBreadcrumbs(schemaTitle)
+                    await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
                     page.title = schemaTitle
@@ -361,7 +361,7 @@ watch(model, async (newModel) => {
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
                     // Update breadcrumbs - record breadcrumb will be added after fetch()
-                    updateBreadcrumbs(schemaTitle)
+                    await updateBreadcrumbs(schemaTitle)
                 }
             }
         }

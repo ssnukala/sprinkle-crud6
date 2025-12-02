@@ -1,3 +1,4 @@
+import { nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 
@@ -20,6 +21,9 @@ interface Breadcrumb {
  * 
  * This composable updates the breadcrumbs array in usePageMeta after
  * the schema is loaded, replacing placeholders with actual model titles.
+ * 
+ * Uses nextTick to ensure updates happen after usePageMeta's route watcher
+ * has finished refreshing the breadcrumbs.
  * 
  * @example
  * ```typescript
@@ -49,11 +53,16 @@ export function useCRUD6Breadcrumbs() {
      * with the actual model title from the schema. It also removes duplicate
      * breadcrumbs that have the same label to keep the trail clean.
      * 
+     * Uses nextTick to ensure the update happens after usePageMeta's refresh.
+     * 
      * @param title - The title to display in breadcrumb (e.g., "Users", "Products")
      * @param path - Optional path for this breadcrumb entry (defaults to current route path)
      */
-    function updateBreadcrumbs(title: string, path?: string): void {
+    async function updateBreadcrumbs(title: string, path?: string): Promise<void> {
         if (!title) return
+
+        // Wait for next tick to ensure usePageMeta has finished its refresh
+        await nextTick()
 
         const currentPath = path || route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
@@ -109,11 +118,16 @@ export function useCRUD6Breadcrumbs() {
      * This adds a breadcrumb entry for the specific record being viewed.
      * It should be called after the record data is loaded.
      * 
+     * Uses nextTick to ensure the update happens after usePageMeta's refresh.
+     * 
      * @param recordTitle - The title of the record (e.g., "John Doe", "Product ABC")
      * @param path - Optional path for this breadcrumb entry (defaults to current route path)
      */
-    function addRecordBreadcrumb(recordTitle: string, path?: string): void {
+    async function addRecordBreadcrumb(recordTitle: string, path?: string): Promise<void> {
         if (!recordTitle) return
+
+        // Wait for next tick to ensure usePageMeta has finished its refresh
+        await nextTick()
 
         const currentPath = path || route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
@@ -145,8 +159,8 @@ export function useCRUD6Breadcrumbs() {
      * 
      * @param modelTitle - The title from schema (e.g., "Users", "Products") 
      */
-    function setListBreadcrumb(modelTitle: string): void {
-        updateBreadcrumbs(modelTitle)
+    async function setListBreadcrumb(modelTitle: string): Promise<void> {
+        await updateBreadcrumbs(modelTitle)
     }
 
     /**
@@ -160,18 +174,18 @@ export function useCRUD6Breadcrumbs() {
      * @param recordTitle - The title of the specific record (e.g., "John Doe")
      * @param listPath - Optional path to the list page for the model breadcrumb
      */
-    function setDetailBreadcrumbs(modelTitle: string, recordTitle: string, listPath?: string): void {
+    async function setDetailBreadcrumbs(modelTitle: string, recordTitle: string, listPath?: string): Promise<void> {
         // First, update the model breadcrumb (replace {{model}} placeholder)
         if (listPath) {
-            updateBreadcrumbs(modelTitle, listPath)
+            await updateBreadcrumbs(modelTitle, listPath)
         } else {
             // Try to find and update any {{model}} placeholder
-            updateBreadcrumbs(modelTitle)
+            await updateBreadcrumbs(modelTitle)
         }
         
         // Then add the record breadcrumb
         if (recordTitle) {
-            addRecordBreadcrumb(recordTitle)
+            await addRecordBreadcrumb(recordTitle)
         }
     }
 

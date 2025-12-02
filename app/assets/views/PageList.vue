@@ -125,20 +125,20 @@ function renderFieldTemplate(template: string, row: any): string {
 }
 
 // Load schema
-onMounted(() => {
+onMounted(async () => {
   if (model.value && loadSchema) {
     // Set initial page title immediately for breadcrumbs
     const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     page.title = initialTitle
     
     // Update breadcrumbs to replace {{model}} placeholder with initial title
-    setListBreadcrumb(initialTitle)
+    await setListBreadcrumb(initialTitle)
     
     // Request BOTH 'list' and 'form' contexts in a single call
     // This avoids duplicate API calls when the create/edit modal is opened
     const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
-      schemaPromise.then(() => {
+      schemaPromise.then(async () => {
         // Update page title and description using schema
         if (schema.value) {
           const schemaTitle = schema.value.title || model.value
@@ -146,7 +146,7 @@ onMounted(() => {
           page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
           
           // Update breadcrumbs with schema title (may be different from initial title)
-          setListBreadcrumb(schemaTitle)
+          await setListBreadcrumb(schemaTitle)
         }
       })
     }

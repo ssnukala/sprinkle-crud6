@@ -6,6 +6,7 @@ export { useCRUD6Relationships } from './useCRUD6Relationships'
 export { useMasterDetail } from './useMasterDetail'
 export { useCRUD6Actions, isPasswordFieldAction } from './useCRUD6Actions'
 export { useCRUD6FieldRenderer } from './useCRUD6FieldRenderer'
+export { useCRUD6Breadcrumbs } from './useCRUD6Breadcrumbs'
 
 // CRUD6 Validation Adapters
 export { useCRUD6RegleAdapter, convertCRUD6ToRegleRules } from './useCRUD6ValidationAdapter'

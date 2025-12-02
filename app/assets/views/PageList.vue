@@ -3,7 +3,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6Schema, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
 import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
 import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
@@ -13,6 +13,8 @@ import { debugLog, debugWarn, debugError } from '../utils/debug'
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const { setListBreadcrumb } = useCRUD6Breadcrumbs()
+
 // Current model name from route
 const model = computed(() => route.params.model as string)
 
@@ -126,7 +128,11 @@ function renderFieldTemplate(template: string, row: any): string {
 onMounted(() => {
   if (model.value && loadSchema) {
     // Set initial page title immediately for breadcrumbs
-    page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    page.title = initialTitle
+    
+    // Update breadcrumbs to replace {{model}} placeholder with initial title
+    setListBreadcrumb(initialTitle)
     
     // Request BOTH 'list' and 'form' contexts in a single call
     // This avoids duplicate API calls when the create/edit modal is opened
@@ -135,8 +141,12 @@ onMounted(() => {
       schemaPromise.then(() => {
         // Update page title and description using schema
         if (schema.value) {
-          page.title = schema.value.title || model.value
+          const schemaTitle = schema.value.title || model.value
+          page.title = schemaTitle
           page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
+          
+          // Update breadcrumbs with schema title (may be different from initial title)
+          setListBreadcrumb(schemaTitle)
         }
       })
     }

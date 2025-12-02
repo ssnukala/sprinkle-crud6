@@ -129,7 +129,7 @@
             "field": "password",
             "style": "warning",
             "permission": "update_user_field",
-            "confirm": "CRUD6.USER.ADMIN.PASSWORD_RESET_CONFIRM",
+            "confirm": "CRUD6.USER.ADMIN.PASSWORD_CHANGE_CONFIRM",
             "modal_config": {
                 "type": "input",
                 "fields": [
@@ -147,6 +147,9 @@
             "style": "danger",
             "permission": "update_user_field",
             "confirm": "CRUD6.USER.DISABLE_CONFIRM",
+            "visible_when": {
+                "flag_enabled": true
+            },
             "modal_config": {
                 "type": "confirm"
             }
@@ -161,6 +164,9 @@
             "style": "primary",
             "permission": "update_user_field",
             "confirm": "CRUD6.USER.ENABLE_CONFIRM",
+            "visible_when": {
+                "flag_enabled": false
+            },
             "modal_config": {
                 "type": "confirm"
             }

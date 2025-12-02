@@ -206,12 +206,34 @@ function getActionLabel(action: ActionConfig): string {
         .join(' ')
 }
 
-// Check if action should be visible based on permissions
+// Check if action should be visible based on permissions and visible_when conditions
 function isActionVisible(action: ActionConfig): boolean {
-    if (!action.permission) {
-        return true
+    // Check permission first
+    if (action.permission && !hasPermission(action.permission as any)) {
+        return false
     }
-    return hasPermission(action.permission as any)
+    
+    // Check visible_when conditions against current record data
+    if (action.visible_when && crud6) {
+        for (const [field, expectedValue] of Object.entries(action.visible_when)) {
+            const actualValue = crud6[field]
+            
+            // Handle boolean comparisons - database values may be 0/1, '0'/'1', true/false, or null
+            if (typeof expectedValue === 'boolean') {
+                // Normalize database boolean values to JavaScript boolean
+                // Common representations: 0, 1, '0', '1', true, false, null, undefined
+                const normalizedActual = actualValue === 1 || actualValue === '1' || actualValue === true
+                if (normalizedActual !== expectedValue) {
+                    return false
+                }
+            } else if (actualValue !== expectedValue) {
+                // Strict equality for non-boolean values
+                return false
+            }
+        }
+    }
+    
+    return true
 }
 
 // Get custom actions from schema with enriched properties

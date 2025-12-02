@@ -114,6 +114,18 @@ export interface ActionConfig {
     password_field?: string
     /** Modal configuration for schema-driven modal rendering */
     modal_config?: ModalConfig
+    /**
+     * Conditional visibility based on record field values.
+     * The action is visible only when all conditions are met.
+     * 
+     * @example
+     * // Show "Enable User" only when flag_enabled is false
+     * "visible_when": { "flag_enabled": false }
+     * 
+     * // Show "Archive" only when status is "active" and is_archived is false
+     * "visible_when": { "status": "active", "is_archived": false }
+     */
+    visible_when?: Record<string, any>
 }
 
 export interface CRUD6Schema {

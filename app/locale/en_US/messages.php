@@ -69,6 +69,22 @@ return [
 
     ],
 
+    // Action translations used in modals
+    'ACTION' => [
+        'CANNOT_UNDO' => 'This action cannot be undone.',
+    ],
+
+    // Validation translations used in forms and modals
+    'VALIDATION' => [
+        'ENTER_VALUE'         => 'Enter value',
+        'CONFIRM'             => 'Confirm',
+        'CONFIRM_PLACEHOLDER' => 'Confirm value',
+        'MIN_LENGTH_HINT'     => 'Minimum {{min}} characters',
+        'MATCH_HINT'          => 'Values must match',
+        'FIELDS_MUST_MATCH'   => 'Fields must match',
+        'MIN_LENGTH'          => 'Minimum {{min}} characters required',
+    ],
+
     // Panel/Breadcrumb translations
     'CRUD6_PANEL'               => 'CRUD6 Management',
     'C6ADMIN_PANEL'             => 'CRUD6 Admin Panel',

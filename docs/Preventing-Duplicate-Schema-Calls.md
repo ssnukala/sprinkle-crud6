@@ -65,7 +65,7 @@ await loadSchema('users', false, 'list,detail,form', true) // includeRelated for
 
 When user navigates from list page to detail page, the schema is already cached, eliminating duplicate API calls.
 
-### Pattern 3: Direct Schema Setting
+### Pattern 4: Direct Schema Setting
 
 When you already have a schema (e.g., from parent component or initial page load):
 
@@ -79,7 +79,7 @@ setSchema(existingSchema, 'users')
 console.log(schema.value) // contains the schema
 ```
 
-### Pattern 4: Parent-Child Schema Sharing
+### Pattern 5: Parent-Child Schema Sharing
 
 Parent component loads schema and passes it to children:
 

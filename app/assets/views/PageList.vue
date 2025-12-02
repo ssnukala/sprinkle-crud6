@@ -128,9 +128,12 @@ onMounted(() => {
     // Set initial page title immediately for breadcrumbs
     page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     
-    // Request BOTH 'list' and 'form' contexts in a single call
-    // This avoids duplicate API calls when the create/edit modal is opened
-    const schemaPromise = loadSchema(model.value, false, 'list,form')
+    // Request 'list', 'detail', and 'form' contexts in a single call
+    // This includes 'detail' context so that when user navigates to a record's detail page,
+    // the schema is already cached and PageRow doesn't need to make another API call
+    // The superset caching in useCRUD6SchemaStore ensures subsequent requests for subsets
+    // (like 'list,form' or 'detail,form') will use this cached schema
+    const schemaPromise = loadSchema(model.value, false, 'list,detail,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(() => {
         // Update page title and description using schema

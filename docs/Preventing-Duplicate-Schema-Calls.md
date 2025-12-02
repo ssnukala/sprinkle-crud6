@@ -15,6 +15,8 @@ The composable now includes:
 1. **Schema Caching**: Automatically caches the loaded schema and tracks the current model
 2. **Smart Loading**: Skips API calls if schema is already loaded for the same model
 3. **Direct Schema Setting**: Allows setting schema without making an API call
+4. **Context-Aware Caching**: Caches schemas by model AND context (e.g., `users:list,detail,form`)
+5. **Superset Caching**: When requesting a subset context, automatically uses cached superset if available (e.g., if `list,detail,form` is cached, requests for `list,form` will use the cached superset)
 
 ## Usage Patterns
 
@@ -45,6 +47,23 @@ const { loadSchema } = useCRUD6Schema()
 // Force reload even if schema is cached
 await loadSchema('users', true)
 ```
+
+### Pattern 3: Superset Context Caching
+
+PageList and PageRow now use the same context (`list,detail,form`) to enable automatic cache sharing:
+
+```typescript
+// PageList.vue - loads schema with all contexts needed for navigation
+await loadSchema('users', false, 'list,detail,form')
+
+// PageRow.vue - reuses cached schema (no duplicate API call)
+await loadSchema('users', false, 'list,detail,form', true) // includeRelated for detail sections
+
+// The second call finds the cached 'users:list,detail,form' and uses it
+// The 'includeRelated' parameter is only used if a new API call is needed
+```
+
+When user navigates from list page to detail page, the schema is already cached, eliminating duplicate API calls.
 
 ### Pattern 3: Direct Schema Setting
 

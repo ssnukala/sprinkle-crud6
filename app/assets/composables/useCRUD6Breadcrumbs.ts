@@ -45,8 +45,9 @@ export function useCRUD6Breadcrumbs() {
      * Update breadcrumbs to replace {{model}} placeholders with actual titles
      * 
      * This function scans existing breadcrumbs for the {{model}} placeholder
-     * (which comes from CRUD6.PAGE translation) and replaces it with the
-     * actual model title from the schema.
+     * (which comes from CRUD6.PAGE translation) and replaces ALL occurrences
+     * with the actual model title from the schema. It also removes duplicate
+     * breadcrumbs that have the same label to keep the trail clean.
      * 
      * @param title - The title to display in breadcrumb (e.g., "Users", "Products")
      * @param path - Optional path for this breadcrumb entry (defaults to current route path)
@@ -57,7 +58,7 @@ export function useCRUD6Breadcrumbs() {
         const currentPath = path || route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
         
-        // Find and replace any breadcrumb with {{model}} placeholder
+        // Replace ALL breadcrumbs with {{model}} placeholder
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
             // Check if this crumb has the {{model}} placeholder
@@ -74,7 +75,21 @@ export function useCRUD6Breadcrumbs() {
         })
 
         if (updated) {
-            page.breadcrumbs = updatedCrumbs
+            // Remove duplicate consecutive breadcrumbs with the same label
+            // This handles cases where parent and child routes both have {{model}}
+            const deduplicatedCrumbs: Breadcrumb[] = []
+            for (let i = 0; i < updatedCrumbs.length; i++) {
+                const crumb = updatedCrumbs[i]
+                const prevCrumb = deduplicatedCrumbs[deduplicatedCrumbs.length - 1]
+                
+                // Skip if this crumb has the same label as the previous one
+                if (prevCrumb && prevCrumb.label === crumb.label) {
+                    continue
+                }
+                deduplicatedCrumbs.push(crumb)
+            }
+            
+            page.breadcrumbs = deduplicatedCrumbs
         } else {
             // If no existing crumb was updated, check if we need to add one
             // This handles cases where the route didn't have a title at all

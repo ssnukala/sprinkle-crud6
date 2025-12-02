@@ -21,7 +21,8 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    title: 'CRUD6.PAGE',
+                    // Note: title is NOT set here to avoid duplicate breadcrumbs
+                    // The record name is added dynamically by PageRow.vue via useCRUD6Breadcrumbs
                     description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'

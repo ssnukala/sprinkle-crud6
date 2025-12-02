@@ -127,26 +127,42 @@ function renderFieldTemplate(template: string, row: any): string {
 // Load schema
 onMounted(async () => {
   if (model.value && loadSchema) {
+    debugLog('[PageList.onMounted] Starting - model:', model.value)
+    debugLog('[PageList.onMounted] Current page.breadcrumbs:', page.breadcrumbs)
+    
     // Set initial page title immediately for breadcrumbs
     const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     page.title = initialTitle
     
+    debugLog('[PageList.onMounted] Initial title:', initialTitle)
+    debugLog('[PageList.onMounted] Calling setListBreadcrumb with initial title')
+    
     // Update breadcrumbs to replace {{model}} placeholder with initial title
     await setListBreadcrumb(initialTitle)
+    
+    debugLog('[PageList.onMounted] After setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
     
     // Request BOTH 'list' and 'form' contexts in a single call
     // This avoids duplicate API calls when the create/edit modal is opened
     const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(async () => {
+        debugLog('[PageList.onMounted] Schema loaded')
+        debugLog('[PageList.onMounted] page.breadcrumbs after schema load:', page.breadcrumbs)
+        
         // Update page title and description using schema
         if (schema.value) {
           const schemaTitle = schema.value.title || model.value
           page.title = schemaTitle
           page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
           
+          debugLog('[PageList.onMounted] Schema title:', schemaTitle)
+          debugLog('[PageList.onMounted] Calling setListBreadcrumb with schema title')
+          
           // Update breadcrumbs with schema title (may be different from initial title)
           await setListBreadcrumb(schemaTitle)
+          
+          debugLog('[PageList.onMounted] After final setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
         }
       })
     }

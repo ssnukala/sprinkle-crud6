@@ -80,21 +80,15 @@ export function useCRUD6Breadcrumbs() {
         debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Breadcrumb labels:', existingCrumbs.map(c => c.label))
         debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Current path:', currentPath)
         
-        // Replace ALL breadcrumbs with {{model}} placeholder
+        // Replace breadcrumbs with CRUD6.PAGE translation key or {{model}} placeholder
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking crumb:', { label: crumb.label, to: crumb.to })
-            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking for {{model}}:', {
-                'label === {{model}}': crumb.label === '{{model}}',
-                'label.includes({{model}})': crumb.label.includes('{{model}}'),
-                'label type': typeof crumb.label,
-                'label length': crumb.label.length,
-                'label charCodes': Array.from(crumb.label).map(c => c.charCodeAt(0))
-            })
             
-            // Check if this crumb has the {{model}} placeholder
-            if (crumb.label === '{{model}}' || crumb.label.includes('{{model}}')) {
-                debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Found {{model}} placeholder in breadcrumb:', crumb)
+            // Check if this crumb has the CRUD6.PAGE translation key (untranslated)
+            // OR the {{model}} placeholder (translated)
+            if (crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}')) {
+                debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Found CRUD6.PAGE or {{model}} placeholder in breadcrumb:', crumb)
                 updated = true
                 return { label: title, to: crumb.to }
             }
@@ -128,7 +122,7 @@ export function useCRUD6Breadcrumbs() {
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Final breadcrumbs after deduplication:', deduplicatedCrumbs)
             page.breadcrumbs = deduplicatedCrumbs
         } else {
-            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] No {{model}} placeholder found, checking if we need to add breadcrumb')
+            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] No CRUD6.PAGE or {{model}} placeholder found, checking if we need to add breadcrumb')
             
             // If no existing crumb was updated, check if we need to add one
             // This handles cases where the route didn't have a title at all

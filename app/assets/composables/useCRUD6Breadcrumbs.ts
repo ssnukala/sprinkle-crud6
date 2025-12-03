@@ -81,13 +81,15 @@ export function useCRUD6Breadcrumbs() {
         debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Current path:', currentPath)
         
         // Replace breadcrumbs with CRUD6.PAGE translation key or {{model}} placeholder
+        // Also handle breadcrumbs that point to route patterns like '/crud6/:model'
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking crumb:', { label: crumb.label, to: crumb.to })
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Check results:', {
                 'isCRUD6PAGE': crumb.label === 'CRUD6.PAGE',
                 'isPlaceholder': crumb.label === '{{model}}',
-                'includesPlaceholder': crumb.label.includes('{{model}}')
+                'includesPlaceholder': crumb.label.includes('{{model}}'),
+                'isRoutePattern': crumb.to.includes(':model')
             })
             
             // Check if this crumb has the CRUD6.PAGE translation key (untranslated)
@@ -95,7 +97,14 @@ export function useCRUD6Breadcrumbs() {
             if (crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}')) {
                 debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Found CRUD6.PAGE or {{model}} placeholder in breadcrumb:', crumb)
                 updated = true
-                return { label: title, to: crumb.to }
+                return { label: title, to: currentPath }
+            }
+            // Check if this crumb points to a route pattern (e.g., '/crud6/:model')
+            // This handles cases where the translation already happened but the path is still a pattern
+            if (crumb.to.includes(':model')) {
+                debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Found route pattern breadcrumb:', crumb)
+                updated = true
+                return { label: title, to: currentPath }
             }
             // Check if this crumb matches our current path and needs updating
             if (crumb.to === currentPath && crumb.label !== title) {

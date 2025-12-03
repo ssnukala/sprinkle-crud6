@@ -228,7 +228,9 @@ async function fetch() {
                     modelLabel: modelLabel.value
                 })
                 
-                page.title = `${recordName} - ${modelLabel.value}`
+                // Set page title to just record name for breadcrumbs
+                // The page heading can be different from breadcrumb
+                page.title = recordName
                 
                 // Update breadcrumbs with model title and record name
                 const listPath = `/crud6/${model.value}`

@@ -235,18 +235,70 @@ export function useCRUD6Breadcrumbs() {
     async function setDetailBreadcrumbs(modelTitle: string, recordTitle: string, listPath?: string): Promise<void> {
         debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Called with:', { modelTitle, recordTitle, listPath })
         
-        // First, update the model breadcrumb (replace {{model}} placeholder)
-        if (listPath) {
-            await updateBreadcrumbs(modelTitle, listPath)
-        } else {
-            // Try to find and update any {{model}} placeholder
-            await updateBreadcrumbs(modelTitle)
+        // Wait for next tick to ensure usePageMeta has finished its refresh
+        await nextTick()
+        
+        const currentPath = route.path
+        const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
+        
+        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Existing breadcrumbs:', existingCrumbs)
+        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Current path:', currentPath)
+        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] List path:', listPath)
+        
+        // Replace CRUD6.PAGE or {{model}} placeholders and update paths
+        const updatedCrumbs: Breadcrumb[] = []
+        let foundModelCrumb = false
+        let foundRecordCrumb = false
+        
+        for (const crumb of existingCrumbs) {
+            // Check if this is the model placeholder that needs replacement
+            if (crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}') || crumb.to.includes(':model')) {
+                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found model placeholder/pattern breadcrumb:', crumb)
+                // Replace with model title pointing to list path
+                updatedCrumbs.push({ label: modelTitle, to: listPath || `/crud6/${route.params.model}` })
+                foundModelCrumb = true
+            }
+            // Check if this is already the current path (detail page)
+            else if (crumb.to === currentPath) {
+                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing current path breadcrumb:', crumb)
+                // Update it with record title
+                updatedCrumbs.push({ label: recordTitle, to: currentPath })
+                foundRecordCrumb = true
+            }
+            // Keep other breadcrumbs as-is
+            else {
+                updatedCrumbs.push(crumb)
+            }
         }
         
-        // Then add the record breadcrumb
-        if (recordTitle) {
-            await addRecordBreadcrumb(recordTitle)
+        // If we didn't find a model breadcrumb, add one
+        if (!foundModelCrumb && listPath) {
+            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding model breadcrumb')
+            updatedCrumbs.push({ label: modelTitle, to: listPath })
         }
+        
+        // If we didn't find the record breadcrumb, add it
+        if (!foundRecordCrumb && recordTitle) {
+            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding record breadcrumb')
+            updatedCrumbs.push({ label: recordTitle, to: currentPath })
+        }
+        
+        // Remove duplicate consecutive breadcrumbs with the same label
+        const deduplicatedCrumbs: Breadcrumb[] = []
+        for (let i = 0; i < updatedCrumbs.length; i++) {
+            const crumb = updatedCrumbs[i]
+            const prevCrumb = deduplicatedCrumbs[deduplicatedCrumbs.length - 1]
+            
+            // Skip if this crumb has the same label as the previous one
+            if (prevCrumb && prevCrumb.label === crumb.label) {
+                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Skipping duplicate breadcrumb:', crumb)
+                continue
+            }
+            deduplicatedCrumbs.push(crumb)
+        }
+        
+        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Final breadcrumbs:', deduplicatedCrumbs)
+        page.breadcrumbs = deduplicatedCrumbs
     }
 
     return {

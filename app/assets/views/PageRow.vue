@@ -211,15 +211,32 @@ async function fetch() {
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
+                
                 // Update page title with record name if available
-                const recordName = fetchedRow[flattenedSchema.value?.title_field || 'name'] || fetchedRow.name
-                if (recordName) {
-                    page.title = `${recordName} - ${modelLabel.value}`
-                    
-                    // Update breadcrumbs with model title and record name
-                    const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
-                }
+                // Try multiple field options: title_field from schema, 'name', 'username', 'user_name', or fall back to ID
+                const titleField = flattenedSchema.value?.title_field || 'name'
+                let recordName = fetchedRow[titleField] 
+                    || fetchedRow.name 
+                    || fetchedRow.username 
+                    || fetchedRow.user_name
+                    || fetchedRow.title
+                    || recordId.value  // Fallback to ID if no name fields found
+                
+                debugLog('[PageRow.fetch] Record fetched:', {
+                    recordId: recordId.value,
+                    titleField,
+                    recordName,
+                    fetchedRowKeys: Object.keys(fetchedRow),
+                    modelLabel: modelLabel.value
+                })
+                
+                page.title = `${recordName} - ${modelLabel.value}`
+                
+                // Update breadcrumbs with model title and record name
+                const listPath = `/crud6/${model.value}`
+                await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                
+                debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
             })

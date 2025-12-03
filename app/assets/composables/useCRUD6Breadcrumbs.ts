@@ -84,6 +84,11 @@ export function useCRUD6Breadcrumbs() {
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking crumb:', { label: crumb.label, to: crumb.to })
+            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Check results:', {
+                'isCRUD6PAGE': crumb.label === 'CRUD6.PAGE',
+                'isPlaceholder': crumb.label === '{{model}}',
+                'includesPlaceholder': crumb.label.includes('{{model}}')
+            })
             
             // Check if this crumb has the CRUD6.PAGE translation key (untranslated)
             // OR the {{model}} placeholder (translated)

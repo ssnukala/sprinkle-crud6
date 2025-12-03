@@ -75,12 +75,23 @@ export function useCRUD6Breadcrumbs() {
         const currentPath = path || route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
         
+        // Log detailed breadcrumb information
         debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Existing breadcrumbs:', existingCrumbs)
+        debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Breadcrumb labels:', existingCrumbs.map(c => c.label))
         debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Current path:', currentPath)
         
         // Replace ALL breadcrumbs with {{model}} placeholder
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
+            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking crumb:', { label: crumb.label, to: crumb.to })
+            debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking for {{model}}:', {
+                'label === {{model}}': crumb.label === '{{model}}',
+                'label.includes({{model}})': crumb.label.includes('{{model}}'),
+                'label type': typeof crumb.label,
+                'label length': crumb.label.length,
+                'label charCodes': Array.from(crumb.label).map(c => c.charCodeAt(0))
+            })
+            
             // Check if this crumb has the {{model}} placeholder
             if (crumb.label === '{{model}}' || crumb.label.includes('{{model}}')) {
                 debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Found {{model}} placeholder in breadcrumb:', crumb)

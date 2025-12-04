@@ -61,13 +61,34 @@ export function useCRUD6Breadcrumbs() {
         // Check if label looks like a translation key (uppercase with dots/underscores)
         // Examples: "C6ADMIN_PANEL", "CRUD6.PAGE", "USER.MANAGEMENT"
         if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] Attempting to translate:', label)
             const translated = translator.translate(label)
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] Translation result:', { 
+                original: label, 
+                translated, 
+                isDifferent: translated !== label,
+                translatedType: typeof translated 
+            })
             // Only use translation if it's different from the key (meaning translation exists)
-            if (translated && translated !== label) {
-                debugLog('[useCRUD6Breadcrumbs.translateLabel] Translated:', { original: label, translated })
+            // Also handle empty strings or undefined/null as "no translation"
+            if (translated && typeof translated === 'string' && translated !== label && translated.trim() !== '') {
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Using translation:', { original: label, translated })
                 return translated
             }
-            debugLog('[useCRUD6Breadcrumbs.translateLabel] No translation found for:', label)
+            
+            // Try fallback translations for common key patterns
+            // e.g., if "CRUD6.ADMIN_PANEL" doesn't translate, try "C6ADMIN_PANEL"
+            if (label.includes('.')) {
+                const fallbackKey = label.replace(/\./g, '_')
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying fallback key:', fallbackKey)
+                const fallbackTranslated = translator.translate(fallbackKey)
+                if (fallbackTranslated && typeof fallbackTranslated === 'string' && fallbackTranslated !== fallbackKey && fallbackTranslated.trim() !== '') {
+                    debugLog('[useCRUD6Breadcrumbs.translateLabel] Using fallback translation:', { original: label, fallback: fallbackKey, translated: fallbackTranslated })
+                    return fallbackTranslated
+                }
+            }
+            
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] No valid translation found for:', label)
         }
         return label
     }

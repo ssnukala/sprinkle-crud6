@@ -88,4 +88,5 @@ return [
     // Panel/Breadcrumb translations
     'CRUD6_PANEL'               => 'CRUD6 Management',
     'C6ADMIN_PANEL'             => 'CRUD6 Admin Panel',
+    'CRUD6.ADMIN_PANEL'         => 'CRUD6 Admin Panel',
 ];

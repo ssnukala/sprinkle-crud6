@@ -119,32 +119,6 @@ const minLength = computed(() => {
 })
 
 /**
- * Computed - Check if this is a password field
- */
-const isPasswordField = computed(() => {
-    return inputType.value === 'password'
-})
-
-/**
- * Computed - Get username value from record for hidden field
- * Tries multiple common username field names
- */
-const usernameValue = computed(() => {
-    if (!props.record) return ''
-    
-    // Try common username field names in order of preference
-    const possibleFields = ['user_name', 'username', 'email', 'login', 'name']
-    
-    for (const field of possibleFields) {
-        if (props.record[field]) {
-            return props.record[field]
-        }
-    }
-    
-    return ''
-})
-
-/**
  * Computed - Accept button severity based on action style
  */
 const acceptSeverity = computed(() => {
@@ -253,19 +227,6 @@ function resetForm() {
             
             <div class="uk-modal-body">
                 <form @submit.prevent="handleConfirmed">
-                    <!-- Hidden username field for password manager accessibility -->
-                    <!-- Required when form has password field for proper password association -->
-                    <input
-                        v-if="isPasswordField && usernameValue"
-                        type="text"
-                        name="username"
-                        :value="usernameValue"
-                        autocomplete="username"
-                        readonly
-                        style="position: absolute; left: -9999px; width: 1px; height: 1px;"
-                        tabindex="-1"
-                        aria-hidden="true" />
-                    
                     <!-- Prompt message with HTML support -->
                     <div v-if="promptMessage" v-html="promptMessage" class="uk-margin-bottom"></div>
                     

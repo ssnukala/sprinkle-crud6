@@ -1,0 +1,44 @@
+{
+  "CRUD6": {
+    "@TRANSLATION": "CRUD6",
+    "CREATE": {
+      "@TRANSLATION": "Create {{model}}",
+      "SUCCESS": "Successfully created {{model}}",
+      "SUCCESS_TITLE": "Created!",
+      "ERROR": "Failed to create {{model}}",
+      "ERROR_TITLE": "Error Creating"
+    },
+    "DELETE": {
+      "@TRANSLATION": "Delete {{model}}",
+      "SUCCESS": "Successfully deleted {{model}}",
+      "SUCCESS_TITLE": "Deleted!",
+      "ERROR": "Failed to delete {{model}}",
+      "ERROR_TITLE": "Error Deleting"
+    },
+    "UPDATE": {
+      "@TRANSLATION": "Update {{model}}",
+      "SUCCESS": "Successfully updated {{model}}",
+      "SUCCESS_TITLE": "Updated!",
+      "ERROR": "Failed to update {{model}}",
+      "ERROR_TITLE": "Error Updating"
+    },
+    "ADMIN_PANEL": "CRUD6 Admin Panel"
+  },
+  "ACTION": {
+    "CANNOT_UNDO": "This action cannot be undone."
+  },
+  "VALIDATION": {
+    "ENTER_VALUE": "Enter value",
+    "CONFIRM": "Confirm",
+    "CONFIRM_PLACEHOLDER": "Confirm value",
+    "MIN_LENGTH_HINT": "Minimum {{min}} characters",
+    "MATCH_HINT": "Values must match",
+    "FIELDS_MUST_MATCH": "Fields must match",
+    "MIN_LENGTH": "Minimum {{min}} characters required"
+  },
+  "CANCEL": "Cancel",
+  "YES": "Yes",
+  "NO": "No",
+  "OK": "OK",
+  "SAVE": "Save"
+}

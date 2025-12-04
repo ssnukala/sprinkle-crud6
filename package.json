@@ -33,7 +33,8 @@
     "./routes": "./app/assets/routes/index.ts",
     "./views": "./app/assets/views/index.ts",
     "./plugins": "./app/assets/plugins/index.ts",
-    "./stores": "./app/assets/stores/index.ts"
+    "./stores": "./app/assets/stores/index.ts",
+    "./locale": "./app/assets/locale/index.ts"
   },
   "files": [
     "app/assets",

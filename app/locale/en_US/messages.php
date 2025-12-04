@@ -67,6 +67,9 @@ return [
             'DETACH_SUCCESS' => 'Successfully detached {{count}} {{relation}} from {{model}}',
         ],
 
+        // Panel/Breadcrumb translations (nested under CRUD6 to match dot notation)
+        'ADMIN_PANEL' => 'CRUD6 Admin Panel',
+
     ],
 
     // Action translations used in modals
@@ -85,8 +88,7 @@ return [
         'MIN_LENGTH'          => 'Minimum {{min}} characters required',
     ],
 
-    // Panel/Breadcrumb translations
+    // Panel/Breadcrumb translations (flat keys for backward compatibility)
     'CRUD6_PANEL'               => 'CRUD6 Management',
     'C6ADMIN_PANEL'             => 'CRUD6 Admin Panel',
-    'CRUD6.ADMIN_PANEL'         => 'CRUD6 Admin Panel',
 ];

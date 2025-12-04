@@ -49,13 +49,24 @@ export function translateOrInterpolate(
     fallback?: string
 ): string {
     // Check if it's a translation key (uppercase with dots/underscores) or already a message
-    const isTranslationKey = /^[A-Z_]+(\.[A-Z_]+)*$/.test(key)
+    const isTranslationKey = /^[A-Z_]+(\.[A-Z_0-9]+)*$/.test(key)
     
     if (isTranslationKey) {
         // It's a translation key like "CRUD6.USER.PASSWORD_CHANGE_CONFIRM"
         // Use translator - it handles both translation AND interpolation
         const translated = translator.translate(key, params)
-        return (translated === key && fallback) ? fallback : translated
+        
+        // If translation failed (returns the key), try fallback
+        if (translated === key && fallback) {
+            return fallback
+        }
+        
+        // If translation succeeded but has placeholders, interpolate them
+        if (translated.includes('{{')) {
+            return interpolatePlaceholders(translated, params)
+        }
+        
+        return translated
     } else {
         // It's already a translated message with placeholders 
         // like "Are you sure you want to change the password for {{user_name}}?"

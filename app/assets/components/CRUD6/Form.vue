@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { watch, computed, onMounted } from 'vue'
+import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
@@ -33,6 +34,15 @@ if (props.schema) {
  * API - Use the CRUD6 edit API
  */
 const { createRow, updateRow, r$, formData, apiLoading, resetForm, slugLocked } = useCRUD6Api(props.model)
+const translator = useTranslator()
+
+/**
+ * Translate helper for template use
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const translated = translator.translate(key, params)
+    return (translated === key && fallback) ? fallback : translated
+}
 
 /**
  * Schema - Use the CRUD6 schema composable for dynamic form generation or use provided schema
@@ -307,7 +317,7 @@ function getLookupAttributes(field: any) {
     <!-- Loading state (only show if we don't have a provided schema) -->
     <div v-if="!props.schema && schemaLoading" class="uk-text-center uk-padding">
         <div uk-spinner></div>
-        <p>{{ $t('LOADING') }}</p>
+        <p>{{ t('LOADING', {}, 'Loading...') }}</p>
     </div>
     
     <!-- Error state (only show if we don't have a provided schema) -->
@@ -347,7 +357,7 @@ function getLookupAttributes(field: any) {
                         class="uk-button uk-button-default uk-form-button"
                         type="button"
                         data-test="btn-toggle-slug-lock"
-                        :uk-tooltip="$t('OVERRIDE')"
+                        :uk-tooltip="t('OVERRIDE', {}, 'Override')"
                         @click="slugLocked = !slugLocked">
                         <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
                     </button>
@@ -522,7 +532,7 @@ function getLookupAttributes(field: any) {
             <!-- Form actions -->
             <div class="uk-text-right" uk-margin>
                 <button class="uk-button uk-button-default uk-modal-close" type="button" data-test="btn-cancel">
-                    {{ $t('CANCEL') }}
+                    {{ t('CANCEL', {}, 'Cancel') }}
                 </button>
                 <button
                     class="uk-button uk-button-primary"
@@ -530,7 +540,7 @@ function getLookupAttributes(field: any) {
                     type="submit"
                     data-test="btn-submit">
                     <div v-if="isLoading" uk-spinner="ratio: 0.5"></div>
-                    {{ $t('SAVE') }}
+                    {{ t('SAVE', {}, 'Save') }}
                 </button>
             </div>
         </fieldset>
@@ -538,6 +548,6 @@ function getLookupAttributes(field: any) {
     
     <!-- Fallback for no schema -->
     <div v-else class="uk-alert-warning" uk-alert>
-        <p>{{ $t('CRUD6.NO_SCHEMA') }}</p>
+        <p>{{ t('CRUD6.NO_SCHEMA', {}, 'No schema available') }}</p>
     </div>
 </template>

@@ -50,6 +50,14 @@ const confirmValue = ref('')
 const error = ref('')
 
 /**
+ * Translate helper for template use
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const translated = translator.translate(key, params)
+    return (translated === key && fallback) ? fallback : translated
+}
+
+/**
  * Computed - Modal ID for UIKit toggle
  */
 const modalId = computed(() => {
@@ -241,7 +249,7 @@ function resetForm() {
                                 v-model="fieldValue"
                                 :type="inputType"
                                 class="uk-input"
-                                :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
+                                :placeholder="t('VALIDATION.ENTER_VALUE', {}, 'Enter value') || `Enter ${fieldLabel.toLowerCase()}`"
                                 :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
@@ -251,7 +259,7 @@ function resetForm() {
                     <!-- Confirm field (shown only when validation.match is true) -->
                     <div v-if="requiresMatch" class="uk-margin">
                         <label class="uk-form-label" :for="`confirm-field-input-${action.key}`">
-                            {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ fieldLabel }}
+                            {{ t('VALIDATION.CONFIRM', {}, 'Confirm') || 'Confirm' }} {{ fieldLabel }}
                         </label>
                         <div class="uk-form-controls">
                             <input
@@ -259,7 +267,7 @@ function resetForm() {
                                 v-model="confirmValue"
                                 :type="inputType"
                                 class="uk-input"
-                                :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
+                                :placeholder="t('VALIDATION.CONFIRM_PLACEHOLDER', {}, 'Confirm value') || `Confirm ${fieldLabel.toLowerCase()}`"
                                 :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
@@ -275,10 +283,10 @@ function resetForm() {
                     <div v-if="minLength || requiresMatch" class="uk-text-small uk-text-muted">
                         <ul class="uk-list">
                             <li v-if="minLength" :class="{ 'uk-text-success': fieldValue.length >= minLength }">
-                                {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }) || `Minimum ${minLength} characters` }}
+                                {{ t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }, 'Minimum characters') || `Minimum ${minLength} characters` }}
                             </li>
                             <li v-if="requiresMatch" :class="{ 'uk-text-success': fieldValue && confirmValue && fieldValue === confirmValue }">
-                                {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                {{ t('VALIDATION.MATCH_HINT', {}, 'Values must match') || 'Values must match' }}
                             </li>
                         </ul>
                     </div>
@@ -290,7 +298,7 @@ function resetForm() {
                     class="uk-button uk-button-default uk-modal-close"
                     type="button"
                     @click="handleCancelled">
-                    {{ $t('CANCEL') || 'Cancel' }}
+                    {{ t('CANCEL', {}, 'Cancel') || 'Cancel' }}
                 </button>
                 <button
                     class="uk-button"

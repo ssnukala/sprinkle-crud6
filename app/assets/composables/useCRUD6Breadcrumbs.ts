@@ -77,11 +77,17 @@ export function useCRUD6Breadcrumbs() {
             }
             
             // Try fallback translations for common key patterns
-            // e.g., if "CRUD6.ADMIN_PANEL" doesn't translate, try "C6ADMIN_PANEL"
+            // e.g., if "CRUD6.ADMIN_PANEL" doesn't translate, try "CRUD6_ADMIN_PANEL"
             if (label.includes('.')) {
                 const fallbackKey = label.replace(/\./g, '_')
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying fallback key:', fallbackKey)
                 const fallbackTranslated = translator.translate(fallbackKey)
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Fallback result:', {
+                    fallbackKey,
+                    translated: fallbackTranslated,
+                    isDifferent: fallbackTranslated !== fallbackKey,
+                    type: typeof fallbackTranslated
+                })
                 if (fallbackTranslated && typeof fallbackTranslated === 'string' && fallbackTranslated !== fallbackKey && fallbackTranslated.trim() !== '') {
                     debugLog('[useCRUD6Breadcrumbs.translateLabel] Using fallback translation:', { original: label, fallback: fallbackKey, translated: fallbackTranslated })
                     return fallbackTranslated

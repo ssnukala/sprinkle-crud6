@@ -15,10 +15,12 @@
  */
 return [
     'CRUD6' => [
+        '@TRANSLATION' => 'CRUD6',
         1 => 'CRUD6',
         2 => 'CRUD6 All Rows',
 
         'CREATE' => [
+            '@TRANSLATION'  => 'Create {{model}}',
             0 => 'Create {{model}}',
             'SUCCESS'       => 'Successfully created {{model}}',
             'SUCCESS_TITLE' => 'Created!',
@@ -27,6 +29,7 @@ return [
         ],
         'CREATION_SUCCESSFUL' => 'Successfully created {{model}} <strong>{{name}}</strong>',
         'DELETE' => [
+            '@TRANSLATION'  => 'Delete {{model}}',
             0 => 'Delete {{model}}',
             'SUCCESS'       => 'Successfully deleted {{model}}',
             'SUCCESS_TITLE' => 'Deleted!',
@@ -38,6 +41,7 @@ return [
         'DELETE_YES'          => 'Yes, delete {{model}}',
         'DELETION_SUCCESSFUL' => 'Successfully deleted {{model}} <strong>{{name}}</strong>',
         'EDIT' => [
+            '@TRANSLATION' => 'Edit {{model}}',
             0 => 'Edit {{model}}',
             'SUCCESS' => 'Retrieved {{model}} for editing',
             'ERROR'   => 'Failed to retrieve {{model}}',
@@ -55,6 +59,7 @@ return [
         'PAGE'                => '{{model}}',
         'PAGE_DESCRIPTION'    => 'A listing of the {{model}} for your site.  Provides management tools for editing and deleting {{model}}.',
         'UPDATE' => [
+            '@TRANSLATION'  => 'Update {{model}}',
             0 => 'Details updated for {{model}} <strong>{{id}}</strong>',
             'SUCCESS'       => 'Successfully updated {{model}}',
             'SUCCESS_TITLE' => 'Updated!',
@@ -63,6 +68,7 @@ return [
         ],
         'UPDATE_FIELD_SUCCESSFUL' => 'Successfully updated {{field}} for {{model}}',
         'RELATIONSHIP' => [
+            '@TRANSLATION'  => 'Relationships',
             'ATTACH_SUCCESS' => 'Successfully attached {{count}} {{relation}} to {{model}}',
             'DETACH_SUCCESS' => 'Successfully detached {{count}} {{relation}} from {{model}}',
         ],

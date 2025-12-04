@@ -5,12 +5,14 @@ import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { createTranslationHelper } from '../../utils/translation'
 
 /**
  * Variables and composables
  */
 const { deleteRow } = useCRUD6Api()
 const translator = useTranslator()
+const t = createTranslationHelper(translator)
 
 /**
  * Props - The CRUD6 object to delete, optional model and schema for consistency
@@ -51,14 +53,6 @@ if (props.schema) {
 const emits = defineEmits(['deleted'])
 
 /**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
-
-/**
  * Methods - Submit the form to the API and handle the response.
  */
 const deleteConfirmed = () => {
@@ -88,13 +82,7 @@ const deleteConfirmed = () => {
         :acceptSeverity="Severity.Danger"
         data-test="modal-delete">
         <template #prompt>
-            <div v-html="(() => {
-                const params = { ...props.crud6, model: modelLabel }
-                console.log('[DeleteModal] DELETE_CONFIRM params:', params)
-                const result = t('CRUD6.DELETE_CONFIRM', params)
-                console.log('[DeleteModal] DELETE_CONFIRM result:', result)
-                return result
-            })()"></div>
+            <div v-html="t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
         </template>
     </UFModalConfirmation>
 </template> 

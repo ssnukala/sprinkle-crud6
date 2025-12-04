@@ -5,6 +5,7 @@ import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
 import { getAutocompleteAttribute } from '../../utils/fieldTypes'
+import { createTranslationHelper } from '../../utils/translation'
 
 /**
  * Unified Action Modal for CRUD6
@@ -20,6 +21,7 @@ import { getAutocompleteAttribute } from '../../utils/fieldTypes'
  */
 
 const translator = useTranslator()
+const t = createTranslationHelper(translator)
 
 /**
  * Props
@@ -111,21 +113,14 @@ const modalConfig = computed((): ModalConfig => {
  */
 const promptMessage = computed(() => {
     if (!props.action.confirm) return ''
-    console.log('[ActionModal] Translating confirm message:', {
-        key: props.action.confirm,
-        record: props.record,
-        recordKeys: props.record ? Object.keys(props.record) : []
-    })
-    const translated = translator.translate(props.action.confirm, props.record)
-    console.log('[ActionModal] Translation result:', translated)
-    return translated
+    return t(props.action.confirm, props.record)
 })
 
 /**
  * Computed - Action label (button text)
  */
 const actionLabel = computed(() => {
-    return translator.translate(props.action.label)
+    return t(props.action.label)
 })
 
 /**

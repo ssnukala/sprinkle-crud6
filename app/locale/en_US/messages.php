@@ -76,6 +76,38 @@ return [
         // Panel/Breadcrumb translations (nested under CRUD6 to match dot notation)
         'ADMIN_PANEL' => 'CRUD6 Admin Panel',
 
+        // User-specific translations
+        'USER' => [
+            'ID' => 'User ID',
+            'USERNAME' => 'Username',
+            'EMAIL' => 'Email',
+            'FIRST_NAME' => 'First Name',
+            'LAST_NAME' => 'Last Name',
+            'LOCALE' => 'Locale',
+            'GROUP' => 'Group',
+            'ROLES' => 'Roles',
+            'PASSWORD' => 'Password',
+            'ENABLED' => 'Enabled',
+            'VERIFIED' => 'Verified',
+            'CREATED_AT' => 'Created At',
+            'UPDATED_AT' => 'Updated At',
+            'DELETED_AT' => 'Deleted At',
+            'PAGE' => 'User Management',
+            'PAGE_DESCRIPTION' => 'A listing of users for your site. Provides management tools for editing and deleting users.',
+            'CHANGE_PASSWORD' => 'Change User\'s Password',
+            'RESET_PASSWORD' => 'Send Password Reset',
+            'ENABLE_USER' => 'Enable User',
+            'DISABLE_USER' => 'Disable User',
+            'TOGGLE_ENABLED' => 'Toggle Enabled Status',
+            'TOGGLE_VERIFIED' => 'Toggle Verified Status',
+            'ADMIN' => [
+                'PASSWORD_CHANGE_CONFIRM' => 'Are you sure you want to change the password for <strong>{{user_name}}</strong> ({{email}})?',
+                'PASSWORD_RESET_CONFIRM' => 'Are you sure you want to send a password reset email to <strong>{{user_name}}</strong> ({{email}})?',
+            ],
+            'ENABLE_CONFIRM' => 'Are you sure you want to enable user <strong>{{user_name}}</strong>?',
+            'DISABLE_CONFIRM' => 'Are you sure you want to disable user <strong>{{user_name}}</strong>?',
+        ],
+
     ],
 
     // Action translations used in modals

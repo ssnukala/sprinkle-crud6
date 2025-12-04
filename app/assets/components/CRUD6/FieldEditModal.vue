@@ -225,61 +225,63 @@ function resetForm() {
             </div>
             
             <div class="uk-modal-body">
-                <!-- Prompt message with HTML support -->
-                <div v-if="promptMessage" v-html="promptMessage" class="uk-margin-bottom"></div>
-                
-                <!-- Field input -->
-                <div class="uk-margin">
-                    <label class="uk-form-label" :for="`field-input-${action.key}`">
-                        {{ fieldLabel }}
-                    </label>
-                    <div class="uk-form-controls">
-                        <input
-                            :id="`field-input-${action.key}`"
-                            v-model="fieldValue"
-                            :type="inputType"
-                            class="uk-input"
-                            :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
-                            :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
-                            required
-                            :minlength="minLength || undefined" />
+                <form @submit.prevent="handleConfirmed">
+                    <!-- Prompt message with HTML support -->
+                    <div v-if="promptMessage" v-html="promptMessage" class="uk-margin-bottom"></div>
+                    
+                    <!-- Field input -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label" :for="`field-input-${action.key}`">
+                            {{ fieldLabel }}
+                        </label>
+                        <div class="uk-form-controls">
+                            <input
+                                :id="`field-input-${action.key}`"
+                                v-model="fieldValue"
+                                :type="inputType"
+                                class="uk-input"
+                                :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
+                                :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
+                                required
+                                :minlength="minLength || undefined" />
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Confirm field (shown only when validation.match is true) -->
-                <div v-if="requiresMatch" class="uk-margin">
-                    <label class="uk-form-label" :for="`confirm-field-input-${action.key}`">
-                        {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ fieldLabel }}
-                    </label>
-                    <div class="uk-form-controls">
-                        <input
-                            :id="`confirm-field-input-${action.key}`"
-                            v-model="confirmValue"
-                            :type="inputType"
-                            class="uk-input"
-                            :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
-                            :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
-                            required
-                            :minlength="minLength || undefined" />
+                    
+                    <!-- Confirm field (shown only when validation.match is true) -->
+                    <div v-if="requiresMatch" class="uk-margin">
+                        <label class="uk-form-label" :for="`confirm-field-input-${action.key}`">
+                            {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ fieldLabel }}
+                        </label>
+                        <div class="uk-form-controls">
+                            <input
+                                :id="`confirm-field-input-${action.key}`"
+                                v-model="confirmValue"
+                                :type="inputType"
+                                class="uk-input"
+                                :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
+                                :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
+                                required
+                                :minlength="minLength || undefined" />
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Error message -->
-                <div v-if="error" class="uk-alert-danger" uk-alert>
-                    <p>{{ error }}</p>
-                </div>
-                
-                <!-- Validation hints -->
-                <div v-if="minLength || requiresMatch" class="uk-text-small uk-text-muted">
-                    <ul class="uk-list">
-                        <li v-if="minLength" :class="{ 'uk-text-success': fieldValue.length >= minLength }">
-                            {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }) || `Minimum ${minLength} characters` }}
-                        </li>
-                        <li v-if="requiresMatch" :class="{ 'uk-text-success': fieldValue && confirmValue && fieldValue === confirmValue }">
-                            {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
-                        </li>
-                    </ul>
-                </div>
+                    
+                    <!-- Error message -->
+                    <div v-if="error" class="uk-alert-danger" uk-alert>
+                        <p>{{ error }}</p>
+                    </div>
+                    
+                    <!-- Validation hints -->
+                    <div v-if="minLength || requiresMatch" class="uk-text-small uk-text-muted">
+                        <ul class="uk-list">
+                            <li v-if="minLength" :class="{ 'uk-text-success': fieldValue.length >= minLength }">
+                                {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }) || `Minimum ${minLength} characters` }}
+                            </li>
+                            <li v-if="requiresMatch" :class="{ 'uk-text-success': fieldValue && confirmValue && fieldValue === confirmValue }">
+                                {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                            </li>
+                        </ul>
+                    </div>
+                </form>
             </div>
             
             <div class="uk-modal-footer uk-text-right">

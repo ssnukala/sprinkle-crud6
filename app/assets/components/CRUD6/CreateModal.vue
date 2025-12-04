@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIkit from 'uikit'
-import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import CRUD6Form from './Form.vue'
-import { createTranslationHelper } from '../../utils/translation'
 
 /**
  * Props - Model for schema loading and optional schema to avoid duplicate loads.
@@ -12,9 +10,6 @@ const props = defineProps<{
     model?: string
     schema?: any
 }>()
-
-const translator = useTranslator()
-const t = createTranslationHelper(translator)
 
 if (props.schema) {
 } else {
@@ -50,12 +45,12 @@ const formSuccess = () => {
 
 <template>
     <a v-bind="$attrs" :uk-toggle="'target: #modal-crud6-create'" data-test="btn-create-modal">
-        <slot><font-awesome-icon icon="plus" fixed-width /> {{ t('CRUD6.CREATE', { model: modelLabel }) }}</slot>
+        <slot><font-awesome-icon icon="plus" fixed-width /> {{ translate('CRUD6.CREATE', { model: modelLabel }, 'Create') }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModal id="modal-crud6-create" closable data-test="modal-create">
-        <template #header>{{ t('CRUD6.CREATE', { model: modelLabel }) }}</template>
+        <template #header>{{ translate('CRUD6.CREATE', { model: modelLabel }, 'Create') }}</template>
         <template #default>
             <CRUD6Form :model="props.model" :schema="props.schema" @success="formSuccess()" />
         </template>

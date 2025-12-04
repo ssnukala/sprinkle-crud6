@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useTranslator } from '@userfrosting/sprinkle-core/stores'
-import { createTranslationHelper } from '../../utils/translation'
 import { useCRUD6SchemaStore } from '@ssnukala/sprinkle-crud6/stores'
 import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
@@ -14,8 +12,6 @@ const props = defineProps<{
 
 // Use the global schema store to check cache first
 const schemaStore = useCRUD6SchemaStore()
-const translator = useTranslator()
-const t = createTranslationHelper(translator)
 
 // Check if schema is already cached (from parent's include_related request)
 const detailSchema = computed(() => {
@@ -76,11 +72,11 @@ const getFieldType = (fieldKey: string): string => {
 </script>
 
 <template>
-    <UFCardBox :title="t(detailTitle, {}, detailTitle)">
+    <UFCardBox :title="translate(detailTitle, undefined, detailTitle)">
         <!-- Loading state -->
         <div v-if="schemaLoading" class="uk-text-center uk-padding">
             <div uk-spinner></div>
-            <p>{{ t('LOADING', {}, 'Loading...') }}</p>
+            <p>{{ translate('LOADING', undefined, 'Loading...') }}</p>
         </div>
         
         <!-- Table with data -->
@@ -102,7 +98,7 @@ const getFieldType = (fieldKey: string): string => {
                 <UFSprunjeColumn v-for="fieldKey in detailConfig.list_fields" :key="fieldKey">
                     <template v-if="['boolean', 'boolean-tgl', 'boolean-toggle', 'boolean-yn'].includes(getFieldType(fieldKey))">
                         <UFLabel :severity="row[fieldKey] ? 'success' : 'danger'">
-                            {{ row[fieldKey] ? t('ENABLED', {}, 'Enabled') : t('DISABLED', {}, 'Disabled') }}
+                            {{ row[fieldKey] ? translate('ENABLED', undefined, 'Enabled') : translate('DISABLED', undefined, 'Disabled') }}
                         </UFLabel>
                     </template>
                     <template v-else-if="getFieldType(fieldKey) === 'date'">

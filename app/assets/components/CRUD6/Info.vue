@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
-import { createTranslationHelper } from '../../utils/translation'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -15,7 +14,6 @@ import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInferenc
 const route = useRoute()
 const router = useRouter()
 const translator = useTranslator()
-const t = createTranslationHelper(translator)
 
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response
@@ -383,7 +381,7 @@ const customActions = computed(() => {
             </p>
             <hr />
             <dl class="uk-description-list" v-if="$checkAccess('view_crud6_field')">
-                <dt><font-awesome-icon icon="users" /> {{ t('USER', { count: crud6.users_count }, 'Users') }}</dt>
+                <dt><font-awesome-icon icon="users" /> {{ translate('USER', { count: crud6.users_count }, 'User') }}</dt>
                 <dd>
                     <span class="uk-badge">{{ crud6.users_count }}</span>
                 </dd>

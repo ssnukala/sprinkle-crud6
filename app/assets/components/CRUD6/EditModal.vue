@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import UIkit from 'uikit'
-import { useTranslator } from '@userfrosting/sprinkle-core/stores'
-import { createTranslationHelper } from '../../utils/translation'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6Form from './Form.vue'
 
@@ -14,9 +12,6 @@ const props = defineProps<{
     model?: string
     schema?: any
 }>()
-
-const translator = useTranslator()
-const t = createTranslationHelper(translator)
 
 /**
  * Emits - Define the saved event. This event is emitted when the form is saved
@@ -57,12 +52,12 @@ const formSuccess = () => {
 
 <template>
     <a :href="'#modal-crud6-edit-' + recordId" v-bind="$attrs" uk-toggle data-test="btn-edit-modal">
-        <slot> <font-awesome-icon icon="pen-to-square" fixed-width /> {{ t('CRUD6.EDIT', { model: modelLabel }) }} </slot>
+        <slot> <font-awesome-icon icon="pen-to-square" fixed-width /> {{ translate('CRUD6.EDIT', { model: modelLabel }, 'Edit') }} </slot>
     </a>
 
     <!-- This is the modal -->
     <UFModal :id="'modal-crud6-edit-' + recordId" closable data-test="modal-edit">
-        <template #header> {{ t('CRUD6.EDIT', { model: modelLabel }) }} </template>
+        <template #header> {{ translate('CRUD6.EDIT', { model: modelLabel }, 'Edit') }} </template>
         <template #default>
             <CRUD6Form :crud6="props.crud6" :model="props.model" :schema="props.schema" @success="formSuccess()" />
         </template>

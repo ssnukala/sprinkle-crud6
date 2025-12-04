@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTranslator } from '@userfrosting/sprinkle-core/stores'
-import { createTranslationHelper } from '../../utils/translation'
 import { useMasterDetail, useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
 import DetailGrid from './DetailGrid.vue'
@@ -47,8 +45,6 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const translator = useTranslator()
-const t = createTranslationHelper(translator)
 
 // Load master schema
 const {
@@ -217,7 +213,7 @@ function getFieldLabel(field: any): string {
         <!-- Loading state -->
         <div v-if="isLoading && !masterSchema" class="uk-text-center uk-padding">
             <div uk-spinner></div>
-            <p>{{ t('LOADING', {}, 'Loading...') }}</p>
+            <p>{{ translate('LOADING', undefined, 'Loading...') }}</p>
         </div>
 
         <!-- Error state -->

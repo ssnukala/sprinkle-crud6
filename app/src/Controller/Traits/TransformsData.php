@@ -122,7 +122,7 @@ trait TransformsData
         $errors = $this->validator->validate($requestSchema, $data);
         
         if (count($errors) !== 0) {
-            $this->logger->error("CRUD6 [TransformsData] Validation failed", [
+            $this->logger->error("Line:125 CRUD6 [TransformsData] Validation failed", [
                 'model' => $crudSchema['model'] ?? 'unknown',
                 'errors' => $errors,
                 'error_count' => count($errors),
@@ -167,7 +167,7 @@ trait TransformsData
         $errors = $this->validator->validate($requestSchema, $params);
         
         if (count($errors) !== 0) {
-            $this->logger->error("CRUD6 [TransformsData] Field validation failed", [
+            $this->logger->error("Line:170 CRUD6 [TransformsData] Field validation failed", [
                 'model' => $crudSchema['model'] ?? 'unknown',
                 'field' => $fieldName,
                 'errors' => $errors,

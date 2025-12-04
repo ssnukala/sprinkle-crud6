@@ -184,7 +184,7 @@ class SchemaService
         foreach ($requiredFields as $field) {
             if (!isset($schema[$field])) {
                 throw new \RuntimeException(
-                    "Schema for model '{$model}' is missing required field: {$field}"
+                    "Line:186 Schema for model '{$model}' is missing required field: {$field}"
                 );
             }
         }
@@ -192,14 +192,14 @@ class SchemaService
         // Validate that model name matches
         if ($schema['model'] !== $model) {
             throw new \RuntimeException(
-                "Schema model name '{$schema['model']}' does not match requested model '{$model}'"
+                "Line:194 Schema model name '{$schema['model']}' does not match requested model '{$model}'"
             );
         }
 
         // Validate fields structure
         if (!is_array($schema['fields']) || empty($schema['fields'])) {
             throw new \RuntimeException(
-                "Schema for model '{$model}' must have a non-empty 'fields' array"
+                "Line:201 Schema for model '{$model}' must have a non-empty 'fields' array"
             );
         }
     }

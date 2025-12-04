@@ -87,7 +87,7 @@ class DeleteAction extends Base
 
             return $this->jsonResponseWithTitle($response, $title, $description);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
+            $this->logger->error("Line:90 CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'error_type' => get_class($e),

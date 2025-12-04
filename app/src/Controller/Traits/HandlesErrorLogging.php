@@ -35,7 +35,7 @@ trait HandlesErrorLogging
             'trace' => $exception->getTraceAsString(),
         ]);
 
-        $this->logger->error("CRUD6 [{$operation}] ===== {$operation} REQUEST FAILED =====", $errorContext);
+        $this->logger->error("Line:38 CRUD6 [{$operation}] ===== {$operation} REQUEST FAILED =====", $errorContext);
     }
 
     /**
@@ -49,7 +49,7 @@ trait HandlesErrorLogging
      */
     protected function logWarning(string $operation, string $message, array $context = []): void
     {
-        $this->logger->warning("CRUD6 [{$operation}] {$message}", $context);
+        $this->logger->warning("Line:52 CRUD6 [{$operation}] {$message}", $context);
     }
 
     /**
@@ -67,6 +67,6 @@ trait HandlesErrorLogging
             'validation_errors' => $errors,
         ]);
 
-        $this->logger->error("CRUD6 [{$operation}] Validation failed", $errorContext);
+        $this->logger->error("Line:70 CRUD6 [{$operation}] Validation failed", $errorContext);
     }
 }

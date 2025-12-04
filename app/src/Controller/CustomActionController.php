@@ -89,7 +89,7 @@ class CustomActionController extends Base
             $actionConfig = $this->findActionConfig($crudSchema, $actionKey);
             
             if ($actionConfig === null) {
-                $this->logger->error("CRUD6 [CustomActionController] Action not found", [
+                $this->logger->error("Line:92 CRUD6 [CustomActionController] Action not found", [
                     'model' => $crudSchema['model'],
                     'action_key' => $actionKey,
                     'available_actions' => array_column($crudSchema['actions'] ?? [], 'key'),
@@ -148,7 +148,7 @@ class CustomActionController extends Base
 
             return $this->jsonResponse($response, $description);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
+            $this->logger->error("Line:151 CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'action_key' => $actionKey,
@@ -195,7 +195,7 @@ class CustomActionController extends Base
         $currentUser = $this->authenticator->user();
 
         if (!$this->authorizer->checkAccess($currentUser, $permission)) {
-            $this->logger->warning("CRUD6 [CustomActionController] Access denied", [
+            $this->logger->warning("Line:198 CRUD6 [CustomActionController] Access denied", [
                 'user' => $currentUser->user_name,
                 'permission' => $permission,
             ]);
@@ -238,7 +238,7 @@ class CustomActionController extends Base
 
         // For other custom actions, log a warning that they're not implemented yet
         // In a real application, you would implement handlers for each action type
-        $this->logger->warning("CRUD6 [CustomActionController] Action type not implemented", [
+        $this->logger->warning("Line:241 CRUD6 [CustomActionController] Action type not implemented", [
             'model' => $schema['model'],
             'action_key' => $actionKey,
             'action_type' => $actionConfig['type'] ?? 'unknown',
@@ -275,7 +275,7 @@ class CustomActionController extends Base
         
         // This is a placeholder that just logs the action
         // The actual implementation would depend on your UserFrosting setup
-        $this->logger->info("CRUD6 [CustomActionController] Password reset requested", [
+        $this->logger->info("Line:278 CRUD6 [CustomActionController] Password reset requested", [
             'model' => $schema['model'],
             'user_id' => $crudModel->id,
             'user_name' => $crudModel->user_name ?? 'unknown',

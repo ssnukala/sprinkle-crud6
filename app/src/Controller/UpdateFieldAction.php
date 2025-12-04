@@ -90,7 +90,7 @@ class UpdateFieldAction extends Base
         try {
             // Check if this field exists and is editable in the schema
             if (!isset($crudSchema['fields'][$fieldName])) {
-                $this->logger->error("CRUD6 [UpdateFieldAction] Field does not exist", [
+                $this->logger->error("Line:93 CRUD6 [UpdateFieldAction] Field does not exist", [
                     'model' => $crudSchema['model'],
                     'field' => $fieldName,
                     'available_fields' => array_keys($crudSchema['fields'] ?? []),
@@ -102,7 +102,7 @@ class UpdateFieldAction extends Base
 
             // Check if the field is not editable
             if (isset($fieldConfig['editable']) && $fieldConfig['editable'] === false) {
-                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update non-editable field", [
+                $this->logger->warning("Line:105 CRUD6 [UpdateFieldAction] Attempt to update non-editable field", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,
@@ -200,7 +200,7 @@ class UpdateFieldAction extends Base
             } catch (\Exception $e) {
                 $this->db->rollBack();
                 
-                $this->logger->error("CRUD6 [UpdateFieldAction] Transaction rolled back", [
+                $this->logger->error("Line:203 CRUD6 [UpdateFieldAction] Transaction rolled back", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,
@@ -236,7 +236,7 @@ class UpdateFieldAction extends Base
 
             return $this->jsonResponse($response, $message);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
+            $this->logger->error("Line:239 CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'field' => $fieldName,

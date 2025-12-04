@@ -108,8 +108,9 @@ class SchemaService
     /**
      * Log debug message if debug mode is enabled.
      * 
-     * Uses DebugLoggerInterface if available, falls back to error_log() otherwise.
-     * Only logs when debug_mode config is true.
+     * Uses DebugLoggerInterface when available. Follows UserFrosting 6 standards
+     * by only logging through the proper logger interface.
+     * Only logs when debug_mode config is true and logger is available.
      * 
      * @param string $message Debug message
      * @param array  $context Context data for structured logging
@@ -118,17 +119,11 @@ class SchemaService
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if (!$this->isDebugMode()) {
+        if (!$this->isDebugMode() || $this->logger === null) {
             return;
         }
 
-        if ($this->logger !== null) {
-            $this->logger->debug($message, $context);
-        } else {
-            // Fallback to error_log if logger not available
-            $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
-            error_log($message . $contextStr);
-        }
+        $this->logger->debug($message, $context);
     }
 
     /**

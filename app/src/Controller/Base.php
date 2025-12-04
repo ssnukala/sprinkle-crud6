@@ -69,7 +69,6 @@ abstract class Base
         protected SchemaService $schemaService,
         protected Config $config
     ) {
-        //$this->logger->debug("[CRUD6 Base Constructor] Initialized - Config Array", $this->config->get('crud6'));
         $this->debugMode = (bool) $this->config->get('crud6.debug_mode', false);
     }
 
@@ -88,8 +87,6 @@ abstract class Base
     {
         if ($this->debugMode) {
             $this->logger->debug($message, $context);
-        } else {
-            //$this->logger->debug("[CRUD6 Base DebugLog] Debug mode disabled, skipping log for message: {$message}");
         }
     }
 

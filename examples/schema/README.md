@@ -364,16 +364,11 @@ See the corresponding migration files in `examples/Migrations/` for the database
 
 ### `title_field` Attribute
 
-The `title_field` attribute controls which field is displayed in breadcrumbs and page titles when viewing individual records. This is especially important for models where the primary key (ID) is not a human-readable identifier.
+The `title_field` attribute controls which field is displayed in breadcrumbs and page titles when viewing individual records. This is essential for displaying meaningful identifiers instead of database IDs.
 
 #### Default Behavior
 
-Without `title_field`, the system tries these fields in order:
-1. `name`
-2. `username`
-3. `user_name`
-4. `title`
-5. Primary key (ID) as last resort
+Without `title_field`, the system will display the record's ID (primary key).
 
 #### Example Usage
 
@@ -419,11 +414,9 @@ The example schemas in this directory demonstrate different use cases:
 Configure `title_field` when:
 - Your model uses numeric IDs but has a human-readable identifier field
 - You want breadcrumbs to be more descriptive
-- The default field (`name`) doesn't exist or isn't the best choice
 - You're using business identifiers (order numbers, SKUs, etc.)
 
 #### When to Skip
 
 You can omit `title_field` when:
-- Your model has a `name` field that's appropriate for display
-- The default fallback behavior works for your use case
+- Displaying the record ID is acceptable for your use case

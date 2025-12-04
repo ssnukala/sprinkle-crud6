@@ -77,23 +77,14 @@ Just add one line to your schema:
 "title_field": "user_name"
 ```
 
-### 2. Smart Fallback
-If `title_field` is not specified or the field is empty, tries these in order:
-1. Field specified in `title_field`
-2. `name`
-3. `username`
-4. `user_name`
-5. `title`
-6. Record ID (last resort)
+### 2. Simple Fallback
+If `title_field` is not specified or the field is empty, the system displays the record ID.
 
-### 3. Flexible
-Works with any field in your model:
-- String fields: `name`, `sku`, `order_number`, `email`
-- Business identifiers: `invoice_number`, `ticket_id`
-- Composite scenarios: Can use any field that makes sense for your model
+### 3. Schema-Driven
+Fully controlled by schema configuration with no hardcoded field name assumptions.
 
-### 4. Backward Compatible
-Existing schemas without `title_field` continue to work using the fallback mechanism.
+### 4. Predictable
+Simple and clear behavior: uses the configured field or falls back to ID.
 
 ## Usage Examples
 
@@ -170,11 +161,11 @@ defined        detail ctx     frontend       from record   instead of "8"
 
 ## Benefits
 
-1. **Better UX**: Users see meaningful identifiers instead of IDs
-2. **Flexible**: Can use any field as the display field
-3. **Smart Defaults**: Fallback mechanism works for most common cases
+1. **Better UX**: Users see meaningful identifiers instead of IDs (when configured)
+2. **Schema-Driven**: Fully controlled by schema configuration
+3. **No Hardcoded Assumptions**: No assumptions about field names
 4. **Easy Configuration**: Just one line in the schema
-5. **Backward Compatible**: Existing schemas continue to work
+5. **Predictable**: Simple fallback to ID when not configured
 6. **Well Documented**: Comprehensive documentation with examples
 7. **Tested**: Full test coverage ensures reliability
 
@@ -213,7 +204,7 @@ This implementation is **complete and ready for review**. To use it:
 
 1. Add `"title_field": "field_name"` to your schema JSON
 2. The breadcrumb will automatically use that field
-3. If not specified, the smart fallback mechanism will handle it
+3. If not specified, the record ID will be displayed
 
 ## Documentation References
 

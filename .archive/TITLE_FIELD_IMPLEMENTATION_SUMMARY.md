@@ -32,18 +32,14 @@ This code ensures that when a schema is filtered for the "detail" context, the `
 The frontend already had logic to use `title_field`:
 
 ```typescript
-// Try multiple field options: title_field from schema, 'name', 'username', 'user_name', or fall back to ID
-const titleField = flattenedSchema.value?.title_field || 'name'
-const fieldOptions = [titleField, 'name', 'username', 'user_name', 'title']
-// Use Set to avoid checking duplicate fields
-const uniqueFields = [...new Set(fieldOptions)]
-let recordName = uniqueFields.map(field => fetchedRow[field]).find(val => val) || recordId.value
+// Use title_field from schema, or fall back to ID
+const titleField = flattenedSchema.value?.title_field
+let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
 ```
 
-This creates a smart fallback system:
-1. First tries the field specified in `title_field`
-2. Falls back to common field names: `name`, `username`, `user_name`, `title`
-3. Finally uses the record ID as a last resort
+This creates a simple, schema-driven system:
+1. Uses the field specified in `title_field` if configured
+2. Falls back to the record ID if `title_field` is not specified or the field is empty
 
 ### 3. Schema Examples
 
@@ -163,24 +159,17 @@ Home > Products > Premium Widget
 
 ## Fallback Behavior
 
-If `title_field` is not specified or the field is empty, the system tries fields in this order:
+If `title_field` is not specified or the field is empty, the system will display the record's ID (primary key).
 
-1. `title_field` (if specified in schema)
-2. `name`
-3. `username`
-4. `user_name`
-5. `title`
-6. Record's primary key (ID)
-
-This ensures breadcrumbs always show something meaningful, even if the schema doesn't specify `title_field`.
+This ensures breadcrumbs always show a value, with the schema controlling what field is displayed.
 
 ## Benefits
 
-1. **Better UX**: Users see meaningful identifiers instead of IDs
-2. **Flexible**: Can use any field as the display field
-3. **Smart Defaults**: Fallback mechanism works for most common cases
+1. **Better UX**: Users see meaningful identifiers instead of IDs (when configured)
+2. **Schema-Driven**: Fully controlled by schema configuration
+3. **No Hardcoded Assumptions**: No assumptions about field names
 4. **Easy Configuration**: Just add one line to the schema
-5. **Backward Compatible**: Existing schemas without `title_field` continue to work
+5. **Predictable**: Simple fallback to ID when not configured
 
 ## Files Changed
 

@@ -101,42 +101,14 @@
 └─────────────────────────────────────────────────────────────────────┘
 
 Priority 1: schema['title_field']
-    ↓ (if exists)
+    ↓ (if exists and configured)
     ├─ Use value from fetchedRow[title_field]
     │  Example: title_field="user_name" → "john_doe" ✓
     │
-    ↓ (if title_field empty or not in record)
+    ↓ (if title_field not configured, empty, or field not in record)
     
-Priority 2: fetchedRow['name']
-    ↓ (if exists and not empty)
-    ├─ Use value from fetchedRow['name']
-    │  Example: name="John Doe" ✓
-    │
-    ↓ (if empty or doesn't exist)
-    
-Priority 3: fetchedRow['username']
-    ↓ (if exists and not empty)
-    ├─ Use value from fetchedRow['username']
-    │  Example: username="jdoe" ✓
-    │
-    ↓ (if empty or doesn't exist)
-    
-Priority 4: fetchedRow['user_name']
-    ↓ (if exists and not empty)
-    ├─ Use value from fetchedRow['user_name']
-    │  Example: user_name="jdoe123" ✓
-    │
-    ↓ (if empty or doesn't exist)
-    
-Priority 5: fetchedRow['title']
-    ↓ (if exists and not empty)
-    ├─ Use value from fetchedRow['title']
-    │  Example: title="Administrator" ✓
-    │
-    ↓ (if empty or doesn't exist)
-    
-Priority 6: recordId
-    └─ Use the record ID as last resort
+Priority 2: recordId (primary key)
+    └─ Use the record ID as fallback
        Example: "8"
 ```
 
@@ -190,7 +162,7 @@ Priority 6: recordId
 
 **Result**: `/crud6/products/15` → **Home > Products > Premium Widget**
 
-### Example 4: Without title_field (Uses Fallback)
+### Example 4: Without title_field (Uses ID Fallback)
 
 ```json
 {
@@ -202,8 +174,8 @@ Priority 6: recordId
 }
 ```
 
-**Result**: `/crud6/categories/5` → **Home > Categories > Electronics**
-(Uses `name` field from fallback mechanism)
+**Result**: `/crud6/categories/5` → **Home > Categories > 5**
+(Displays ID when `title_field` is not configured)
 
 ## Component Interaction
 
@@ -288,9 +260,9 @@ The `title_field` feature provides:
 
 1. **Configuration**: Simple schema attribute to specify display field
 2. **Backend Support**: SchemaService includes it in detail context
-3. **Frontend Usage**: PageRow.vue uses it with smart fallbacks
-4. **Flexibility**: Works with any field in the model
-5. **Reliability**: Multiple fallbacks ensure breadcrumbs always show something
-6. **Backward Compatible**: Works without configuration for common cases
+3. **Frontend Usage**: PageRow.vue uses it with simple ID fallback
+4. **Schema-Driven**: Fully controlled by schema configuration
+5. **Predictable**: Simple fallback to ID when not configured
+6. **No Hardcoded Assumptions**: No assumptions about field names
 7. **Well Tested**: Comprehensive unit tests verify functionality
 8. **Documented**: Multiple documentation sources with examples

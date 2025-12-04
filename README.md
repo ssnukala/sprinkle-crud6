@@ -174,13 +174,13 @@ The following schema properties have default values and can be omitted from your
 - **primary_key**: Defaults to `"id"` if not specified
 - **timestamps**: Defaults to `true` if not specified
 - **soft_delete**: Defaults to `false` if not specified
-- **title_field**: Defaults to `"name"` if not specified - specifies which field to display in breadcrumbs and page titles for individual records
+- **title_field**: Specifies which field to display in breadcrumbs and page titles for individual records (if not specified, the record ID is used)
 
 This allows for cleaner, more concise schema definitions by only specifying these values when they differ from the defaults.
 
 #### Breadcrumb Display Configuration
 
-The `title_field` attribute controls which field is displayed in breadcrumbs and page titles when viewing individual records. This is especially important for models where the primary identifier is not a human-readable name.
+The `title_field` attribute controls which field is displayed in breadcrumbs and page titles when viewing individual records. This is essential for displaying meaningful identifiers instead of database IDs.
 
 **Example**: For a users model accessed via `/crud6/users/8`, instead of showing "8" in the breadcrumb, you can configure it to show the user's name:
 
@@ -197,18 +197,12 @@ The `title_field` attribute controls which field is displayed in breadcrumbs and
 
 With this configuration, the breadcrumb will show "john_doe" (the value of `user_name`) instead of "8" (the ID).
 
-**Fallback Behavior**: If `title_field` is not specified or the specified field is empty, the system will try these fields in order:
-1. The field specified in `title_field` (if configured)
-2. `name`
-3. `username`
-4. `user_name`
-5. `title`
-6. The record's primary key (ID) as a last resort
+**Fallback Behavior**: If `title_field` is not specified or the specified field is empty, the system will display the record's ID.
 
 **Common Examples**:
 - Users model: `"title_field": "user_name"` or `"title_field": "email"`
 - Products model: `"title_field": "name"` or `"title_field": "sku"`
-- Contacts model: `"title_field": "last_name"` or combine multiple fields in your display logic
+- Contacts model: `"title_field": "last_name"` or `"title_field": "email"`
 - Categories model: `"title_field": "name"`
 - Orders model: `"title_field": "order_number"`
 

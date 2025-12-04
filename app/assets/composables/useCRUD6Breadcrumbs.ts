@@ -62,6 +62,8 @@ export function useCRUD6Breadcrumbs() {
         // Examples: "C6ADMIN_PANEL", "CRUD6.PAGE", "USER.MANAGEMENT"
         if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Attempting to translate:', label)
+            
+            // Try direct translation first
             const translated = translator.translate(label)
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Translation result:', { 
                 original: label, 
@@ -69,8 +71,8 @@ export function useCRUD6Breadcrumbs() {
                 isDifferent: translated !== label,
                 translatedType: typeof translated 
             })
-            // Only use translation if it's different from the key (meaning translation exists)
-            // Also handle empty strings or undefined/null as "no translation"
+            
+            // Check if translation was successful
             if (translated && typeof translated === 'string' && translated !== label && translated.trim() !== '') {
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Using translation:', { original: label, translated })
                 return translated
@@ -94,7 +96,36 @@ export function useCRUD6Breadcrumbs() {
                 }
             }
             
+            // Try alternative key patterns as last resort
+            // For C6ADMIN_PANEL, try CRUD6_PANEL, ADMIN_PANEL, etc.
+            const alternativeKeys = []
+            
+            // If key starts with C6, try CRUD6 variant
+            if (label.startsWith('C6')) {
+                alternativeKeys.push(label.replace(/^C6/, 'CRUD6'))
+            }
+            
+            // If key has ADMIN_PANEL, try just that
+            if (label.includes('ADMIN_PANEL')) {
+                alternativeKeys.push('ADMIN_PANEL')
+            }
+            
+            // Try each alternative
+            for (const altKey of alternativeKeys) {
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying alternative key:', altKey)
+                const altTranslated = translator.translate(altKey)
+                if (altTranslated && typeof altTranslated === 'string' && altTranslated !== altKey && altTranslated.trim() !== '') {
+                    debugLog('[useCRUD6Breadcrumbs.translateLabel] Using alternative translation:', { 
+                        original: label, 
+                        alternative: altKey, 
+                        translated: altTranslated 
+                    })
+                    return altTranslated
+                }
+            }
+            
             debugLog('[useCRUD6Breadcrumbs.translateLabel] No valid translation found for:', label)
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] ⚠️ Translation not found - check if locale file is loaded')
         }
         return label
     }

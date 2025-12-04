@@ -307,7 +307,7 @@ function getLookupAttributes(field: any) {
     <!-- Loading state (only show if we don't have a provided schema) -->
     <div v-if="!props.schema && schemaLoading" class="uk-text-center uk-padding">
         <div uk-spinner></div>
-        <p>{{ $t('LOADING') }}</p>
+        <p>{{ translate('LOADING', undefined, 'Loading...') }}</p>
     </div>
     
     <!-- Error state (only show if we don't have a provided schema) -->
@@ -347,7 +347,7 @@ function getLookupAttributes(field: any) {
                         class="uk-button uk-button-default uk-form-button"
                         type="button"
                         data-test="btn-toggle-slug-lock"
-                        :uk-tooltip="$t('OVERRIDE')"
+                        :uk-tooltip="translate('OVERRIDE', undefined, 'Override')"
                         @click="slugLocked = !slugLocked">
                         <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
                     </button>
@@ -522,7 +522,7 @@ function getLookupAttributes(field: any) {
             <!-- Form actions -->
             <div class="uk-text-right" uk-margin>
                 <button class="uk-button uk-button-default uk-modal-close" type="button" data-test="btn-cancel">
-                    {{ $t('CANCEL') }}
+                    {{ translate('CANCEL', undefined, 'Cancel') }}
                 </button>
                 <button
                     class="uk-button uk-button-primary"
@@ -530,7 +530,7 @@ function getLookupAttributes(field: any) {
                     type="submit"
                     data-test="btn-submit">
                     <div v-if="isLoading" uk-spinner="ratio: 0.5"></div>
-                    {{ $t('SAVE') }}
+                    {{ translate('SAVE', undefined, 'Save') }}
                 </button>
             </div>
         </fieldset>
@@ -538,6 +538,6 @@ function getLookupAttributes(field: any) {
     
     <!-- Fallback for no schema -->
     <div v-else class="uk-alert-warning" uk-alert>
-        <p>{{ $t('CRUD6.NO_SCHEMA') }}</p>
+        <p>{{ translate('CRUD6.NO_SCHEMA', undefined, 'No schema') }}</p>
     </div>
 </template>

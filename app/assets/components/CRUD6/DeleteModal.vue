@@ -64,21 +64,21 @@ const deleteConfirmed = () => {
 
 <template>
     <a :href="'#confirm-crud6-delete-' + recordId" v-bind="$attrs" uk-toggle data-test="btn-delete-modal">
-        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}</slot>
+        <slot><font-awesome-icon icon="trash" fixed-width /> {{ translate('CRUD6.DELETE', { model: modelLabel }, 'Delete') }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModalConfirmation
         :id="'confirm-crud6-delete-' + recordId"
-        :title="$t('CRUD6.DELETE', { model: modelLabel })"
+        :title="translate('CRUD6.DELETE', { model: modelLabel }, 'Delete')"
         @confirmed="deleteConfirmed()"
-        :acceptLabel="$t('CRUD6.DELETE_YES', { model: modelLabel })"
+        :acceptLabel="translate('CRUD6.DELETE_YES', { model: modelLabel }, 'Yes, delete')"
         acceptIcon="trash"
         :rejectIcon="null"
         :acceptSeverity="Severity.Danger"
         data-test="modal-delete">
         <template #prompt>
-            <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
+            <div v-html="translate('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel }, 'Are you sure?')"></div>
         </template>
     </UFModalConfirmation>
 </template> 

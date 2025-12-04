@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMasterDetail, useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -213,7 +213,7 @@ function getFieldLabel(field: any): string {
         <!-- Loading state -->
         <div v-if="isLoading && !masterSchema" class="uk-text-center uk-padding">
             <div uk-spinner></div>
-            <p>{{ $t('LOADING') }}</p>
+            <p>{{ translate('LOADING', undefined, 'Loading...') }}</p>
         </div>
 
         <!-- Error state -->

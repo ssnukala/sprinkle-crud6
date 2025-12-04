@@ -381,7 +381,7 @@ const customActions = computed(() => {
             </p>
             <hr />
             <dl class="uk-description-list" v-if="$checkAccess('view_crud6_field')">
-                <dt><font-awesome-icon icon="users" /> {{ $t('USER', crud6.users_count) }}</dt>
+                <dt><font-awesome-icon icon="users" /> {{ translate('USER', { count: crud6.users_count }, 'User') }}</dt>
                 <dd>
                     <span class="uk-badge">{{ crud6.users_count }}</span>
                 </dd>

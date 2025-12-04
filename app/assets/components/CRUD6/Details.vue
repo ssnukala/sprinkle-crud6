@@ -72,11 +72,11 @@ const getFieldType = (fieldKey: string): string => {
 </script>
 
 <template>
-    <UFCardBox :title="translate(detailTitle, undefined, detailTitle)">
+    <UFCardBox :title="$t(detailTitle)">
         <!-- Loading state -->
         <div v-if="schemaLoading" class="uk-text-center uk-padding">
             <div uk-spinner></div>
-            <p>{{ translate('LOADING', undefined, 'Loading...') }}</p>
+            <p>{{ $t('LOADING') }}</p>
         </div>
         
         <!-- Table with data -->
@@ -98,7 +98,7 @@ const getFieldType = (fieldKey: string): string => {
                 <UFSprunjeColumn v-for="fieldKey in detailConfig.list_fields" :key="fieldKey">
                     <template v-if="['boolean', 'boolean-tgl', 'boolean-toggle', 'boolean-yn'].includes(getFieldType(fieldKey))">
                         <UFLabel :severity="row[fieldKey] ? 'success' : 'danger'">
-                            {{ row[fieldKey] ? translate('ENABLED', undefined, 'Enabled') : translate('DISABLED', undefined, 'Disabled') }}
+                            {{ row[fieldKey] ? $t('ENABLED') : $t('DISABLED') }}
                         </UFLabel>
                     </template>
                     <template v-else-if="getFieldType(fieldKey) === 'date'">

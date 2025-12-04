@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, getCurrentInstance } from 'vue'
+import { ref, computed } from 'vue'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -17,24 +17,6 @@ import { getAutocompleteAttribute } from '../../utils/fieldTypes'
  */
 
 const translator = useTranslator()
-
-// Access UserFrosting's global $t() function for translations
-// Same approach as useCRUD6Breadcrumbs
-const instance = getCurrentInstance()
-const $t = instance?.appContext.config.globalProperties.$t
-
-/**
- * Translate a key using UserFrosting's global $t() function
- * Falls back to provided default if translation not found
- */
-function translate(key: string, params?: Record<string, any>, fallback?: string): string {
-    if (!$t) {
-        return fallback || key
-    }
-    const translated = params ? $t(key, params) : $t(key)
-    // If translation not found, $t returns the key itself
-    return (translated === key && fallback) ? fallback : translated
-}
 
 /**
  * Props
@@ -259,7 +241,7 @@ function resetForm() {
                                 v-model="fieldValue"
                                 :type="inputType"
                                 class="uk-input"
-                                :placeholder="translate('VALIDATION.ENTER_VALUE', undefined, `Enter ${fieldLabel.toLowerCase()}`)"
+                                :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
                                 :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
@@ -269,7 +251,7 @@ function resetForm() {
                     <!-- Confirm field (shown only when validation.match is true) -->
                     <div v-if="requiresMatch" class="uk-margin">
                         <label class="uk-form-label" :for="`confirm-field-input-${action.key}`">
-                            {{ translate('VALIDATION.CONFIRM', undefined, 'Confirm') }} {{ fieldLabel }}
+                            {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ fieldLabel }}
                         </label>
                         <div class="uk-form-controls">
                             <input
@@ -277,7 +259,7 @@ function resetForm() {
                                 v-model="confirmValue"
                                 :type="inputType"
                                 class="uk-input"
-                                :placeholder="translate('VALIDATION.CONFIRM_PLACEHOLDER', undefined, `Confirm ${fieldLabel.toLowerCase()}`)"
+                                :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
                                 :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
@@ -293,10 +275,10 @@ function resetForm() {
                     <div v-if="minLength || requiresMatch" class="uk-text-small uk-text-muted">
                         <ul class="uk-list">
                             <li v-if="minLength" :class="{ 'uk-text-success': fieldValue.length >= minLength }">
-                                {{ translate('VALIDATION.MIN_LENGTH_HINT', { min: minLength }, `Minimum ${minLength} characters`) }}
+                                {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: minLength }) || `Minimum ${minLength} characters` }}
                             </li>
                             <li v-if="requiresMatch" :class="{ 'uk-text-success': fieldValue && confirmValue && fieldValue === confirmValue }">
-                                {{ translate('VALIDATION.MATCH_HINT', undefined, 'Values must match') }}
+                                {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
                             </li>
                         </ul>
                     </div>
@@ -308,7 +290,7 @@ function resetForm() {
                     class="uk-button uk-button-default uk-modal-close"
                     type="button"
                     @click="handleCancelled">
-                    {{ translate('CANCEL', undefined, 'Cancel') }}
+                    {{ $t('CANCEL') || 'Cancel' }}
                 </button>
                 <button
                     class="uk-button"

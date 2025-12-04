@@ -15,6 +15,14 @@ const route = useRoute()
 const router = useRouter()
 const translator = useTranslator()
 
+/**
+ * Translate helper for template use
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const translated = translator.translate(key, params)
+    return (translated === key && fallback) ? fallback : translated
+}
+
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response
     schema?: any
@@ -381,7 +389,7 @@ const customActions = computed(() => {
             </p>
             <hr />
             <dl class="uk-description-list" v-if="$checkAccess('view_crud6_field')">
-                <dt><font-awesome-icon icon="users" /> {{ $t('USER', crud6.users_count) }}</dt>
+                <dt><font-awesome-icon icon="users" /> {{ t('USER', { count: crud6.users_count }, 'Users') }}</dt>
                 <dd>
                     <span class="uk-badge">{{ crud6.users_count }}</span>
                 </dd>

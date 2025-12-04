@@ -99,9 +99,10 @@ const modalConfig = computed((): ModalConfig => {
     // For 'confirm' type without explicit fields, keep fields array empty
     
     // Determine default warning key based on modal type if not explicitly set
+    // Use UserFrosting 6 standard WARNING_CANNOT_UNDONE from sprinkle-core
     let defaultWarningKey: string | undefined
     if (modalType === 'confirm') {
-        defaultWarningKey = 'ACTION.CANNOT_UNDO'
+        defaultWarningKey = 'WARNING_CANNOT_UNDONE'
     }
     
     return {

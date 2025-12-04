@@ -1,0 +1,44 @@
+{
+  "CRUD6": {
+    "@TRANSLATION": "CRUD6",
+    "CREATE": {
+      "@TRANSLATION": "Créer {{model}}",
+      "SUCCESS": "{{model}} créé avec succès",
+      "SUCCESS_TITLE": "Créé !",
+      "ERROR": "Échec de la création de {{model}}",
+      "ERROR_TITLE": "Erreur de création"
+    },
+    "DELETE": {
+      "@TRANSLATION": "Supprimer {{model}}",
+      "SUCCESS": "{{model}} supprimé avec succès",
+      "SUCCESS_TITLE": "Supprimé !",
+      "ERROR": "Échec de la suppression de {{model}}",
+      "ERROR_TITLE": "Erreur de suppression"
+    },
+    "UPDATE": {
+      "@TRANSLATION": "Mettre à jour {{model}}",
+      "SUCCESS": "{{model}} mis à jour avec succès",
+      "SUCCESS_TITLE": "Mis à jour !",
+      "ERROR": "Échec de la mise à jour de {{model}}",
+      "ERROR_TITLE": "Erreur de mise à jour"
+    },
+    "ADMIN_PANEL": "Panneau d'administration CRUD6"
+  },
+  "ACTION": {
+    "CANNOT_UNDO": "Cette action ne peut pas être annulée."
+  },
+  "VALIDATION": {
+    "ENTER_VALUE": "Entrer une valeur",
+    "CONFIRM": "Confirmer",
+    "CONFIRM_PLACEHOLDER": "Confirmer la valeur",
+    "MIN_LENGTH_HINT": "Minimum {{min}} caractères",
+    "MATCH_HINT": "Les valeurs doivent correspondre",
+    "FIELDS_MUST_MATCH": "Les champs doivent correspondre",
+    "MIN_LENGTH": "Minimum {{min}} caractères requis"
+  },
+  "CANCEL": "Annuler",
+  "YES": "Oui",
+  "NO": "Non",
+  "OK": "OK",
+  "SAVE": "Enregistrer"
+}

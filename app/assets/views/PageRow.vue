@@ -228,13 +228,14 @@ async function fetch() {
                     modelLabel: modelLabel.value
                 })
                 
-                // Set page title to just record name for breadcrumbs
-                // The page heading can be different from breadcrumb
-                page.title = recordName
-                
                 // Update breadcrumbs with model title and record name
+                // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
+                // setDetailBreadcrumbs will handle the breadcrumb trail correctly
                 const listPath = `/crud6/${model.value}`
                 await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                
+                // Set page title for display after breadcrumbs are updated
+                page.title = recordName
                 
                 debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {
@@ -340,13 +341,6 @@ watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
         debugLog('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
-        // Set initial page title immediately for breadcrumbs
-        const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
-        page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
-        
-        // Update breadcrumbs with initial title (replace {{model}} placeholder)
-        await updateBreadcrumbs(initialTitle)
-        
         currentModel = newModel
         // Request all contexts needed by detail page in one consolidated API call
         // This prevents child components (Info, EditModal) from making separate schema calls
@@ -372,13 +366,14 @@ watch(model, async (newModel) => {
                     await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    page.title = schemaTitle
+                    // Don't set page.title or update breadcrumbs yet for detail pages
+                    // Let setDetailBreadcrumbs handle it after the record is fetched
+                    // to avoid duplicate breadcrumbs
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Update breadcrumbs - record breadcrumb will be added after fetch()
-                    await updateBreadcrumbs(schemaTitle)
+                    // Note: Breadcrumbs will be updated by setDetailBreadcrumbs after fetch()
                 }
             }
         }

@@ -26,5 +26,19 @@ return [
          * @var bool
          */
         'debug_mode' => false,
+
+        /**
+         * Schema cache Time-To-Live (TTL) in seconds.
+         * 
+         * Controls how long schema data is cached in persistent cache (PSR-16).
+         * Only applies when a cache implementation is injected into SchemaService.
+         * 
+         * In-memory cache (active during request) is always enabled.
+         * 
+         * Default: 3600 seconds (1 hour)
+         * 
+         * @var int
+         */
+        'cache_ttl' => 3600,
     ]
 ];

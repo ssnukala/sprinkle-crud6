@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { useI18n } from 'vue-i18n'
+import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'
 
 /**
@@ -45,7 +46,7 @@ interface Breadcrumb {
 export function useCRUD6Breadcrumbs() {
     const route = useRoute()
     const page = usePageMeta()
-    const translator = useTranslator()
+    const { t } = useI18n()
 
     /**
      * Translate a breadcrumb label if it's a translation key
@@ -53,6 +54,8 @@ export function useCRUD6Breadcrumbs() {
      * Detects translation keys by checking if the string is in SCREAMING_SNAKE_CASE
      * format and contains dots (e.g., "C6ADMIN_PANEL", "CRUD6.PAGE").
      * Falls back to the original value if translation doesn't exist.
+     * 
+     * Uses Vue i18n's t() function to access the same translations available in Vue templates.
      * 
      * @param label - The label to potentially translate
      * @returns Translated label or original value
@@ -63,8 +66,8 @@ export function useCRUD6Breadcrumbs() {
         if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Attempting to translate:', label)
             
-            // Try direct translation first
-            const translated = translator.translate(label)
+            // Try direct translation first using Vue i18n
+            const translated = t(label)
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Translation result:', { 
                 original: label, 
                 translated, 
@@ -83,7 +86,7 @@ export function useCRUD6Breadcrumbs() {
             if (label.includes('.')) {
                 const fallbackKey = label.replace(/\./g, '_')
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying fallback key:', fallbackKey)
-                const fallbackTranslated = translator.translate(fallbackKey)
+                const fallbackTranslated = t(fallbackKey)
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Fallback result:', {
                     fallbackKey,
                     translated: fallbackTranslated,
@@ -113,7 +116,7 @@ export function useCRUD6Breadcrumbs() {
             // Try each alternative
             for (const altKey of alternativeKeys) {
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying alternative key:', altKey)
-                const altTranslated = translator.translate(altKey)
+                const altTranslated = t(altKey)
                 if (altTranslated && typeof altTranslated === 'string' && altTranslated !== altKey && altTranslated.trim() !== '') {
                     debugLog('[useCRUD6Breadcrumbs.translateLabel] Using alternative translation:', { 
                         original: label, 
@@ -125,7 +128,7 @@ export function useCRUD6Breadcrumbs() {
             }
             
             debugLog('[useCRUD6Breadcrumbs.translateLabel] No valid translation found for:', label)
-            debugLog('[useCRUD6Breadcrumbs.translateLabel] ⚠️ Translation not found - check if locale file is loaded')
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] ⚠️ Translation not found - using original label')
         }
         return label
     }

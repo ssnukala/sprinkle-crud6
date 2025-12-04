@@ -400,13 +400,6 @@ function resetForm() {
     error.value = ''
 }
 
-/**
- * Translate with fallback - wraps translator.translate for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
 </script>
 
 <template>

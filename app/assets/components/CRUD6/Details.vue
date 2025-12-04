@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import { useCRUD6SchemaStore } from '@ssnukala/sprinkle-crud6/stores'
 import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
@@ -14,14 +15,7 @@ const props = defineProps<{
 // Use the global schema store to check cache first
 const schemaStore = useCRUD6SchemaStore()
 const translator = useTranslator()
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
+const t = createTranslationHelper(translator)
 
 // Check if schema is already cached (from parent's include_related request)
 const detailSchema = computed(() => {

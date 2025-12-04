@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import UIkit from 'uikit'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import CRUD6Form from './Form.vue'
+import { createTranslationHelper } from '../../utils/translation'
 
 /**
  * Props - Model for schema loading and optional schema to avoid duplicate loads.
@@ -13,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const translator = useTranslator()
+const t = createTranslationHelper(translator)
 
 if (props.schema) {
 } else {
@@ -35,14 +37,6 @@ const modelLabel = computed(() => {
  * to notify the parent component to refresh the data.
  */
 const emits = defineEmits(['saved'])
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
 
 /**
  * Methods - Submit the form to the API and handle the response.

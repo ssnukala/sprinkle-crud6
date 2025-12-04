@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import UIkit from 'uikit'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6Form from './Form.vue'
 
@@ -15,6 +16,7 @@ const props = defineProps<{
 }>()
 
 const translator = useTranslator()
+const t = createTranslationHelper(translator)
 
 /**
  * Emits - Define the saved event. This event is emitted when the form is saved
@@ -41,14 +43,6 @@ const modelLabel = computed(() => {
     // Capitalize first letter of model name as fallback
     return props.model ? props.model.charAt(0).toUpperCase() + props.model.slice(1) : 'Record'
 })
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
 
 /**
  * Methods - Submit the form to the API and handle the response.

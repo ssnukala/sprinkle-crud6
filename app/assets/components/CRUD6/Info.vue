@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
@@ -14,14 +15,7 @@ import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInferenc
 const route = useRoute()
 const router = useRouter()
 const translator = useTranslator()
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
+const t = createTranslationHelper(translator)
 
 const { crud6, schema: providedSchema } = defineProps<{
     crud6: CRUD6Response

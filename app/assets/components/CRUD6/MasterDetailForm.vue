@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import { useMasterDetail, useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
 import DetailGrid from './DetailGrid.vue'
@@ -47,14 +48,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const translator = useTranslator()
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
+const t = createTranslationHelper(translator)
 
 // Load master schema
 const {

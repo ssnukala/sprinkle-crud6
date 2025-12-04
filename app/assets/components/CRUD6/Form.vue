@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, computed, onMounted } from 'vue'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
@@ -35,14 +36,7 @@ if (props.schema) {
  */
 const { createRow, updateRow, r$, formData, apiLoading, resetForm, slugLocked } = useCRUD6Api(props.model)
 const translator = useTranslator()
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
+const t = createTranslationHelper(translator)
 
 /**
  * Schema - Use the CRUD6 schema composable for dynamic form generation or use provided schema

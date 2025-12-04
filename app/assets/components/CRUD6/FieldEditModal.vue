@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { createTranslationHelper } from '../../utils/translation'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
@@ -17,6 +18,7 @@ import { getAutocompleteAttribute } from '../../utils/fieldTypes'
  */
 
 const translator = useTranslator()
+const t = createTranslationHelper(translator)
 
 /**
  * Props
@@ -48,14 +50,6 @@ const emits = defineEmits<{
 const fieldValue = ref('')
 const confirmValue = ref('')
 const error = ref('')
-
-/**
- * Translate helper for template use
- */
-function t(key: string, params?: Record<string, any>, fallback?: string): string {
-    const translated = translator.translate(key, params)
-    return (translated === key && fallback) ? fallback : translated
-}
 
 /**
  * Computed - Modal ID for UIKit toggle

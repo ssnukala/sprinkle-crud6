@@ -102,6 +102,15 @@ const formLayoutClass = computed(() => {
 })
 
 /**
+ * Helper function to check if a field is disabled/non-editable
+ * @param field - The field configuration object
+ * @returns true if field should be disabled
+ */
+const isFieldDisabled = (field: any): boolean => {
+    return field.editable === false
+}
+
+/**
  * Watchers - Watch for changes in the crud6 prop and update formData
  * accordingly. Useful when the crud6 prop is updated from the parent component,
  * or the modal is reused.
@@ -289,7 +298,7 @@ function getLookupAttributes(field: any) {
         'display-field': lookupConfig.displayField,
         placeholder: field.placeholder,
         required: field.required,
-        disabled: field.readonly
+        disabled: isFieldDisabled(field)
     }
 }
 </script>
@@ -356,7 +365,7 @@ function getLookupAttributes(field: any) {
                         :field-key="fieldKey"
                         :placeholder="field.placeholder || field.label || 'Enter address'"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         :address-fields="field.address_fields"
                         v-model="formData[fieldKey]"
                         @address-selected="handleAddressSelected"
@@ -374,7 +383,7 @@ function getLookupAttributes(field: any) {
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
                         :required="field.required"
-                        :disabled="fieldKey === 'slug' ? slugLocked : field.readonly"
+                        :disabled="fieldKey === 'slug' ? slugLocked : isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     
@@ -390,7 +399,7 @@ function getLookupAttributes(field: any) {
                         :data-test="fieldKey"
                         :required="field.required"
                         :step="field.type === 'integer' ? '1' : 'any'"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         autocomplete="off"
                         v-model="formData[fieldKey]" />
                     
@@ -406,7 +415,7 @@ function getLookupAttributes(field: any) {
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Date input -->
@@ -419,7 +428,7 @@ function getLookupAttributes(field: any) {
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     
@@ -433,7 +442,7 @@ function getLookupAttributes(field: any) {
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         autocomplete="off"
                         v-model="formData[fieldKey]" />
                     
@@ -449,7 +458,7 @@ function getLookupAttributes(field: any) {
                         :rows="parseTextareaConfig(field.type).rows"
                         :cols="parseTextareaConfig(field.type).cols"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Boolean fields - Toggle switch, Checkbox, or Yes/No select -->
@@ -461,7 +470,7 @@ function getLookupAttributes(field: any) {
                             class="uk-select"
                             :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
                             :data-test="fieldKey"
-                            :disabled="field.readonly"
+                            :disabled="isFieldDisabled(field)"
                             :required="field.required"
                             v-model="formData[fieldKey]">
                             <option :value="true">Yes</option>
@@ -473,7 +482,7 @@ function getLookupAttributes(field: any) {
                             v-else-if="getBooleanUIType(field.type) === 'toggle'"
                             :id="getFieldId(fieldKey)"
                             :data-test="fieldKey"
-                            :disabled="field.readonly"
+                            :disabled="isFieldDisabled(field)"
                             v-model="formData[fieldKey]" />
                         
                         <!-- Standard Checkbox (boolean) -->
@@ -483,7 +492,7 @@ function getLookupAttributes(field: any) {
                                 class="uk-checkbox"
                                 type="checkbox"
                                 :data-test="fieldKey"
-                                :disabled="field.readonly"
+                                :disabled="isFieldDisabled(field)"
                                 v-model="formData[fieldKey]" />
                             {{ field.label || fieldKey }}
                         </label>
@@ -500,7 +509,7 @@ function getLookupAttributes(field: any) {
                         :aria-label="field.label || fieldKey"
                         :data-test="fieldKey"
                         :required="field.required"
-                        :disabled="field.readonly"
+                        :disabled="isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     

@@ -17,7 +17,7 @@
       "type": "integer",
       "label": "Order ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": true
     },

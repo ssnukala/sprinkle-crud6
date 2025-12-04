@@ -108,8 +108,9 @@ class SchemaService
     /**
      * Log debug message if debug mode is enabled.
      * 
-     * Uses DebugLoggerInterface if available, falls back to error_log() otherwise.
-     * Only logs when debug_mode config is true.
+     * Uses DebugLoggerInterface when available. Follows UserFrosting 6 standards
+     * by only logging through the proper logger interface.
+     * Only logs when debug_mode config is true and logger is available.
      * 
      * @param string $message Debug message
      * @param array  $context Context data for structured logging
@@ -118,17 +119,11 @@ class SchemaService
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if (!$this->isDebugMode()) {
+        if (!$this->isDebugMode() || $this->logger === null) {
             return;
         }
 
-        if ($this->logger !== null) {
-            $this->logger->debug($message, $context);
-        } else {
-            // Fallback to error_log if logger not available
-            $contextStr = !empty($context) ? ' ' . json_encode($context) : '';
-            error_log($message . $contextStr);
-        }
+        $this->logger->debug($message, $context);
     }
 
     /**
@@ -189,7 +184,7 @@ class SchemaService
         foreach ($requiredFields as $field) {
             if (!isset($schema[$field])) {
                 throw new \RuntimeException(
-                    "Schema for model '{$model}' is missing required field: {$field}"
+                    "Line:186 Schema for model '{$model}' is missing required field: {$field}"
                 );
             }
         }
@@ -197,14 +192,14 @@ class SchemaService
         // Validate that model name matches
         if ($schema['model'] !== $model) {
             throw new \RuntimeException(
-                "Schema model name '{$schema['model']}' does not match requested model '{$model}'"
+                "Line:194 Schema model name '{$schema['model']}' does not match requested model '{$model}'"
             );
         }
 
         // Validate fields structure
         if (!is_array($schema['fields']) || empty($schema['fields'])) {
             throw new \RuntimeException(
-                "Schema for model '{$model}' must have a non-empty 'fields' array"
+                "Line:201 Schema for model '{$model}' must have a non-empty 'fields' array"
             );
         }
     }
@@ -296,8 +291,8 @@ class SchemaService
     /**
      * Normalize visibility flags to show_in array.
      * 
-     * Supports both new show_in array and legacy flags (editable, viewable, listable).
-     * Converts legacy flags to show_in for internal consistency.
+     * Converts visibility flags (editable, viewable, listable) to show_in array
+     * for consistent internal representation.
      * 
      * Supported contexts:
      * - 'list': Field appears in list/table view
@@ -307,8 +302,8 @@ class SchemaService
      * - 'detail': Field appears in detail/view page
      * 
      * Special handling:
-     * - Password fields: Default to ['create', 'edit'] (not viewable)
-     * - Readonly fields: Added to 'detail' but removed from 'create'/'edit'
+     * - Password fields: Default to ['create', 'edit'] (not viewable for security)
+     * - Non-editable fields: Added to 'detail' but removed from 'create'/'edit'
      * - 'form' is expanded to ['create', 'edit'] for granular control
      * 
      * @param array $schema The schema array
@@ -338,21 +333,20 @@ class SchemaService
                 }
                 $field['show_in'] = array_unique($normalizedShowIn);
                 
-                // Derive legacy flags from show_in for backward compatibility
+                // Derive convenience flags from show_in
                 $field['listable'] = in_array('list', $field['show_in']);
                 $field['editable'] = in_array('create', $field['show_in']) || in_array('edit', $field['show_in']);
                 $field['viewable'] = in_array('detail', $field['show_in']);
                 continue;
             }
 
-            // Otherwise, create show_in from legacy flags (or defaults)
+            // Otherwise, create show_in from flags (or defaults)
             $showIn = [];
             
-            // Default visibility based on legacy flags or sensible defaults
+            // Default visibility based on flags or sensible defaults
             $listable = $field['listable'] ?? true;
             $editable = $field['editable'] ?? true;
             $viewable = $field['viewable'] ?? true;
-            $readonly = $field['readonly'] ?? false;
 
             // Build show_in array
             if ($listable) {
@@ -361,15 +355,15 @@ class SchemaService
             
             // Special handling for password fields
             if ($fieldType === 'password') {
-                // Password fields default to create and edit only (not viewable)
-                if ($editable && !$readonly) {
+                // Password fields default to create and edit only (not viewable for security)
+                if ($editable) {
                     $showIn[] = 'create';
                     $showIn[] = 'edit';
                 }
                 // Never show password in detail view (security)
             } else {
                 // Regular fields: add create/edit if editable
-                if ($editable && !$readonly) {
+                if ($editable) {
                     $showIn[] = 'create';
                     $showIn[] = 'edit';
                 }
@@ -383,7 +377,7 @@ class SchemaService
             // Set the show_in array
             $field['show_in'] = $showIn;
 
-            // Keep legacy flags for backward compatibility
+            // Set convenience flags
             $field['listable'] = $listable;
             $field['editable'] = $editable;
             $field['viewable'] = $viewable;
@@ -1066,7 +1060,7 @@ class SchemaService
                         $data['fields'][$fieldKey] = [
                             'type' => $field['type'] ?? 'string',
                             'label' => $field['label'] ?? $fieldKey,
-                            'readonly' => $field['readonly'] ?? false,
+                            'editable' => $field['editable'] ?? true,
                         ];
 
                         // Include description if present
@@ -1155,8 +1149,8 @@ class SchemaService
             if (isset($field['show_in']) && is_array($field['show_in'])) {
                 $showInContext = in_array($context, $field['show_in']);
             } else {
-                // Fallback to legacy flags if show_in not set
-                $showInContext = ($field['editable'] ?? true) !== false && !($field['readonly'] ?? false);
+                // Fallback if show_in not set
+                $showInContext = ($field['editable'] ?? true) !== false;
             }
             
             if ($showInContext) {
@@ -1164,7 +1158,7 @@ class SchemaService
                     'type' => $field['type'] ?? 'string',
                     'label' => $field['label'] ?? $fieldKey,
                     'required' => $field['required'] ?? false,
-                    'readonly' => $field['readonly'] ?? false,
+                    'editable' => $field['editable'] ?? true,
                 ];
 
                 // Include validation rules if present

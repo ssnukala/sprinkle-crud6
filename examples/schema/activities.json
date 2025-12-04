@@ -19,7 +19,7 @@
             "type": "integer",
             "label": "CRUD6.ACTIVITY.ID",
             "auto_increment": true,
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ]

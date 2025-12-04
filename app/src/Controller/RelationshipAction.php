@@ -234,7 +234,7 @@ class RelationshipAction extends Base
             }
         }
         
-        $this->logger->debug("CRUD6 [RelationshipAction] GET relationship", [
+        $this->logger->debug("Line:237 CRUD6 [RelationshipAction] GET relationship", [
             'model' => $crudSchema['model'],
             'record_id' => $crudModel->id,
             'relationship' => $relationName,
@@ -281,7 +281,7 @@ class RelationshipAction extends Base
             return $response->withHeader('Content-Type', 'application/json');
             
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [RelationshipAction] Failed to get relationship", [
+            $this->logger->error("Line:284 CRUD6 [RelationshipAction] Failed to get relationship", [
                 'model' => $crudSchema['model'],
                 'record_id' => $crudModel->id,
                 'relationship' => $relationName,
@@ -348,7 +348,7 @@ class RelationshipAction extends Base
         // Get filtered count AFTER applying search but BEFORE pagination
         $filteredCount = $query->count();
         
-        $this->logger->debug("CRUD6 [RelationshipAction] Many-to-many counts", [
+        $this->logger->debug("Line:351 CRUD6 [RelationshipAction] Many-to-many counts", [
             'model' => $crudSchema['model'],
             'record_id' => $crudModel->id,
             'relationship' => $relatedModel,
@@ -455,7 +455,7 @@ class RelationshipAction extends Base
         // Get filtered count AFTER applying search but BEFORE pagination
         $filteredCount = $query->count();
         
-        $this->logger->debug("CRUD6 [RelationshipAction] Belongs-to-many-through counts", [
+        $this->logger->debug("Line:458 CRUD6 [RelationshipAction] Belongs-to-many-through counts", [
             'model' => $crudSchema['model'],
             'record_id' => $crudModel->id,
             'relationship' => $relatedModel,

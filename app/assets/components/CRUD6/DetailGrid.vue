@@ -56,10 +56,10 @@ function getFieldType(fieldKey: string): string {
     return config.type || 'string'
 }
 
-// Check if field is readonly
+// Check if field is non-editable
 function isFieldReadonly(fieldKey: string): boolean {
     const config = getFieldConfig(fieldKey)
-    return config.readonly === true || config.auto_increment === true
+    return config.editable === false || config.auto_increment === true
 }
 
 // Add new row
@@ -75,7 +75,7 @@ function addRow() {
     // Initialize fields with default values
     props.fields.forEach(fieldKey => {
         const config = getFieldConfig(fieldKey)
-        if (!config.readonly && !config.auto_increment) {
+        if (config.editable !== false && !config.auto_increment) {
             switch (config.type) {
                 case 'integer':
                 case 'decimal':
@@ -157,7 +157,7 @@ function getLookupAttributes(field: any) {
         model: lookupConfig.model,
         'id-field': lookupConfig.idField,
         'display-field': lookupConfig.displayField,
-        disabled: field.disabled || field.readonly
+        disabled: field.disabled || field.editable === false
     }
 }
 </script>

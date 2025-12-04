@@ -113,7 +113,7 @@ class EditAction extends Base
             }
             
             // Method not allowed
-            $this->logger->warning("CRUD6 [EditAction] Method not allowed", [
+            $this->logger->warning("Line:116 CRUD6 [EditAction] Method not allowed", [
                 'model' => $crudSchema['model'],
                 'method' => $method,
                 'allowed_methods' => ['GET', 'PUT'],
@@ -122,7 +122,7 @@ class EditAction extends Base
             $response->getBody()->write(json_encode(['error' => 'Method not allowed']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(405);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [EditAction] ===== REQUEST FAILED =====", [
+            $this->logger->error("Line:125 CRUD6 [EditAction] ===== REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'method' => $method,
                 'error_type' => get_class($e),
@@ -198,7 +198,7 @@ class EditAction extends Base
             $response->getBody()->write(json_encode($responseData));
             return $response->withHeader('Content-Type', 'application/json');
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [EditAction] Failed to read record", [
+            $this->logger->error("Line:201 CRUD6 [EditAction] Failed to read record", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'error_type' => get_class($e),
@@ -451,7 +451,7 @@ class EditAction extends Base
                     $relationship = $relationshipMap[$relatedModel] ?? null;
                     
                     if (!$relationship) {
-                        $this->logger->warning("CRUD6 [EditAction] No relationship or foreign_key found for detail", [
+                        $this->logger->warning("Line:454 CRUD6 [EditAction] No relationship or foreign_key found for detail", [
                             'related_model' => $relatedModel,
                             'available_relationships' => array_keys($relationshipMap),
                             'detail_config' => $detailConfig,
@@ -480,7 +480,7 @@ class EditAction extends Base
                 ]);
             } catch (\Exception $e) {
                 // Log error but continue loading other relationships
-                $this->logger->error("CRUD6 [EditAction] Failed to load detail", [
+                $this->logger->error("Line:483 CRUD6 [EditAction] Failed to load detail", [
                     'related_model' => $relatedModel,
                     'error' => $e->getMessage(),
                     'error_type' => get_class($e),
@@ -527,14 +527,14 @@ class EditAction extends Base
         
         // Validate relationship configuration
         if (!$type) {
-            $this->logger->error("CRUD6 [EditAction] Relationship missing type", [
+            $this->logger->error("Line:530 CRUD6 [EditAction] Relationship missing type", [
                 'relationship' => $relationship,
             ]);
             throw new \RuntimeException("Relationship configuration missing 'type' field");
         }
         
         if (!$relatedModel) {
-            $this->logger->error("CRUD6 [EditAction] Relationship missing name", [
+            $this->logger->error("Line:537 CRUD6 [EditAction] Relationship missing name", [
                 'relationship' => $relationship,
             ]);
             throw new \RuntimeException("Relationship configuration missing 'name' field");
@@ -559,7 +559,7 @@ class EditAction extends Base
         }
         
         // Unsupported relationship type
-        $this->logger->warning("CRUD6 [EditAction] Unsupported relationship type", [
+        $this->logger->warning("Line:562 CRUD6 [EditAction] Unsupported relationship type", [
             'type' => $type,
             'related_model' => $relatedModel,
             'supported_types' => ['many_to_many', 'belongs_to_many_through'],
@@ -595,7 +595,7 @@ class EditAction extends Base
         
         // Validate required configuration
         if (!$pivotTable || !$foreignKey || !$relatedKey || !$relatedModel) {
-            $this->logger->error("CRUD6 [EditAction] Invalid many_to_many relationship configuration", [
+            $this->logger->error("Line:598 CRUD6 [EditAction] Invalid many_to_many relationship configuration", [
                 'relationship' => $relationship,
                 'missing_fields' => array_filter([
                     'pivot_table' => !$pivotTable,
@@ -666,7 +666,7 @@ class EditAction extends Base
             return $results->toArray();
             
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [EditAction] Failed to query many_to_many relationship", [
+            $this->logger->error("Line:669 CRUD6 [EditAction] Failed to query many_to_many relationship", [
                 'relationship' => $relationship,
                 'record_id' => $recordId,
                 'error' => $e->getMessage(),
@@ -737,7 +737,7 @@ class EditAction extends Base
         $missingFields = array_keys(array_filter($requiredFields, fn($value) => $value === null));
         
         if (!empty($missingFields)) {
-            $this->logger->error("CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
+            $this->logger->error("Line:740 CRUD6 [EditAction] Invalid belongs_to_many_through relationship configuration", [
                 'relationship' => $relationship,
                 'missing_fields' => $missingFields,
             ]);
@@ -813,7 +813,7 @@ class EditAction extends Base
             return $results->toArray();
             
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [EditAction] Failed to query belongs_to_many_through relationship", [
+            $this->logger->error("Line:816 CRUD6 [EditAction] Failed to query belongs_to_many_through relationship", [
                 'relationship' => $relationship,
                 'record_id' => $recordId,
                 'error' => $e->getMessage(),
@@ -900,7 +900,7 @@ class EditAction extends Base
             return $results->toArray();
             
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [EditAction] Failed to query has-many relationship", [
+            $this->logger->error("Line:903 CRUD6 [EditAction] Failed to query has-many relationship", [
                 'related_model' => $relatedModel,
                 'foreign_key' => $foreignKey,
                 'record_id' => $recordId,

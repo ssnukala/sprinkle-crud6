@@ -58,7 +58,7 @@ trait ProcessesRelationshipActions
 
             $relationName = $relationship['name'] ?? null;
             if (!$relationName) {
-                $this->logger->warning("CRUD6 [RelationshipActions] Skipping relationship without name", [
+                $this->logger->warning("Line:61 CRUD6 [RelationshipActions] Skipping relationship without name", [
                     'event' => $event,
                     'model' => $schema['model'],
                 ]);
@@ -83,7 +83,7 @@ trait ProcessesRelationshipActions
                     $this->processDetachAction($model, $schema, $relationName, $action['detach'], $event);
                 }
             } catch (\Exception $e) {
-                $this->logger->error("CRUD6 [RelationshipActions] Failed to process action", [
+                $this->logger->error("Line:86 CRUD6 [RelationshipActions] Failed to process action", [
                     'event' => $event,
                     'model' => $schema['model'],
                     'relationship' => $relationName,
@@ -147,7 +147,7 @@ trait ProcessesRelationshipActions
     ): void {
         foreach ($attachConfig as $attachItem) {
             if (!is_array($attachItem) || !isset($attachItem['related_id'])) {
-                $this->logger->warning("CRUD6 [RelationshipActions] Invalid attach configuration", [
+                $this->logger->warning("Line:150 CRUD6 [RelationshipActions] Invalid attach configuration", [
                     'model' => $schema['model'],
                     'relationship' => $relationName,
                     'event' => $event,
@@ -274,7 +274,7 @@ trait ProcessesRelationshipActions
                 'related_ids' => $detachConfig,
             ]);
         } else {
-            $this->logger->warning("CRUD6 [RelationshipActions] Invalid detach configuration", [
+            $this->logger->warning("Line:277 CRUD6 [RelationshipActions] Invalid detach configuration", [
                 'event' => $event,
                 'model' => $schema['model'],
                 'relationship' => $relationName,

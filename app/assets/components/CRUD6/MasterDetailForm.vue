@@ -111,7 +111,7 @@ const editableMasterFields = computed(() => {
     return Object.entries(masterSchema.value.fields)
         .filter(([key, field]) => {
             // Exclude readonly, auto_increment, and timestamp fields
-            if (field.readonly || field.auto_increment) return false
+            if (field.editable === false || field.auto_increment) return false
             if (key === 'created_at' || key === 'updated_at' || key === 'deleted_at') return false
             return true
         })
@@ -243,7 +243,7 @@ function getFieldLabel(field: any): string {
                                 type="text"
                                 class="uk-input"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                                 :autocomplete="getAutocompleteAttribute(field.key, 'string')"
                             />
 
@@ -255,7 +255,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-textarea"
                                 rows="3"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                             ></textarea>
 
                             <!-- Number input -->
@@ -267,7 +267,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-input"
                                 :step="getFieldType(field) === 'integer' ? '1' : '0.01'"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                                 autocomplete="off"
                             />
 
@@ -278,7 +278,7 @@ function getFieldLabel(field: any): string {
                                     v-model="masterFormData[field.key]"
                                     type="checkbox"
                                     class="uk-checkbox"
-                                    :disabled="field.readonly"
+                                    :disabled="field.editable === false"
                                 />
                                 {{ getFieldLabel(field) }}
                             </label>
@@ -291,7 +291,7 @@ function getFieldLabel(field: any): string {
                                 type="date"
                                 class="uk-input"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                                 :autocomplete="getAutocompleteAttribute(field.key, 'date')"
                             />
 
@@ -303,7 +303,7 @@ function getFieldLabel(field: any): string {
                                 type="datetime-local"
                                 class="uk-input"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                                 autocomplete="off"
                             />
 
@@ -315,7 +315,7 @@ function getFieldLabel(field: any): string {
                                 type="text"
                                 class="uk-input"
                                 :required="field.required"
-                                :readonly="field.readonly"
+                                :disabled="field.editable === false"
                                 :autocomplete="getAutocompleteAttribute(field.key)"
                             />
                         </div>

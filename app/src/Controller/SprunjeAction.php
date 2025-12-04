@@ -456,7 +456,7 @@ class SprunjeAction extends Base
 
             return $this->sprunje->toResponse($response);
         } catch (\Exception $e) {
-            $this->logger->error("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST FAILED =====", [
+            $this->logger->error("Line:459 CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),

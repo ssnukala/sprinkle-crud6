@@ -75,7 +75,6 @@ class SchemaInjector implements MiddlewareInterface
         }
 
         $model = $route->getArgument('model');
-        //echo "Line 62: CRUD6: SchemaInjector for model: {$model}\n";
         if ($model === null) {
             throw new NotFoundException('Model parameter not found in route');
         }
@@ -88,7 +87,7 @@ class SchemaInjector implements MiddlewareInterface
                 ->withAttribute('crud6_model', $model)
                 ->withAttribute('crud6_schema', $schema);
         } catch (SchemaNotFoundException $e) {
-            throw new SchemaNotFoundException("Line 62: Schema not found for model: {$model}");
+            throw new SchemaNotFoundException("Schema not found for model: {$model}");
         }
 
         return $handler->handle($request);

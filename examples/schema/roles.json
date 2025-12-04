@@ -75,7 +75,7 @@
             "type": "integer",
             "label": "CRUD6.ROLE.ID",
             "auto_increment": true,
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ]
@@ -147,7 +147,7 @@
         "created_at": {
             "type": "datetime",
             "label": "CRUD6.ROLE.CREATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],
@@ -156,7 +156,7 @@
         "updated_at": {
             "type": "datetime",
             "label": "CRUD6.ROLE.UPDATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],

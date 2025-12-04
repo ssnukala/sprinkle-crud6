@@ -28,7 +28,7 @@ Add a hidden field definition in the `fields` section of your schema:
       "type": "string",
       "label": "",
       "required": false,
-      "readonly": true,
+      "editable": false,
       "hidden": true,
       "show_in": [],
       "value_source": "user_name",
@@ -161,7 +161,7 @@ This pattern can be used for any hidden fields, not just usernames:
     "type": "integer",
     "hidden": true,
     "value_source": "id",
-    "readonly": true
+    "editable": false
   }
 }
 ```

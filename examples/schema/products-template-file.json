@@ -18,7 +18,7 @@
       "type": "integer",
       "label": "ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": true
@@ -94,7 +94,7 @@
     "created_at": {
       "type": "datetime",
       "label": "Created At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": true,
@@ -103,7 +103,7 @@
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": false,

@@ -258,7 +258,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         
         if ($config === null) {
             throw new \InvalidArgumentException(
-                "Dynamic relationship '{$name}' not found. " .
+                "Line:260 Dynamic relationship '{$name}' not found. " .
                 "Ensure configureFromSchema() was called before accessing relationships."
             );
         }
@@ -267,7 +267,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         if ($type !== 'many_to_many') {
             throw new \InvalidArgumentException(
-                "Dynamic relationship '{$name}' has unsupported type '{$type}'. " .
+                "Line:269 Dynamic relationship '{$name}' has unsupported type '{$type}'. " .
                 "Only 'many_to_many' relationships are supported for attach/sync/detach operations."
             );
         }
@@ -280,7 +280,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         if (!$pivotTable || !$foreignKey || !$relatedKey) {
             throw new \InvalidArgumentException(
-                "Dynamic relationship '{$name}' is missing required configuration: " .
+                "Line:282 Dynamic relationship '{$name}' is missing required configuration: " .
                 "pivot_table, foreign_key, or related_key."
             );
         }
@@ -422,10 +422,10 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         if (isset($schema['fields']) && is_array($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                // Skip auto-increment fields from fillable
+                // Skip auto-increment and non-editable fields from fillable
                 if (
                     !($fieldConfig['auto_increment'] ?? false) &&
-                    !($fieldConfig['readonly'] ?? false)
+                    ($fieldConfig['editable'] ?? true) !== false
                 ) {
                     $fillable[] = $fieldName;
                 }

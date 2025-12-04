@@ -213,12 +213,9 @@ async function fetch() {
                 originalRecord.value = { ...fetchedRow }
                 
                 // Update page title with record name if available
-                // Try multiple field options: title_field from schema, 'name', 'username', 'user_name', or fall back to ID
-                const titleField = flattenedSchema.value?.title_field || 'name'
-                const fieldOptions = [titleField, 'name', 'username', 'user_name', 'title']
-                // Use Set to avoid checking duplicate fields
-                const uniqueFields = [...new Set(fieldOptions)]
-                let recordName = uniqueFields.map(field => fetchedRow[field]).find(val => val) || recordId.value
+                // Use title_field from schema, or fall back to ID
+                const titleField = flattenedSchema.value?.title_field
+                let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
                 
                 debugLog('[PageRow.fetch] Record fetched:', {
                     recordId: recordId.value,

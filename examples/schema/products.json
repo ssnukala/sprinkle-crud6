@@ -4,6 +4,7 @@
   "singular_title": "Product",
   "description": "Manage your product catalog",
   "table": "products",
+  "title_field": "name",
   "permissions": {
     "read": "view_products",
     "create": "create_product",

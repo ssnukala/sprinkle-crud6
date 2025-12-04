@@ -6,6 +6,7 @@
   "table": "contacts",
   "primary_key": "id",
   "timestamps": true,
+  "title_field": "last_name",
   "permissions": {
     "read": "uri_contacts",
     "create": "create_contact",

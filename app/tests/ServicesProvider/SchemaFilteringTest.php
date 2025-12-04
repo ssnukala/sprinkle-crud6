@@ -563,4 +563,111 @@ class SchemaFilteringTest extends TestCase
         $this->assertTrue($detailData['fields']['password']['readonly'], 'password should be readonly');
         $this->assertFalse($detailData['fields']['password']['editable'], 'password should not be editable');
     }
+
+    /**
+     * Test that title_field attribute is included in detail context
+     * 
+     * The title_field attribute controls which field is displayed in breadcrumbs
+     * and page titles for individual records. This should be included in the detail
+     * context so the frontend can use it to display the correct field value.
+     */
+    public function testTitleFieldIncludedInDetailContext(): void
+    {
+        // Create schema with title_field attribute
+        $schema = [
+            'model' => 'users',
+            'title' => 'User Management',
+            'table' => 'users',
+            'title_field' => 'user_name',  // Should be included in detail context
+            'fields' => [
+                'id' => [
+                    'type' => 'integer',
+                    'label' => 'ID',
+                    'auto_increment' => true,
+                ],
+                'user_name' => [
+                    'type' => 'string',
+                    'label' => 'Username',
+                ],
+                'email' => [
+                    'type' => 'string',
+                    'label' => 'Email',
+                ],
+            ],
+        ];
+
+        // Load SchemaService
+        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
+        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        
+        require_once $serviceFile;
+        
+        // Create mock and SchemaService instance
+        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
+        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        
+        // Use reflection to access protected method
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('getContextSpecificData');
+        $method->setAccessible(true);
+        
+        // Test detail context includes title_field
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        
+        $this->assertArrayHasKey('title_field', $detailData, 'title_field should be included in detail context');
+        $this->assertEquals('user_name', $detailData['title_field'], 'title_field should match schema value');
+        
+        // Test with different title_field values
+        $schema['title_field'] = 'email';
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $this->assertEquals('email', $detailData['title_field'], 'title_field should be updated');
+        
+        // Test when title_field is not present in schema
+        unset($schema['title_field']);
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $this->assertArrayNotHasKey('title_field', $detailData, 'title_field should not be in context when not in schema');
+    }
+
+    /**
+     * Test title_field with various field types
+     * 
+     * title_field can point to any field in the schema, not just strings.
+     * This test verifies that various field types work correctly.
+     */
+    public function testTitleFieldWithVariousFieldTypes(): void
+    {
+        // Load SchemaService
+        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
+        require_once $serviceFile;
+        
+        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
+        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        
+        $reflection = new \ReflectionClass($schemaService);
+        $method = $reflection->getMethod('getContextSpecificData');
+        $method->setAccessible(true);
+        
+        // Test with string field (most common)
+        $schema = [
+            'model' => 'products',
+            'title' => 'Products',
+            'table' => 'products',
+            'title_field' => 'name',
+            'fields' => ['name' => ['type' => 'string', 'label' => 'Product Name']],
+        ];
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $this->assertEquals('name', $detailData['title_field']);
+        
+        // Test with SKU/code field
+        $schema['title_field'] = 'sku';
+        $schema['fields']['sku'] = ['type' => 'string', 'label' => 'SKU'];
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $this->assertEquals('sku', $detailData['title_field']);
+        
+        // Test with order_number field
+        $schema['title_field'] = 'order_number';
+        $schema['fields']['order_number'] = ['type' => 'string', 'label' => 'Order Number'];
+        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $this->assertEquals('order_number', $detailData['title_field']);
+    }
 }

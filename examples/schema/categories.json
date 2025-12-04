@@ -4,6 +4,7 @@
   "singular_title": "Category",
   "description": "Manage product categories",
   "table": "categories",
+  "title_field": "name",
   "permissions": {
     "read": "view_categories",
     "create": "create_category",

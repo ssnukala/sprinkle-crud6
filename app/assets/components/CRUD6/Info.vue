@@ -271,9 +271,9 @@ const customActions = computed(() => {
                 <font-awesome-icon :icon="crud6.icon" class="fa-5x" />
             </div>
             
-            <!-- Title - use schema title field or fallback to name -->
+            <!-- Title - use schema title field or fallback to ID -->
             <h3 class="uk-text-center uk-margin-remove">
-                {{ crud6[finalSchema.title_field || 'name'] || crud6.name }}
+                {{ finalSchema.title_field ? (crud6[finalSchema.title_field] || crud6.id) : crud6.id }}
             </h3>
             
             <!-- Description - use schema description field or fallback -->

@@ -191,14 +191,15 @@ async function fetch() {
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 // Update page title with record name if available
-                const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
-                if (recordName) {
-                    page.title = `${recordName} - ${modelLabel.value}`
-                    
-                    // Update breadcrumbs with model title and record name
-                    const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
-                }
+                // Use title_field from schema, or fall back to ID
+                const titleField = schema.value?.title_field
+                const recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                
+                page.title = `${recordName} - ${modelLabel.value}`
+                
+                // Update breadcrumbs with model title and record name
+                const listPath = `/crud6/${model.value}`
+                await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
             })

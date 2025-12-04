@@ -1,6 +1,6 @@
 import { nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
+import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'
 
 /**
@@ -45,6 +45,32 @@ interface Breadcrumb {
 export function useCRUD6Breadcrumbs() {
     const route = useRoute()
     const page = usePageMeta()
+    const translator = useTranslator()
+
+    /**
+     * Translate a breadcrumb label if it's a translation key
+     * 
+     * Detects translation keys by checking if the string is in SCREAMING_SNAKE_CASE
+     * format and contains dots (e.g., "C6ADMIN_PANEL", "CRUD6.PAGE").
+     * Falls back to the original value if translation doesn't exist.
+     * 
+     * @param label - The label to potentially translate
+     * @returns Translated label or original value
+     */
+    function translateLabel(label: string): string {
+        // Check if label looks like a translation key (uppercase with dots/underscores)
+        // Examples: "C6ADMIN_PANEL", "CRUD6.PAGE", "USER.MANAGEMENT"
+        if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
+            const translated = translator.translate(label)
+            // Only use translation if it's different from the key (meaning translation exists)
+            if (translated && translated !== label) {
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Translated:', { original: label, translated })
+                return translated
+            }
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] No translation found for:', label)
+        }
+        return label
+    }
 
     /**
      * Update breadcrumbs to replace {{model}} placeholders with actual titles
@@ -53,6 +79,8 @@ export function useCRUD6Breadcrumbs() {
      * (which comes from CRUD6.PAGE translation) and replaces ALL occurrences
      * with the actual model title from the schema. It also removes duplicate
      * breadcrumbs that have the same label to keep the trail clean.
+     * 
+     * Additionally, it translates any translation keys found in breadcrumb labels.
      * 
      * Uses nextTick to ensure the update happens after usePageMeta's refresh.
      * 
@@ -82,6 +110,7 @@ export function useCRUD6Breadcrumbs() {
         
         // Replace breadcrumbs with CRUD6.PAGE translation key or {{model}} placeholder
         // Also handle breadcrumbs that point to route patterns like '/crud6/:model'
+        // Additionally, translate any translation keys in breadcrumb labels
         let updated = false
         const updatedCrumbs: Breadcrumb[] = existingCrumbs.map((crumb: Breadcrumb) => {
             debugLog('[useCRUD6Breadcrumbs.updateBreadcrumbs] Checking crumb:', { label: crumb.label, to: crumb.to })
@@ -112,6 +141,14 @@ export function useCRUD6Breadcrumbs() {
                 updated = true
                 return { label: title, to: crumb.to }
             }
+            
+            // Translate the label if it's a translation key
+            const translatedLabel = translateLabel(crumb.label)
+            if (translatedLabel !== crumb.label) {
+                updated = true
+                return { label: translatedLabel, to: crumb.to }
+            }
+            
             return crumb
         })
 
@@ -265,9 +302,10 @@ export function useCRUD6Breadcrumbs() {
                 updatedCrumbs.push({ label: recordTitle, to: currentPath })
                 foundRecordCrumb = true
             }
-            // Keep other breadcrumbs as-is
+            // Keep other breadcrumbs, but translate if needed
             else {
-                updatedCrumbs.push(crumb)
+                const translatedLabel = translateLabel(crumb.label)
+                updatedCrumbs.push({ label: translatedLabel, to: crumb.to })
             }
         }
         

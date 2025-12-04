@@ -276,6 +276,7 @@ const showApiKeyWarning = computed(() => {
             :disabled="disabled"
             :required="required"
             :value="modelValue"
+            autocomplete="street-address"
             @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
         

@@ -5,6 +5,7 @@ import { useMasterDetail, useCRUD6Schema, useCRUD6Api } from '@ssnukala/sprinkle
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
 import DetailGrid from './DetailGrid.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
+import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
 /**
  * MasterDetailForm Component
@@ -243,6 +244,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-input"
                                 :required="field.required"
                                 :readonly="field.readonly"
+                                :autocomplete="getAutocompleteAttribute(field.key, 'string')"
                             />
 
                             <!-- Textarea -->
@@ -266,6 +268,7 @@ function getFieldLabel(field: any): string {
                                 :step="getFieldType(field) === 'integer' ? '1' : '0.01'"
                                 :required="field.required"
                                 :readonly="field.readonly"
+                                autocomplete="off"
                             />
 
                             <!-- Checkbox -->
@@ -289,6 +292,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-input"
                                 :required="field.required"
                                 :readonly="field.readonly"
+                                :autocomplete="getAutocompleteAttribute(field.key, 'date')"
                             />
 
                             <!-- Datetime input -->
@@ -300,6 +304,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-input"
                                 :required="field.required"
                                 :readonly="field.readonly"
+                                autocomplete="off"
                             />
 
                             <!-- Default text input -->
@@ -311,6 +316,7 @@ function getFieldLabel(field: any): string {
                                 class="uk-input"
                                 :required="field.required"
                                 :readonly="field.readonly"
+                                :autocomplete="getAutocompleteAttribute(field.key)"
                             />
                         </div>
                     </div>

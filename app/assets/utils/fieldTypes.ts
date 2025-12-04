@@ -263,3 +263,92 @@ export function getRegisteredFieldTypes(): string[] {
 export function getNamedPatterns(): Record<string, string> {
     return { ...NAMED_PATTERNS }
 }
+
+/**
+ * Get appropriate autocomplete attribute value based on field name and type
+ * 
+ * Follows HTML5 autocomplete specification to help browsers provide
+ * better autofill suggestions and reduce warnings in DevTools.
+ * 
+ * @param fieldKey - Field name/key (e.g., 'user_name', 'email', 'first_name')
+ * @param fieldType - CRUD6 field type (e.g., 'email', 'password', 'string')
+ * @returns Autocomplete attribute value or 'off' for fields that shouldn't autocomplete
+ * 
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
+ */
+export function getAutocompleteAttribute(fieldKey: string, fieldType?: string): string {
+    const lowerKey = fieldKey.toLowerCase()
+    
+    // Password fields
+    if (fieldType === 'password' || lowerKey.includes('password')) {
+        return 'new-password' // Use new-password for create/update forms
+    }
+    
+    // Email fields
+    if (fieldType === 'email' || lowerKey === 'email' || lowerKey.includes('email')) {
+        return 'email'
+    }
+    
+    // Name fields
+    if (lowerKey === 'name' || lowerKey === 'full_name' || lowerKey === 'fullname') {
+        return 'name'
+    }
+    if (lowerKey === 'first_name' || lowerKey === 'firstname' || lowerKey === 'given_name') {
+        return 'given-name'
+    }
+    if (lowerKey === 'last_name' || lowerKey === 'lastname' || lowerKey === 'family_name' || lowerKey === 'surname') {
+        return 'family-name'
+    }
+    
+    // Username
+    if (lowerKey === 'user_name' || lowerKey === 'username' || lowerKey === 'login') {
+        return 'username'
+    }
+    
+    // Organization
+    if (lowerKey === 'organization' || lowerKey === 'company' || lowerKey === 'org') {
+        return 'organization'
+    }
+    
+    // Address fields
+    if (lowerKey === 'address' || lowerKey === 'street') {
+        return 'street-address'
+    }
+    if (lowerKey === 'addr_line1' || lowerKey === 'address_line1') {
+        return 'address-line1'
+    }
+    if (lowerKey === 'addr_line2' || lowerKey === 'address_line2') {
+        return 'address-line2'
+    }
+    if (lowerKey === 'city' || lowerKey === 'locality') {
+        return 'address-level2'
+    }
+    if (lowerKey === 'state' || lowerKey === 'province' || lowerKey === 'region') {
+        return 'address-level1'
+    }
+    if (lowerKey === 'zip' || lowerKey === 'postal_code' || lowerKey === 'postcode' || lowerKey === 'zipcode') {
+        return 'postal-code'
+    }
+    if (lowerKey === 'country') {
+        return 'country-name'
+    }
+    
+    // Phone fields
+    if (fieldType === 'phone' || lowerKey === 'phone' || lowerKey === 'telephone' || lowerKey === 'tel' || lowerKey.includes('phone')) {
+        return 'tel'
+    }
+    
+    // URL fields
+    if (fieldType === 'url' || lowerKey === 'url' || lowerKey === 'website') {
+        return 'url'
+    }
+    
+    // Date fields
+    if (fieldType === 'date' && lowerKey.includes('birth')) {
+        return 'bday'
+    }
+    
+    // Default: turn off autocomplete for generic fields
+    // This prevents browser warnings while not providing unhelpful suggestions
+    return 'off'
+}

@@ -133,8 +133,10 @@
             "modal_config": {
                 "type": "input",
                 "fields": [
+                    "username_hidden",
                     "password"
-                ]
+                ],
+                "comment": "username_hidden field included for password manager accessibility - see field definition below"
             }
         },
         {
@@ -335,6 +337,17 @@
             "show_in": [
                 "form"
             ]
+        },
+        "username_hidden": {
+            "type": "string",
+            "label": "",
+            "required": false,
+            "readonly": true,
+            "hidden": true,
+            "show_in": [],
+            "value_source": "user_name",
+            "autocomplete": "username",
+            "comment": "Hidden username field for password manager accessibility. When included in password forms, helps password managers associate passwords with correct accounts. The value_source references the user_name field from the current record."
         },
         "password": {
             "type": "password",

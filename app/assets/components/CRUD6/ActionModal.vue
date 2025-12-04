@@ -4,6 +4,7 @@ import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
+import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
 /**
  * Unified Action Modal for CRUD6
@@ -429,77 +430,79 @@ function resetForm() {
             
             <!-- Modal Body -->
             <div class="uk-modal-body">
-                <!-- Confirmation message (for confirm type or when confirm prop exists) -->
-                <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
-                    <p>
-                        <font-awesome-icon 
-                            icon="triangle-exclamation" 
-                            class="uk-text-warning fa-4x" />
-                    </p>
-                    <div v-html="promptMessage"></div>
-                    <div v-if="modalConfig.type === 'confirm'" class="uk-text-meta">
-                        {{ $t('ACTION.CANNOT_UNDO') || 'This action cannot be undone.' }}
-                    </div>
-                </div>
-                
-                <!-- Input fields (for input type) -->
-                <template v-if="fieldsToRender.length > 0">
-                    <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
-                        <label class="uk-form-label" :for="`field-${action.key}-${field.key}`">
-                            {{ getFieldLabel(field.key, field.config) }}
-                        </label>
-                        <div class="uk-form-controls">
-                            <input
-                                :id="`field-${action.key}-${field.key}`"
-                                v-model="fieldValues[field.key]"
-                                :type="getInputType(field.config)"
-                                class="uk-input"
-                                :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
-                                :autocomplete="getInputType(field.config) === 'password' ? 'new-password' : 'off'"
-                                required
-                                :minlength="getMinLength(field.config) || undefined" />
+                <form @submit.prevent="handleConfirmed">
+                    <!-- Confirmation message (for confirm type or when confirm prop exists) -->
+                    <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
+                        <p>
+                            <font-awesome-icon 
+                                icon="triangle-exclamation" 
+                                class="uk-text-warning fa-4x" />
+                        </p>
+                        <div v-html="promptMessage"></div>
+                        <div v-if="modalConfig.type === 'confirm'" class="uk-text-meta">
+                            {{ $t('ACTION.CANNOT_UNDO') || 'This action cannot be undone.' }}
                         </div>
-                        
-                        <!-- Confirm field for match validation -->
-                        <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
-                            <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                    </div>
+                    
+                    <!-- Input fields (for input type) -->
+                    <template v-if="fieldsToRender.length > 0">
+                        <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
+                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}`">
+                                {{ getFieldLabel(field.key, field.config) }}
                             </label>
                             <div class="uk-form-controls">
                                 <input
-                                    :id="`confirm-${action.key}-${field.key}`"
-                                    v-model="confirmValues[field.key]"
+                                    :id="`field-${action.key}-${field.key}`"
+                                    v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
-                                    :autocomplete="getInputType(field.config) === 'password' ? 'new-password' : 'off'"
-                                    required />
+                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                    :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
+                                    required
+                                    :minlength="getMinLength(field.config) || undefined" />
+                            </div>
+                            
+                            <!-- Confirm field for match validation -->
+                            <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
+                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
+                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                                </label>
+                                <div class="uk-form-controls">
+                                    <input
+                                        :id="`confirm-${action.key}-${field.key}`"
+                                        v-model="confirmValues[field.key]"
+                                        :type="getInputType(field.config)"
+                                        class="uk-input"
+                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                        :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
+                                        required />
+                                </div>
                             </div>
                         </div>
+                    </template>
+                    
+                    <!-- Error message -->
+                    <div v-if="error" class="uk-alert-danger" uk-alert>
+                        <p>{{ error }}</p>
                     </div>
-                </template>
-                
-                <!-- Error message -->
-                <div v-if="error" class="uk-alert-danger" uk-alert>
-                    <p>{{ error }}</p>
-                </div>
-                
-                <!-- Validation hints -->
-                <div v-if="fieldsToRender.some(f => getMinLength(f.config) || requiresMatch(f.config))" 
-                     class="uk-text-small uk-text-muted">
-                    <ul class="uk-list">
-                        <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
-                            <li v-if="getMinLength(field.config)" 
-                                :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
-                            </li>
-                            <li v-if="requiresMatch(field.config)" 
-                                :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
-                            </li>
-                        </template>
-                    </ul>
-                </div>
+                    
+                    <!-- Validation hints -->
+                    <div v-if="fieldsToRender.some(f => getMinLength(f.config) || requiresMatch(f.config))" 
+                         class="uk-text-small uk-text-muted">
+                        <ul class="uk-list">
+                            <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
+                                <li v-if="getMinLength(field.config)" 
+                                    :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
+                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
+                                </li>
+                                <li v-if="requiresMatch(field.config)" 
+                                    :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
+                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </form>
             </div>
             
             <!-- Modal Footer with schema-driven buttons -->

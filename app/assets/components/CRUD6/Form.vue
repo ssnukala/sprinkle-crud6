@@ -7,7 +7,7 @@ import CRUD6AutoLookup from './AutoLookup.vue'
 import GoogleAddress from './GoogleAddress.vue'
 import CRUD6ToggleSwitch from './ToggleSwitch.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
-import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType } from '../../utils/fieldTypes'
+import { parseTextareaConfig, getInputType, getInputPattern, isBooleanType, getBooleanUIType, isAddressType, getAutocompleteAttribute } from '../../utils/fieldTypes'
 import { getLookupConfig } from '../../composables/useCRUD6FieldRenderer'
 
 /**
@@ -375,6 +375,7 @@ function getLookupAttributes(field: any) {
                         :data-test="fieldKey"
                         :required="field.required"
                         :disabled="fieldKey === 'slug' ? slugLocked : field.readonly"
+                        :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Number input -->
@@ -390,6 +391,7 @@ function getLookupAttributes(field: any) {
                         :required="field.required"
                         :step="field.type === 'integer' ? '1' : 'any'"
                         :disabled="field.readonly"
+                        autocomplete="off"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Password input -->
@@ -418,6 +420,7 @@ function getLookupAttributes(field: any) {
                         :data-test="fieldKey"
                         :required="field.required"
                         :disabled="field.readonly"
+                        :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     
                     <!-- DateTime input -->
@@ -431,6 +434,7 @@ function getLookupAttributes(field: any) {
                         :data-test="fieldKey"
                         :required="field.required"
                         :disabled="field.readonly"
+                        autocomplete="off"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Textarea for text fields (supports text, textarea, textarea-rXcY formats) -->
@@ -497,6 +501,7 @@ function getLookupAttributes(field: any) {
                         :data-test="fieldKey"
                         :required="field.required"
                         :disabled="field.readonly"
+                        :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
                     
                     <!-- Validation errors -->

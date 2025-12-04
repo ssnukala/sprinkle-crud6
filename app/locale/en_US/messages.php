@@ -97,4 +97,5 @@ return [
     // Panel/Breadcrumb translations (flat keys for backward compatibility)
     'CRUD6_PANEL'               => 'CRUD6 Management',
     'C6ADMIN_PANEL'             => 'CRUD6 Admin Panel',
+    'CRUD6_ADMIN_PANEL'         => 'CRUD6 Admin Panel',  // Fallback for CRUD6.ADMIN_PANEL
 ];

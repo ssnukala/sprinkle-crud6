@@ -311,7 +311,10 @@ export function getAutocompleteAttribute(fieldKey: string, fieldType?: string): 
     }
     
     // Address fields
-    if (lowerKey === 'address' || lowerKey === 'street' || lowerKey === 'addr_line1' || lowerKey === 'address_line1') {
+    if (lowerKey === 'address' || lowerKey === 'street') {
+        return 'street-address'
+    }
+    if (lowerKey === 'addr_line1' || lowerKey === 'address_line1') {
         return 'address-line1'
     }
     if (lowerKey === 'addr_line2' || lowerKey === 'address_line2') {

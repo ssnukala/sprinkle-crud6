@@ -362,13 +362,18 @@ watch(model, async (newModel) => {
                     // Update breadcrumbs for create mode
                     await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
-                    // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    // Don't set page.title or update breadcrumbs yet for detail pages
-                    // Let setDetailBreadcrumbs handle it after the record is fetched
-                    // to avoid duplicate breadcrumbs
+                    // IMPORTANT: Don't set page.title here for detail pages
+                    // If page.title is set, usePageMeta will auto-generate a breadcrumb with the ID
+                    // This causes the "8" to show in breadcrumbs on first load
+                    // Instead, let setDetailBreadcrumbs handle both title and breadcrumbs after fetch()
+                    
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
+                    
+                    // Clear page.title to prevent auto-breadcrumb generation
+                    // It will be set after record fetch with proper record name
+                    page.title = ''
                     
                     // Note: Breadcrumbs will be updated by setDetailBreadcrumbs after fetch()
                 }

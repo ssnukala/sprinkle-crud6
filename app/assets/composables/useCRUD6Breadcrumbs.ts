@@ -1,6 +1,6 @@
-import { nextTick } from 'vue'
+import { nextTick, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
+import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'
 
 /**
@@ -45,7 +45,15 @@ interface Breadcrumb {
 export function useCRUD6Breadcrumbs() {
     const route = useRoute()
     const page = usePageMeta()
-    const translator = useTranslator()
+    
+    // Access UserFrosting's global $t() function via getCurrentInstance()
+    // This gives access to the same translation system used in Vue templates
+    const instance = getCurrentInstance()
+    const $t = instance?.appContext.config.globalProperties.$t
+    
+    if (!$t) {
+        debugWarn('[useCRUD6Breadcrumbs] Warning: $t() translation function not available')
+    }
 
     /**
      * Translate a breadcrumb label if it's a translation key
@@ -54,20 +62,87 @@ export function useCRUD6Breadcrumbs() {
      * format and contains dots (e.g., "C6ADMIN_PANEL", "CRUD6.PAGE").
      * Falls back to the original value if translation doesn't exist.
      * 
+     * Uses UserFrosting's global $t() function to access the same translations
+     * available in Vue templates.
+     * 
      * @param label - The label to potentially translate
      * @returns Translated label or original value
      */
     function translateLabel(label: string): string {
+        // Return label unchanged if $t() is not available
+        if (!$t) {
+            debugWarn('[useCRUD6Breadcrumbs.translateLabel] $t() not available, returning label unchanged:', label)
+            return label
+        }
+        
         // Check if label looks like a translation key (uppercase with dots/underscores)
         // Examples: "C6ADMIN_PANEL", "CRUD6.PAGE", "USER.MANAGEMENT"
         if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
-            const translated = translator.translate(label)
-            // Only use translation if it's different from the key (meaning translation exists)
-            if (translated && translated !== label) {
-                debugLog('[useCRUD6Breadcrumbs.translateLabel] Translated:', { original: label, translated })
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] Attempting to translate:', label)
+            
+            // Try direct translation first using UserFrosting's $t()
+            const translated = $t(label)
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] Translation result:', { 
+                original: label, 
+                translated, 
+                isDifferent: translated !== label,
+                translatedType: typeof translated 
+            })
+            
+            // Check if translation was successful
+            if (translated && typeof translated === 'string' && translated !== label && translated.trim() !== '') {
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Using translation:', { original: label, translated })
                 return translated
             }
-            debugLog('[useCRUD6Breadcrumbs.translateLabel] No translation found for:', label)
+            
+            // Try fallback translations for common key patterns
+            // e.g., if "CRUD6.ADMIN_PANEL" doesn't translate, try "CRUD6_ADMIN_PANEL"
+            if (label.includes('.')) {
+                const fallbackKey = label.replace(/\./g, '_')
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying fallback key:', fallbackKey)
+                const fallbackTranslated = $t(fallbackKey)
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Fallback result:', {
+                    fallbackKey,
+                    translated: fallbackTranslated,
+                    isDifferent: fallbackTranslated !== fallbackKey,
+                    type: typeof fallbackTranslated
+                })
+                if (fallbackTranslated && typeof fallbackTranslated === 'string' && fallbackTranslated !== fallbackKey && fallbackTranslated.trim() !== '') {
+                    debugLog('[useCRUD6Breadcrumbs.translateLabel] Using fallback translation:', { original: label, fallback: fallbackKey, translated: fallbackTranslated })
+                    return fallbackTranslated
+                }
+            }
+            
+            // Try alternative key patterns as last resort
+            // For C6ADMIN_PANEL, try CRUD6_PANEL, ADMIN_PANEL, etc.
+            const alternativeKeys = []
+            
+            // If key starts with C6, try CRUD6 variant
+            if (label.startsWith('C6')) {
+                alternativeKeys.push(label.replace(/^C6/, 'CRUD6'))
+            }
+            
+            // If key has ADMIN_PANEL, try just that
+            if (label.includes('ADMIN_PANEL')) {
+                alternativeKeys.push('ADMIN_PANEL')
+            }
+            
+            // Try each alternative
+            for (const altKey of alternativeKeys) {
+                debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying alternative key:', altKey)
+                const altTranslated = $t(altKey)
+                if (altTranslated && typeof altTranslated === 'string' && altTranslated !== altKey && altTranslated.trim() !== '') {
+                    debugLog('[useCRUD6Breadcrumbs.translateLabel] Using alternative translation:', { 
+                        original: label, 
+                        alternative: altKey, 
+                        translated: altTranslated 
+                    })
+                    return altTranslated
+                }
+            }
+            
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] No valid translation found for:', label)
+            debugLog('[useCRUD6Breadcrumbs.translateLabel] ⚠️ Translation not found - using original label')
         }
         return label
     }

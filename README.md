@@ -918,41 +918,52 @@ See the [Comparative Analysis](docs/COMPREHENSIVE_REVIEW.md#comparative-analysis
 
 ## Translation Support
 
-### Nested Translation Pattern
+CRUD6 follows **UserFrosting 6 standards** for translations, ensuring consistency with sprinkle-admin and theme-pink-cupcake.
 
-CRUD6 supports UserFrosting 6's nested translation syntax using `{{&KEY}}`. This allows schema authors to embed translation keys within confirmation messages and have them recursively translated at render time.
+### UserFrosting 6 Pattern
 
-**Example:**
+**Locale file** (use specific field placeholders, no embedded warnings):
 ```php
-// Locale file (app/locale/en_US/messages.php)
+// app/locale/en_US/messages.php
 'USER' => [
-    'DISABLE_CONFIRM' => 'Are you sure you want to disable {{user_name}}?<br/>{{&ACTION.CANNOT_UNDO}}',
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
 ],
-'ACTION' => [
-    'CANNOT_UNDO' => 'This action cannot be undone.',
-],
+// WARNING_CANNOT_UNDONE is from UF6 core - no need to define it
 ```
 
-The `{{&ACTION.CANNOT_UNDO}}` will be automatically translated to "This action cannot be undone."
-
-### Warning Messages
-
-ActionModal supports configurable warning messages via the `modal_config.warning` property:
-
+**Schema** (warnings handled separately):
 ```json
 {
-    "key": "delete_user",
-    "confirm": "USER.DELETE_CONFIRM",
+    "key": "disable_user",
+    "confirm": "USER.DISABLE_CONFIRM",
     "modal_config": {
-        "type": "confirm",
-        "warning": "ACTION.CANNOT_UNDO"
+        "type": "confirm"
+        // Defaults to "WARNING_CANNOT_UNDONE" from UF6 core
     }
 }
 ```
 
-- Default: Confirm-type modals automatically show `ACTION.CANNOT_UNDO`
-- Custom: Set `warning` to any translation key
-- Disable: Set `warning` to empty string `""`
+### Key Principles
+
+1. **Use specific field placeholders**: `{{first_name}}`, `{{last_name}}`, `{{user_name}}` (not generic `{{name}}`)
+2. **Use `WARNING_CANNOT_UNDONE`**: Standard warning key from UserFrosting 6 core
+3. **Separate warnings from messages**: Warnings handled by modal component, not locale strings
+4. **Follow UF6 patterns**: Matches sprinkle-admin and theme-pink-cupcake conventions
+
+### Warning Configuration
+
+Control warning display via `modal_config.warning`:
+
+```json
+// Default warning (from UF6 core)
+{"modal_config": {"type": "confirm"}}  // Uses WARNING_CANNOT_UNDONE
+
+// Custom warning
+{"modal_config": {"type": "confirm", "warning": "MY_CUSTOM_WARNING"}}
+
+// No warning
+{"modal_config": {"type": "confirm", "warning": ""}}
+```
 
 ### Documentation
 

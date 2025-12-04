@@ -4,6 +4,7 @@
   "singular_title": "Order",
   "description": "Manage customer orders",
   "table": "orders",
+  "title_field": "order_number",
   "permissions": {
     "read": "view_orders",
     "create": "create_order",

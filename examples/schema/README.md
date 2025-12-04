@@ -359,3 +359,71 @@ The c6admin schemas demonstrate working relationships that match UserFrosting 6 
   - One-to-many with activities
 
 See the corresponding migration files in `examples/Migrations/` for the database schema these JSON schemas reference.
+
+## Breadcrumb and Page Title Configuration
+
+### `title_field` Attribute
+
+The `title_field` attribute controls which field is displayed in breadcrumbs and page titles when viewing individual records. This is especially important for models where the primary key (ID) is not a human-readable identifier.
+
+#### Default Behavior
+
+Without `title_field`, the system tries these fields in order:
+1. `name`
+2. `username`
+3. `user_name`
+4. `title`
+5. Primary key (ID) as last resort
+
+#### Example Usage
+
+For a users model accessed via `/crud6/users/8`, instead of showing "8" in the breadcrumb, configure it to show the username:
+
+```json
+{
+  "model": "users",
+  "title_field": "user_name",
+  "fields": {
+    "id": { "type": "integer", "auto_increment": true },
+    "user_name": { "type": "string", "label": "Username" }
+  }
+}
+```
+
+Breadcrumb will show: **Home** > **Users** > **john_doe** (instead of "8")
+
+#### Schema Examples with `title_field`
+
+The example schemas in this directory demonstrate different use cases:
+
+- **users01.json**: `"title_field": "user_name"` - Shows username in breadcrumb
+- **products.json**: `"title_field": "name"` - Shows product name
+- **orders.json**: `"title_field": "order_number"` - Shows order number (more meaningful than ID)
+- **contacts.json**: `"title_field": "last_name"` - Shows last name
+- **groups.json**: `"title_field": "name"` - Shows group name
+- **categories.json**: `"title_field": "name"` - Shows category name
+
+#### Common Patterns
+
+| Model Type | Recommended `title_field` | Why |
+|------------|--------------------------|-----|
+| Users | `user_name` or `email` | Human-readable identifier |
+| Products | `name` or `sku` | Product identifier |
+| Orders | `order_number` | Business identifier |
+| Categories | `name` | Descriptive name |
+| Invoices | `invoice_number` | Business identifier |
+| Contacts | `last_name` or `email` | Person identifier |
+
+#### When to Use
+
+Configure `title_field` when:
+- Your model uses numeric IDs but has a human-readable identifier field
+- You want breadcrumbs to be more descriptive
+- The default field (`name`) doesn't exist or isn't the best choice
+- You're using business identifiers (order numbers, SKUs, etc.)
+
+#### When to Skip
+
+You can omit `title_field` when:
+- Your model has a `name` field that's appropriate for display
+- The default fallback behavior works for your use case

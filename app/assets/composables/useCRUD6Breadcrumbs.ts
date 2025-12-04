@@ -1,6 +1,5 @@
-import { nextTick } from 'vue'
+import { nextTick, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'
 
@@ -46,7 +45,15 @@ interface Breadcrumb {
 export function useCRUD6Breadcrumbs() {
     const route = useRoute()
     const page = usePageMeta()
-    const { t } = useI18n()
+    
+    // Access UserFrosting's global $t() function via getCurrentInstance()
+    // This gives access to the same translation system used in Vue templates
+    const instance = getCurrentInstance()
+    const $t = instance?.appContext.config.globalProperties.$t
+    
+    if (!$t) {
+        debugWarn('[useCRUD6Breadcrumbs] Warning: $t() translation function not available')
+    }
 
     /**
      * Translate a breadcrumb label if it's a translation key
@@ -55,19 +62,26 @@ export function useCRUD6Breadcrumbs() {
      * format and contains dots (e.g., "C6ADMIN_PANEL", "CRUD6.PAGE").
      * Falls back to the original value if translation doesn't exist.
      * 
-     * Uses Vue i18n's t() function to access the same translations available in Vue templates.
+     * Uses UserFrosting's global $t() function to access the same translations
+     * available in Vue templates.
      * 
      * @param label - The label to potentially translate
      * @returns Translated label or original value
      */
     function translateLabel(label: string): string {
+        // Return label unchanged if $t() is not available
+        if (!$t) {
+            debugWarn('[useCRUD6Breadcrumbs.translateLabel] $t() not available, returning label unchanged:', label)
+            return label
+        }
+        
         // Check if label looks like a translation key (uppercase with dots/underscores)
         // Examples: "C6ADMIN_PANEL", "CRUD6.PAGE", "USER.MANAGEMENT"
         if (/^[A-Z][A-Z0-9_.]+$/.test(label)) {
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Attempting to translate:', label)
             
-            // Try direct translation first using Vue i18n
-            const translated = t(label)
+            // Try direct translation first using UserFrosting's $t()
+            const translated = $t(label)
             debugLog('[useCRUD6Breadcrumbs.translateLabel] Translation result:', { 
                 original: label, 
                 translated, 
@@ -86,7 +100,7 @@ export function useCRUD6Breadcrumbs() {
             if (label.includes('.')) {
                 const fallbackKey = label.replace(/\./g, '_')
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying fallback key:', fallbackKey)
-                const fallbackTranslated = t(fallbackKey)
+                const fallbackTranslated = $t(fallbackKey)
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Fallback result:', {
                     fallbackKey,
                     translated: fallbackTranslated,
@@ -116,7 +130,7 @@ export function useCRUD6Breadcrumbs() {
             // Try each alternative
             for (const altKey of alternativeKeys) {
                 debugLog('[useCRUD6Breadcrumbs.translateLabel] Trying alternative key:', altKey)
-                const altTranslated = t(altKey)
+                const altTranslated = $t(altKey)
                 if (altTranslated && typeof altTranslated === 'string' && altTranslated !== altKey && altTranslated.trim() !== '') {
                     debugLog('[useCRUD6Breadcrumbs.translateLabel] Using alternative translation:', { 
                         original: label, 

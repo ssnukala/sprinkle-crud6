@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { debugLog, debugError } from '../../utils/debug'
+import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
 /**
  * Google Address Autocomplete Component
@@ -276,6 +277,7 @@ const showApiKeyWarning = computed(() => {
             :disabled="disabled"
             :required="required"
             :value="modelValue"
+            :autocomplete="getAutocompleteAttribute(fieldKey, 'address')"
             @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
         

@@ -916,6 +916,50 @@ For a comprehensive analysis of the codebase, including optimization recommendat
 
 See the [Comparative Analysis](docs/COMPREHENSIVE_REVIEW.md#comparative-analysis) for detailed comparison.
 
+## Translation Support
+
+### Nested Translation Pattern
+
+CRUD6 supports UserFrosting 6's nested translation syntax using `{{&KEY}}`. This allows schema authors to embed translation keys within confirmation messages and have them recursively translated at render time.
+
+**Example:**
+```php
+// Locale file (app/locale/en_US/messages.php)
+'USER' => [
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable {{user_name}}?<br/>{{&ACTION.CANNOT_UNDO}}',
+],
+'ACTION' => [
+    'CANNOT_UNDO' => 'This action cannot be undone.',
+],
+```
+
+The `{{&ACTION.CANNOT_UNDO}}` will be automatically translated to "This action cannot be undone."
+
+### Warning Messages
+
+ActionModal supports configurable warning messages via the `modal_config.warning` property:
+
+```json
+{
+    "key": "delete_user",
+    "confirm": "USER.DELETE_CONFIRM",
+    "modal_config": {
+        "type": "confirm",
+        "warning": "ACTION.CANNOT_UNDO"
+    }
+}
+```
+
+- Default: Confirm-type modals automatically show `ACTION.CANNOT_UNDO`
+- Custom: Set `warning` to any translation key
+- Disable: Set `warning` to empty string `""`
+
+### Documentation
+
+- **Complete Guide**: [docs/NESTED_TRANSLATION_USAGE_GUIDE.md](docs/NESTED_TRANSLATION_USAGE_GUIDE.md)
+- **Example Schema**: [examples/schema/users-translation-example.json](examples/schema/users-translation-example.json)
+- **Example Locale**: [examples/locale/translation-example-messages.php](examples/locale/translation-example-messages.php)
+
 ## Contributing
 
 1. Fork the repository

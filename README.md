@@ -107,7 +107,7 @@ Create JSON schema files in `app/schema/crud6/` directory. Each file should be n
       "type": "integer",
       "label": "ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
     },
@@ -143,23 +143,20 @@ Each field in the schema can have the following properties:
 - **filterable**: Whether the field is included in global search and filtering
 - **listable**: Whether the field should be displayed in list views (must be explicitly set to `true` to show; defaults to `false` for security)
 - **viewable**: Whether the field should be displayed in detail/view pages (defaults to `true`; set to `false` to hide sensitive fields from detail views)
-- **editable**: Whether the field can be edited in forms (defaults to `true` unless field is `auto_increment` or `computed`; set to `false` to make field readonly)
+- **editable**: Whether the field can be edited in forms (defaults to `true` unless field is `auto_increment` or `computed`; set to `false` to make field non-editable)
 - **auto_increment**: Whether the field is auto-incremented (automatically sets `editable: false`)
 - **default**: Default value for the field
 - **validation**: Validation rules for the field
 - **filter_type**: Type of filter (`equals`, `like`, `starts_with`, `ends_with`, `in`, `between`, `greater_than`, `less_than`, `not_equals`)
 - **field_template**: Custom Vue.js HTML template for rendering the field in list views (supports placeholders like `{{field_name}}`)
-- **readonly**: ⚠️ **DEPRECATED** - Use `editable: false` instead. This attribute is kept for backward compatibility but will be removed in future versions.
 
 > **Security Note**: The `listable` field property defaults to `false` for security. Only fields explicitly marked as `listable: true` will be displayed in list views. This prevents sensitive data (such as passwords, API keys, or internal timestamps) from being accidentally exposed. Always review which fields should be visible in your application's list views.
 
 > **Visibility Control**: Use `listable`, `viewable`, and `editable` together for fine-grained control:
 > - `listable: true` - Shows field in list/table views
-> - `viewable: true` - Shows field in detail/view pages (good for readonly fields like timestamps)
-> - `editable: false` - Makes field readonly (not editable in forms)
+> - `viewable: true` - Shows field in detail/view pages (good for non-editable fields like timestamps)
+> - `editable: false` - Makes field non-editable (not editable in forms)
 > - Example: A `created_at` field might be `listable: false`, `viewable: true`, `editable: false` to show it in detail view but not allow editing
-> 
-> **Note**: Setting `editable: false` automatically makes a field readonly - there's no need to specify both `editable: false` and `readonly: true`.
 
 > **Boolean Field Types**: CRUD6 supports multiple boolean field rendering options:
 > - `type: "boolean"` (default) or `type: "boolean", ui: "checkbox"` - Standard checkbox
@@ -425,7 +422,7 @@ Configure editable master-detail relationships to allow creating/editing master 
     "id": { "type": "integer", "auto_increment": true },
     "order_number": { "type": "string", "required": true },
     "customer_name": { "type": "string", "required": true },
-    "total_amount": { "type": "decimal", "readonly": true }
+    "total_amount": { "type": "decimal", "editable": false }
   }
 }
 ```

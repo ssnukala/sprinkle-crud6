@@ -34,7 +34,7 @@
             "type": "integer",
             "label": "CRUD6.GROUP.ID",
             "auto_increment": true,
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ]
@@ -106,7 +106,7 @@
         "created_at": {
             "type": "datetime",
             "label": "CRUD6.GROUP.CREATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],
@@ -115,7 +115,7 @@
         "updated_at": {
             "type": "datetime",
             "label": "CRUD6.GROUP.UPDATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],

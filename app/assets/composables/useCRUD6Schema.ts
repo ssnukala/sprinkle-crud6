@@ -9,7 +9,7 @@ export interface SchemaField {
     required?: boolean
     sortable?: boolean
     filterable?: boolean
-    readonly?: boolean
+    editable?: boolean
     filter_type?: string
     validation?: any
     [key: string]: any
@@ -388,7 +388,7 @@ export function useCRUD6Schema(modelName?: string) {
                 sortable: field.sortable || false,
                 filterable: field.filterable || false,
                 type: field.type || 'string',
-                readonly: field.readonly || false,
+                editable: field.editable !== false,
                 filterType: field.filter_type || 'equals'
             }))
     })

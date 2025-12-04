@@ -422,10 +422,10 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         if (isset($schema['fields']) && is_array($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                // Skip auto-increment fields from fillable
+                // Skip auto-increment and non-editable fields from fillable
                 if (
                     !($fieldConfig['auto_increment'] ?? false) &&
-                    !($fieldConfig['readonly'] ?? false)
+                    ($fieldConfig['editable'] ?? true) !== false
                 ) {
                     $fillable[] = $fieldName;
                 }

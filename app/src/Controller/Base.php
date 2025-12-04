@@ -262,7 +262,7 @@ abstract class Base
      * 
      * Fields are considered editable if:
      * - They have `editable: true` explicitly set, OR
-     * - They don't have `readonly: true`, `auto_increment: true`, or `computed: true`
+     * - They don't have `editable: false`, `auto_increment: true`, or `computed: true`
      * 
      * @param string|array $modelNameOrSchema The model name or schema array
      * 
@@ -276,18 +276,12 @@ abstract class Base
 
         $editable = [];
         foreach ($schema['fields'] ?? [] as $name => $field) {
-            // Check if field is explicitly marked as editable
-            if (isset($field['editable'])) {
-                if ($field['editable'] === true) {
-                    $editable[] = $name;
-                }
+            // Check if field is explicitly marked as not editable
+            if (isset($field['editable']) && $field['editable'] === false) {
                 continue;
             }
 
-            // If no explicit editable attribute, check for non-editable flags
-            if ($field['readonly'] ?? false) {
-                continue;
-            }
+            // Check for non-editable flags
             if ($field['auto_increment'] ?? false) {
                 continue;
             }

@@ -72,7 +72,7 @@
             "type": "integer",
             "label": "CRUD6.PERMISSION.ID",
             "auto_increment": true,
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ]
@@ -157,7 +157,7 @@
         "created_at": {
             "type": "datetime",
             "label": "CRUD6.PERMISSION.CREATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],
@@ -166,7 +166,7 @@
         "updated_at": {
             "type": "datetime",
             "label": "CRUD6.PERMISSION.UPDATED_AT",
-            "readonly": true,
+            "editable": false,
             "show_in": [
                 "detail"
             ],

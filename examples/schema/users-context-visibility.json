@@ -77,7 +77,7 @@
       "label": "API Token",
       "show_in": ["create"],
       "description": "API token is generated on creation, cannot be edited later",
-      "readonly": true
+      "editable": false
     },
     "email_verified_at": {
       "type": "datetime",

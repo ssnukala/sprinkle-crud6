@@ -18,7 +18,7 @@
       "type": "integer",
       "label": "ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "show_in": ["list", "detail"]
     },
     "name": {
@@ -107,14 +107,14 @@
     "created_at": {
       "type": "datetime",
       "label": "Created At",
-      "readonly": true,
+      "editable": false,
       "show_in": ["detail"],
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
-      "readonly": true,
+      "editable": false,
       "show_in": ["detail"],
       "date_format": "Y-m-d H:i:s"
     }

@@ -95,7 +95,7 @@ export interface FieldConfig {
     label?: string
     placeholder?: string
     required?: boolean
-    readonly?: boolean
+    editable?: boolean
     disabled?: boolean
     validation?: any
     rows?: number
@@ -221,7 +221,7 @@ export function getFieldAttributes(
         'aria-label': field.label || fieldKey,
         'data-test': fieldKey,
         required: field.required,
-        disabled: field.readonly || field.disabled,
+        disabled: field.editable === false || field.disabled,
         placeholder: field.placeholder || field.label || fieldKey
     }
     
@@ -287,7 +287,7 @@ export function getFieldAttributes(
                 class: 'uk-checkbox',
                 type: 'checkbox',
                 'data-test': fieldKey,
-                disabled: field.readonly || field.disabled
+                disabled: field.editable === false || field.disabled
             }
             
         case 'boolean-toggle':
@@ -296,7 +296,7 @@ export function getFieldAttributes(
                 class: 'uk-checkbox',
                 type: 'checkbox',
                 'data-test': fieldKey,
-                disabled: field.readonly || field.disabled
+                disabled: field.editable === false || field.disabled
             }
             
         default:
@@ -347,7 +347,7 @@ export function getFieldRenderConfig(
                     'display-field': lookupConfig.displayField,
                     placeholder: field.placeholder,
                     required: field.required,
-                    disabled: field.readonly
+                    disabled: field.editable === false
                 }
             }
             break
@@ -359,7 +359,7 @@ export function getFieldRenderConfig(
                     'field-key': fieldKey,
                     placeholder: field.placeholder || field.label || 'Enter address',
                     required: field.required,
-                    disabled: field.readonly,
+                    disabled: field.editable === false,
                     'address-fields': field.address_fields
                 }
             }

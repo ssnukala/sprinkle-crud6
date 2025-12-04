@@ -28,7 +28,7 @@
       "type": "integer",
       "label": "Order ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": true
@@ -78,7 +78,7 @@
       "sortable": true,
       "filterable": true,
       "listable": true,
-      "readonly": true,
+      "editable": false,
       "validation": {
         "numeric": true,
         "min": 0
@@ -118,7 +118,7 @@
     "created_at": {
       "type": "datetime",
       "label": "Created At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": true
@@ -126,7 +126,7 @@
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false,
       "listable": false

@@ -36,7 +36,7 @@
       "type": "integer",
       "label": "Order ID",
       "auto_increment": true,
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": true
     },
@@ -91,7 +91,7 @@
       "label": "Total Amount",
       "sortable": true,
       "filterable": true,
-      "readonly": true
+      "editable": false
     },
     "notes": {
       "type": "text",
@@ -102,21 +102,21 @@
     "created_at": {
       "type": "datetime",
       "label": "Created At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
-      "readonly": true,
+      "editable": false,
       "sortable": true,
       "filterable": false
     },
     "deleted_at": {
       "type": "datetime",
       "label": "Deleted At",
-      "readonly": true,
+      "editable": false,
       "sortable": false,
       "filterable": false
     }

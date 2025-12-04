@@ -291,6 +291,32 @@ const getFieldLabel = (fieldKey: string, fieldConfig?: SchemaField) => {
 }
 
 /**
+ * Computed - Check if form has password fields
+ */
+const hasPasswordField = computed(() => {
+    return fieldsToRender.value.some(field => field.config?.type === 'password')
+})
+
+/**
+ * Computed - Get username value from record for hidden field
+ * Tries multiple common username field names
+ */
+const usernameValue = computed(() => {
+    if (!props.record) return ''
+    
+    // Try common username field names in order of preference
+    const possibleFields = ['user_name', 'username', 'email', 'login', 'name']
+    
+    for (const field of possibleFields) {
+        if (props.record[field]) {
+            return props.record[field]
+        }
+    }
+    
+    return ''
+})
+
+/**
  * Validate all fields
  */
 const isFormValid = computed(() => {
@@ -431,6 +457,19 @@ function resetForm() {
             <!-- Modal Body -->
             <div class="uk-modal-body">
                 <form @submit.prevent="handleConfirmed">
+                    <!-- Hidden username field for password manager accessibility -->
+                    <!-- Required when form has password fields for proper password association -->
+                    <input
+                        v-if="hasPasswordField && usernameValue"
+                        type="text"
+                        name="username"
+                        :value="usernameValue"
+                        autocomplete="username"
+                        readonly
+                        style="position: absolute; left: -9999px; width: 1px; height: 1px;"
+                        tabindex="-1"
+                        aria-hidden="true" />
+                    
                     <!-- Confirmation message (for confirm type or when confirm prop exists) -->
                     <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
                         <p>

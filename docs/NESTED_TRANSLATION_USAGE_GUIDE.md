@@ -1,8 +1,8 @@
-# Nested Translation Pattern - Usage Guide for Schema Authors
+# Translation Pattern - Usage Guide for Schema Authors (UserFrosting 6 Standards)
 
 ## Overview
 
-This guide explains how to properly use translations in CRUD6 schemas, especially for custom actions that display confirmation messages and input forms.
+This guide explains how to properly use translations in CRUD6 schemas following UserFrosting 6 standards, especially for custom actions that display confirmation messages and input forms.
 
 ## The Problem
 
@@ -11,7 +11,7 @@ When creating custom actions in your schema (like password changes, user enable/
 **Bad Output:**
 ```
 Are you sure you want to disable ()?
-ACTION.CANNOT_UNDO
+WARNING_CANNOT_UNDONE
 
 Password
 VALIDATION.ENTER_VALUE
@@ -19,28 +19,29 @@ VALIDATION.ENTER_VALUE
 
 **Good Output:**
 ```
-Are you sure you want to disable John Doe?
+Are you sure you want to disable John Doe (jdoe)?
 This action cannot be undone.
 
 Password
 Enter password
 ```
 
-## Solution: Use Nested Translation Syntax
+## UserFrosting 6 Standard Pattern
 
-UserFrosting 6's translator supports nested translation using the `{{&KEY}}` syntax. This allows you to embed translation keys within your locale messages, and they will be translated at render time.
+UserFrosting 6 uses a **separation of concerns** approach for confirmation messages and warnings:
+- **Confirmation messages** contain the specific question with record field placeholders
+- **Warning messages** are handled by the modal component using UF6 core's `WARNING_CANNOT_UNDONE` key
+- **Do NOT** embed warning messages in locale strings
 
-### Basic Pattern
+### Standard Pattern (Recommended)
 
 **In your locale file** (e.g., `app/locale/en_US/messages.php`):
 
 ```php
 'USER' => [
-    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?<br/>{{&ACTION.CANNOT_UNDO}}',
-],
-
-'ACTION' => [
-    'CANNOT_UNDO' => 'This action cannot be undone.',
+    // Use specific field names as placeholders - UF6 standard
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+    // Warning is NOT included here - handled by modal component
 ],
 ```
 
@@ -51,25 +52,25 @@ UserFrosting 6's translator supports nested translation using the `{{&KEY}}` syn
     "actions": [
         {
             "key": "disable_user",
-            "label": "CRUD6.USER.DISABLE_USER",
-            "confirm": "CRUD6.USER.DISABLE_CONFIRM",
+            "label": "USER.DISABLE",
+            "confirm": "USER.DISABLE_CONFIRM",
             "modal_config": {
-                "type": "confirm"
+                "type": "confirm",
+                "warning": "WARNING_CANNOT_UNDONE"  // From UF6 core - this is the default
             }
         }
     ]
 }
 ```
 
-### How It Works
+### Key Principles
 
-1. The schema references the translation key: `"confirm": "CRUD6.USER.DISABLE_CONFIRM"`
-2. The translator looks up that key and finds: `'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?<br/>{{&ACTION.CANNOT_UNDO}}'`
-3. The translator replaces `{{first_name}}`, `{{last_name}}`, `{{user_name}}` with values from the record
-4. The translator sees `{{&ACTION.CANNOT_UNDO}}` (note the `&` prefix) and recursively translates it
-5. `ACTION.CANNOT_UNDO` is looked up and replaced with `'This action cannot be undone.'`
+1. **Use specific field placeholders**: `{{first_name}}`, `{{last_name}}`, `{{user_name}}` - NOT generic `{{name}}`
+2. **Warning is separate**: Use `WARNING_CANNOT_UNDONE` from UF6 core (in sprinkle-core/locale)
+3. **No nested translations needed**: The `{{&KEY}}` syntax is only for special cases
+4. **Modal handles warning**: ActionModal automatically shows the warning for confirm-type modals
 
-## Examples
+## Examples Following UserFrosting 6 Standards
 
 ### Example 1: Confirm Action (No Input Fields)
 
@@ -86,6 +87,7 @@ UserFrosting 6's translator supports nested translation using the `{{&KEY}}` syn
     "confirm": "USER.DISABLE_CONFIRM",
     "modal_config": {
         "type": "confirm"
+        // warning defaults to "WARNING_CANNOT_UNDONE" - no need to specify
     }
 }
 ```
@@ -94,18 +96,15 @@ UserFrosting 6's translator supports nested translation using the `{{&KEY}}` syn
 ```php
 'USER' => [
     'DISABLE' => 'Disable User',
-    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}}</strong>?<br/>{{&ACTION.CANNOT_UNDO}}',
-],
-
-'ACTION' => [
-    'CANNOT_UNDO' => 'This action cannot be undone.',
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+    // No ACTION or WARNING keys needed - using UF6 core's WARNING_CANNOT_UNDONE
 ],
 ```
 
 **Result:**
 - Modal title: "Disable User"
-- Confirmation message: "Are you sure you want to disable **John Doe**?" (with user's actual name)
-- Warning: "This action cannot be undone." (translated from ACTION.CANNOT_UNDO)
+- Confirmation message: "Are you sure you want to disable **John Doe (jdoe)**?" (with user's actual data)
+- Warning: "This action cannot be undone." (from UF6 core's WARNING_CANNOT_UNDONE)
 
 ### Example 2: Input Action (With Password Field)
 
@@ -234,45 +233,63 @@ Instead of embedding the warning in the confirmation message, you can use the `w
 
 This approach separates the confirmation message from the warning, making it easier to reuse messages and customize warnings per action.
 
-## Best Practices
+## Best Practices (UserFrosting 6 Standards)
 
-### 1. Use Nested Translation for Common Messages
+### 1. Use UF6 Core Warning Key
 
-For messages like "This action cannot be undone", use `{{&ACTION.CANNOT_UNDO}}` instead of duplicating the text:
+Always use `WARNING_CANNOT_UNDONE` from UserFrosting 6 core for standard warnings:
 
-✅ **Good:**
+✅ **Good (UF6 Standard):**
+```php
+'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+// Warning handled by modal_config.warning = "WARNING_CANNOT_UNDONE"
+```
+
+❌ **Avoid (deprecated pattern):**
 ```php
 'DISABLE_CONFIRM' => 'Are you sure you want to disable {{name}}?<br/>{{&ACTION.CANNOT_UNDO}}',
 ```
 
-❌ **Bad:**
+### 2. Use Specific Field Placeholders
+
+Follow UF6 pattern of using actual field names, not generic placeholders:
+
+✅ **Good:**
 ```php
-'DISABLE_CONFIRM' => 'Are you sure you want to disable {{name}}?<br/>This action cannot be undone.',
+'DELETE_CONFIRM' => 'Are you sure you want to delete the user <strong>{{full_name}} ({{user_name}})</strong>?',
 ```
 
-### 2. Define Reusable Translation Keys
-
-Create common keys in a central namespace:
-
+❌ **Avoid:**
 ```php
-'ACTION' => [
-    'CANNOT_UNDO' => 'This action cannot be undone.',
-    'PERMANENT_WARNING' => 'This action is permanent and cannot be reversed.',
-    'CONFIRM_ACTION' => 'Please confirm to proceed.',
-],
-
-'VALIDATION' => [
-    'ENTER_VALUE' => 'Enter value',
-    'CONFIRM' => 'Confirm',
-    'CONFIRM_PLACEHOLDER' => 'Confirm value',
-    'MIN_LENGTH_HINT' => 'Minimum {{min}} characters',
-    'MATCH_HINT' => 'Values must match',
-],
+'DELETE_CONFIRM' => 'Are you sure you want to delete <strong>{{name}}</strong>?',
 ```
 
-### 3. Use Descriptive Locale Keys
+### 3. Separate Warnings from Messages
 
-Use clear, hierarchical keys:
+Keep confirmation messages and warnings separate as per UF6 pattern:
+
+✅ **Good:**
+```php
+// Locale
+'USER' => [
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}}</strong>?',
+],
+
+// Schema
+"modal_config": {
+    "type": "confirm",
+    "warning": "WARNING_CANNOT_UNDONE"  // From UF6 core
+}
+```
+
+❌ **Avoid:**
+```php
+'DISABLE_CONFIRM' => 'Are you sure...?<br/>This action cannot be undone.',  // Hardcoded warning
+```
+
+### 4. Use Descriptive Locale Keys
+
+Use clear, hierarchical keys following UF6 conventions:
 
 ✅ **Good:**
 ```php
@@ -288,15 +305,6 @@ Use clear, hierarchical keys:
 ```php
 'PWD_CHG_CONF' => '...',
 'PWD_RST_CONF' => '...',
-```
-
-### 4. Always Provide Placeholders
-
-Make sure your confirmation messages use the available record data:
-
-✅ **Good:**
-```php
-'DELETE_CONFIRM' => 'Are you sure you want to delete <strong>{{first_name}} {{last_name}}</strong>?',
 ```
 
 ❌ **Bad:**
@@ -322,21 +330,26 @@ If you support multiple languages, make sure all nested translations are defined
 
 ## Common Translation Keys
 
-### Actions
+### Warning Key (UserFrosting 6 Core)
 
-These keys are available in the CRUD6 sprinkle:
+This key is available in **sprinkle-core** and should be used for all standard warnings:
 
 ```php
-'ACTION' => [
-    'CANNOT_UNDO' => 'This action cannot be undone.',
-],
+// From UserFrosting 6 sprinkle-core
+'WARNING_CANNOT_UNDONE' => 'This action cannot be undone.',
 ```
 
-Use them in your messages with `{{&ACTION.CANNOT_UNDO}}`.
+Use it in your schema:
+```json
+"modal_config": {
+    "type": "confirm",
+    "warning": "WARNING_CANNOT_UNDONE"  // This is the default for confirm-type modals
+}
+```
 
-### Validation
+### Validation Keys (CRUD6 Sprinkle)
 
-These keys are available in the CRUD6 sprinkle:
+These keys are available in the CRUD6 sprinkle and are automatically used by ActionModal:
 
 ```php
 'VALIDATION' => [
@@ -350,23 +363,23 @@ These keys are available in the CRUD6 sprinkle:
 ],
 ```
 
-These are automatically used by ActionModal for input fields, but you can also reference them in your messages if needed.
+These are automatically applied to input fields - no action needed from schema authors.
 
 ## Troubleshooting
 
 ### Issue: Translation keys showing as literal text
 
-**Symptom:** You see "ACTION.CANNOT_UNDO" instead of "This action cannot be undone"
+**Symptom:** You see "WARNING_CANNOT_UNDONE" instead of "This action cannot be undone"
 
 **Causes:**
-1. Missing `&` prefix: Use `{{&ACTION.CANNOT_UNDO}}` not `{{ACTION.CANNOT_UNDO}}`
-2. Translation key not defined in locale file
-3. Locale file not loaded for the current sprinkle
+1. Using wrong key name (e.g., `ACTION.CANNOT_UNDO` instead of `WARNING_CANNOT_UNDONE`)
+2. Translation key not defined in UF6 core
+3. Locale file not loaded properly
 
 **Solution:**
-- Add `&` prefix for nested translations
-- Verify the key exists in your locale file
-- Check that your sprinkle's locale directory is in the correct location (`app/locale/en_US/messages.php`)
+- Use `WARNING_CANNOT_UNDONE` (the UF6 standard key from sprinkle-core)
+- Verify your UserFrosting 6 installation includes sprinkle-core
+- Check modal_config: `"warning": "WARNING_CANNOT_UNDONE"`
 
 ### Issue: Placeholders showing empty
 
@@ -374,13 +387,13 @@ These are automatically used by ActionModal for input fields, but you can also r
 
 **Causes:**
 1. Record data not being passed to translator
-2. Placeholder names don't match record field names
+2. Placeholder names don't match record field names (e.g., using `{{name}}` when field is `{{user_name}}`)
 3. Record fields are null/undefined
 
 **Solution:**
 - Verify the action receives `:record="crud6"` prop
-- Check that placeholder names match your model's field names
-- Use fallback values: `{{first_name|Anonymous}}`
+- Use specific field names that match your model: `{{first_name}}`, `{{last_name}}`, `{{user_name}}`
+- Check that record actually has these fields populated
 
 ### Issue: Validation messages not translating
 
@@ -390,14 +403,18 @@ These are automatically used by ActionModal for input fields, but you can also r
 
 **Solution:**
 - Update to the latest version of CRUD6 sprinkle
+- Validation keys are now properly translated using the translator composable
 - The translator composable is now used consistently
 
 ## Summary
 
-- ✅ Use `{{&KEY}}` syntax for nested translations
-- ✅ Define common messages in reusable keys (ACTION.CANNOT_UNDO, etc.)
-- ✅ Use the `warning` property in `modal_config` for flexibility
-- ✅ Always provide placeholders for user data
+Following UserFrosting 6 standards ensures consistency and maintainability:
+
+- ✅ Use `WARNING_CANNOT_UNDONE` from UF6 core for standard warnings
+- ✅ Use specific field placeholders (`{{first_name}}`, `{{user_name}}`) not generic `{{name}}`
+- ✅ Separate confirmation messages from warnings
+- ✅ Set `modal_config.warning` to customize or disable warnings
+- ✅ Follow UF6 patterns from sprinkle-admin and theme-pink-cupcake
 - ✅ Test all locales to ensure complete translations
 
-This pattern ensures your custom actions display properly translated messages across all modals and languages.
+This approach ensures your custom actions integrate seamlessly with UserFrosting 6 and display properly translated messages across all modals and languages.

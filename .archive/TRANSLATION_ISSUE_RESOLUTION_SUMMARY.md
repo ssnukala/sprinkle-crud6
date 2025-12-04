@@ -1,103 +1,113 @@
-# Translation Issue Resolution Summary
+# Translation Issue Resolution Summary - UserFrosting 6 Standards
 
 ## Issue Resolved in CRUD6 Sprinkle
 
-The translation issue where `ACTION.CANNOT_UNDO` and `VALIDATION.*` keys were showing as untranslated text has been fixed in the CRUD6 sprinkle.
+The translation issue where translation keys were showing as untranslated text has been fixed in the CRUD6 sprinkle, now following **UserFrosting 6 standards**.
 
 ### Changes Made
 
 #### 1. ActionModal Component Updates
 - **File**: `app/assets/components/CRUD6/ActionModal.vue`
 - **Changes**:
+  - **Default warning now uses `WARNING_CANNOT_UNDONE`** (UF6 standard from sprinkle-core)
   - Added `warning` property to ModalConfig interface
   - Created `warningMessage` computed property using translator composable
   - Replaced all inline `$t()` calls with computed helper functions
-  - Helper functions ensure consistent translator usage:
-    - `getFieldPlaceholder()` - Translates VALIDATION.ENTER_VALUE
-    - `getConfirmPlaceholder()` - Translates VALIDATION.CONFIRM_PLACEHOLDER
-    - `getConfirmPrefix()` - Translates VALIDATION.CONFIRM
-    - `getMinLengthHint()` - Translates VALIDATION.MIN_LENGTH_HINT
-    - `getMatchHint()` - Translates VALIDATION.MATCH_HINT
+  - Helper functions ensure consistent translator usage
 
-#### 2. ModalConfig Interface Update
+#### 2. Locale File Update
+- **File**: `app/locale/en_US/messages.php`
+- **Change**: **Removed `ACTION.CANNOT_UNDO`** - now uses UF6 core's `WARNING_CANNOT_UNDONE`
+- **Alignment**: Follows UserFrosting 6 sprinkle-admin patterns
+
+#### 3. ModalConfig Interface Update
 - **File**: `app/assets/composables/useCRUD6Schema.ts`
-- **Change**: Added optional `warning` property to ModalConfig interface
-- **Default**: For confirm-type modals, defaults to 'ACTION.CANNOT_UNDO' if not specified
+- **Default**: For confirm-type modals, defaults to **`WARNING_CANNOT_UNDONE`** (UF6 standard)
 - **Usage**: Can be set to custom key or empty string to disable warning
 
-#### 3. Documentation
-- **Usage Guide**: `docs/NESTED_TRANSLATION_USAGE_GUIDE.md`
-- **Solution Analysis**: `.archive/NESTED_TRANSLATION_PATTERN_SOLUTION.md`
-- **Example Schema**: `examples/schema/users-translation-example.json`
-- **Example Locale**: `examples/locale/translation-example-messages.php`
+## UserFrosting 6 Standard Pattern
 
-## What Still Needs to Be Done in sprinkle-c6admin
+### The UF6 Way (Recommended)
 
-The sprinkle-c6admin repository needs to update its locale messages to properly use nested translation syntax.
+**Locale Message** (`app/locale/en_US/messages.php`):
+```php
+'USER' => [
+    // Use specific field names - NO embedded warning
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+],
+// WARNING_CANNOT_UNDONE is from UF6 core - DO NOT define it in your sprinkle
+```
 
-### Current Problem in sprinkle-c6admin
+**Schema** (`app/schema/crud6/users.json`):
+```json
+{
+    "key": "disable_user",
+    "confirm": "USER.DISABLE_CONFIRM",
+    "modal_config": {
+        "type": "confirm"
+        // warning defaults to "WARNING_CANNOT_UNDONE" from UF6 core
+    }
+}
+```
 
-**Current Locale Messages** (`app/locale/en_US/messages.php`):
+## What Needs to Be Done in sprinkle-c6admin
+
+The sprinkle-c6admin repository should follow UserFrosting 6 standards.
+
+### Current State (Already Correct!)
+
+The messages in sprinkle-c6admin are already following UF6 standards:
+
 ```php
 'ADMIN' => [
     'PASSWORD_CHANGE_CONFIRM' => 'Are you sure you want to change the password for <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
-    'PASSWORD_RESET_CONFIRM' => 'Are you sure you want to send a password reset link to <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
 ],
 'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
-'ENABLE_CONFIRM' => 'Are you sure you want to enable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
 ```
 
-These messages don't include the "This action cannot be undone" warning.
+✅ Uses specific field placeholders  
+✅ No embedded warning messages  
+✅ Clean separation of concerns
 
-### Solution for sprinkle-c6admin
+### What c6admin Schemas Need
 
-Update the locale messages to include nested translation keys using `{{&KEY}}` syntax:
+Update schemas to explicitly set the warning (or rely on defaults):
 
-**Updated Locale Messages**:
-```php
-'ADMIN' => [
-    'PASSWORD_CHANGE_CONFIRM' => 'Are you sure you want to change the password for <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?<br/>{{&ACTION.CANNOT_UNDO}}',
-    'PASSWORD_RESET_CONFIRM' => 'Are you sure you want to send a password reset link to <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
-],
-'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?<br/>{{&ACTION.CANNOT_UNDO}}',
-'ENABLE_CONFIRM' => 'Are you sure you want to enable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
-```
-
-### Alternative Solution
-
-Instead of embedding `{{&ACTION.CANNOT_UNDO}}` in the locale messages, update the schema to specify warning in modal_config:
-
-**Current Schema** (`app/schema/crud6/users.json`):
+**Option 1: Use default WARNING_CANNOT_UNDONE**
 ```json
 {
     "key": "disable_user",
     "confirm": "CRUD6.USER.DISABLE_CONFIRM",
     "modal_config": {
         "type": "confirm"
+        // Defaults to WARNING_CANNOT_UNDONE - no change needed!
     }
 }
 ```
 
-**Updated Schema**:
+**Option 2: No warning**
 ```json
 {
-    "key": "disable_user",
-    "confirm": "CRUD6.USER.DISABLE_CONFIRM",
+    "key": "enable_user",
+    "confirm": "CRUD6.USER.ENABLE_CONFIRM",
     "modal_config": {
         "type": "confirm",
-        "warning": "ACTION.CANNOT_UNDO"
+        "warning": ""  // Explicitly disable warning
     }
 }
 ```
 
-This approach keeps the confirmation message clean and uses the modal_config to specify the warning explicitly.
-
-### Recommended Approach
-
-Use **both** approaches for flexibility:
-
-1. **Update locale messages** to include `{{&ACTION.CANNOT_UNDO}}` for actions that should always show this warning
-2. **Use modal_config.warning** for actions that need custom warnings or no warning
+**Option 3: Custom warning**
+```json
+{
+    "key": "delete_permanent",
+    "confirm": "USER.DELETE_PERMANENT_CONFIRM",
+    "modal_config": {
+        "type": "confirm",
+        "warning": "USER.DELETE_PERMANENT_WARNING"  // Custom warning key
+    }
+}
+```
 
 **Example - Disable User (Always show warning):**
 ```php

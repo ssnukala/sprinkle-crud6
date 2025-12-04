@@ -22,7 +22,7 @@
             "modal_config": {
                 "type": "confirm"
             },
-            "comment": "Default warning 'ACTION.CANNOT_UNDO' is automatically shown for confirm-type modals"
+            "comment": "Default warning 'WARNING_CANNOT_UNDONE' from UF6 core is automatically shown for confirm-type modals"
         },
         {
             "key": "enable_user",

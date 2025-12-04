@@ -2,6 +2,8 @@
 
 This directory contains example JSON schema files for the CRUD6 sprinkle.
 
+> **Note on Comments in Examples**: Some example schemas include a `"comment"` field for documentation purposes. This is not part of the official schema specification and should be removed for production use. Standard JSON does not support comments, so these are included only to explain example features inline.
+
 ## Schema Files
 
 ### Local Examples
@@ -15,7 +17,8 @@ These are example schemas demonstrating CRUD6 features:
 - `analytics.json` - Analytics tracking
 - `users.json` - Basic user schema
 - `users-extended.json` - Extended user schema with details and actions
-- `users-boolean-test.json` - **NEW** Demonstrates all three boolean field types
+- `users-boolean-test.json` - Demonstrates all three boolean field types
+- `users-translation-example.json` - **NEW** Demonstrates nested translation pattern with `{{&KEY}}` syntax
 - `contacts.json` - Contact management with boolean-yn field
 - `field-template-example.json` - Field template demonstration
 - `smartlookup-example.json` - Smart lookup field example

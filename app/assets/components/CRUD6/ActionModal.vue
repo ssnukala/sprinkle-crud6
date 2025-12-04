@@ -98,10 +98,10 @@ const modalConfig = computed((): ModalConfig => {
     }
     // For 'confirm' type without explicit fields, keep fields array empty
     
-    // Determine default warning based on modal type if not explicitly set
-    let defaultWarning: string | undefined
+    // Determine default warning key based on modal type if not explicitly set
+    let defaultWarningKey: string | undefined
     if (modalType === 'confirm') {
-        defaultWarning = 'ACTION.CANNOT_UNDO'
+        defaultWarningKey = 'ACTION.CANNOT_UNDO'
     }
     
     return {
@@ -109,7 +109,7 @@ const modalConfig = computed((): ModalConfig => {
         title: config.title || props.action.label,
         fields: fields,
         buttons: config.buttons || defaultButtons,
-        warning: config.warning !== undefined ? config.warning : defaultWarning
+        warning: config.warning !== undefined ? config.warning : defaultWarningKey
     }
 })
 
@@ -305,6 +305,8 @@ const getFieldLabel = (fieldKey: string, fieldConfig?: SchemaField) => {
     return fieldKey
 }
 
+// TODO: Consider extracting these translation helper functions into a separate
+// useFieldTranslations composable for reusability across components
 /**
  * Get translated placeholder for field input
  */

@@ -98,11 +98,18 @@ const modalConfig = computed((): ModalConfig => {
     }
     // For 'confirm' type without explicit fields, keep fields array empty
     
+    // Determine default warning based on modal type if not explicitly set
+    let defaultWarning: string | undefined
+    if (modalType === 'confirm') {
+        defaultWarning = 'ACTION.CANNOT_UNDO'
+    }
+    
     return {
         type: modalType,
         title: config.title || props.action.label,
         fields: fields,
-        buttons: config.buttons || defaultButtons
+        buttons: config.buttons || defaultButtons,
+        warning: config.warning !== undefined ? config.warning : defaultWarning
     }
 })
 
@@ -129,6 +136,14 @@ const modalTitle = computed(() => {
         return translator.translate(modalConfig.value.title, props.record)
     }
     return actionLabel.value
+})
+
+/**
+ * Computed - Warning message (translated)
+ */
+const warningMessage = computed(() => {
+    if (!modalConfig.value.warning) return ''
+    return translator.translate(modalConfig.value.warning)
 })
 
 /**
@@ -291,6 +306,45 @@ const getFieldLabel = (fieldKey: string, fieldConfig?: SchemaField) => {
 }
 
 /**
+ * Get translated placeholder for field input
+ */
+const getFieldPlaceholder = (fieldKey: string, fieldConfig?: SchemaField) => {
+    const label = getFieldLabel(fieldKey, fieldConfig)
+    const enterValue = translator.translate('VALIDATION.ENTER_VALUE')
+    return enterValue || `Enter ${label.toLowerCase()}`
+}
+
+/**
+ * Get translated placeholder for confirm input
+ */
+const getConfirmPlaceholder = (fieldKey: string, fieldConfig?: SchemaField) => {
+    const label = getFieldLabel(fieldKey, fieldConfig)
+    const confirmPlaceholder = translator.translate('VALIDATION.CONFIRM_PLACEHOLDER')
+    return confirmPlaceholder || `Confirm ${label.toLowerCase()}`
+}
+
+/**
+ * Get translated "Confirm" prefix
+ */
+const getConfirmPrefix = () => {
+    return translator.translate('VALIDATION.CONFIRM') || 'Confirm'
+}
+
+/**
+ * Get translated min length hint
+ */
+const getMinLengthHint = (min: number) => {
+    return translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`
+}
+
+/**
+ * Get translated match hint
+ */
+const getMatchHint = () => {
+    return translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
+}
+
+/**
  * Validate all fields
  */
 const isFormValid = computed(() => {
@@ -439,8 +493,8 @@ function resetForm() {
                                 class="uk-text-warning fa-4x" />
                         </p>
                         <div v-html="promptMessage"></div>
-                        <div v-if="modalConfig.type === 'confirm'" class="uk-text-meta">
-                            {{ $t('ACTION.CANNOT_UNDO') || 'This action cannot be undone.' }}
+                        <div v-if="warningMessage" class="uk-text-meta">
+                            {{ warningMessage }}
                         </div>
                     </div>
                     
@@ -456,7 +510,7 @@ function resetForm() {
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                    :placeholder="getFieldPlaceholder(field.key, field.config)"
                                     :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
@@ -465,7 +519,7 @@ function resetForm() {
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
                                 <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                                    {{ getConfirmPrefix() }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
@@ -473,7 +527,7 @@ function resetForm() {
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                        :placeholder="getConfirmPlaceholder(field.key, field.config)"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
@@ -493,11 +547,11 @@ function resetForm() {
                             <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
                                 <li v-if="getMinLength(field.config)" 
                                     :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
+                                    {{ getMinLengthHint(getMinLength(field.config)) }}
                                 </li>
                                 <li v-if="requiresMatch(field.config)" 
                                     :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                    {{ getMatchHint() }}
                                 </li>
                             </template>
                         </ul>

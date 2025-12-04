@@ -63,6 +63,8 @@ export interface ModalConfig {
     fields?: string[]
     /** Button combination preset or custom buttons */
     buttons?: 'yes_no' | 'save_cancel' | 'ok_cancel' | 'confirm_cancel' | ModalButtonConfig[]
+    /** Warning message to display (translation key, defaults to 'ACTION.CANNOT_UNDO' for confirm type) */
+    warning?: string
 }
 
 export interface ActionConfig {

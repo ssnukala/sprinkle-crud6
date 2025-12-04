@@ -88,7 +88,13 @@ const deleteConfirmed = () => {
         :acceptSeverity="Severity.Danger"
         data-test="modal-delete">
         <template #prompt>
-            <div v-html="t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
+            <div v-html="(() => {
+                const params = { ...props.crud6, model: modelLabel }
+                console.log('[DeleteModal] DELETE_CONFIRM params:', params)
+                const result = t('CRUD6.DELETE_CONFIRM', params)
+                console.log('[DeleteModal] DELETE_CONFIRM result:', result)
+                return result
+            })()"></div>
         </template>
     </UFModalConfirmation>
 </template> 

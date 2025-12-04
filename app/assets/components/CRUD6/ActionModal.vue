@@ -111,7 +111,14 @@ const modalConfig = computed((): ModalConfig => {
  */
 const promptMessage = computed(() => {
     if (!props.action.confirm) return ''
-    return translator.translate(props.action.confirm, props.record)
+    console.log('[ActionModal] Translating confirm message:', {
+        key: props.action.confirm,
+        record: props.record,
+        recordKeys: props.record ? Object.keys(props.record) : []
+    })
+    const translated = translator.translate(props.action.confirm, props.record)
+    console.log('[ActionModal] Translation result:', translated)
+    return translated
 })
 
 /**

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
+import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
 /**
  * Generic Field Edit Modal for CRUD6 Custom Actions
@@ -241,7 +242,7 @@ function resetForm() {
                                 :type="inputType"
                                 class="uk-input"
                                 :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${fieldLabel.toLowerCase()}`"
-                                :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
+                                :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
                         </div>
@@ -259,7 +260,7 @@ function resetForm() {
                                 :type="inputType"
                                 class="uk-input"
                                 :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${fieldLabel.toLowerCase()}`"
-                                :autocomplete="inputType === 'password' ? 'new-password' : 'off'"
+                                :autocomplete="getAutocompleteAttribute(action.field || 'value', fieldConfig?.type)"
                                 required
                                 :minlength="minLength || undefined" />
                         </div>

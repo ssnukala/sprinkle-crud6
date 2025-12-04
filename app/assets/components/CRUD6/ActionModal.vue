@@ -4,6 +4,7 @@ import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
+import { getAutocompleteAttribute } from '../../utils/fieldTypes'
 
 /**
  * Unified Action Modal for CRUD6
@@ -456,7 +457,7 @@ function resetForm() {
                                     :type="getInputType(field.config)"
                                     class="uk-input"
                                     :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
-                                    :autocomplete="getInputType(field.config) === 'password' ? 'new-password' : 'off'"
+                                    :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
                             </div>
@@ -473,7 +474,7 @@ function resetForm() {
                                         :type="getInputType(field.config)"
                                         class="uk-input"
                                         :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
-                                        :autocomplete="getInputType(field.config) === 'password' ? 'new-password' : 'off'"
+                                        :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
                             </div>

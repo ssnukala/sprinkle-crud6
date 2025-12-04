@@ -8,8 +8,13 @@ This directory contains examples, documentation, and reference materials for the
 Contains CRUD6 JSON schema files demonstrating various features and integrations:
 - **Local examples**: Product catalog, orders, categories with various field types and relationships
 - **C6Admin schemas**: UserFrosting 6 integration examples (users, roles, permissions, groups, activities)
+- **Translation example**: `users-translation-example.json` - Demonstrates proper nested translation usage
 
 See [schema/README.md](schema/README.md) for detailed schema documentation.
+
+### `/locale/` - Locale File Examples
+Example locale files showing proper translation patterns:
+- `translation-example-messages.php` - Demonstrates `{{&KEY}}` nested translation syntax
 
 ### `/docs/` - Documentation
 User guides and integration documentation:
@@ -78,6 +83,29 @@ See the Vue component examples for:
 - Form handling
 - Master-detail relationships
 - AutoLookup field integration
+
+## Translation Examples
+
+### Nested Translation Pattern
+
+The CRUD6 sprinkle supports nested translations using the `{{&KEY}}` syntax. This allows you to embed translation keys within locale messages, and they will be recursively translated at render time.
+
+**Example Schema**: `schema/users-translation-example.json`
+**Example Locale**: `locale/translation-example-messages.php`
+
+**Key Pattern:**
+```php
+// In locale file
+'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{user_name}}</strong>?<br/>{{&ACTION.CANNOT_UNDO}}',
+
+'ACTION' => [
+    'CANNOT_UNDO' => 'This action cannot be undone.',
+],
+```
+
+The `{{&ACTION.CANNOT_UNDO}}` will be recursively translated to "This action cannot be undone."
+
+**Full Guide**: See [../docs/NESTED_TRANSLATION_USAGE_GUIDE.md](../docs/NESTED_TRANSLATION_USAGE_GUIDE.md) for complete documentation.
 
 ## More Information
 

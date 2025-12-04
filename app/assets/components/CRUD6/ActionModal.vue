@@ -397,6 +397,14 @@ function resetForm() {
     confirmValues.value = {}
     error.value = ''
 }
+
+/**
+ * Translate with fallback - wraps translator.translate for template use
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const translated = translator.translate(key, params)
+    return (translated === key && fallback) ? fallback : translated
+}
 </script>
 
 <template>
@@ -440,7 +448,7 @@ function resetForm() {
                         </p>
                         <div v-html="promptMessage"></div>
                         <div v-if="modalConfig.type === 'confirm'" class="uk-text-meta">
-                            {{ $t('ACTION.CANNOT_UNDO') || 'This action cannot be undone.' }}
+                            {{ t('ACTION.CANNOT_UNDO', {}, 'This action cannot be undone.') }}
                         </div>
                     </div>
                     
@@ -456,7 +464,7 @@ function resetForm() {
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                    :placeholder="t('VALIDATION.ENTER_VALUE', {}, `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`)"
                                     :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
@@ -465,7 +473,7 @@ function resetForm() {
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
                                 <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                                    {{ t('VALIDATION.CONFIRM', {}, 'Confirm') }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
@@ -473,7 +481,7 @@ function resetForm() {
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                        :placeholder="t('VALIDATION.CONFIRM_PLACEHOLDER', {}, `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`)"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
@@ -493,11 +501,11 @@ function resetForm() {
                             <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
                                 <li v-if="getMinLength(field.config)" 
                                     :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
+                                    {{ t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }, `Minimum ${getMinLength(field.config)} characters`) }}
                                 </li>
                                 <li v-if="requiresMatch(field.config)" 
                                     :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                    {{ t('VALIDATION.MATCH_HINT', {}, 'Values must match') }}
                                 </li>
                             </template>
                         </ul>

@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
+import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 
 /**
  * Variables and composables
  */
 const { deleteRow } = useCRUD6Api()
+const translator = useTranslator()
 
 /**
  * Props - The CRUD6 object to delete, optional model and schema for consistency
@@ -49,6 +51,14 @@ if (props.schema) {
 const emits = defineEmits(['deleted'])
 
 /**
+ * Translate helper for template use
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const translated = translator.translate(key, params)
+    return (translated === key && fallback) ? fallback : translated
+}
+
+/**
  * Methods - Submit the form to the API and handle the response.
  */
 const deleteConfirmed = () => {
@@ -64,21 +74,21 @@ const deleteConfirmed = () => {
 
 <template>
     <a :href="'#confirm-crud6-delete-' + recordId" v-bind="$attrs" uk-toggle data-test="btn-delete-modal">
-        <slot><font-awesome-icon icon="trash" fixed-width /> {{ $t('CRUD6.DELETE', { model: modelLabel }) }}</slot>
+        <slot><font-awesome-icon icon="trash" fixed-width /> {{ t('CRUD6.DELETE', { model: modelLabel }) }}</slot>
     </a>
 
     <!-- This is the modal -->
     <UFModalConfirmation
         :id="'confirm-crud6-delete-' + recordId"
-        :title="$t('CRUD6.DELETE', { model: modelLabel })"
+        :title="t('CRUD6.DELETE', { model: modelLabel })"
         @confirmed="deleteConfirmed()"
-        :acceptLabel="$t('CRUD6.DELETE_YES', { model: modelLabel })"
+        :acceptLabel="t('CRUD6.DELETE_YES', { model: modelLabel })"
         acceptIcon="trash"
         :rejectIcon="null"
         :acceptSeverity="Severity.Danger"
         data-test="modal-delete">
         <template #prompt>
-            <div v-html="$t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
+            <div v-html="t('CRUD6.DELETE_CONFIRM', { ...props.crud6, model: modelLabel })"></div>
         </template>
     </UFModalConfirmation>
 </template> 

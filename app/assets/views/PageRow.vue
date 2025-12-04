@@ -2,8 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
-import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6Api, useCRUD6Schema, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6Info from '../components/CRUD6/Info.vue'
 import CRUD6Details from '../components/CRUD6/Details.vue'
 import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
@@ -18,6 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
 const translator = useTranslator()
+const { setDetailBreadcrumbs, updateBreadcrumbs } = useCRUD6Breadcrumbs()
 
 // Get model and ID from route parameters
 const model = computed(() => route.params.model as string)
@@ -203,19 +203,41 @@ const modelLabel = computed(() => {
 /**
  * Methods - Fetch record
  */
-function fetch() {
+async function fetch() {
     if (recordId.value && fetchRow) {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
-            fetchPromise.then((fetchedRow) => {
+            fetchPromise.then(async (fetchedRow) => {
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
+                
                 // Update page title with record name if available
-                const recordName = fetchedRow[flattenedSchema.value?.title_field || 'name'] || fetchedRow.name
-                if (recordName) {
-                    page.title = `${recordName} - ${modelLabel.value}`
-                }
+                // Try multiple field options: title_field from schema, 'name', 'username', 'user_name', or fall back to ID
+                const titleField = flattenedSchema.value?.title_field || 'name'
+                const fieldOptions = [titleField, 'name', 'username', 'user_name', 'title']
+                // Use Set to avoid checking duplicate fields
+                const uniqueFields = [...new Set(fieldOptions)]
+                let recordName = uniqueFields.map(field => fetchedRow[field]).find(val => val) || recordId.value
+                
+                debugLog('[PageRow.fetch] Record fetched:', {
+                    recordId: recordId.value,
+                    titleField,
+                    recordName,
+                    availableFields: Object.keys(fetchedRow).slice(0, 10), // Limit to first 10 for performance
+                    modelLabel: modelLabel.value
+                })
+                
+                // Update breadcrumbs with model title and record name
+                // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
+                // setDetailBreadcrumbs will handle the breadcrumb trail correctly
+                const listPath = `/crud6/${model.value}`
+                await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                
+                // Set page title for display after breadcrumbs are updated
+                page.title = recordName
+                
+                debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
             })
@@ -319,10 +341,6 @@ watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
         debugLog('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
-        // Set initial page title immediately for breadcrumbs
-        const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
-        page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
-        
         currentModel = newModel
         // Request all contexts needed by detail page in one consolidated API call
         // This prevents child components (Info, EditModal) from making separate schema calls
@@ -334,20 +352,28 @@ watch(model, async (newModel) => {
             
             // Update page title and description with translation support
             if (flattenedSchema.value) {
+                const schemaTitle = flattenedSchema.value.title 
+                    ? translator.translate(flattenedSchema.value.title) 
+                    : modelLabel.value
+                    
                 if (isCreateMode.value) {
                     page.title = translator.translate('CRUD6.CREATE', { model: modelLabel.value })
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.CREATE.SUCCESS', { model: modelLabel.value })
+                    
+                    // Update breadcrumbs for create mode
+                    await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    // Translate title if it's a translation key
-                    page.title = flattenedSchema.value.title 
-                        ? translator.translate(flattenedSchema.value.title) 
-                        : modelLabel.value
+                    // Don't set page.title or update breadcrumbs yet for detail pages
+                    // Let setDetailBreadcrumbs handle it after the record is fetched
+                    // to avoid duplicate breadcrumbs
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
+                    
+                    // Note: Breadcrumbs will be updated by setDetailBreadcrumbs after fetch()
                 }
             }
         }

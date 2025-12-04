@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
-import { useCRUD6Api, useCRUD6Schema, useMasterDetail } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6Api, useCRUD6Schema, useMasterDetail, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
 import type { DetailRecord, DetailEditableConfig } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import CRUD6Info from '../components/CRUD6/Info.vue'
@@ -31,6 +31,7 @@ import { getLookupConfig } from '../composables/useCRUD6FieldRenderer'
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const { setDetailBreadcrumbs, updateBreadcrumbs } = useCRUD6Breadcrumbs()
 
 // Get model and ID from route parameters
 const model = computed(() => route.params.model as string)
@@ -185,7 +186,7 @@ async function fetch() {
     if (recordId.value && fetchRow) {
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
-            fetchPromise.then((fetchedRow) => {
+            fetchPromise.then(async (fetchedRow) => {
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
@@ -193,6 +194,10 @@ async function fetch() {
                 const recordName = fetchedRow[schema.value?.title_field || 'name'] || fetchedRow.name
                 if (recordName) {
                     page.title = `${recordName} - ${modelLabel.value}`
+                    
+                    // Update breadcrumbs with model title and record name
+                    const listPath = `/crud6/${model.value}`
+                    await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
                 }
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
@@ -364,6 +369,9 @@ watch(model, async (newModel) => {
         const initialTitle = newModel.charAt(0).toUpperCase() + newModel.slice(1)
         page.title = isCreateMode.value ? `Create ${initialTitle}` : initialTitle
         
+        // Update breadcrumbs with initial title (replace {{model}} placeholder)
+        await updateBreadcrumbs(initialTitle)
+        
         currentModel = newModel
         // Request all contexts needed by master-detail page in one consolidated API call
         // This prevents child components from making separate schema calls
@@ -375,13 +383,21 @@ watch(model, async (newModel) => {
             
             // Update page title and description
             if (schema.value) {
+                const schemaTitle = schema.value.title || modelLabel.value
+                
                 if (isCreateMode.value) {
                     page.title = `Create ${modelLabel.value}`
                     page.description = schema.value.description || `Create a new ${modelLabel.value}`
+                    
+                    // Update breadcrumbs for create mode
+                    await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
                     // Set title to schema title for breadcrumbs, will be updated with record name after fetch
-                    page.title = schema.value.title || modelLabel.value
+                    page.title = schemaTitle
                     page.description = schema.value.description || `View and edit ${modelLabel.value} details.`
+                    
+                    // Update breadcrumbs - record breadcrumb will be added after fetch()
+                    await updateBreadcrumbs(schemaTitle)
                 }
             }
         }

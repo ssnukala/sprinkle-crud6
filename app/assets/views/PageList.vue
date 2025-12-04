@@ -3,7 +3,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
-import { useCRUD6Schema } from '@ssnukala/sprinkle-crud6/composables'
+import { useCRUD6Schema, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
 import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
 import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
 import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
@@ -13,6 +13,8 @@ import { debugLog, debugWarn, debugError } from '../utils/debug'
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const { setListBreadcrumb } = useCRUD6Breadcrumbs()
+
 // Current model name from route
 const model = computed(() => route.params.model as string)
 
@@ -123,20 +125,44 @@ function renderFieldTemplate(template: string, row: any): string {
 }
 
 // Load schema
-onMounted(() => {
+onMounted(async () => {
   if (model.value && loadSchema) {
+    debugLog('[PageList.onMounted] Starting - model:', model.value)
+    debugLog('[PageList.onMounted] Current page.breadcrumbs:', page.breadcrumbs)
+    
     // Set initial page title immediately for breadcrumbs
-    page.title = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
+    page.title = initialTitle
+    
+    debugLog('[PageList.onMounted] Initial title:', initialTitle)
+    debugLog('[PageList.onMounted] Calling setListBreadcrumb with initial title')
+    
+    // Update breadcrumbs to replace {{model}} placeholder with initial title
+    await setListBreadcrumb(initialTitle)
+    
+    debugLog('[PageList.onMounted] After setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
     
     // Request BOTH 'list' and 'form' contexts in a single call
     // This avoids duplicate API calls when the create/edit modal is opened
     const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
-      schemaPromise.then(() => {
+      schemaPromise.then(async () => {
+        debugLog('[PageList.onMounted] Schema loaded')
+        debugLog('[PageList.onMounted] page.breadcrumbs after schema load:', page.breadcrumbs)
+        
         // Update page title and description using schema
         if (schema.value) {
-          page.title = schema.value.title || model.value
+          const schemaTitle = schema.value.title || model.value
+          page.title = schemaTitle
           page.description = schema.value.description || `A listing of the ${modelLabel.value} for your site. Provides management tools for editing and deleting ${modelLabel.value}.`
+          
+          debugLog('[PageList.onMounted] Schema title:', schemaTitle)
+          debugLog('[PageList.onMounted] Calling setListBreadcrumb with schema title')
+          
+          // Update breadcrumbs with schema title (may be different from initial title)
+          await setListBreadcrumb(schemaTitle)
+          
+          debugLog('[PageList.onMounted] After final setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
         }
       })
     }

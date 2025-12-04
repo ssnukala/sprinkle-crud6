@@ -21,9 +21,10 @@ describe('routes.test.ts', () => {
         expect(listRoute.meta).not.toHaveProperty('title')
         expect(listRoute.meta).not.toHaveProperty('description')
         
-        // View route should have title and description
+        // View route should NOT have title (to avoid duplicate breadcrumbs)
+        // but should have description. Record name is added dynamically by PageRow.vue
         const viewRoute = mainRoute.children[1]
-        expect(viewRoute.meta).toHaveProperty('title')
+        expect(viewRoute.meta).not.toHaveProperty('title')
         expect(viewRoute.meta).toHaveProperty('description')
     })
 })

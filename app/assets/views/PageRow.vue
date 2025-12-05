@@ -200,6 +200,17 @@ const modelLabel = computed(() => {
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
 })
 
+// Model title for breadcrumbs - use plural title (e.g., "Users" for list page link)
+// This is used in breadcrumb trails when linking back to the list page
+const modelTitle = computed(() => {
+    if (flattenedSchema.value?.title) {
+        // Try to translate - if key doesn't exist, returns the original value
+        return translator.translate(flattenedSchema.value.title)
+    }
+    // Fallback to modelLabel if title is not available
+    return modelLabel.value
+})
+
 /**
  * Methods - Fetch record
  */
@@ -228,8 +239,9 @@ async function fetch() {
                 // Update breadcrumbs with model title and record name
                 // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
                 // setDetailBreadcrumbs will handle the breadcrumb trail correctly
+                // Use modelTitle (plural) for the list page breadcrumb link
                 const listPath = `/crud6/${model.value}`
-                await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                await setDetailBreadcrumbs(modelTitle.value, recordName, listPath)
                 
                 // Set page title for display after breadcrumbs are updated
                 page.title = recordName
@@ -368,11 +380,11 @@ watch(model, async (newModel) => {
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
                     // Set initial breadcrumbs with model title immediately
-                    // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / User" on first load
+                    // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / Users" on first load
                     // The record name will be added after fetch completes
-                    // Use modelLabel (singular) for consistency with the breadcrumb update in fetch()
+                    // Use modelTitle (plural) for the list page breadcrumb link
                     const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(modelLabel.value, '', listPath)
+                    await setDetailBreadcrumbs(modelTitle.value, '', listPath)
                     
                     // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
                     // It will be updated with the record name after fetch() completes

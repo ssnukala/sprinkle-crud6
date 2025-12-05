@@ -236,6 +236,16 @@ async function fetch() {
                     modelLabel: modelLabel.value
                 })
                 
+                // Wait for schema to be available before setting breadcrumbs
+                // This prevents setting breadcrumbs with incomplete model title
+                // Use a simple polling mechanism to ensure schema is loaded
+                let retries = 0
+                const maxRetries = 20 // Max 2 seconds (20 * 100ms)
+                while (!flattenedSchema.value?.title && retries < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 100))
+                    retries++
+                }
+                
                 // Update breadcrumbs with model title and record name
                 // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
                 // setDetailBreadcrumbs will handle the breadcrumb trail correctly

@@ -60,14 +60,14 @@ const createAction = computed(() => {
   return create
 })
 
-// Get all actions from schema for table row dropdowns
+// Get all actions EXCEPT create_action for table row dropdowns
 const rowActions = computed(() => {
   debugLog('[PageList.rowActions] Computing row actions')
   debugLog('[PageList.rowActions] schema.value?.actions:', schema.value?.actions?.map(a => a.key))
   
-  // Use all actions from schema (backend provides them)
-  const actions = schema.value?.actions || []
-  debugLog('[PageList.rowActions] Returning', actions.length, 'actions')
+  // Use all actions from schema except create_action (not relevant for individual rows)
+  const actions = (schema.value?.actions || []).filter(action => action.key !== 'create_action')
+  debugLog('[PageList.rowActions] Filtered out create_action, returning', actions.length, 'actions:', actions.map(a => a.key))
   return actions
 })
 

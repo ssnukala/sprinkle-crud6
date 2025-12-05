@@ -60,6 +60,31 @@ const confirmValues = ref<Record<string, any>>({})
 const error = ref('')
 
 /**
+ * Computed - Model label for translations
+ * Priority: schema singular_title > translated singular_title > model name (capitalized)
+ */
+const modelLabel = computed(() => {
+    if (props.schema?.singular_title) {
+        // Try to translate the singular_title in case it's a translation key
+        const translated = translator.translate(props.schema.singular_title)
+        return translated
+    }
+    // Capitalize first letter of model name as fallback
+    return props.model ? props.model.charAt(0).toUpperCase() + props.model.slice(1) : 'Record'
+})
+
+/**
+ * Computed - Translation context with both model and record data
+ * This allows translations to use both {{model}} and record fields like {{user_name}}
+ */
+const translationContext = computed(() => {
+    return {
+        model: modelLabel.value,
+        ...(props.record || {})
+    }
+})
+
+/**
  * Computed - Modal ID for UIKit toggle
  */
 const modalId = computed(() => {
@@ -143,14 +168,16 @@ const modalConfig = computed((): ModalConfig => {
  */
 const promptMessage = computed(() => {
     if (!props.action.confirm) return ''
-    return translator.translate(props.action.confirm, props.record)
+    return translator.translate(props.action.confirm, translationContext.value)
 })
 
 /**
  * Computed - Action label (button text)
+ * Supports both translation keys and plain text
  */
 const actionLabel = computed(() => {
-    return translator.translate(props.action.label)
+    if (!props.action.label) return ''
+    return translator.translate(props.action.label, translationContext.value)
 })
 
 /**
@@ -158,7 +185,7 @@ const actionLabel = computed(() => {
  */
 const modalTitle = computed(() => {
     if (modalConfig.value.title) {
-        return translator.translate(modalConfig.value.title, props.record)
+        return translator.translate(modalConfig.value.title, translationContext.value)
     }
     return actionLabel.value
 })
@@ -580,7 +607,7 @@ function resetForm() {
                     @click="handleButtonClick(button)"
                     :data-test="`btn-${button.action}-${action.key}`">
                     <font-awesome-icon v-if="button.icon" :icon="button.icon" fixed-width />
-                    {{ translator.translate(button.label) }}
+                    {{ translator.translate(button.label, translationContext) }}
                 </button>
             </div>
         </div>

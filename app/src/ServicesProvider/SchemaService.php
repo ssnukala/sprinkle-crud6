@@ -905,6 +905,11 @@ class SchemaService
             'primary_key' => $schema['primary_key'] ?? 'id',
         ];
 
+        // Add title_field if present (used for translation context)
+        if (isset($schema['title_field'])) {
+            $filtered['title_field'] = $schema['title_field'];
+        }
+
         // Add description if present
         if (isset($schema['description'])) {
             $filtered['description'] = $schema['description'];
@@ -913,6 +918,16 @@ class SchemaService
         // Add permissions if present (needed for permission checks)
         if (isset($schema['permissions'])) {
             $filtered['permissions'] = $schema['permissions'];
+        }
+
+        // Add actions at root level (all actions available for all contexts)
+        if (isset($schema['actions'])) {
+            $filtered['actions'] = $schema['actions'];
+            $this->logger->debug('[SchemaService.filterSchemaForMultipleContexts] Actions included at root level', [
+                'model' => $schema['model'],
+                'action_count' => count($schema['actions']),
+                'action_keys' => array_column($schema['actions'], 'key'),
+            ]);
         }
 
         // Add contexts section with filtered data for each context

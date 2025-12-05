@@ -923,7 +923,7 @@ class SchemaService
         // Add actions at root level (all actions available for all contexts)
         if (isset($schema['actions'])) {
             $filtered['actions'] = $schema['actions'];
-            $this->logger->debug('[SchemaService.filterSchemaForMultipleContexts] Actions included at root level', [
+            $this->debugLog('[SchemaService.filterSchemaForMultipleContexts] Actions included at root level', [
                 'model' => $schema['model'],
                 'action_count' => count($schema['actions']),
                 'action_keys' => array_column($schema['actions'], 'key'),

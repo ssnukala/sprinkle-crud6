@@ -55,35 +55,9 @@ const schemaFields = computed(() => {
 const listActions = computed(() => {
   debugLog('[PageList.listActions] Computing list actions')
   debugLog('[PageList.listActions] schema.value?.contexts?.list?.actions:', schema.value?.contexts?.list?.actions)
-  debugLog('[PageList.listActions] schema.value?.actions:', schema.value?.actions)
   
-  // Get actions from schema
-  // If contexts.list.actions is provided by backend, use it (already filtered by backend)
-  if (schema.value?.contexts?.list?.actions) {
-    debugLog('[PageList.listActions] Using backend-filtered contexts.list.actions:', schema.value.contexts.list.actions)
-    return schema.value.contexts.list.actions
-  }
-  
-  // Fallback: filter from all actions for list scope
-  // Only include actions with explicit 'list' scope
-  const allActions = schema.value?.actions || []
-  debugLog('[PageList.listActions] Falling back to client-side filtering from allActions:', allActions)
-  
-  const filtered = allActions.filter(action => {
-    // Exclude actions without scope (they must define scope explicitly)
-    if (!action.scope) {
-      debugLog('[PageList.listActions] Excluding action without scope:', action.key)
-      return false
-    }
-    
-    const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
-    const includes = scopes.includes('list')
-    debugLog('[PageList.listActions] Action', action.key, 'has scope:', action.scope, 'includes list?', includes)
-    return includes
-  })
-  
-  debugLog('[PageList.listActions] Final filtered list actions:', filtered.map(a => a.key))
-  return filtered
+  // Backend always provides filtered actions in contexts
+  return schema.value?.contexts?.list?.actions || []
 })
 
 // Get detail-scoped actions for table rows (edit, delete, etc.)
@@ -91,32 +65,8 @@ const detailActions = computed(() => {
   debugLog('[PageList.detailActions] Computing detail actions')
   debugLog('[PageList.detailActions] schema.value?.contexts?.detail?.actions:', schema.value?.contexts?.detail?.actions)
   
-  // If contexts.detail.actions is provided by backend, use it (already filtered by backend)
-  if (schema.value?.contexts?.detail?.actions) {
-    debugLog('[PageList.detailActions] Using backend-filtered contexts.detail.actions:', schema.value.contexts.detail.actions)
-    return schema.value.contexts.detail.actions
-  }
-  
-  // Fallback: filter from all actions for detail scope
-  // Only include actions with explicit 'detail' scope
-  const allActions = schema.value?.actions || []
-  debugLog('[PageList.detailActions] Falling back to client-side filtering from allActions:', allActions)
-  
-  const filtered = allActions.filter(action => {
-    // Exclude actions without scope (they must define scope explicitly)
-    if (!action.scope) {
-      debugLog('[PageList.detailActions] Excluding action without scope:', action.key)
-      return false
-    }
-    
-    const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
-    const includes = scopes.includes('detail')
-    debugLog('[PageList.detailActions] Action', action.key, 'has scope:', action.scope, 'includes detail?', includes)
-    return includes
-  })
-  
-  debugLog('[PageList.detailActions] Final filtered detail actions:', filtered.map(a => a.key))
-  return filtered
+  // Backend always provides filtered actions in contexts
+  return schema.value?.contexts?.detail?.actions || []
 })
 
 // API URL

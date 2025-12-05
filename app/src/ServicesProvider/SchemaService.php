@@ -1044,7 +1044,7 @@ class SchemaService
                 return $this->getFormContextData($schema, 'edit');
 
             case 'form':
-                // For create/edit forms (backward compatible): fields visible in both
+                // For create/edit forms: fields visible in both create and edit contexts
                 // This merges fields from both create and edit contexts
                 $createData = $this->getFormContextData($schema, 'create');
                 $editData = $this->getFormContextData($schema, 'edit');
@@ -1689,8 +1689,8 @@ class SchemaService
     /**
      * Filter actions by scope.
      * 
-     * Returns only actions that should appear in the specified scope (list or detail).
-     * Actions without a scope are included in all scopes for backward compatibility.
+     * Returns only actions that have the specified scope (list or detail).
+     * Actions without a scope attribute are excluded - all actions must explicitly declare their scope.
      * 
      * @param array  $actions Actions array from schema
      * @param string $scope   The scope to filter by ('list' or 'detail')

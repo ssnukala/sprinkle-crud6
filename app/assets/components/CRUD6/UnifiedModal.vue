@@ -96,13 +96,30 @@ const translationContext = computed(() => {
         }
     }
     
-    // For title field
+    // For title field - use the actual field value from record
     if (props.schema?.title_field && props.record) {
         context.title = props.record[props.schema.title_field]
+    } else if (props.record?.user_name) {
+        // Fallback for user_name (common title field)
+        context.title = props.record.user_name
+    } else if (props.record?.name) {
+        // Fallback for name
+        context.title = props.record.name
     }
     
     return context
 })
+
+/**
+ * Computed - Translated validation strings
+ */
+const validationStrings = computed(() => ({
+    enterValue: translator.translate('VALIDATION.ENTER_VALUE') || 'Enter value',
+    confirm: translator.translate('VALIDATION.CONFIRM') || 'Confirm',
+    confirmPlaceholder: translator.translate('VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
+    minLengthHint: (min: number) => translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
+    matchHint: translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
+}))
 
 /**
  * Computed - Modal ID for UIKit toggle
@@ -563,7 +580,7 @@ function resetForm() {
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                    :placeholder="validationStrings.enterValue"
                                     :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
@@ -572,7 +589,7 @@ function resetForm() {
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
                                 <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                                    {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
@@ -580,7 +597,7 @@ function resetForm() {
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                        :placeholder="validationStrings.confirmPlaceholder"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
@@ -600,11 +617,11 @@ function resetForm() {
                             <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
                                 <li v-if="getMinLength(field.config)" 
                                     :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
+                                    {{ validationStrings.minLengthHint(getMinLength(field.config)) }}
                                 </li>
                                 <li v-if="requiresMatch(field.config)" 
                                     :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                    {{ validationStrings.matchHint }}
                                 </li>
                             </template>
                         </ul>

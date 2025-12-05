@@ -53,9 +53,20 @@ const schemaFields = computed(() => {
 
 // Get list-scoped actions from schema
 const listActions = computed(() => {
-  // Get actions from schema (could be in contexts.list or top-level)
-  const actions = schema.value?.contexts?.list?.actions || schema.value?.actions || []
-  return actions
+  // Get actions from schema
+  // If contexts.list.actions is provided by backend, use it (already filtered)
+  // Otherwise filter from all actions
+  if (schema.value?.contexts?.list?.actions) {
+    return schema.value.contexts.list.actions
+  }
+  
+  // Fallback: filter from all actions for list scope
+  const allActions = schema.value?.actions || []
+  return allActions.filter(action => {
+    if (!action.scope) return false // Only scoped actions
+    const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
+    return scopes.includes('list')
+  })
 })
 
 // Get detail-scoped actions for table rows (edit, delete, etc.)
@@ -222,9 +233,19 @@ onMounted(async () => {
           :model="model"
           :schema="schema"
           @saved="sprunjer.fetch()"
-          @confirmed="sprunjer.fetch()"
-          class="uk-button"
-          :class="action.style ? `uk-button-${action.style}` : 'uk-button-primary'" />
+          @confirmed="sprunjer.fetch()">
+          <template #trigger="{ modalId }">
+            <a
+              :href="`#${modalId}`"
+              uk-toggle
+              :data-test="`btn-action-${action.key}`"
+              class="uk-button"
+              :class="action.style ? `uk-button-${action.style}` : 'uk-button-primary'">
+              <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+              {{ $t(action.label || action.key, { model: modelLabel }) }}
+            </a>
+          </template>
+        </CRUD6UnifiedModal>
       </template>
 
       <!-- Header -->

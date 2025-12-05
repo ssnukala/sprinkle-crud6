@@ -16,6 +16,7 @@ use Psr\SimpleCache\CacheInterface;
 use UserFrosting\Config\Config;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException;
 use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**

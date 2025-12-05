@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\ServicesProvider;
 
 use PHPUnit\Framework\TestCase;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader;
 
 /**
@@ -23,11 +24,30 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader;
 class SchemaLoaderTest extends TestCase
 {
     /**
+     * Create a mock Config instance for testing.
+     * 
+     * @return Config
+     */
+    protected function createMockConfig(): Config
+    {
+        $config = $this->createMock(Config::class);
+        $config->method('get')
+            ->willReturnCallback(function ($key, $default = null) {
+                if ($key === 'crud6.schema_path') {
+                    return $default;
+                }
+                return $default;
+            });
+        return $config;
+    }
+
+    /**
      * Test getSchemaFilePath with connection returns connection-based path.
      */
     public function testGetSchemaFilePathWithConnection(): void
     {
-        $loader = new SchemaLoader();
+        $config = $this->createMockConfig();
+        $loader = new SchemaLoader($config);
 
         $path = $loader->getSchemaFilePath('users', 'db1');
         $this->assertEquals('schema://crud6/db1/users.json', $path);
@@ -41,7 +61,8 @@ class SchemaLoaderTest extends TestCase
      */
     public function testGetSchemaFilePathWithoutConnection(): void
     {
-        $loader = new SchemaLoader();
+        $config = $this->createMockConfig();
+        $loader = new SchemaLoader($config);
 
         $path = $loader->getSchemaFilePath('users');
         $this->assertEquals('schema://crud6/users.json', $path);
@@ -52,7 +73,8 @@ class SchemaLoaderTest extends TestCase
      */
     public function testApplyDefaultsSetsDefaultValues(): void
     {
-        $loader = new SchemaLoader();
+        $config = $this->createMockConfig();
+        $loader = new SchemaLoader($config);
 
         // Test schema without any defaults
         $schema = [
@@ -73,7 +95,8 @@ class SchemaLoaderTest extends TestCase
      */
     public function testApplyDefaultsPreservesExistingValues(): void
     {
-        $loader = new SchemaLoader();
+        $config = $this->createMockConfig();
+        $loader = new SchemaLoader($config);
 
         // Test schema with explicit values
         $schema = [
@@ -97,7 +120,8 @@ class SchemaLoaderTest extends TestCase
      */
     public function testApplyDefaultsWithPartialOverrides(): void
     {
-        $loader = new SchemaLoader();
+        $config = $this->createMockConfig();
+        $loader = new SchemaLoader($config);
 
         // Test schema with only some values set
         $schema = [

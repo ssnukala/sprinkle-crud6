@@ -12,20 +12,37 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
+use UserFrosting\Config\Config;
 use UserFrosting\Support\Repository\Loader\YamlFileLoader;
 
 /**
  * Schema Loader.
  * 
  * Handles loading of JSON schema files from the file system using
- * the resource locator pattern.
+ * the resource locator pattern and UserFrosting's YamlFileLoader.
+ * 
+ * The schema path is configurable through the Config service, allowing
+ * flexibility in schema file organization.
  */
 class SchemaLoader
 {
     /**
-     * @var string Base path for schema files
+     * @var string Base path for schema files (configurable)
      */
-    protected string $schemaPath = 'schema://crud6/';
+    protected string $schemaPath;
+
+    /**
+     * Constructor.
+     * 
+     * Schema path can be configured via 'crud6.schema_path' config key.
+     * Defaults to 'schema://crud6/' if not configured.
+     * 
+     * @param Config $config Configuration repository
+     */
+    public function __construct(Config $config)
+    {
+        $this->schemaPath = $config->get('crud6.schema_path', 'schema://crud6/');
+    }
 
     /**
      * Get the file path for a model's schema.

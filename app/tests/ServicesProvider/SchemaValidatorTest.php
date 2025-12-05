@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\ServicesProvider;
 
 use PHPUnit\Framework\TestCase;
+use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaValidationException;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator;
 
 /**
@@ -53,7 +54,7 @@ class SchemaValidatorTest extends TestCase
             'fields' => ['field1' => []],
         ];
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(SchemaValidationException::class);
         $this->expectExceptionMessage("missing required field: model");
         
         $validator->validate($schema, 'test_model');
@@ -71,7 +72,7 @@ class SchemaValidatorTest extends TestCase
             'fields' => ['field1' => []],
         ];
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(SchemaValidationException::class);
         $this->expectExceptionMessage("missing required field: table");
         
         $validator->validate($schema, 'test_model');
@@ -89,7 +90,7 @@ class SchemaValidatorTest extends TestCase
             'table' => 'test_table',
         ];
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(SchemaValidationException::class);
         $this->expectExceptionMessage("missing required field: fields");
         
         $validator->validate($schema, 'test_model');
@@ -108,7 +109,7 @@ class SchemaValidatorTest extends TestCase
             'fields' => ['field1' => []],
         ];
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(SchemaValidationException::class);
         $this->expectExceptionMessage("does not match requested model");
         
         $validator->validate($schema, 'test_model');
@@ -127,7 +128,7 @@ class SchemaValidatorTest extends TestCase
             'fields' => [],
         ];
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(SchemaValidationException::class);
         $this->expectExceptionMessage("must have a non-empty 'fields' array");
         
         $validator->validate($schema, 'test_model');

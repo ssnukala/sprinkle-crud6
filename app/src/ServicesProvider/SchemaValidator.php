@@ -12,11 +12,15 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\ServicesProvider;
 
+use UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaValidationException;
+
 /**
  * Schema Validator.
  * 
  * Handles validation of schema structure to ensure all required fields are present
  * and properly formatted.
+ * 
+ * Uses UserFrosting framework exceptions for consistency with framework patterns.
  */
 class SchemaValidator
 {
@@ -31,7 +35,7 @@ class SchemaValidator
      * 
      * @return void
      * 
-     * @throws \RuntimeException If schema validation fails
+     * @throws SchemaValidationException If schema validation fails
      */
     public function validate(array $schema, string $model): void
     {
@@ -39,23 +43,23 @@ class SchemaValidator
 
         foreach ($requiredFields as $field) {
             if (!isset($schema[$field])) {
-                throw new \RuntimeException(
-                    "Line:186 Schema for model '{$model}' is missing required field: {$field}"
+                throw new SchemaValidationException(
+                    "Schema for model '{$model}' is missing required field: {$field}"
                 );
             }
         }
 
         // Validate that model name matches
         if ($schema['model'] !== $model) {
-            throw new \RuntimeException(
-                "Line:194 Schema model name '{$schema['model']}' does not match requested model '{$model}'"
+            throw new SchemaValidationException(
+                "Schema model name '{$schema['model']}' does not match requested model '{$model}'"
             );
         }
 
         // Validate fields structure
         if (!is_array($schema['fields']) || empty($schema['fields'])) {
-            throw new \RuntimeException(
-                "Line:201 Schema for model '{$model}' must have a non-empty 'fields' array"
+            throw new SchemaValidationException(
+                "Schema for model '{$model}' must have a non-empty 'fields' array"
             );
         }
     }

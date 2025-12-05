@@ -3,7 +3,8 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            title: 'CRUD6.PAGE',
+            // Remove title from meta to prevent usePageMeta from auto-generating breadcrumbs
+            // Breadcrumbs are now fully managed by useCRUD6Breadcrumbs composable
             description: 'CRUD6.PAGE_DESCRIPTION'
         },
         children: [

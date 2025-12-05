@@ -41,7 +41,7 @@ const modelLabel = computed(() => {
   return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
 })
 
-// Schema fields
+// Schema fields for table display
 const schemaFields = computed(() => {
   // If schema has contexts (multi-context response), use the list context
   if (schema.value?.contexts?.list?.fields) {
@@ -49,6 +49,34 @@ const schemaFields = computed(() => {
   }
   // Otherwise use the fields directly (single-context or legacy response)
   return Object.entries(schema.value?.fields || {})
+})
+
+// Schema fields for modals - merge fields from all contexts to ensure
+// action modals can access fields like 'password' that may only be in 'form' context
+const schemaFieldsForModal = computed(() => {
+  if (!schema.value) return {}
+  
+  // Start with base fields
+  let allFields = { ...(schema.value.fields || {}) }
+  
+  // If schema has contexts (multi-context response), merge fields from all contexts
+  // This ensures action modals can access fields from 'form' context (like password)
+  if (schema.value.contexts) {
+    // Merge form context fields (includes create/edit fields like password)
+    if (schema.value.contexts.form?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.form.fields }
+    }
+    // Also check list and detail contexts
+    if (schema.value.contexts.list?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.list.fields }
+    }
+    if (schema.value.contexts.detail?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.detail.fields }
+    }
+  }
+  
+  debugLog('[PageList.schemaFieldsForModal] Total fields:', Object.keys(allFields).length, 'keys:', Object.keys(allFields))
+  return allFields
 })
 
 // Get create action for button above table
@@ -306,6 +334,7 @@ onMounted(async () => {
                 <CRUD6UnifiedModal
                   :action="action"
                   :record="row"
+                  :schema-fields="schemaFieldsForModal"
                   :model="model"
                   :schema="schema"
                   @saved="sprunjer.fetch()"

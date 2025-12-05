@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import UIkit from 'uikit'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
 import { getAutocompleteAttribute } from '../../utils/fieldTypes'
+import CRUD6Form from './Form.vue'
 
 /**
- * Unified Action Modal for CRUD6
+ * Unified Modal for CRUD6
  * 
  * This component provides a schema-driven modal that can render:
  * - Confirmation dialogs (message only with confirm/cancel)
  * - Input forms (single or multiple fields with validation)
- * - Full CRUD forms (using CRUD6Form component)
+ * - Full CRUD forms (using CRUD6Form component for create/edit)
+ * - Delete confirmations
  * 
  * Button combinations are configurable via schema:
  * - Presets: 'yes_no', 'save_cancel', 'ok_cancel', 'confirm_cancel'
@@ -27,12 +30,14 @@ const translator = useTranslator()
 const props = defineProps<{
     /** The action configuration from schema */
     action: ActionConfig
-    /** The record data for variable interpolation in messages */
+    /** The record data for variable interpolation in messages and for edit forms */
     record?: any
     /** Schema fields configuration for input rendering */
     schemaFields?: Record<string, SchemaField>
-    /** Model name for display */
+    /** Model name for CRUD6Form */
     model?: string
+    /** Complete schema for CRUD6Form (when type is 'form') */
+    schema?: any
 }>()
 
 /**
@@ -43,6 +48,8 @@ const emits = defineEmits<{
     confirmed: [data?: Record<string, any>]
     /** Emitted when user cancels the action */
     cancelled: []
+    /** Emitted when form is saved (for form type) */
+    saved: []
 }>()
 
 /**
@@ -51,6 +58,67 @@ const emits = defineEmits<{
 const fieldValues = ref<Record<string, any>>({})
 const confirmValues = ref<Record<string, any>>({})
 const error = ref('')
+
+/**
+ * Computed - Model label for translations
+ * Priority: schema singular_title > translated singular_title > model name (capitalized)
+ */
+const modelLabel = computed(() => {
+    if (props.schema?.singular_title) {
+        // Try to translate the singular_title in case it's a translation key
+        const translated = translator.translate(props.schema.singular_title)
+        return translated
+    }
+    // Capitalize first letter of model name as fallback
+    return props.model ? props.model.charAt(0).toUpperCase() + props.model.slice(1) : 'Record'
+})
+
+/**
+ * Computed - Translation context with both model and record data
+ * This allows translations to use both {{model}} and record fields
+ * For toggle actions, also translate the field label
+ */
+const translationContext = computed(() => {
+    const context: Record<string, any> = {
+        model: modelLabel.value,
+        ...(props.record || {})
+    }
+    
+    // For toggle actions, translate the field label if present
+    if (props.action.field_label) {
+        // Try to translate the field label (it might be a translation key)
+        context.field = translator.translate(props.action.field_label)
+    } else if (props.action.field && props.schemaFields) {
+        // Fallback: try to get field label from schema fields
+        const fieldConfig = props.schemaFields[props.action.field]
+        if (fieldConfig?.label) {
+            context.field = translator.translate(fieldConfig.label)
+        }
+    }
+    
+    // For title - use the title_field from schema if available
+    // This is the schema-driven approach - no hardcoded field names
+    // Fallback to 'id' which is always available as a route parameter
+    if (props.schema?.title_field && props.record) {
+        context.title = props.record[props.schema.title_field]
+    } else if (props.record?.id) {
+        // Fallback to id (always available from route parameter)
+        context.title = props.record.id
+    }
+    
+    return context
+})
+
+/**
+ * Computed - Translated validation strings
+ */
+const validationStrings = computed(() => ({
+    enterValue: translator.translate('VALIDATION.ENTER_VALUE') || 'Enter value',
+    confirm: translator.translate('VALIDATION.CONFIRM') || 'Confirm',
+    confirmPlaceholder: translator.translate('VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
+    minLengthHint: (min: number) => translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
+    matchHint: translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
+}))
 
 /**
  * Computed - Modal ID for UIKit toggle
@@ -65,10 +133,26 @@ const modalId = computed(() => {
  * - 'confirm' type → defaults to 'yes_no'
  * - 'input'/'form' type → defaults to 'save_cancel'
  * - 'message' type → defaults to 'ok_cancel'
+ * - action.type === 'form' → automatically uses 'form' modal type
+ * - action.type === 'delete' → automatically uses 'confirm' modal type
  */
 const modalConfig = computed((): ModalConfig => {
     const config = props.action.modal_config || {}
-    const modalType = config.type || (props.action.confirm ? 'confirm' : 'input')
+    
+    // Determine modal type from config or action.type
+    let modalType = config.type
+    if (!modalType) {
+        // Auto-detect from action.type
+        if (props.action.type === 'form') {
+            modalType = 'form'
+        } else if (props.action.type === 'delete') {
+            modalType = 'confirm'
+        } else if (props.action.confirm) {
+            modalType = 'confirm'
+        } else {
+            modalType = 'input'
+        }
+    }
     
     // Determine default buttons based on modal type if not explicitly set
     let defaultButtons: ModalConfig['buttons']
@@ -92,10 +176,11 @@ const modalConfig = computed((): ModalConfig => {
     if (config.fields) {
         // Explicitly specified fields - always use them
         fields = config.fields
-    } else if (modalType === 'input' || modalType === 'form') {
-        // Only auto-include action.field for input/form modals (not confirm)
+    } else if (modalType === 'input') {
+        // Only auto-include action.field for input modals (not form or confirm)
         fields = props.action.field ? [props.action.field] : []
     }
+    // For 'form' type, fields come from schema
     // For 'confirm' type without explicit fields, keep fields array empty
     
     // Determine default warning key based on modal type if not explicitly set
@@ -119,14 +204,16 @@ const modalConfig = computed((): ModalConfig => {
  */
 const promptMessage = computed(() => {
     if (!props.action.confirm) return ''
-    return translator.translate(props.action.confirm, props.record)
+    return translator.translate(props.action.confirm, translationContext.value)
 })
 
 /**
  * Computed - Action label (button text)
+ * Supports both translation keys and plain text
  */
 const actionLabel = computed(() => {
-    return translator.translate(props.action.label)
+    if (!props.action.label) return ''
+    return translator.translate(props.action.label, translationContext.value)
 })
 
 /**
@@ -134,7 +221,7 @@ const actionLabel = computed(() => {
  */
 const modalTitle = computed(() => {
     if (modalConfig.value.title) {
-        return translator.translate(modalConfig.value.title, props.record)
+        return translator.translate(modalConfig.value.title, translationContext.value)
     }
     return actionLabel.value
 })
@@ -355,6 +442,16 @@ function handleButtonClick(button: ModalButtonConfig) {
 }
 
 /**
+ * Handle form success (for CRUD6Form)
+ */
+function handleFormSuccess() {
+    emits('saved')
+    emits('confirmed')
+    UIkit.modal(`#${modalId.value}`).hide()
+    resetForm()
+}
+
+/**
  * Handle confirmation
  */
 function handleConfirmed() {
@@ -446,7 +543,17 @@ function resetForm() {
             
             <!-- Modal Body -->
             <div class="uk-modal-body">
-                <form @submit.prevent="handleConfirmed">
+                <!-- Full CRUD Form (for form type) -->
+                <template v-if="modalConfig.type === 'form'">
+                    <CRUD6Form
+                        :crud6="record"
+                        :model="model"
+                        :schema="schema"
+                        @success="handleFormSuccess()" />
+                </template>
+                
+                <!-- Input/Confirm Form (for input/confirm types) -->
+                <form v-else @submit.prevent="handleConfirmed">
                     <!-- Confirmation message (for confirm type or when confirm prop exists) -->
                     <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
                         <p>
@@ -472,7 +579,7 @@ function resetForm() {
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                    :placeholder="validationStrings.enterValue"
                                     :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
@@ -481,7 +588,7 @@ function resetForm() {
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
                                 <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
+                                    {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
@@ -489,7 +596,7 @@ function resetForm() {
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
+                                        :placeholder="validationStrings.confirmPlaceholder"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
@@ -509,11 +616,11 @@ function resetForm() {
                             <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
                                 <li v-if="getMinLength(field.config)" 
                                     :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
+                                    {{ validationStrings.minLengthHint(getMinLength(field.config)) }}
                                 </li>
                                 <li v-if="requiresMatch(field.config)" 
                                     :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
+                                    {{ validationStrings.matchHint }}
                                 </li>
                             </template>
                         </ul>
@@ -521,8 +628,8 @@ function resetForm() {
                 </form>
             </div>
             
-            <!-- Modal Footer with schema-driven buttons -->
-            <div class="uk-modal-footer uk-text-right">
+            <!-- Modal Footer with schema-driven buttons (not shown for form type) -->
+            <div v-if="modalConfig.type !== 'form'" class="uk-modal-footer uk-text-right">
                 <button
                     v-for="(button, index) in resolvedButtons"
                     :key="index"
@@ -536,7 +643,7 @@ function resetForm() {
                     @click="handleButtonClick(button)"
                     :data-test="`btn-${button.action}-${action.key}`">
                     <font-awesome-icon v-if="button.icon" :icon="button.icon" fixed-width />
-                    {{ translator.translate(button.label) }}
+                    {{ translator.translate(button.label, translationContext) }}
                 </button>
             </div>
         </div>

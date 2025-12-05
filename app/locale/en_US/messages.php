@@ -67,6 +67,8 @@ return [
             'ERROR_TITLE'   => 'Error Updating',
         ],
         'UPDATE_FIELD_SUCCESSFUL' => 'Successfully updated {{field}} for {{model}}',
+        'TOGGLE_CONFIRM' => 'Are you sure you want to toggle <strong>{{field}}</strong> for <strong>{{title}}</strong>?',
+        'TOGGLE_SUCCESS' => 'Successfully toggled {{field}}',
         'RELATIONSHIP' => [
             '@TRANSLATION'  => 'Relationships',
             'ATTACH_SUCCESS' => 'Successfully attached {{count}} {{relation}} to {{model}}',

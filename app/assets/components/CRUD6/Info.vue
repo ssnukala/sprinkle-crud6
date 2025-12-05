@@ -5,9 +5,7 @@ import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Actions } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Response } from '@ssnukala/sprinkle-crud6/interfaces'
 import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
-import CRUD6EditModal from './EditModal.vue'
-import CRUD6DeleteModal from './DeleteModal.vue'
-import CRUD6ActionModal from './ActionModal.vue'
+import CRUD6UnifiedModal from './UnifiedModal.vue'
 import { debugLog, debugWarn, debugError } from '../../utils/debug'
 import { getEnrichedAction, inferFieldFromKey } from '../../utils/actionInference'
 
@@ -141,6 +139,21 @@ function formatFieldValue(value: any, field: any): string {
 
 // Handle custom action execution (called after modal confirmation)
 async function handleActionClick(action: ActionConfig, actionData?: Record<string, any>) {
+    // Special handling for delete action - navigate after deletion
+    if (action.type === 'delete') {
+        // Delete confirmation already handled by modal
+        // Navigate to list view after successful deletion
+        router.push({ name: 'crud6.list', params: { model: model.value } })
+        return
+    }
+    
+    // For form type (edit), data is already saved by CRUD6Form
+    // Just refresh the record data
+    if (action.type === 'form') {
+        emits('crud6Updated')
+        return
+    }
+    
     // For actions with input data (password, field updates, etc.), merge with record
     const recordData = actionData ? { ...crud6, ...actionData } : crud6
     
@@ -149,34 +162,6 @@ async function handleActionClick(action: ActionConfig, actionData?: Record<strin
         // Refresh the record data after field update
         emits('crud6Updated')
     }
-}
-
-// Check if action requires a modal (either for confirmation or input)
-function requiresModal(action: ActionConfig): boolean {
-    // Action has confirmation message
-    if (action.confirm) {
-        return true
-    }
-    
-    // Action has modal_config with input type
-    if (action.modal_config?.type === 'input' || action.modal_config?.type === 'form') {
-        return true
-    }
-    
-    // Legacy: password_update type or requires_password_input flag
-    if (action.type === 'password_update' || action.requires_password_input === true) {
-        return true
-    }
-    
-    // Field update with validation.match (requires confirmation input)
-    if (action.type === 'field_update' && action.field && finalSchema.value?.fields) {
-        const fieldConfig = finalSchema.value.fields[action.field]
-        if (fieldConfig?.validation?.match === true) {
-            return true
-        }
-    }
-    
-    return false
 }
 
 // Get action label with proper fallback logic
@@ -237,11 +222,16 @@ function isActionVisible(action: ActionConfig): boolean {
 }
 
 // Get custom actions from schema with enriched properties
+// Exclude create_action (doesn't make sense when viewing a specific record)
 const customActions = computed(() => {
     if (!finalSchema.value?.actions) return []
     
+    debugLog('[Info] customActions - raw actions:', finalSchema.value.actions?.map(a => a.key))
+    
     // Enrich each action with inferred properties
+    // Filter out create_action - it's only relevant for list view
     return finalSchema.value.actions
+        .filter(action => action.key !== 'create_action')
         .map(action => {
             // Infer field if not specified
             const field = action.field || inferFieldFromKey(action.key)
@@ -318,53 +308,19 @@ const customActions = computed(() => {
             
             <!-- Action buttons with dynamic permissions -->
             
-            <!-- Custom action buttons from schema -->
-            <!-- Unified ActionModal handles all cases: confirmation, input, or both -->
+            <!-- All actions (custom + default) from schema using UnifiedModal -->
+            <!-- UnifiedModal handles all types: form, delete, field_update, confirmation, etc. -->
             <template v-for="action in customActions" :key="action.key">
-                <!-- Actions requiring modal (confirmation or input) -->
-                <CRUD6ActionModal
-                    v-if="requiresModal(action)"
+                <!-- All actions use UnifiedModal for consistency -->
+                <CRUD6UnifiedModal
                     :action="action"
                     :record="crud6"
                     :schema-fields="schemaFieldsForModal"
+                    :schema="finalSchema"
                     :model="model"
-                    @confirmed="handleActionClick(action, $event)" />
-                
-                <!-- Action without modal - direct button -->
-                <button
-                    v-else
-                    @click="handleActionClick(action)"
-                    :disabled="actionLoading"
-                    :data-test="`btn-action-${action.key}`"
-                    :class="[
-                        'uk-width-1-1',
-                        'uk-margin-small-bottom',
-                        'uk-button',
-                        'uk-button-small',
-                        action.style ? `uk-button-${action.style}` : 'uk-button-default'
-                    ]">
-                    <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-                    {{ getActionLabel(action) }}
-                </button>
+                    @confirmed="handleActionClick(action, $event)"
+                    @saved="emits('crud6Updated')" />
             </template>
-            
-            <!-- Edit Modal - renders trigger button and modal together (UIKit handles visibility) -->
-            <CRUD6EditModal
-                v-if="hasUpdatePermission"
-                :crud6="crud6"
-                :model="model"
-                :schema="finalSchema"
-                @saved="emits('crud6Updated')"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small" />
-            
-            <!-- Delete Modal - renders trigger button and modal together (UIKit handles visibility) -->
-            <CRUD6DeleteModal
-                v-if="hasDeletePermission"
-                :crud6="crud6"
-                :model="model"
-                :schema="finalSchema"
-                @deleted="router.push({ name: 'crud6.list', params: { model: model } })"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small" />
             
             <!-- Slot for additional content -->
             <slot data-test="slot"></slot>
@@ -387,21 +343,6 @@ const customActions = computed(() => {
                 </dd>
             </dl>
             <hr />
-            <!-- Legacy Edit Modal - always rendered for backward compatibility -->
-            <CRUD6EditModal
-                v-if="$checkAccess('update_crud6_field')"
-                :crud6="crud6"
-                :schema="finalSchema"
-                @saved="emits('crud6Updated')"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small" />
-            
-            <!-- Legacy Delete Modal - always rendered for backward compatibility -->
-            <CRUD6DeleteModal
-                v-if="$checkAccess('delete_crud6_row')"
-                :crud6="crud6"
-                :schema="finalSchema"
-                @deleted="router.push({ name: 'crud6.list', params: { model: model } })"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small" />
             <slot data-test="slot"></slot>
         </template>
     </UFCardBox>

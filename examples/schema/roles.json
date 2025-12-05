@@ -2,6 +2,7 @@
     "model": "roles",
     "title": "CRUD6.ROLE.PAGE",
     "singular_title": "CRUD6.ROLE.1",
+    "title_field": "name",
     "description": "CRUD6.ROLE.PAGE_DESCRIPTION",
     "table": "roles",
     "primary_key": "id",
@@ -75,7 +76,7 @@
             "type": "integer",
             "label": "CRUD6.ROLE.ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "show_in": [
                 "detail"
             ]
@@ -147,7 +148,7 @@
         "created_at": {
             "type": "datetime",
             "label": "CRUD6.ROLE.CREATED_AT",
-            "editable": false,
+            "readonly": true,
             "show_in": [
                 "detail"
             ],
@@ -156,7 +157,7 @@
         "updated_at": {
             "type": "datetime",
             "label": "CRUD6.ROLE.UPDATED_AT",
-            "editable": false,
+            "readonly": true,
             "show_in": [
                 "detail"
             ],

@@ -2,17 +2,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
+import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
-import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
-import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
-import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
+import CRUD6UnifiedModal from '../components/CRUD6/UnifiedModal.vue'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const translator = useTranslator()
 const { setListBreadcrumb } = useCRUD6Breadcrumbs()
 
 // Current model name from route
@@ -35,13 +35,13 @@ const hasDeletePermission = computed(() => hasPermission('delete'))
 // Model label for buttons - prioritize singular_title over model name
 const modelLabel = computed(() => {
   if (schema.value?.singular_title) {
-    return schema.value.singular_title
+    return translator.translate(schema.value.singular_title)
   }
   // Capitalize first letter of model name as fallback
   return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
 })
 
-// Schema fields
+// Schema fields for table display
 const schemaFields = computed(() => {
   // If schema has contexts (multi-context response), use the list context
   if (schema.value?.contexts?.list?.fields) {
@@ -49,6 +49,54 @@ const schemaFields = computed(() => {
   }
   // Otherwise use the fields directly (single-context or legacy response)
   return Object.entries(schema.value?.fields || {})
+})
+
+// Schema fields for modals - merge fields from all contexts to ensure
+// action modals can access fields like 'password' that may only be in 'form' context
+const schemaFieldsForModal = computed(() => {
+  if (!schema.value) return {}
+  
+  // Start with base fields
+  let allFields = { ...(schema.value.fields || {}) }
+  
+  // If schema has contexts (multi-context response), merge fields from all contexts
+  // This ensures action modals can access fields from 'form' context (like password)
+  if (schema.value.contexts) {
+    // Merge form context fields (includes create/edit fields like password)
+    if (schema.value.contexts.form?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.form.fields }
+    }
+    // Also check list and detail contexts
+    if (schema.value.contexts.list?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.list.fields }
+    }
+    if (schema.value.contexts.detail?.fields) {
+      allFields = { ...allFields, ...schema.value.contexts.detail.fields }
+    }
+  }
+  
+  debugLog('[PageList.schemaFieldsForModal] Total fields:', Object.keys(allFields).length, 'keys:', Object.keys(allFields))
+  return allFields
+})
+
+// Get create action for button above table
+const createAction = computed(() => {
+  const actions = schema.value?.actions || []
+  debugLog('[PageList.createAction] All actions:', actions?.map(a => a.key))
+  const create = actions.find(action => action.key === 'create_action')
+  debugLog('[PageList.createAction] Found create_action:', !!create)
+  return create
+})
+
+// Get all actions EXCEPT create_action for table row dropdowns
+const rowActions = computed(() => {
+  debugLog('[PageList.rowActions] Computing row actions')
+  debugLog('[PageList.rowActions] schema.value?.actions:', schema.value?.actions?.map(a => a.key))
+  
+  // Use all actions from schema except create_action (not relevant for individual rows)
+  const actions = (schema.value?.actions || []).filter(action => action.key !== 'create_action')
+  debugLog('[PageList.rowActions] Filtered out create_action, returning', actions.length, 'actions:', actions.map(a => a.key))
+  return actions
 })
 
 // API URL
@@ -142,8 +190,9 @@ onMounted(async () => {
     
     debugLog('[PageList.onMounted] After setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
     
-    // Request BOTH 'list' and 'form' contexts in a single call
+    // Request schema with 'list' and 'form' contexts
     // This avoids duplicate API calls when the create/edit modal is opened
+    debugLog('[PageList.onMounted] Requesting schema with contexts: list,form')
     const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(async () => {
@@ -190,14 +239,26 @@ onMounted(async () => {
       :dataUrl="apiUrl"
       :searchColumn="searchColumn">
 
-      <!-- Actions -->
+      <!-- Actions - Only Create button -->
       <template #actions="{ sprunjer }">
-        <CRUD6CreateModal
-          v-if="hasCreatePermission && schema"
+        <CRUD6UnifiedModal
+          v-if="createAction"
+          :action="createAction"
           :model="model"
           :schema="schema"
           @saved="sprunjer.fetch()"
-          class="uk-button uk-button-primary" />
+          @confirmed="sprunjer.fetch()">
+          <template #trigger="{ modalId }">
+            <a
+              :href="`#${modalId}`"
+              uk-toggle
+              data-test="btn-create"
+              class="uk-button uk-button-primary">
+              <font-awesome-icon icon="plus" fixed-width />
+              {{ $t('CRUD6.CREATE', { model: modelLabel }) }}
+            </a>
+          </template>
+        </CRUD6UnifiedModal>
       </template>
 
       <!-- Header -->
@@ -268,21 +329,24 @@ onMounted(async () => {
                   <font-awesome-icon icon="eye" fixed-width /> View
                 </RouterLink>
               </li>
-              <li v-if="hasEditPermission && schema">
-                <CRUD6EditModal 
-                  :crud6="row" 
-                  :model="model" 
-                  :schema="schema" 
-                  @saved="sprunjer.fetch()" 
-                  class="uk-drop-close" />
-              </li>
-              <li v-if="hasDeletePermission && schema">
-                <CRUD6DeleteModal 
-                  :crud6="row" 
-                  :model="model" 
-                  :schema="schema" 
-                  @deleted="sprunjer.fetch()" 
-                  class="uk-drop-close" />
+              <!-- All actions from schema (create, edit, delete, toggle, etc.) -->
+              <li v-for="action in rowActions" :key="action.key">
+                <CRUD6UnifiedModal
+                  :action="action"
+                  :record="row"
+                  :schema-fields="schemaFieldsForModal"
+                  :model="model"
+                  :schema="schema"
+                  @saved="sprunjer.fetch()"
+                  @confirmed="sprunjer.fetch()"
+                  class="uk-drop-close">
+                  <template #trigger="{ modalId }">
+                    <a :href="`#${modalId}`" uk-toggle>
+                      <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                      {{ translator.translate(action.label || action.key, { model: modelLabel, ...row }) }}
+                    </a>
+                  </template>
+                </CRUD6UnifiedModal>
               </li>
             </ul>
           </div>

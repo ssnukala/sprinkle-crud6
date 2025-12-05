@@ -77,12 +77,14 @@ export interface ActionConfig {
     /** 
      * Action type
      * - 'field_update': Update a field value (including password fields with requires_password_input)
-     * - 'modal': Show a modal component
+     * - 'form': Show a form modal (create/edit)
+     * - 'delete': Delete operation with confirmation
+     * - 'modal': Show a custom modal component
      * - 'route': Navigate to a route
      * - 'api_call': Make an API call
      * @deprecated 'password_update' is deprecated. Use 'field_update' with requires_password_input: true instead.
      */
-    type: 'field_update' | 'modal' | 'route' | 'api_call' | 'password_update'
+    type: 'field_update' | 'form' | 'delete' | 'modal' | 'route' | 'api_call' | 'password_update'
     /** Permission required to see/use this action (can be auto-inferred from model and action type) */
     permission?: string
     /** For field_update: field to update (can be auto-inferred from key pattern, e.g., "password_action" -> "password") */
@@ -128,6 +130,19 @@ export interface ActionConfig {
      * "visible_when": { "status": "active", "is_archived": false }
      */
     visible_when?: Record<string, any>
+    /**
+     * Scope filtering: where this action should appear
+     * - 'list': Appears in list/table view
+     * - 'detail': Appears in detail/view page
+     * - Array: Can appear in multiple scopes
+     * - Omitted: Appears in all scopes (backward compatible)
+     * 
+     * @example
+     * "scope": ["list"]  // Only in list view (e.g., create button)
+     * "scope": ["detail"]  // Only in detail view (e.g., edit/delete buttons)
+     * "scope": ["list", "detail"]  // Both contexts
+     */
+    scope?: string | string[]
 }
 
 export interface CRUD6Schema {

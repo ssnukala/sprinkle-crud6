@@ -1,0 +1,229 @@
+{
+  "model": "products",
+  "title": "PRODUCT.PLURAL",
+  "singular_title": "PRODUCT.SINGULAR",
+  "description": "Manage products with default actions and custom workflows",
+  "table": "products",
+  "title_field": "name",
+  "permissions": {
+    "read": "view_products",
+    "create": "create_product",
+    "update": "update_product",
+    "delete": "delete_product"
+  },
+  "default_sort": {
+    "created_at": "desc"
+  },
+  "actions": [
+    {
+      "key": "duplicate_product",
+      "label": "Duplicate Product",
+      "icon": "copy",
+      "type": "api_call",
+      "method": "POST",
+      "endpoint": "/api/crud6/products/{id}/duplicate",
+      "scope": ["detail"],
+      "style": "secondary",
+      "permission": "create_product",
+      "confirm": "Create a copy of <strong>{{name}}</strong>?",
+      "success_message": "Product duplicated successfully",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": "yes_no"
+      }
+    },
+    {
+      "key": "publish_product",
+      "label": "Publish",
+      "icon": "check-circle",
+      "type": "field_update",
+      "field": "status",
+      "value": "published",
+      "scope": ["detail"],
+      "style": "primary",
+      "permission": "update_product",
+      "confirm": "Publish <strong>{{name}}</strong>? This will make it visible to customers.",
+      "success_message": "Product published successfully",
+      "visible_when": { "status": "draft" },
+      "modal_config": {
+        "type": "confirm",
+        "warning": "Published products cannot be unpublished easily"
+      }
+    },
+    {
+      "key": "archive_product",
+      "label": "Archive",
+      "icon": "box-archive",
+      "type": "field_update",
+      "field": "status",
+      "value": "archived",
+      "scope": ["detail"],
+      "style": "warning",
+      "permission": "update_product",
+      "confirm": "Archive <strong>{{name}}</strong>? It will no longer appear in active listings.",
+      "success_message": "Product archived",
+      "visible_when": { "status": "published" }
+    },
+    {
+      "key": "bulk_import",
+      "label": "Import Products",
+      "icon": "upload",
+      "type": "modal",
+      "modal": "ProductImportModal",
+      "scope": ["list"],
+      "style": "secondary",
+      "permission": "create_product"
+    },
+    {
+      "key": "export_products",
+      "label": "Export All",
+      "icon": "download",
+      "type": "api_call",
+      "method": "GET",
+      "endpoint": "/api/crud6/products/export",
+      "scope": ["list"],
+      "style": "default",
+      "permission": "view_products"
+    }
+  ],
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "editable": false,
+      "sortable": true,
+      "filterable": false,
+      "show_in": ["list", "detail"]
+    },
+    "name": {
+      "type": "string",
+      "label": "Product Name",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 3,
+          "max": 100
+        }
+      }
+    },
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "validation": {
+        "required": true,
+        "unique": true,
+        "length": {
+          "min": 3,
+          "max": 50
+        }
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "show_in": ["create", "edit", "detail"],
+      "rows": 5
+    },
+    "price": {
+      "type": "decimal",
+      "label": "Price",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "validation": {
+        "required": true,
+        "min": 0,
+        "max": 999999.99
+      }
+    },
+    "cost": {
+      "type": "decimal",
+      "label": "Cost",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "show_in": ["create", "edit", "detail"],
+      "validation": {
+        "min": 0,
+        "max": 999999.99
+      }
+    },
+    "stock_quantity": {
+      "type": "integer",
+      "label": "Stock",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "validation": {
+        "required": true,
+        "min": 0
+      }
+    },
+    "category_id": {
+      "type": "smartlookup",
+      "label": "Category",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "lookup": {
+        "model": "categories",
+        "id": "id",
+        "desc": "name"
+      },
+      "validation": {
+        "required": true
+      }
+    },
+    "status": {
+      "type": "string",
+      "label": "Status",
+      "default": "draft",
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"],
+      "validation": {
+        "in": ["draft", "published", "archived"]
+      }
+    },
+    "featured": {
+      "type": "boolean",
+      "label": "Featured",
+      "ui": "toggle",
+      "default": false,
+      "sortable": true,
+      "filterable": true,
+      "show_in": ["list", "create", "edit", "detail"]
+    },
+    "created_at": {
+      "type": "datetime",
+      "label": "Created At",
+      "editable": false,
+      "sortable": true,
+      "filterable": false,
+      "show_in": ["detail"]
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "editable": false,
+      "sortable": true,
+      "filterable": false,
+      "show_in": ["detail"]
+    }
+  }
+}

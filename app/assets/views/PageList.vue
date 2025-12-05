@@ -2,17 +2,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
+import { usePageMeta, useTranslator } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6Schema, useCRUD6Breadcrumbs } from '@ssnukala/sprinkle-crud6/composables'
-import CRUD6CreateModal from '../components/CRUD6/CreateModal.vue'
-import CRUD6EditModal from '../components/CRUD6/EditModal.vue'
-import CRUD6DeleteModal from '../components/CRUD6/DeleteModal.vue'
+import CRUD6UnifiedModal from '../components/CRUD6/UnifiedModal.vue'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
+import type { ActionConfig } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 
 const route = useRoute()
 const router = useRouter()
 const page = usePageMeta()
+const translator = useTranslator()
 const { setListBreadcrumb } = useCRUD6Breadcrumbs()
 
 // Current model name from route
@@ -35,7 +35,7 @@ const hasDeletePermission = computed(() => hasPermission('delete'))
 // Model label for buttons - prioritize singular_title over model name
 const modelLabel = computed(() => {
   if (schema.value?.singular_title) {
-    return schema.value.singular_title
+    return translator.translate(schema.value.singular_title)
   }
   // Capitalize first letter of model name as fallback
   return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
@@ -49,6 +49,28 @@ const schemaFields = computed(() => {
   }
   // Otherwise use the fields directly (single-context or legacy response)
   return Object.entries(schema.value?.fields || {})
+})
+
+// Get list-scoped actions from schema
+const listActions = computed(() => {
+  // Get actions from schema (could be in contexts.list or top-level)
+  const actions = schema.value?.contexts?.list?.actions || schema.value?.actions || []
+  return actions
+})
+
+// Get detail-scoped actions for table rows (edit, delete, etc.)
+const detailActions = computed(() => {
+  // For table rows, we want actions that would appear in detail view
+  // These are typically edit and delete
+  // We'll filter from the full actions list for detail scope
+  const allActions = schema.value?.actions || []
+  
+  // Filter for actions with detail scope or no scope (backward compatible)
+  return allActions.filter(action => {
+    if (!action.scope) return false // Only scoped actions in table
+    const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
+    return scopes.includes('detail')
+  })
 })
 
 // API URL
@@ -192,12 +214,17 @@ onMounted(async () => {
 
       <!-- Actions -->
       <template #actions="{ sprunjer }">
-        <CRUD6CreateModal
-          v-if="hasCreatePermission && schema"
+        <!-- All list-scoped actions from schema (including default create action) -->
+        <CRUD6UnifiedModal
+          v-for="action in listActions"
+          :key="action.key"
+          :action="action"
           :model="model"
           :schema="schema"
           @saved="sprunjer.fetch()"
-          class="uk-button uk-button-primary" />
+          @confirmed="sprunjer.fetch()"
+          class="uk-button"
+          :class="action.style ? `uk-button-${action.style}` : 'uk-button-primary'" />
       </template>
 
       <!-- Header -->
@@ -268,21 +295,23 @@ onMounted(async () => {
                   <font-awesome-icon icon="eye" fixed-width /> View
                 </RouterLink>
               </li>
-              <li v-if="hasEditPermission && schema">
-                <CRUD6EditModal 
-                  :crud6="row" 
-                  :model="model" 
-                  :schema="schema" 
-                  @saved="sprunjer.fetch()" 
-                  class="uk-drop-close" />
-              </li>
-              <li v-if="hasDeletePermission && schema">
-                <CRUD6DeleteModal 
-                  :crud6="row" 
-                  :model="model" 
-                  :schema="schema" 
-                  @deleted="sprunjer.fetch()" 
-                  class="uk-drop-close" />
+              <!-- Detail-scoped actions from schema (edit, delete, etc.) -->
+              <li v-for="action in detailActions" :key="action.key">
+                <CRUD6UnifiedModal
+                  :action="action"
+                  :record="row"
+                  :model="model"
+                  :schema="schema"
+                  @saved="sprunjer.fetch()"
+                  @confirmed="sprunjer.fetch()"
+                  class="uk-drop-close">
+                  <template #trigger="{ modalId }">
+                    <a :href="`#${modalId}`" uk-toggle>
+                      <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                      {{ translator.translate(action.label || action.key, { model: modelLabel, ...row }) }}
+                    </a>
+                  </template>
+                </CRUD6UnifiedModal>
               </li>
             </ul>
           </div>

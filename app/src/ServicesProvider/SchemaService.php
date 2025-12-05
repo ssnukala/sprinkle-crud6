@@ -662,6 +662,9 @@ class SchemaService
         // Normalize boolean field types with UI specification
         $schema = $this->normalizeBooleanTypes($schema);
 
+        // Add default CRUD actions if not disabled
+        $schema = $this->addDefaultActions($schema);
+
         // If schema was loaded from connection-based path and doesn't have explicit connection, set it
         if ($connection !== null && !isset($schema['connection'])) {
             $schema['connection'] = $connection;
@@ -1017,6 +1020,12 @@ class SchemaService
                         }
                     }
                 }
+
+                // Include actions scoped for list view
+                if (isset($schema['actions'])) {
+                    $data['actions'] = $this->filterActionsByScope($schema['actions'], 'list');
+                }
+
                 return $data;
 
             case 'create':
@@ -1097,7 +1106,7 @@ class SchemaService
 
                 // Include actions configuration if present (for custom action buttons)
                 if (isset($schema['actions'])) {
-                    $data['actions'] = $schema['actions'];
+                    $data['actions'] = $this->filterActionsByScope($schema['actions'], 'detail');
                 }
 
                 // Include relationships configuration if present (for data fetching)
@@ -1446,5 +1455,159 @@ class SchemaService
         
         // Not a translation key, return as-is
         return $value;
+    }
+
+    /**
+     * Add default CRUD actions to schema if not already defined.
+     * 
+     * This method intelligently adds standard CRUD actions (create, edit, delete)
+     * to schemas that don't already define them. Each action is scoped appropriately:
+     * 
+     * - 'create': Appears in list view (scope: 'list')
+     * - 'edit': Appears in detail view (scope: 'detail')
+     * - 'delete': Appears in detail view (scope: 'detail')
+     * 
+     * Actions are only added if:
+     * 1. Schema doesn't have an existing action with the same key
+     * 2. Schema permissions allow the operation
+     * 3. Schema hasn't explicitly set `default_actions: false`
+     * 
+     * Schemas can override default actions in two ways:
+     * 1. Set `"default_actions": false` to disable all defaults
+     * 2. Define custom actions with keys matching default keys (create_action, edit_action, delete_action)
+     * 
+     * @param array $schema The schema array
+     * 
+     * @return array The schema with default actions added
+     */
+    protected function addDefaultActions(array $schema): array
+    {
+        // Check if default actions are disabled
+        if (isset($schema['default_actions']) && $schema['default_actions'] === false) {
+            $this->debugLog("[CRUD6 SchemaService] Default actions disabled for model", [
+                'model' => $schema['model'] ?? 'unknown',
+            ]);
+            return $schema;
+        }
+
+        // Initialize actions array if not present
+        if (!isset($schema['actions'])) {
+            $schema['actions'] = [];
+        }
+
+        // Get existing action keys for duplicate detection
+        $existingKeys = array_column($schema['actions'], 'key');
+
+        // Get model label for translations
+        $modelLabel = $schema['singular_title'] ?? $schema['title'] ?? ucfirst($schema['model']);
+
+        // Default actions with scope filtering
+        $defaultActions = [];
+
+        // Create action - appears in list view
+        if (!in_array('create_action', $existingKeys) && $this->hasSchemaPermission($schema, 'create')) {
+            $defaultActions[] = [
+                'key' => 'create_action',
+                'label' => "CRUD6.CREATE",
+                'icon' => 'plus',
+                'type' => 'form',
+                'style' => 'primary',
+                'permission' => $schema['permissions']['create'] ?? 'create',
+                'scope' => ['list'],
+                'modal_config' => [
+                    'type' => 'form',
+                    'title' => "CRUD6.CREATE",
+                ],
+            ];
+        }
+
+        // Edit action - appears in detail view
+        if (!in_array('edit_action', $existingKeys) && $this->hasSchemaPermission($schema, 'update')) {
+            $defaultActions[] = [
+                'key' => 'edit_action',
+                'label' => "CRUD6.EDIT",
+                'icon' => 'pen-to-square',
+                'type' => 'form',
+                'style' => 'primary',
+                'permission' => $schema['permissions']['update'] ?? 'update',
+                'scope' => ['detail'],
+                'modal_config' => [
+                    'type' => 'form',
+                    'title' => "CRUD6.EDIT",
+                ],
+            ];
+        }
+
+        // Delete action - appears in detail view
+        if (!in_array('delete_action', $existingKeys) && $this->hasSchemaPermission($schema, 'delete')) {
+            $defaultActions[] = [
+                'key' => 'delete_action',
+                'label' => "CRUD6.DELETE",
+                'icon' => 'trash',
+                'type' => 'delete',
+                'style' => 'danger',
+                'permission' => $schema['permissions']['delete'] ?? 'delete',
+                'scope' => ['detail'],
+                'confirm' => "CRUD6.DELETE_CONFIRM",
+                'modal_config' => [
+                    'type' => 'confirm',
+                    'buttons' => 'yes_no',
+                    'warning' => 'WARNING_CANNOT_UNDONE',
+                ],
+            ];
+        }
+
+        // Prepend default actions (so custom actions appear after)
+        if (!empty($defaultActions)) {
+            $schema['actions'] = array_merge($defaultActions, $schema['actions']);
+            
+            $this->debugLog("[CRUD6 SchemaService] Added default actions", [
+                'model' => $schema['model'] ?? 'unknown',
+                'actions_added' => array_column($defaultActions, 'key'),
+            ]);
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Check if schema has permission for an operation.
+     * 
+     * @param array  $schema    The schema array
+     * @param string $operation The operation (create, read, update, delete)
+     * 
+     * @return bool True if permission exists
+     */
+    protected function hasSchemaPermission(array $schema, string $operation): bool
+    {
+        return isset($schema['permissions'][$operation]);
+    }
+
+    /**
+     * Filter actions by scope.
+     * 
+     * Returns only actions that should appear in the specified scope (list or detail).
+     * Actions without a scope are included in all scopes for backward compatibility.
+     * 
+     * @param array  $actions Actions array from schema
+     * @param string $scope   The scope to filter by ('list' or 'detail')
+     * 
+     * @return array Filtered actions array
+     */
+    public function filterActionsByScope(array $actions, string $scope): array
+    {
+        return array_values(array_filter($actions, function ($action) use ($scope) {
+            // Include actions without scope (backward compatibility)
+            if (!isset($action['scope'])) {
+                return true;
+            }
+
+            // Check if scope matches
+            if (is_array($action['scope'])) {
+                return in_array($scope, $action['scope']);
+            }
+
+            return $action['scope'] === $scope;
+        }));
     }
 }

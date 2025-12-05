@@ -312,15 +312,15 @@ emit('cancelled')
 'CONFIRM' => 'Confirm',
 ```
 
-## Backward Compatibility
+## Replaced Components
 
-The old modal components are **deprecated but still functional**:
-- `CRUD6CreateModal`
-- `CRUD6EditModal`
-- `CRUD6DeleteModal`
-- `CRUD6ActionModal`
+The following modal components have been **removed** and replaced by `CRUD6UnifiedModal`:
+- `CRUD6CreateModal` → Use UnifiedModal with `type: 'form'` and `scope: ['list']`
+- `CRUD6EditModal` → Use UnifiedModal with `type: 'form'` and `scope: ['detail']`
+- `CRUD6DeleteModal` → Use UnifiedModal with `type: 'delete'` and `scope: ['detail']`
+- `CRUD6ActionModal` → Use UnifiedModal for all custom actions
 
-They will be removed in a future major version. Migrate to `CRUD6UnifiedModal` when convenient.
+All functionality is now provided by `CRUD6UnifiedModal` with automatic schema-based action generation.
 
 ## Examples
 

@@ -2,9 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 // Test that all components can be imported from their new flattened structure
 import {
-    CRUD6CreateModal,
-    CRUD6DeleteModal,
-    CRUD6EditModal,
+    CRUD6UnifiedModal,
     CRUD6Form,
     CRUD6Info,
     CRUD6Details
@@ -19,10 +17,8 @@ import {
 } from '../../views'
 
 describe('Component Imports', () => {
-    test('CRUD6 modal components should be defined', () => {
-        expect(CRUD6CreateModal).toBeDefined()
-        expect(CRUD6EditModal).toBeDefined()
-        expect(CRUD6DeleteModal).toBeDefined()
+    test('CRUD6 UnifiedModal component should be defined', () => {
+        expect(CRUD6UnifiedModal).toBeDefined()
     })
 
     test('CRUD6 form and info components should be defined', () => {

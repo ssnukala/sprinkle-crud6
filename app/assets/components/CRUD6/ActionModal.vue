@@ -306,47 +306,6 @@ const getFieldLabel = (fieldKey: string, fieldConfig?: SchemaField) => {
     return fieldKey
 }
 
-// TODO: Consider extracting these translation helper functions into a separate
-// useFieldTranslations composable for reusability across components
-/**
- * Get translated placeholder for field input
- */
-const getFieldPlaceholder = (fieldKey: string, fieldConfig?: SchemaField) => {
-    const label = getFieldLabel(fieldKey, fieldConfig)
-    const enterValue = translator.translate('VALIDATION.ENTER_VALUE')
-    return enterValue || `Enter ${label.toLowerCase()}`
-}
-
-/**
- * Get translated placeholder for confirm input
- */
-const getConfirmPlaceholder = (fieldKey: string, fieldConfig?: SchemaField) => {
-    const label = getFieldLabel(fieldKey, fieldConfig)
-    const confirmPlaceholder = translator.translate('VALIDATION.CONFIRM_PLACEHOLDER')
-    return confirmPlaceholder || `Confirm ${label.toLowerCase()}`
-}
-
-/**
- * Get translated "Confirm" prefix
- */
-const getConfirmPrefix = () => {
-    return translator.translate('VALIDATION.CONFIRM') || 'Confirm'
-}
-
-/**
- * Get translated min length hint
- */
-const getMinLengthHint = (min: number) => {
-    return translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`
-}
-
-/**
- * Get translated match hint
- */
-const getMatchHint = () => {
-    return translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
-}
-
 /**
  * Validate all fields
  */
@@ -513,7 +472,7 @@ function resetForm() {
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
-                                    :placeholder="getFieldPlaceholder(field.key, field.config)"
+                                    :placeholder="$t('VALIDATION.ENTER_VALUE') || `Enter ${getFieldLabel(field.key, field.config).toLowerCase()}`"
                                     :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                     required
                                     :minlength="getMinLength(field.config) || undefined" />
@@ -522,7 +481,7 @@ function resetForm() {
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
                                 <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
-                                    {{ getConfirmPrefix() }} {{ getFieldLabel(field.key, field.config) }}
+                                    {{ $t('VALIDATION.CONFIRM') || 'Confirm' }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
@@ -530,7 +489,7 @@ function resetForm() {
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="getConfirmPlaceholder(field.key, field.config)"
+                                        :placeholder="$t('VALIDATION.CONFIRM_PLACEHOLDER') || `Confirm ${getFieldLabel(field.key, field.config).toLowerCase()}`"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
                                         required />
                                 </div>
@@ -550,11 +509,11 @@ function resetForm() {
                             <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
                                 <li v-if="getMinLength(field.config)" 
                                     :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ getMinLengthHint(getMinLength(field.config)) }}
+                                    {{ $t('VALIDATION.MIN_LENGTH_HINT', { min: getMinLength(field.config) }) || `Minimum ${getMinLength(field.config)} characters` }}
                                 </li>
                                 <li v-if="requiresMatch(field.config)" 
                                     :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ getMatchHint() }}
+                                    {{ $t('VALIDATION.MATCH_HINT') || 'Values must match' }}
                                 </li>
                             </template>
                         </ul>

@@ -223,28 +223,13 @@ async function fetch() {
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 
-                // Update page title with record name if available
-                // Use title_field from schema, or fall back to ID
-                const titleField = flattenedSchema.value?.title_field
-                let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
-                
-                debugLog('[PageRow.fetch] Record fetched:', {
-                    recordId: recordId.value,
-                    titleField,
-                    recordName,
-                    availableFields: Object.keys(fetchedRow).slice(0, 10), // Limit to first 10 for performance
-                    modelLabel: modelLabel.value
-                })
-                
-                // Wait for schema to be available before setting breadcrumbs
-                // This prevents setting breadcrumbs with incomplete model title
-                // Use a simple polling mechanism to ensure schema is loaded
+                // Wait for schema to be available before calculating record name and setting breadcrumbs
+                // This prevents using ID instead of title_field value
                 console.log('[BREADCRUMB DEBUG] Starting schema wait', {
                     hasFlattenedSchema: !!flattenedSchema.value,
                     hasTitle: !!flattenedSchema.value?.title,
                     title: flattenedSchema.value?.title,
                     modelTitleValue: modelTitle.value,
-                    recordName,
                     recordId: recordId.value
                 })
                 
@@ -257,6 +242,19 @@ async function fetch() {
                         console.log(`[BREADCRUMB DEBUG] Waiting for schema... retry ${retries}/${maxRetries}`)
                     }
                 }
+                
+                // NOW calculate record name after schema is available
+                // Use title_field from schema, or fall back to ID
+                const titleField = flattenedSchema.value?.title_field
+                let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                
+                debugLog('[PageRow.fetch] Record fetched:', {
+                    recordId: recordId.value,
+                    titleField,
+                    recordName,
+                    availableFields: Object.keys(fetchedRow).slice(0, 10), // Limit to first 10 for performance
+                    modelLabel: modelLabel.value
+                })
                 
                 console.log('[BREADCRUMB DEBUG] Schema wait complete', {
                     retries,

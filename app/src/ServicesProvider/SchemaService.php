@@ -1464,6 +1464,9 @@ class SchemaService
      * before changing the value. This method adds default confirm messages and modal
      * config if not already present.
      * 
+     * The field label is included as a translatable parameter so it can be properly
+     * translated in the frontend.
+     * 
      * @param array $actions Actions array from schema
      * @param array $schema  Full schema for field label lookups
      * 
@@ -1484,11 +1487,19 @@ class SchemaService
             }
 
             $fieldConfig = $schema['fields'][$fieldName] ?? null;
+            // Use field label (may be a translation key or plain text)
             $fieldLabel = $fieldConfig['label'] ?? ucfirst(str_replace('_', ' ', $fieldName));
 
             // Add default confirm message if not present
+            // Use CRUD6.TOGGLE_CONFIRM translation key which will handle the field label translation
             if (!isset($action['confirm'])) {
-                $action['confirm'] = "Are you sure you want to toggle <strong>{$fieldLabel}</strong> for <strong>{{" . ($schema['title_field'] ?? 'id') . "}}</strong>?";
+                $titleField = $schema['title_field'] ?? 'id';
+                // Store field label for translation
+                if (!isset($action['field_label'])) {
+                    $action['field_label'] = $fieldLabel;
+                }
+                // Use translation key for confirm message
+                $action['confirm'] = "CRUD6.TOGGLE_CONFIRM";
             }
 
             // Add default modal config if not present

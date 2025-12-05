@@ -76,12 +76,32 @@ const modelLabel = computed(() => {
 /**
  * Computed - Translation context with both model and record data
  * This allows translations to use both {{model}} and record fields like {{user_name}}
+ * For toggle actions, also translate the field label
  */
 const translationContext = computed(() => {
-    return {
+    const context: Record<string, any> = {
         model: modelLabel.value,
         ...(props.record || {})
     }
+    
+    // For toggle actions, translate the field label if present
+    if (props.action.field_label) {
+        // Try to translate the field label (it might be a translation key)
+        context.field = translator.translate(props.action.field_label)
+    } else if (props.action.field && props.schemaFields) {
+        // Fallback: try to get field label from schema fields
+        const fieldConfig = props.schemaFields[props.action.field]
+        if (fieldConfig?.label) {
+            context.field = translator.translate(fieldConfig.label)
+        }
+    }
+    
+    // For title field
+    if (props.schema?.title_field && props.record) {
+        context.title = props.record[props.schema.title_field]
+    }
+    
+    return context
 })
 
 /**

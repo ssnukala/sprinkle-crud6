@@ -338,21 +338,6 @@ const customActions = computed(() => {
                 </dd>
             </dl>
             <hr />
-            <!-- Legacy Edit Modal - always rendered for backward compatibility -->
-            <CRUD6EditModal
-                v-if="$checkAccess('update_crud6_field')"
-                :crud6="crud6"
-                :schema="finalSchema"
-                @saved="emits('crud6Updated')"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-primary uk-button-small" />
-            
-            <!-- Legacy Delete Modal - always rendered for backward compatibility -->
-            <CRUD6DeleteModal
-                v-if="$checkAccess('delete_crud6_row')"
-                :crud6="crud6"
-                :schema="finalSchema"
-                @deleted="router.push({ name: 'crud6.list', params: { model: model } })"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-danger uk-button-small" />
             <slot data-test="slot"></slot>
         </template>
     </UFCardBox>

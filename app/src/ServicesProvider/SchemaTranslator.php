@@ -26,12 +26,14 @@ class SchemaTranslator
     /**
      * Constructor.
      * 
-     * @param Translator|null           $translator Translator for i18n (optional)
-     * @param DebugLoggerInterface|null $logger     Debug logger for diagnostics (optional)
+     * Dependencies are injected through the DI container following UserFrosting 6 patterns.
+     * 
+     * @param Translator           $translator Translator for i18n
+     * @param DebugLoggerInterface $logger     Debug logger for diagnostics
      */
     public function __construct(
-        protected ?Translator $translator = null,
-        protected ?DebugLoggerInterface $logger = null
+        protected Translator $translator,
+        protected DebugLoggerInterface $logger
     ) {
     }
 
@@ -54,11 +56,6 @@ class SchemaTranslator
      */
     public function translate(array $schema): array
     {
-        if ($this->translator === null) {
-            $this->debugLog("[CRUD6 SchemaTranslator] No translator available, returning untranslated schema");
-            return $schema;
-        }
-
         $this->debugLog("[CRUD6 SchemaTranslator] translateSchema() called", [
             'model' => $schema['model'] ?? 'unknown',
         ]);
@@ -145,10 +142,6 @@ class SchemaTranslator
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if ($this->logger === null) {
-            return;
-        }
-
         $this->logger->debug($message, $context);
     }
 }

@@ -25,10 +25,12 @@ class SchemaFilter
     /**
      * Constructor.
      * 
-     * @param DebugLoggerInterface|null $logger Debug logger for diagnostics (optional)
+     * Dependencies are injected through the DI container following UserFrosting 6 patterns.
+     * 
+     * @param DebugLoggerInterface $logger Debug logger for diagnostics
      */
     public function __construct(
-        protected ?DebugLoggerInterface $logger = null
+        protected DebugLoggerInterface $logger
     ) {
     }
 
@@ -513,6 +515,9 @@ class SchemaFilter
     /**
      * Log debug message.
      * 
+    /**
+     * Log debug message.
+     * 
      * @param string $message Debug message
      * @param array  $context Context data for structured logging
      * 
@@ -520,10 +525,6 @@ class SchemaFilter
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if ($this->logger === null) {
-            return;
-        }
-
         $this->logger->debug($message, $context);
     }
 }

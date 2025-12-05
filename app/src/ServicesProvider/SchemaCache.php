@@ -48,13 +48,16 @@ class SchemaCache
     /**
      * Constructor.
      * 
-     * @param Config                    $config Configuration repository
-     * @param DebugLoggerInterface|null $logger Debug logger for diagnostics (optional)
-     * @param CacheInterface|null       $cache  PSR-16 cache for persistent caching (optional)
+     * Logger is injected through DI container. PSR-16 cache is optional and
+     * injected by the service provider factory.
+     * 
+     * @param Config               $config Configuration repository
+     * @param DebugLoggerInterface $logger Debug logger for diagnostics
+     * @param CacheInterface|null  $cache  PSR-16 cache for persistent caching (optional)
      */
     public function __construct(
         protected Config $config,
-        protected ?DebugLoggerInterface $logger = null,
+        protected DebugLoggerInterface $logger,
         protected ?CacheInterface $cache = null
     ) {
         // Load cache TTL from config if available
@@ -81,7 +84,7 @@ class SchemaCache
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if (!$this->isDebugMode() || $this->logger === null) {
+        if (!$this->isDebugMode()) {
             return;
         }
 

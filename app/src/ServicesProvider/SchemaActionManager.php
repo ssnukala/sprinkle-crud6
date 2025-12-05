@@ -25,12 +25,14 @@ class SchemaActionManager
     /**
      * Constructor.
      * 
-     * @param SchemaValidator           $validator Schema validator for permission checks
-     * @param DebugLoggerInterface|null $logger    Debug logger for diagnostics (optional)
+     * Dependencies are injected through the DI container following UserFrosting 6 patterns.
+     * 
+     * @param SchemaValidator      $validator Schema validator for permission checks
+     * @param DebugLoggerInterface $logger    Debug logger for diagnostics
      */
     public function __construct(
         protected SchemaValidator $validator,
-        protected ?DebugLoggerInterface $logger = null
+        protected DebugLoggerInterface $logger
     ) {
     }
 
@@ -281,6 +283,9 @@ class SchemaActionManager
     /**
      * Log debug message.
      * 
+    /**
+     * Log debug message.
+     * 
      * @param string $message Debug message
      * @param array  $context Context data for structured logging
      * 
@@ -288,10 +293,6 @@ class SchemaActionManager
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if ($this->logger === null) {
-            return;
-        }
-
         $this->logger->debug($message, $context);
     }
 }

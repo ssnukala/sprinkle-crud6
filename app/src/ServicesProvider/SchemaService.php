@@ -25,87 +25,66 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
  * This refactored version maintains backward compatibility while improving
  * maintainability through separation of concerns.
  * 
+ * All specialized services are injected through the DI container following
+ * UserFrosting 6 patterns, ensuring proper dependency management and testability.
+ * 
  * Schema files are loaded from the 'schema://crud6/' location and can be organized
  * by database connection in subdirectories for multi-database support.
  * 
  * ## Caching Strategy
  * 
- * The service implements a two-tier caching system:
+ * The service implements a two-tier caching system through SchemaCache:
  * 1. **In-memory cache**: Active during the request lifecycle (always enabled)
  * 2. **Persistent cache**: Optional PSR-16 compatible cache for production (redis, file, etc.)
  * 
- * To enable persistent caching, inject a PSR-16 CacheInterface implementation.
+ * ## Service Components
  * 
- * @example
- * ```php
- * // With PSR-16 cache (production)
- * $schemaService = new SchemaService($locator, $config, $logger, $translator, $cache);
+ * - **SchemaLoader**: File path resolution, JSON loading, default values
+ * - **SchemaValidator**: Structure validation, permission checks
+ * - **SchemaNormalizer**: ORM attributes, lookups, visibility flags, boolean types
+ * - **SchemaCache**: Two-tier caching (in-memory + PSR-16)
+ * - **SchemaFilter**: Context filtering, related schema loading
+ * - **SchemaTranslator**: i18n translation
+ * - **SchemaActionManager**: Default actions, toggle normalization
  * 
- * // Without cache (development)
- * $schemaService = new SchemaService($locator, $config);
- * ```
+ * @see \UserFrosting\Sprinkle\Core\ServicesProvider\CacheService
  */
 class SchemaService
 {
-    /**
-     * Schema loader instance.
-     */
-    protected SchemaLoader $loader;
-
-    /**
-     * Schema validator instance.
-     */
-    protected SchemaValidator $validator;
-
-    /**
-     * Schema normalizer instance.
-     */
-    protected SchemaNormalizer $normalizer;
-
-    /**
-     * Schema cache instance.
-     */
-    protected SchemaCache $cache;
-
-    /**
-     * Schema filter instance.
-     */
-    protected SchemaFilter $filter;
-
-    /**
-     * Schema translator instance.
-     */
-    protected SchemaTranslator $translator;
-
-    /**
-     * Schema action manager instance.
-     */
-    protected SchemaActionManager $actionManager;
 
     /**
      * Constructor for SchemaService.
      * 
-     * @param ResourceLocatorInterface  $locator    Resource locator for finding schema files
-     * @param Config                    $config     Configuration repository
-     * @param DebugLoggerInterface|null $logger     Debug logger for diagnostics (optional)
-     * @param Translator|null           $i18n       Translator for i18n (optional)
-     * @param CacheInterface|null       $psr16Cache PSR-16 cache for persistent caching (optional)
+     * All specialized service components are injected through the DI container
+     * following UserFrosting 6 patterns for better testability and maintainability.
+     * 
+     * @param ResourceLocatorInterface  $locator      Resource locator for finding schema files
+     * @param Config                    $config       Configuration repository
+     * @param DebugLoggerInterface      $logger       Debug logger for diagnostics
+     * @param Translator                $i18n         Translator for i18n
+     * @param SchemaLoader              $loader       Schema file loader
+     * @param SchemaValidator           $validator    Schema validator
+     * @param SchemaNormalizer          $normalizer   Schema normalizer
+     * @param SchemaCache               $cache        Schema cache handler
+     * @param SchemaFilter              $filter       Schema context filter
+     * @param SchemaTranslator          $translator   Schema translator
+     * @param SchemaActionManager       $actionManager Action manager
      */
     public function __construct(
         protected ResourceLocatorInterface $locator,
         protected Config $config,
-        protected ?DebugLoggerInterface $logger = null,
-        protected ?Translator $i18n = null,
-        protected ?CacheInterface $psr16Cache = null
+        protected DebugLoggerInterface $logger,
+        protected Translator $i18n,
+        protected SchemaLoader $loader,
+        protected SchemaValidator $validator,
+        protected SchemaNormalizer $normalizer,
+        protected SchemaCache $cache,
+        protected SchemaFilter $filter,
+        protected SchemaTranslator $translator,
+        protected SchemaActionManager $actionManager
     ) {
-        // Initialize specialized service components
-        $this->loader = new SchemaLoader();
-        $this->validator = new SchemaValidator();
-        $this->normalizer = new SchemaNormalizer();
-        $this->cache = new SchemaCache($config, $logger, $psr16Cache);
-        $this->filter = new SchemaFilter($logger);
-        $this->translator = new SchemaTranslator($i18n, $logger);
-        $this->actionManager = new SchemaActionManager($this->validator, $logger);
+        // All services are now injected through constructor
+        // No need to instantiate them here
     }
 
     /**
@@ -121,9 +100,8 @@ class SchemaService
     /**
      * Log debug message if debug mode is enabled.
      * 
-     * Uses DebugLoggerInterface when available. Follows UserFrosting 6 standards
-     * by only logging through the proper logger interface.
-     * Only logs when debug_mode config is true and logger is available.
+     * Uses DebugLoggerInterface following UserFrosting 6 standards.
+     * Only logs when debug_mode config is true.
      * 
      * @param string $message Debug message
      * @param array  $context Context data for structured logging
@@ -132,7 +110,7 @@ class SchemaService
      */
     protected function debugLog(string $message, array $context = []): void
     {
-        if (!$this->isDebugMode() || $this->logger === null) {
+        if (!$this->isDebugMode()) {
             return;
         }
 

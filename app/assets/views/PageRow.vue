@@ -379,18 +379,15 @@ watch(model, async (newModel) => {
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Set initial breadcrumbs with model title immediately
-                    // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / Users" on first load
-                    // The record name will be added after fetch completes
-                    // Use modelTitle (plural) for the list page breadcrumb link
-                    const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(modelTitle.value, '', listPath)
+                    // Don't set breadcrumbs here - let fetch() handle it after loading the record
+                    // This ensures breadcrumbs are only set once with complete data
+                    // The breadcrumb will show "UserFrosting / Admin Panel / Users / user01" after fetch completes
                     
                     // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
                     // It will be updated with the record name after fetch() completes
                     page.title = ''
                     
-                    // Note: Record breadcrumb will be added by setDetailBreadcrumbs after fetch()
+                    // Note: Breadcrumbs will be set by setDetailBreadcrumbs() after fetch() completes
                 }
             }
         }

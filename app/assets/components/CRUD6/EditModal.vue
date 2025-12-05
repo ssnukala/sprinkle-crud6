@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use CRUD6UnifiedModal instead. This component will be removed in a future version.
+ * 
+ * Migration guide:
+ * Replace <CRUD6EditModal :crud6="record"> with:
+ * <CRUD6UnifiedModal :action="editAction" :record="record" :model="model" :schema="schema" @saved="..." />
+ * 
+ * Where editAction = { key: 'edit_action', label: 'CRUD6.EDIT', type: 'form', ... }
+ * Or use default actions from schema which are automatically added by SchemaService.
+ */
 import { computed } from 'vue'
 import UIkit from 'uikit'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'

@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use CRUD6UnifiedModal instead. ActionModal is now replaced by UnifiedModal.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ * 
+ * UnifiedModal provides all ActionModal features plus:
+ * - Support for 'form' type (full CRUD forms)
+ * - Support for 'delete' type (delete confirmations)
+ * - Better translation consistency
+ * - Unified interface for all modal types
+ */
 import { ref, computed } from 'vue'
 import { Severity } from '@userfrosting/sprinkle-core/interfaces'
 import { useTranslator } from '@userfrosting/sprinkle-core/stores'

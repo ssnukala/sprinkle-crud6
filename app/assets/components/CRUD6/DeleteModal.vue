@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use CRUD6UnifiedModal instead. This component will be removed in a future version.
+ * 
+ * Migration guide:
+ * Replace <CRUD6DeleteModal :crud6="record"> with:
+ * <CRUD6UnifiedModal :action="deleteAction" :record="record" :model="model" :schema="schema" @confirmed="..." />
+ * 
+ * Where deleteAction = { key: 'delete_action', label: 'CRUD6.DELETE', type: 'delete', confirm: '...', ... }
+ * Or use default actions from schema which are automatically added by SchemaService.
+ */
 import { computed } from 'vue'
 import { useCRUD6Api } from '@ssnukala/sprinkle-crud6/composables'
 import type { CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'

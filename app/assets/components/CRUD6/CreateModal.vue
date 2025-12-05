@@ -1,4 +1,14 @@
 <script setup lang="ts">
+/**
+ * @deprecated Use CRUD6UnifiedModal instead. This component will be removed in a future version.
+ * 
+ * Migration guide:
+ * Replace <CRUD6CreateModal> with:
+ * <CRUD6UnifiedModal :action="createAction" :model="model" :schema="schema" @saved="..." />
+ * 
+ * Where createAction = { key: 'create_action', label: 'CRUD6.CREATE', type: 'form', ... }
+ * Or use default actions from schema which are automatically added by SchemaService.
+ */
 import { computed } from 'vue'
 import UIkit from 'uikit'
 import CRUD6Form from './Form.vue'

@@ -75,7 +75,7 @@ const modelLabel = computed(() => {
 
 /**
  * Computed - Translation context with both model and record data
- * This allows translations to use both {{model}} and record fields like {{user_name}}
+ * This allows translations to use both {{model}} and record fields
  * For toggle actions, also translate the field label
  */
 const translationContext = computed(() => {
@@ -96,15 +96,10 @@ const translationContext = computed(() => {
         }
     }
     
-    // For title field - use the actual field value from record
+    // For title - use the title_field from schema if available
+    // This is the schema-driven approach - no hardcoded field names
     if (props.schema?.title_field && props.record) {
         context.title = props.record[props.schema.title_field]
-    } else if (props.record?.user_name) {
-        // Fallback for user_name (common title field)
-        context.title = props.record.user_name
-    } else if (props.record?.name) {
-        // Fallback for name
-        context.title = props.record.name
     }
     
     return context

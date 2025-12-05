@@ -78,11 +78,6 @@ return [
 
     ],
 
-    // Action translations used in modals
-    'ACTION' => [
-        'CANNOT_UNDO' => 'This action cannot be undone.',
-    ],
-
     // Validation translations used in forms and modals
     'VALIDATION' => [
         'ENTER_VALUE'         => 'Enter value',

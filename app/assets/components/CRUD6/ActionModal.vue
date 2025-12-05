@@ -98,11 +98,19 @@ const modalConfig = computed((): ModalConfig => {
     }
     // For 'confirm' type without explicit fields, keep fields array empty
     
+    // Determine default warning key based on modal type if not explicitly set
+    // Use UserFrosting 6 standard WARNING_CANNOT_UNDONE from sprinkle-core
+    let defaultWarningKey: string | undefined
+    if (modalType === 'confirm') {
+        defaultWarningKey = 'WARNING_CANNOT_UNDONE'
+    }
+    
     return {
         type: modalType,
         title: config.title || props.action.label,
         fields: fields,
-        buttons: config.buttons || defaultButtons
+        buttons: config.buttons || defaultButtons,
+        warning: config.warning !== undefined ? config.warning : defaultWarningKey
     }
 })
 
@@ -129,6 +137,14 @@ const modalTitle = computed(() => {
         return translator.translate(modalConfig.value.title, props.record)
     }
     return actionLabel.value
+})
+
+/**
+ * Computed - Warning message (translated)
+ */
+const warningMessage = computed(() => {
+    if (!modalConfig.value.warning) return ''
+    return translator.translate(modalConfig.value.warning)
 })
 
 /**
@@ -439,8 +455,8 @@ function resetForm() {
                                 class="uk-text-warning fa-4x" />
                         </p>
                         <div v-html="promptMessage"></div>
-                        <div v-if="modalConfig.type === 'confirm'" class="uk-text-meta">
-                            {{ $t('ACTION.CANNOT_UNDO') || 'This action cannot be undone.' }}
+                        <div v-if="warningMessage" class="uk-text-meta">
+                            {{ warningMessage }}
                         </div>
                     </div>
                     

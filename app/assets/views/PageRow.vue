@@ -362,20 +362,22 @@ watch(model, async (newModel) => {
                     // Update breadcrumbs for create mode
                     await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
-                    // IMPORTANT: Don't set page.title here for detail pages
-                    // If page.title is set, usePageMeta will auto-generate a breadcrumb with the ID
-                    // This causes the "8" to show in breadcrumbs on first load
-                    // Instead, let setDetailBreadcrumbs handle both title and breadcrumbs after fetch()
-                    
+                    // Set page description
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Clear page.title to prevent auto-breadcrumb generation
-                    // It will be set after record fetch with proper record name
+                    // Set initial breadcrumbs with model title immediately
+                    // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / User" on first load
+                    // The record name will be added after fetch completes
+                    const listPath = `/crud6/${model.value}`
+                    await setDetailBreadcrumbs(schemaTitle, '', listPath)
+                    
+                    // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
+                    // It will be updated with the record name after fetch() completes
                     page.title = ''
                     
-                    // Note: Breadcrumbs will be updated by setDetailBreadcrumbs after fetch()
+                    // Note: Record breadcrumb will be added by setDetailBreadcrumbs after fetch()
                 }
             }
         }

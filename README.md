@@ -916,6 +916,61 @@ For a comprehensive analysis of the codebase, including optimization recommendat
 
 See the [Comparative Analysis](docs/COMPREHENSIVE_REVIEW.md#comparative-analysis) for detailed comparison.
 
+## Translation Support
+
+CRUD6 follows **UserFrosting 6 standards** for translations, ensuring consistency with sprinkle-admin and theme-pink-cupcake.
+
+### UserFrosting 6 Pattern
+
+**Locale file** (use specific field placeholders, no embedded warnings):
+```php
+// app/locale/en_US/messages.php
+'USER' => [
+    'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+],
+// WARNING_CANNOT_UNDONE is from UF6 core - no need to define it
+```
+
+**Schema** (warnings handled separately):
+```json
+{
+    "key": "disable_user",
+    "confirm": "USER.DISABLE_CONFIRM",
+    "modal_config": {
+        "type": "confirm"
+        // Defaults to "WARNING_CANNOT_UNDONE" from UF6 core
+    }
+}
+```
+
+### Key Principles
+
+1. **Use specific field placeholders**: `{{first_name}}`, `{{last_name}}`, `{{user_name}}` (not generic `{{name}}`)
+2. **Use `WARNING_CANNOT_UNDONE`**: Standard warning key from UserFrosting 6 core
+3. **Separate warnings from messages**: Warnings handled by modal component, not locale strings
+4. **Follow UF6 patterns**: Matches sprinkle-admin and theme-pink-cupcake conventions
+
+### Warning Configuration
+
+Control warning display via `modal_config.warning`:
+
+```json
+// Default warning (from UF6 core)
+{"modal_config": {"type": "confirm"}}  // Uses WARNING_CANNOT_UNDONE
+
+// Custom warning
+{"modal_config": {"type": "confirm", "warning": "MY_CUSTOM_WARNING"}}
+
+// No warning
+{"modal_config": {"type": "confirm", "warning": ""}}
+```
+
+### Documentation
+
+- **Complete Guide**: [docs/NESTED_TRANSLATION_USAGE_GUIDE.md](docs/NESTED_TRANSLATION_USAGE_GUIDE.md)
+- **Example Schema**: [examples/schema/users-translation-example.json](examples/schema/users-translation-example.json)
+- **Example Locale**: [examples/locale/translation-example-messages.php](examples/locale/translation-example-messages.php)
+
 ## Contributing
 
 1. Fork the repository

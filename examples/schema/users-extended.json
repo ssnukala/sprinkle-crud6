@@ -41,7 +41,12 @@
       "type": "field_update",
       "field": "flag_enabled",
       "toggle": true,
-      "permission": "update_user_field"
+      "permission": "update_user_field",
+      "confirm": "Are you sure you want to toggle <strong>Enabled</strong> for <strong>{{user_name}}</strong>?",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": "yes_no"
+      }
     },
     {
       "key": "flag_verified_action",
@@ -50,7 +55,12 @@
       "type": "field_update",
       "field": "flag_verified",
       "toggle": true,
-      "permission": "update_user_field"
+      "permission": "update_user_field",
+      "confirm": "Are you sure you want to toggle <strong>Verified</strong> for <strong>{{user_name}}</strong>?",
+      "modal_config": {
+        "type": "confirm",
+        "buttons": "yes_no"
+      }
     },
     {
       "key": "password_action",

@@ -1458,6 +1458,61 @@ class SchemaService
     }
 
     /**
+     * Normalize toggle actions to ensure they have confirmation modals.
+     * 
+     * Toggle actions (field_update with toggle: true) should always show a confirmation
+     * before changing the value. This method adds default confirm messages and modal
+     * config if not already present.
+     * 
+     * @param array $actions Actions array from schema
+     * @param array $schema  Full schema for field label lookups
+     * 
+     * @return array Normalized actions array
+     */
+    protected function normalizeToggleActions(array $actions, array $schema): array
+    {
+        foreach ($actions as &$action) {
+            // Only process field_update actions with toggle enabled
+            if (($action['type'] ?? '') !== 'field_update' || !($action['toggle'] ?? false)) {
+                continue;
+            }
+
+            // Get field name and field configuration
+            $fieldName = $action['field'] ?? null;
+            if (!$fieldName) {
+                continue;
+            }
+
+            $fieldConfig = $schema['fields'][$fieldName] ?? null;
+            $fieldLabel = $fieldConfig['label'] ?? ucfirst(str_replace('_', ' ', $fieldName));
+
+            // Add default confirm message if not present
+            if (!isset($action['confirm'])) {
+                $action['confirm'] = "Are you sure you want to toggle <strong>{$fieldLabel}</strong> for <strong>{{" . ($schema['title_field'] ?? 'id') . "}}</strong>?";
+            }
+
+            // Add default modal config if not present
+            if (!isset($action['modal_config'])) {
+                $action['modal_config'] = [
+                    'type' => 'confirm',
+                    'buttons' => 'yes_no',
+                ];
+            } elseif (!isset($action['modal_config']['type'])) {
+                // Ensure modal type is set to confirm for toggles
+                $action['modal_config']['type'] = 'confirm';
+            }
+
+            $this->debugLog("[CRUD6 SchemaService] Normalized toggle action", [
+                'key' => $action['key'] ?? 'unknown',
+                'field' => $fieldName,
+                'has_confirm' => isset($action['confirm']),
+            ]);
+        }
+
+        return $actions;
+    }
+
+    /**
      * Add default CRUD actions to schema if not already defined.
      * 
      * This method intelligently adds standard CRUD actions (create, edit, delete)
@@ -1494,6 +1549,9 @@ class SchemaService
         if (!isset($schema['actions'])) {
             $schema['actions'] = [];
         }
+
+        // Normalize toggle actions to ensure they have confirmation
+        $schema['actions'] = $this->normalizeToggleActions($schema['actions'], $schema);
 
         // Get existing action keys for duplicate detection
         $existingKeys = array_column($schema['actions'], 'key');

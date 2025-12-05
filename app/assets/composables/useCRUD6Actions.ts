@@ -134,7 +134,7 @@ export function isPasswordFieldAction(action: ActionConfig, field?: string | nul
  * await executeActionWithoutConfirm(sendEmailAction, '789')
  * ```
  * 
- * Note: Confirmation dialogs should be handled by components (e.g., ConfirmActionModal)
+ * Note: Confirmation dialogs should be handled by components (e.g., ActionModal)
  * rather than using native browser confirm(). Use executeActionWithoutConfirm() when
  * the component handles confirmation.
  */
@@ -152,7 +152,7 @@ export function useCRUD6Actions(model?: string) {
      * 
      * @deprecated Use executeActionWithoutConfirm() and handle confirmation in component
      * This method uses native browser confirm() which doesn't render HTML properly.
-     * For better UX, use ConfirmActionModal component with executeActionWithoutConfirm().
+     * For better UX, use ActionModal component with executeActionWithoutConfirm().
      */
     async function executeAction(
         action: ActionConfig,
@@ -161,7 +161,7 @@ export function useCRUD6Actions(model?: string) {
     ): Promise<boolean> {
         // Check for confirmation using native browser dialog
         // Note: Native browser confirm() doesn't render HTML, so we strip HTML tags
-        // DEPRECATED: Use ConfirmActionModal component instead
+        // DEPRECATED: Use ActionModal component instead
         if (action.confirm) {
             // Translate the confirmation message if it's a translation key
             let confirmMessage = translator.translate(action.confirm, currentRecord)
@@ -182,7 +182,7 @@ export function useCRUD6Actions(model?: string) {
      * Execute a custom action without confirmation prompt.
      * 
      * This method should be used when the component handles confirmation
-     * (e.g., through ConfirmActionModal). It skips the native browser confirm()
+     * (e.g., through ActionModal). It skips the native browser confirm()
      * and directly executes the action.
      * 
      * @param action The action configuration from schema

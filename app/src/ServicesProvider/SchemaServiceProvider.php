@@ -24,30 +24,44 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 /**
  * Schema Service Provider.
  * 
- * Registers the SchemaService for loading and managing JSON schema files.
+ * Registers the SchemaService and its specialized service components with the DI container.
  * Follows the UserFrosting 6 service provider pattern from sprinkle-core.
  * 
- * Explicitly injects all dependencies including Translator to ensure
- * schema translations work correctly.
+ * All service classes are registered in the container to support proper dependency injection
+ * and follow the Single Responsibility Principle.
  * 
  * @see \UserFrosting\Sprinkle\Core\ServicesProvider\CacheService
  */
 class SchemaServiceProvider implements ServicesProviderInterface
 {
     /**
-     * Register SchemaService with the DI container.
+     * Register SchemaService and related services with the DI container.
+     * 
+     * Registers all specialized service classes used by SchemaService:
+     * - SchemaLoader: File loading and default values
+     * - SchemaValidator: Schema structure validation
+     * - SchemaNormalizer: Schema normalization operations
+     * - SchemaCache: Two-tier caching strategy
+     * - SchemaFilter: Context filtering
+     * - SchemaTranslator: i18n translation
+     * - SchemaActionManager: Action management
      * 
      * @return array<string, mixed> Service definitions for the container
      */
     public function register(): array
     {
         return [
-            SchemaService::class => function (ContainerInterface $c) {
-                // Get required dependencies
-                $locator = $c->get(ResourceLocatorInterface::class);
+            // Register specialized service classes using autowire
+            SchemaLoader::class => \DI\autowire(SchemaLoader::class),
+            SchemaValidator::class => \DI\autowire(SchemaValidator::class),
+            SchemaNormalizer::class => \DI\autowire(SchemaNormalizer::class),
+            SchemaFilter::class => \DI\autowire(SchemaFilter::class),
+            SchemaTranslator::class => \DI\autowire(SchemaTranslator::class),
+            
+            // SchemaCache requires explicit factory due to optional PSR-16 cache
+            SchemaCache::class => function (ContainerInterface $c) {
                 $config = $c->get(Config::class);
                 $logger = $c->get(DebugLoggerInterface::class);
-                $translator = $c->get(Translator::class);
                 
                 // Cache is optional - try to get it but don't fail if not available
                 $cache = null;
@@ -59,7 +73,32 @@ class SchemaServiceProvider implements ServicesProviderInterface
                     }
                 }
                 
-                return new SchemaService($locator, $config, $logger, $translator, $cache);
+                return new SchemaCache($config, $logger, $cache);
+            },
+            
+            // SchemaActionManager requires SchemaValidator dependency
+            SchemaActionManager::class => function (ContainerInterface $c) {
+                return new SchemaActionManager(
+                    $c->get(SchemaValidator::class),
+                    $c->get(DebugLoggerInterface::class)
+                );
+            },
+            
+            // Main SchemaService orchestrates all specialized services
+            SchemaService::class => function (ContainerInterface $c) {
+                return new SchemaService(
+                    $c->get(ResourceLocatorInterface::class),
+                    $c->get(Config::class),
+                    $c->get(DebugLoggerInterface::class),
+                    $c->get(Translator::class),
+                    $c->get(SchemaLoader::class),
+                    $c->get(SchemaValidator::class),
+                    $c->get(SchemaNormalizer::class),
+                    $c->get(SchemaCache::class),
+                    $c->get(SchemaFilter::class),
+                    $c->get(SchemaTranslator::class),
+                    $c->get(SchemaActionManager::class)
+                );
             },
         ];
     }

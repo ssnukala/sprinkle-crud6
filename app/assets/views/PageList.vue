@@ -65,15 +65,15 @@ const listActions = computed(() => {
   }
   
   // Fallback: filter from all actions for list scope
-  // Match backend logic: include actions without scope for backward compatibility
+  // Only include actions with explicit 'list' scope
   const allActions = schema.value?.actions || []
   debugLog('[PageList.listActions] Falling back to client-side filtering from allActions:', allActions)
   
   const filtered = allActions.filter(action => {
-    // Include actions without scope (backward compatibility)
+    // Exclude actions without scope (they must define scope explicitly)
     if (!action.scope) {
-      debugLog('[PageList.listActions] Including action without scope:', action.key)
-      return true
+      debugLog('[PageList.listActions] Excluding action without scope:', action.key)
+      return false
     }
     
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
@@ -98,15 +98,15 @@ const detailActions = computed(() => {
   }
   
   // Fallback: filter from all actions for detail scope
-  // Match backend logic: include actions without scope for backward compatibility
+  // Only include actions with explicit 'detail' scope
   const allActions = schema.value?.actions || []
   debugLog('[PageList.detailActions] Falling back to client-side filtering from allActions:', allActions)
   
   const filtered = allActions.filter(action => {
-    // Include actions without scope (backward compatibility)
+    // Exclude actions without scope (they must define scope explicitly)
     if (!action.scope) {
-      debugLog('[PageList.detailActions] Including action without scope:', action.key)
-      return true
+      debugLog('[PageList.detailActions] Excluding action without scope:', action.key)
+      return false
     }
     
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]

@@ -1708,9 +1708,14 @@ class SchemaService
         ]);
         
         $filtered = array_values(array_filter($actions, function ($action) use ($scope) {
-            // Include actions without scope (backward compatibility)
+            // Exclude actions without scope (they should define their scope explicitly)
+            // Only default actions (create/edit/delete) added by addDefaultActions have scopes
             if (!isset($action['scope'])) {
-                return true;
+                $this->logger->debug('[SchemaService.filterActionsByScope] Excluding action without scope', [
+                    'action_key' => $action['key'] ?? 'unknown',
+                    'scope' => $scope,
+                ]);
+                return false;
             }
 
             // Check if scope matches

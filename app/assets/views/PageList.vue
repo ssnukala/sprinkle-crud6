@@ -54,16 +54,18 @@ const schemaFields = computed(() => {
 // Get list-scoped actions from schema
 const listActions = computed(() => {
   // Get actions from schema
-  // If contexts.list.actions is provided by backend, use it (already filtered)
-  // Otherwise filter from all actions
+  // If contexts.list.actions is provided by backend, use it (already filtered by backend)
   if (schema.value?.contexts?.list?.actions) {
     return schema.value.contexts.list.actions
   }
   
   // Fallback: filter from all actions for list scope
+  // Match backend logic: include actions without scope for backward compatibility
   const allActions = schema.value?.actions || []
   return allActions.filter(action => {
-    if (!action.scope) return false // Only scoped actions
+    // Include actions without scope (backward compatibility)
+    if (!action.scope) return true
+    
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
     return scopes.includes('list')
   })
@@ -71,14 +73,18 @@ const listActions = computed(() => {
 
 // Get detail-scoped actions for table rows (edit, delete, etc.)
 const detailActions = computed(() => {
-  // For table rows, we want actions that would appear in detail view
-  // These are typically edit and delete
-  // We'll filter from the full actions list for detail scope
-  const allActions = schema.value?.actions || []
+  // If contexts.detail.actions is provided by backend, use it (already filtered by backend)
+  if (schema.value?.contexts?.detail?.actions) {
+    return schema.value.contexts.detail.actions
+  }
   
-  // Filter for actions with detail scope or no scope (backward compatible)
+  // Fallback: filter from all actions for detail scope
+  // Match backend logic: include actions without scope for backward compatibility
+  const allActions = schema.value?.actions || []
   return allActions.filter(action => {
-    if (!action.scope) return false // Only scoped actions in table
+    // Include actions without scope (backward compatibility)
+    if (!action.scope) return true
+    
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
     return scopes.includes('detail')
   })

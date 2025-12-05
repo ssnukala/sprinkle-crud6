@@ -239,22 +239,61 @@ async function fetch() {
                 // Wait for schema to be available before setting breadcrumbs
                 // This prevents setting breadcrumbs with incomplete model title
                 // Use a simple polling mechanism to ensure schema is loaded
+                console.log('[BREADCRUMB DEBUG] Starting schema wait', {
+                    hasFlattenedSchema: !!flattenedSchema.value,
+                    hasTitle: !!flattenedSchema.value?.title,
+                    title: flattenedSchema.value?.title,
+                    modelTitleValue: modelTitle.value,
+                    recordName,
+                    recordId: recordId.value
+                })
+                
                 let retries = 0
                 const maxRetries = 20 // Max 2 seconds (20 * 100ms)
                 while (!flattenedSchema.value?.title && retries < maxRetries) {
                     await new Promise(resolve => setTimeout(resolve, 100))
                     retries++
+                    if (retries % 5 === 0) {
+                        console.log(`[BREADCRUMB DEBUG] Waiting for schema... retry ${retries}/${maxRetries}`)
+                    }
                 }
+                
+                console.log('[BREADCRUMB DEBUG] Schema wait complete', {
+                    retries,
+                    hasFlattenedSchema: !!flattenedSchema.value,
+                    hasTitle: !!flattenedSchema.value?.title,
+                    title: flattenedSchema.value?.title,
+                    modelTitleValue: modelTitle.value,
+                    recordName,
+                    recordId: recordId.value
+                })
                 
                 // Update breadcrumbs with model title and record name
                 // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
                 // setDetailBreadcrumbs will handle the breadcrumb trail correctly
                 // Use modelTitle (plural) for the list page breadcrumb link
                 const listPath = `/crud6/${model.value}`
+                
+                console.log('[BREADCRUMB DEBUG] Calling setDetailBreadcrumbs', {
+                    modelTitle: modelTitle.value,
+                    recordName,
+                    listPath,
+                    currentBreadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
+                })
+                
                 await setDetailBreadcrumbs(modelTitle.value, recordName, listPath)
+                
+                console.log('[BREADCRUMB DEBUG] After setDetailBreadcrumbs', {
+                    breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
+                })
                 
                 // Set page title for display after breadcrumbs are updated
                 page.title = recordName
+                
+                console.log('[BREADCRUMB DEBUG] Set page.title', {
+                    pageTitle: page.title,
+                    recordName
+                })
                 
                 debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {
@@ -357,6 +396,8 @@ watch(
 // Load schema when model changes - single source of truth for schema loading
 let currentModel = ''
 watch(model, async (newModel) => {
+    console.log('[BREADCRUMB DEBUG - model watcher] START', { newModel, currentModel, loadSchema: !!loadSchema })
+    
     if (newModel && loadSchema && newModel !== currentModel) {
         debugLog('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
         
@@ -364,10 +405,16 @@ watch(model, async (newModel) => {
         // Request all contexts needed by detail page in one consolidated API call
         // This prevents child components (Info, EditModal) from making separate schema calls
         // Include related schemas to eliminate separate requests for detail models (activities, roles, permissions)
+        console.log('[BREADCRUMB DEBUG - model watcher] Loading schema for:', newModel)
         const schemaPromise = loadSchema(newModel, false, 'list,detail,form', true)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
             debugLog('[PageRow] Schema loaded successfully for model:', newModel)
+            console.log('[BREADCRUMB DEBUG - model watcher] Schema loaded', {
+                hasFlattenedSchema: !!flattenedSchema.value,
+                title: flattenedSchema.value?.title,
+                singular_title: flattenedSchema.value?.singular_title
+            })
             
             // Update page title and description with translation support
             if (flattenedSchema.value) {
@@ -392,6 +439,7 @@ watch(model, async (newModel) => {
                     // Don't set breadcrumbs here - let fetch() handle it after loading the record
                     // This ensures breadcrumbs are only set once with complete data
                     // The breadcrumb will show "UserFrosting / Admin Panel / Users / user01" after fetch completes
+                    console.log('[BREADCRUMB DEBUG - model watcher] Not setting breadcrumbs here, waiting for fetch()')
                     
                     // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
                     // It will be updated with the record name after fetch() completes
@@ -402,13 +450,17 @@ watch(model, async (newModel) => {
             }
         }
     }
+    console.log('[BREADCRUMB DEBUG - model watcher] END')
 }, { immediate: true })
 
 // Watch for recordId changes to fetch data
 watch(recordId, (newId) => {
+    console.log('[BREADCRUMB DEBUG - recordId watcher] START', { newId, isCreateMode: isCreateMode.value })
     if (newId && !isCreateMode.value) {
+        console.log('[BREADCRUMB DEBUG - recordId watcher] Calling fetch()')
         fetch()
     }
+    console.log('[BREADCRUMB DEBUG - recordId watcher] END')
 }, { immediate: true })
 
 /**

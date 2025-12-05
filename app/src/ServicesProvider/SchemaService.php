@@ -1021,16 +1021,13 @@ class SchemaService
                     }
                 }
 
-                // Include actions scoped for list view
+                // Include all actions
                 if (isset($schema['actions'])) {
-                    $filteredActions = $this->filterActionsByScope($schema['actions'], 'list');
-                    $this->logger->debug('[SchemaService.getContextData] List context - filtered actions', [
-                        'original_count' => count($schema['actions']),
-                        'filtered_count' => count($filteredActions),
-                        'original_keys' => array_column($schema['actions'], 'key'),
-                        'filtered_keys' => array_column($filteredActions, 'key'),
+                    $data['actions'] = $schema['actions'];
+                    $this->logger->debug('[SchemaService.getContextData] List context - all actions included', [
+                        'action_count' => count($schema['actions']),
+                        'action_keys' => array_column($schema['actions'], 'key'),
                     ]);
-                    $data['actions'] = $filteredActions;
                 }
 
                 return $data;
@@ -1111,16 +1108,13 @@ class SchemaService
                     $data['details'] = $schema['details'];
                 }
 
-                // Include actions configuration if present (for custom action buttons)
+                // Include all actions
                 if (isset($schema['actions'])) {
-                    $filteredActions = $this->filterActionsByScope($schema['actions'], 'detail');
-                    $this->logger->debug('[SchemaService.getContextData] Detail context - filtered actions', [
-                        'original_count' => count($schema['actions']),
-                        'filtered_count' => count($filteredActions),
-                        'original_keys' => array_column($schema['actions'], 'key'),
-                        'filtered_keys' => array_column($filteredActions, 'key'),
+                    $data['actions'] = $schema['actions'];
+                    $this->logger->debug('[SchemaService.getContextData] Detail context - all actions included', [
+                        'action_count' => count($schema['actions']),
+                        'action_keys' => array_column($schema['actions'], 'key'),
                     ]);
-                    $data['actions'] = $filteredActions;
                 }
 
                 // Include relationships configuration if present (for data fetching)
@@ -1589,10 +1583,10 @@ class SchemaService
         // Get model label for translations
         $modelLabel = $schema['singular_title'] ?? $schema['title'] ?? ucfirst($schema['model']);
 
-        // Default actions with scope filtering
+        // Default actions - all available in row dropdown
         $defaultActions = [];
 
-        // Create action - appears in list view
+        // Create action
         if (!in_array('create_action', $existingKeys) && $this->hasSchemaPermission($schema, 'create')) {
             $this->logger->debug('[SchemaService.addDefaultActions] Adding create_action', [
                 'model' => $schema['model'] ?? 'unknown',
@@ -1605,7 +1599,6 @@ class SchemaService
                 'type' => 'form',
                 'style' => 'primary',
                 'permission' => $schema['permissions']['create'] ?? 'create',
-                'scope' => ['list'],
                 'modal_config' => [
                     'type' => 'form',
                     'title' => "CRUD6.CREATE",
@@ -1613,7 +1606,7 @@ class SchemaService
             ];
         }
 
-        // Edit action - appears in detail view
+        // Edit action
         if (!in_array('edit_action', $existingKeys) && $this->hasSchemaPermission($schema, 'update')) {
             $defaultActions[] = [
                 'key' => 'edit_action',
@@ -1622,7 +1615,6 @@ class SchemaService
                 'type' => 'form',
                 'style' => 'primary',
                 'permission' => $schema['permissions']['update'] ?? 'update',
-                'scope' => ['detail'],
                 'modal_config' => [
                     'type' => 'form',
                     'title' => "CRUD6.EDIT",
@@ -1630,7 +1622,7 @@ class SchemaService
             ];
         }
 
-        // Delete action - appears in detail view
+        // Delete action
         if (!in_array('delete_action', $existingKeys) && $this->hasSchemaPermission($schema, 'delete')) {
             $this->logger->debug('[SchemaService.addDefaultActions] Adding delete_action', [
                 'model' => $schema['model'] ?? 'unknown',
@@ -1643,7 +1635,6 @@ class SchemaService
                 'type' => 'delete',
                 'style' => 'danger',
                 'permission' => $schema['permissions']['delete'] ?? 'delete',
-                'scope' => ['detail'],
                 'confirm' => "CRUD6.DELETE_CONFIRM",
                 'modal_config' => [
                     'type' => 'confirm',

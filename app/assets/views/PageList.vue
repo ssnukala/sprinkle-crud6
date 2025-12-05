@@ -51,22 +51,19 @@ const schemaFields = computed(() => {
   return Object.entries(schema.value?.fields || {})
 })
 
-// Get list-scoped actions from schema
-const listActions = computed(() => {
-  debugLog('[PageList.listActions] Computing list actions')
-  debugLog('[PageList.listActions] schema.value?.contexts?.list?.actions:', schema.value?.contexts?.list?.actions)
-  
-  // Backend always provides filtered actions in contexts
-  return schema.value?.contexts?.list?.actions || []
+// Get create action for button above table
+const createAction = computed(() => {
+  const actions = schema.value?.actions || []
+  return actions.find(action => action.key === 'create_action')
 })
 
-// Get detail-scoped actions for table rows (edit, delete, etc.)
-const detailActions = computed(() => {
-  debugLog('[PageList.detailActions] Computing detail actions')
-  debugLog('[PageList.detailActions] schema.value?.contexts?.detail?.actions:', schema.value?.contexts?.detail?.actions)
+// Get all actions from schema for table row dropdowns
+const rowActions = computed(() => {
+  debugLog('[PageList.rowActions] Computing row actions')
+  debugLog('[PageList.rowActions] schema.value?.actions:', schema.value?.actions)
   
-  // Backend always provides filtered actions in contexts
-  return schema.value?.contexts?.detail?.actions || []
+  // Use all actions from schema (backend provides them)
+  return schema.value?.actions || []
 })
 
 // API URL
@@ -160,11 +157,10 @@ onMounted(async () => {
     
     debugLog('[PageList.onMounted] After setListBreadcrumb, page.breadcrumbs:', page.breadcrumbs)
     
-    // Request BOTH 'list' and 'form' contexts in a single call
+    // Request schema with 'list' and 'form' contexts
     // This avoids duplicate API calls when the create/edit modal is opened
-    // NOTE: We should also request 'detail' context for row action filtering
     debugLog('[PageList.onMounted] Requesting schema with contexts: list,form')
-    const schemaPromise = loadSchema(model.value, false, 'list,form,detail')
+    const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(async () => {
         debugLog('[PageList.onMounted] Schema loaded')
@@ -210,13 +206,11 @@ onMounted(async () => {
       :dataUrl="apiUrl"
       :searchColumn="searchColumn">
 
-      <!-- Actions -->
+      <!-- Actions - Only Create button -->
       <template #actions="{ sprunjer }">
-        <!-- All list-scoped actions from schema (including default create action) -->
         <CRUD6UnifiedModal
-          v-for="action in listActions"
-          :key="action.key"
-          :action="action"
+          v-if="createAction"
+          :action="createAction"
           :model="model"
           :schema="schema"
           @saved="sprunjer.fetch()"
@@ -225,11 +219,10 @@ onMounted(async () => {
             <a
               :href="`#${modalId}`"
               uk-toggle
-              :data-test="`btn-action-${action.key}`"
-              class="uk-button"
-              :class="action.style ? `uk-button-${action.style}` : 'uk-button-primary'">
-              <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-              {{ $t(action.label || action.key, { model: modelLabel }) }}
+              data-test="btn-create"
+              class="uk-button uk-button-primary">
+              <font-awesome-icon icon="plus" fixed-width />
+              {{ $t('CRUD6.CREATE', { model: modelLabel }) }}
             </a>
           </template>
         </CRUD6UnifiedModal>
@@ -303,8 +296,8 @@ onMounted(async () => {
                   <font-awesome-icon icon="eye" fixed-width /> View
                 </RouterLink>
               </li>
-              <!-- Detail-scoped actions from schema (edit, delete, etc.) -->
-              <li v-for="action in detailActions" :key="action.key">
+              <!-- All actions from schema (create, edit, delete, toggle, etc.) -->
+              <li v-for="action in rowActions" :key="action.key">
                 <CRUD6UnifiedModal
                   :action="action"
                   :record="row"

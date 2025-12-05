@@ -98,8 +98,12 @@ const translationContext = computed(() => {
     
     // For title - use the title_field from schema if available
     // This is the schema-driven approach - no hardcoded field names
+    // Fallback to 'id' which is always available as a route parameter
     if (props.schema?.title_field && props.record) {
         context.title = props.record[props.schema.title_field]
+    } else if (props.record?.id) {
+        // Fallback to id (always available from route parameter)
+        context.title = props.record.id
     }
     
     return context

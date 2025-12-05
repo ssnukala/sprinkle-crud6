@@ -222,11 +222,16 @@ function isActionVisible(action: ActionConfig): boolean {
 }
 
 // Get custom actions from schema with enriched properties
+// Exclude create_action (doesn't make sense when viewing a specific record)
 const customActions = computed(() => {
     if (!finalSchema.value?.actions) return []
     
+    debugLog('[Info] customActions - raw actions:', finalSchema.value.actions?.map(a => a.key))
+    
     // Enrich each action with inferred properties
+    // Filter out create_action - it's only relevant for list view
     return finalSchema.value.actions
+        .filter(action => action.key !== 'create_action')
         .map(action => {
             // Infer field if not specified
             const field = action.field || inferFieldFromKey(action.key)

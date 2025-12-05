@@ -113,11 +113,11 @@ const translationContext = computed(() => {
  * Computed - Translated validation strings
  */
 const validationStrings = computed(() => ({
-    enterValue: translator.translate('VALIDATION.ENTER_VALUE') || 'Enter value',
-    confirm: translator.translate('VALIDATION.CONFIRM') || 'Confirm',
-    confirmPlaceholder: translator.translate('VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
-    minLengthHint: (min: number) => translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
-    matchHint: translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
+    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE') || 'Enter value',
+    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM') || 'Confirm',
+    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
+    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
+    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT') || 'Values must match'
 }))
 
 /**
@@ -462,14 +462,14 @@ function handleConfirmed() {
         
         // Check match validation
         if (requiresMatch(config) && value !== confirmValues.value[field.key]) {
-            error.value = translator.translate('VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
+            error.value = translator.translate('CRUD6.VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
             return
         }
         
         // Check min length
         const minLen = getMinLength(config)
         if (minLen && String(value || '').length < minLen) {
-            error.value = translator.translate('VALIDATION.MIN_LENGTH', { min: minLen }) || `Minimum ${minLen} characters required`
+            error.value = translator.translate('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen }) || `Minimum ${minLen} characters required`
             return
         }
     }

@@ -370,12 +370,26 @@ export function useCRUD6Breadcrumbs() {
                 updatedCrumbs.push({ label: modelTitle, to: listPath || `/crud6/${route.params.model}` })
                 foundModelCrumb = true
             }
+            // Check if this breadcrumb points to the list path (existing model breadcrumb)
+            // This handles cases where setDetailBreadcrumbs is called multiple times
+            // and the placeholder was already replaced with the model title
+            else if (listPath && crumb.to === listPath) {
+                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing model breadcrumb by path:', crumb)
+                // Update with current model title (in case it changed, e.g., from plural to singular)
+                updatedCrumbs.push({ label: modelTitle, to: listPath })
+                foundModelCrumb = true
+            }
             // Check if this is already the current path (detail page)
             else if (crumb.to === currentPath) {
                 debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing current path breadcrumb:', crumb)
-                // Update it with record title
-                updatedCrumbs.push({ label: recordTitle, to: currentPath })
-                foundRecordCrumb = true
+                // Update it with record title (only if recordTitle is provided)
+                if (recordTitle) {
+                    updatedCrumbs.push({ label: recordTitle, to: currentPath })
+                    foundRecordCrumb = true
+                } else {
+                    // If no recordTitle provided, skip this breadcrumb (it will be added later when record is loaded)
+                    debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Skipping current path breadcrumb (no recordTitle yet)')
+                }
             }
             // Keep other breadcrumbs, but translate if needed
             else {

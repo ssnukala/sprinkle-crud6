@@ -370,8 +370,9 @@ watch(model, async (newModel) => {
                     // Set initial breadcrumbs with model title immediately
                     // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / User" on first load
                     // The record name will be added after fetch completes
+                    // Use modelLabel (singular) for consistency with the breadcrumb update in fetch()
                     const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(schemaTitle, '', listPath)
+                    await setDetailBreadcrumbs(modelLabel.value, '', listPath)
                     
                     // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
                     // It will be updated with the record name after fetch() completes

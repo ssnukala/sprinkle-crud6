@@ -78,17 +78,17 @@ return [
         // Panel/Breadcrumb translations (nested under CRUD6 to match dot notation)
         'ADMIN_PANEL' => 'CRUD6 Admin Panel',
 
-    ],
+        // Validation translations used in forms and modals (nested under CRUD6 for proper scoping)
+        'VALIDATION' => [
+            'ENTER_VALUE'         => 'Enter value',
+            'CONFIRM'             => 'Confirm',
+            'CONFIRM_PLACEHOLDER' => 'Confirm value',
+            'MIN_LENGTH_HINT'     => 'Minimum {{min}} characters',
+            'MATCH_HINT'          => 'Values must match',
+            'FIELDS_MUST_MATCH'   => 'Fields must match',
+            'MIN_LENGTH'          => 'Minimum {{min}} characters required',
+        ],
 
-    // Validation translations used in forms and modals
-    'VALIDATION' => [
-        'ENTER_VALUE'         => 'Enter value',
-        'CONFIRM'             => 'Confirm',
-        'CONFIRM_PLACEHOLDER' => 'Confirm value',
-        'MIN_LENGTH_HINT'     => 'Minimum {{min}} characters',
-        'MATCH_HINT'          => 'Values must match',
-        'FIELDS_MUST_MATCH'   => 'Fields must match',
-        'MIN_LENGTH'          => 'Minimum {{min}} characters required',
     ],
 
     // Panel/Breadcrumb translations (flat keys for backward compatibility)

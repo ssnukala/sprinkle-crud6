@@ -1023,7 +1023,14 @@ class SchemaService
 
                 // Include actions scoped for list view
                 if (isset($schema['actions'])) {
-                    $data['actions'] = $this->filterActionsByScope($schema['actions'], 'list');
+                    $filteredActions = $this->filterActionsByScope($schema['actions'], 'list');
+                    $this->logger->debug('[SchemaService.getContextData] List context - filtered actions', [
+                        'original_count' => count($schema['actions']),
+                        'filtered_count' => count($filteredActions),
+                        'original_keys' => array_column($schema['actions'], 'key'),
+                        'filtered_keys' => array_column($filteredActions, 'key'),
+                    ]);
+                    $data['actions'] = $filteredActions;
                 }
 
                 return $data;
@@ -1106,7 +1113,14 @@ class SchemaService
 
                 // Include actions configuration if present (for custom action buttons)
                 if (isset($schema['actions'])) {
-                    $data['actions'] = $this->filterActionsByScope($schema['actions'], 'detail');
+                    $filteredActions = $this->filterActionsByScope($schema['actions'], 'detail');
+                    $this->logger->debug('[SchemaService.getContextData] Detail context - filtered actions', [
+                        'original_count' => count($schema['actions']),
+                        'filtered_count' => count($filteredActions),
+                        'original_keys' => array_column($schema['actions'], 'key'),
+                        'filtered_keys' => array_column($filteredActions, 'key'),
+                    ]);
+                    $data['actions'] = $filteredActions;
                 }
 
                 // Include relationships configuration if present (for data fetching)
@@ -1550,7 +1564,7 @@ class SchemaService
     {
         // Check if default actions are disabled
         if (isset($schema['default_actions']) && $schema['default_actions'] === false) {
-            $this->debugLog("[CRUD6 SchemaService] Default actions disabled for model", [
+            $this->logger->debug('[SchemaService.addDefaultActions] Default actions disabled', [
                 'model' => $schema['model'] ?? 'unknown',
             ]);
             return $schema;
@@ -1560,6 +1574,11 @@ class SchemaService
         if (!isset($schema['actions'])) {
             $schema['actions'] = [];
         }
+        
+        $this->logger->debug('[SchemaService.addDefaultActions] Before adding defaults', [
+            'model' => $schema['model'] ?? 'unknown',
+            'existing_actions' => array_column($schema['actions'], 'key'),
+        ]);
 
         // Normalize toggle actions to ensure they have confirmation
         $schema['actions'] = $this->normalizeToggleActions($schema['actions'], $schema);
@@ -1575,6 +1594,10 @@ class SchemaService
 
         // Create action - appears in list view
         if (!in_array('create_action', $existingKeys) && $this->hasSchemaPermission($schema, 'create')) {
+            $this->logger->debug('[SchemaService.addDefaultActions] Adding create_action', [
+                'model' => $schema['model'] ?? 'unknown',
+                'has_create_permission' => true,
+            ]);
             $defaultActions[] = [
                 'key' => 'create_action',
                 'label' => "CRUD6.CREATE",
@@ -1609,6 +1632,10 @@ class SchemaService
 
         // Delete action - appears in detail view
         if (!in_array('delete_action', $existingKeys) && $this->hasSchemaPermission($schema, 'delete')) {
+            $this->logger->debug('[SchemaService.addDefaultActions] Adding delete_action', [
+                'model' => $schema['model'] ?? 'unknown',
+                'has_delete_permission' => true,
+            ]);
             $defaultActions[] = [
                 'key' => 'delete_action',
                 'label' => "CRUD6.DELETE",
@@ -1630,9 +1657,16 @@ class SchemaService
         if (!empty($defaultActions)) {
             $schema['actions'] = array_merge($defaultActions, $schema['actions']);
             
-            $this->debugLog("[CRUD6 SchemaService] Added default actions", [
+            $this->logger->debug('[SchemaService.addDefaultActions] Added default actions', [
                 'model' => $schema['model'] ?? 'unknown',
                 'actions_added' => array_column($defaultActions, 'key'),
+                'total_actions' => count($schema['actions']),
+                'all_action_keys' => array_column($schema['actions'], 'key'),
+            ]);
+        } else {
+            $this->logger->debug('[SchemaService.addDefaultActions] No default actions added', [
+                'model' => $schema['model'] ?? 'unknown',
+                'reason' => 'All defaults already exist or no permissions',
             ]);
         }
 
@@ -1665,7 +1699,15 @@ class SchemaService
      */
     public function filterActionsByScope(array $actions, string $scope): array
     {
-        return array_values(array_filter($actions, function ($action) use ($scope) {
+        $this->logger->debug('[SchemaService.filterActionsByScope] Filtering actions', [
+            'scope' => $scope,
+            'input_actions' => array_column($actions, 'key'),
+            'actions_with_scopes' => array_map(function($action) {
+                return ['key' => $action['key'], 'scope' => $action['scope'] ?? 'none'];
+            }, $actions)
+        ]);
+        
+        $filtered = array_values(array_filter($actions, function ($action) use ($scope) {
             // Include actions without scope (backward compatibility)
             if (!isset($action['scope'])) {
                 return true;
@@ -1678,5 +1720,12 @@ class SchemaService
 
             return $action['scope'] === $scope;
         }));
+        
+        $this->logger->debug('[SchemaService.filterActionsByScope] Filter result', [
+            'scope' => $scope,
+            'filtered_actions' => array_column($filtered, 'key'),
+        ]);
+        
+        return $filtered;
     }
 }

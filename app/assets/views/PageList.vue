@@ -53,41 +53,70 @@ const schemaFields = computed(() => {
 
 // Get list-scoped actions from schema
 const listActions = computed(() => {
+  debugLog('[PageList.listActions] Computing list actions')
+  debugLog('[PageList.listActions] schema.value?.contexts?.list?.actions:', schema.value?.contexts?.list?.actions)
+  debugLog('[PageList.listActions] schema.value?.actions:', schema.value?.actions)
+  
   // Get actions from schema
   // If contexts.list.actions is provided by backend, use it (already filtered by backend)
   if (schema.value?.contexts?.list?.actions) {
+    debugLog('[PageList.listActions] Using backend-filtered contexts.list.actions:', schema.value.contexts.list.actions)
     return schema.value.contexts.list.actions
   }
   
   // Fallback: filter from all actions for list scope
   // Match backend logic: include actions without scope for backward compatibility
   const allActions = schema.value?.actions || []
-  return allActions.filter(action => {
+  debugLog('[PageList.listActions] Falling back to client-side filtering from allActions:', allActions)
+  
+  const filtered = allActions.filter(action => {
     // Include actions without scope (backward compatibility)
-    if (!action.scope) return true
+    if (!action.scope) {
+      debugLog('[PageList.listActions] Including action without scope:', action.key)
+      return true
+    }
     
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
-    return scopes.includes('list')
+    const includes = scopes.includes('list')
+    debugLog('[PageList.listActions] Action', action.key, 'has scope:', action.scope, 'includes list?', includes)
+    return includes
   })
+  
+  debugLog('[PageList.listActions] Final filtered list actions:', filtered.map(a => a.key))
+  return filtered
 })
 
 // Get detail-scoped actions for table rows (edit, delete, etc.)
 const detailActions = computed(() => {
+  debugLog('[PageList.detailActions] Computing detail actions')
+  debugLog('[PageList.detailActions] schema.value?.contexts?.detail?.actions:', schema.value?.contexts?.detail?.actions)
+  
   // If contexts.detail.actions is provided by backend, use it (already filtered by backend)
   if (schema.value?.contexts?.detail?.actions) {
+    debugLog('[PageList.detailActions] Using backend-filtered contexts.detail.actions:', schema.value.contexts.detail.actions)
     return schema.value.contexts.detail.actions
   }
   
   // Fallback: filter from all actions for detail scope
   // Match backend logic: include actions without scope for backward compatibility
   const allActions = schema.value?.actions || []
-  return allActions.filter(action => {
+  debugLog('[PageList.detailActions] Falling back to client-side filtering from allActions:', allActions)
+  
+  const filtered = allActions.filter(action => {
     // Include actions without scope (backward compatibility)
-    if (!action.scope) return true
+    if (!action.scope) {
+      debugLog('[PageList.detailActions] Including action without scope:', action.key)
+      return true
+    }
     
     const scopes = Array.isArray(action.scope) ? action.scope : [action.scope]
-    return scopes.includes('detail')
+    const includes = scopes.includes('detail')
+    debugLog('[PageList.detailActions] Action', action.key, 'has scope:', action.scope, 'includes detail?', includes)
+    return includes
   })
+  
+  debugLog('[PageList.detailActions] Final filtered detail actions:', filtered.map(a => a.key))
+  return filtered
 })
 
 // API URL
@@ -183,7 +212,9 @@ onMounted(async () => {
     
     // Request BOTH 'list' and 'form' contexts in a single call
     // This avoids duplicate API calls when the create/edit modal is opened
-    const schemaPromise = loadSchema(model.value, false, 'list,form')
+    // NOTE: We should also request 'detail' context for row action filtering
+    debugLog('[PageList.onMounted] Requesting schema with contexts: list,form')
+    const schemaPromise = loadSchema(model.value, false, 'list,form,detail')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(async () => {
         debugLog('[PageList.onMounted] Schema loaded')

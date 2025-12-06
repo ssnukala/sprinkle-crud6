@@ -285,11 +285,12 @@ async function fetch() {
                     breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
                 })
                 
-                // DON'T set page.title here as it causes usePageMeta to automatically add a breadcrumb
-                // The record name is already in the breadcrumb trail
-                // page.title = recordName
+                // Set page.title AFTER breadcrumbs are set
+                // The breadcrumb component uses page.title to render the current page text
+                // Setting it after setDetailBreadcrumbs prevents usePageMeta from adding duplicate breadcrumbs
+                page.title = recordName
                 
-                console.log('[BREADCRUMB DEBUG] Skipped setting page.title to avoid auto-breadcrumb')
+                console.log('[BREADCRUMB DEBUG] Set page.title to:', recordName)
                 
                 debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {

@@ -513,8 +513,9 @@ function resetForm() {
 </script>
 
 <template>
-    <!-- Trigger link styled as button for UIKit modal toggle -->
-    <slot name="trigger" :modal-id="modalId">
+    <div>
+        <!-- Trigger link styled as button for UIKit modal toggle -->
+        <slot name="trigger" :modal-id="modalId">
         <a
             :href="`#${modalId}`"
             uk-toggle
@@ -647,6 +648,7 @@ function resetForm() {
                 </button>
             </div>
         </div>
+    </div>
     </div>
 </template>
 

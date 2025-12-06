@@ -5,16 +5,12 @@ export default [
             auth: {},
             description: 'CRUD6.PAGE_DESCRIPTION'
         },
-        component: () => import('../views/PageList.vue'),
-        beforeEnter: (to, from, next) => {
-            // If ID param exists, skip to child route - prevents PageList from mounting on detail routes
-            if (to.params.id) {
-                next()
-            } else {
-                next()
-            }
-        },
         children: [
+            {
+                path: '',
+                name: 'crud6.list',
+                component: () => import('../views/PageList.vue')
+            },
             {
                 path: ':id',
                 name: 'crud6.view',

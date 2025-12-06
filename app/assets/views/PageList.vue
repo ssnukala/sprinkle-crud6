@@ -178,6 +178,13 @@ onMounted(async () => {
     debugLog('[PageList.onMounted] Starting - model:', model.value)
     debugLog('[PageList.onMounted] Current page.breadcrumbs:', page.breadcrumbs)
     
+    // Don't set breadcrumbs if we have an ID param - this is a detail route, not list
+    // This prevents race conditions during route transitions where PageList briefly mounts
+    if (route.params.id) {
+      debugLog('[PageList.onMounted] Skipping breadcrumb setup - ID param exists, this is a detail route')
+      return
+    }
+    
     // Set initial page title immediately for breadcrumbs
     const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     page.title = initialTitle

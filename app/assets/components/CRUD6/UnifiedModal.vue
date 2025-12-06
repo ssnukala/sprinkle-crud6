@@ -112,13 +112,24 @@ const translationContext = computed(() => {
 /**
  * Computed - Translated validation strings
  */
-const validationStrings = computed(() => ({
-    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE') || 'Enter value',
-    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM') || 'Confirm',
-    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
-    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
-    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT') || 'Values must match'
-}))
+const validationStrings = computed(() => {
+    const enterValue = translator.translate('CRUD6.VALIDATION.ENTER_VALUE')
+    const confirm = translator.translate('CRUD6.VALIDATION.CONFIRM')
+    const confirmPlaceholder = translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER')
+    const minLengthHint = (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min })
+    const matchHint = translator.translate('CRUD6.VALIDATION.MATCH_HINT')
+    
+    return {
+        enterValue: enterValue === 'CRUD6.VALIDATION.ENTER_VALUE' ? 'Enter value' : enterValue,
+        confirm: confirm === 'CRUD6.VALIDATION.CONFIRM' ? 'Confirm' : confirm,
+        confirmPlaceholder: confirmPlaceholder === 'CRUD6.VALIDATION.CONFIRM_PLACEHOLDER' ? 'Confirm value' : confirmPlaceholder,
+        minLengthHint: (min: number) => {
+            const translated = minLengthHint(min)
+            return translated === 'CRUD6.VALIDATION.MIN_LENGTH_HINT' ? `Minimum ${min} characters` : translated
+        },
+        matchHint: matchHint === 'CRUD6.VALIDATION.MATCH_HINT' ? 'Values must match' : matchHint
+    }
+})
 
 /**
  * Computed - Modal ID for UIKit toggle

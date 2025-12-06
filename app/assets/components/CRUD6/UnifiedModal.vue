@@ -124,7 +124,9 @@ const validationStrings = computed(() => ({
  * Computed - Modal ID for UIKit toggle
  */
 const modalId = computed(() => {
-    return `action-modal-${props.action.key}`
+    // Include record ID to ensure uniqueness when same action appears in multiple rows
+    const recordId = props.record?.id ?? 'new'
+    return `action-modal-${props.action.key}-${recordId}`
 })
 
 /**
@@ -571,12 +573,12 @@ function resetForm() {
                     <!-- Input fields (for input type) -->
                     <template v-if="fieldsToRender.length > 0">
                         <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
-                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}`">
+                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`">
                                 {{ getFieldLabel(field.key, field.config) }}
                             </label>
                             <div class="uk-form-controls">
                                 <input
-                                    :id="`field-${action.key}-${field.key}`"
+                                    :id="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`"
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
@@ -588,12 +590,12 @@ function resetForm() {
                             
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
-                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
+                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`">
                                     {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
-                                        :id="`confirm-${action.key}-${field.key}`"
+                                        :id="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`"
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"

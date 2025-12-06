@@ -1,4 +1,4 @@
-import { nextTick, getCurrentInstance, watch } from 'vue'
+import { nextTick, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'
@@ -345,25 +345,12 @@ export function useCRUD6Breadcrumbs() {
      * @param listPath - Optional path to the list page for the model breadcrumb
      */
     async function setDetailBreadcrumbs(modelTitle: string, recordTitle: string, listPath?: string): Promise<void> {
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] START', { modelTitle, recordTitle, listPath })
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Called with:', { modelTitle, recordTitle, listPath })
-        
-        // Wait for multiple ticks to ensure usePageMeta and all other reactive updates have finished
+        // Wait for Vue reactivity to settle
         await nextTick()
         await nextTick()
         
         const currentPath = route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] BEFORE PROCESSING', {
-            existingCrumbs: existingCrumbs.map(c => ({ label: c.label, to: c.to })),
-            currentPath,
-            listPath
-        })
-        
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Existing breadcrumbs:', existingCrumbs)
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Current path:', currentPath)
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] List path:', listPath)
         
         // Replace CRUD6.PAGE or {{model}} placeholders and update paths
         const updatedCrumbs: Breadcrumb[] = []
@@ -371,80 +358,42 @@ export function useCRUD6Breadcrumbs() {
         let foundRecordCrumb = false
         
         for (const crumb of existingCrumbs) {
-            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Processing crumb', {
-                label: crumb.label,
-                to: crumb.to,
-                checks: {
-                    isPlaceholder: crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}') || crumb.to.includes(':model'),
-                    isListPath: listPath && crumb.to === listPath,
-                    isCurrentPath: crumb.to === currentPath
-                }
-            })
-            
             // Check if this is the model placeholder that needs replacement
             if (crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}') || crumb.to.includes(':model')) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found model placeholder/pattern breadcrumb:', crumb)
-                console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Replacing placeholder with model title')
                 // Replace with model title pointing to list path
                 updatedCrumbs.push({ label: modelTitle, to: listPath || `/crud6/${route.params.model}` })
                 foundModelCrumb = true
             }
             // Check if this breadcrumb points to the list path (existing model breadcrumb)
-            // This handles cases where setDetailBreadcrumbs is called multiple times
-            // and the placeholder was already replaced with the model title
             else if (listPath && crumb.to === listPath) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing model breadcrumb by path:', crumb)
-                console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Updating existing model breadcrumb')
-                // Update with current model title (in case it changed, e.g., from plural to singular)
+                // Update with current model title
                 updatedCrumbs.push({ label: modelTitle, to: listPath })
                 foundModelCrumb = true
             }
             // Check if this is already the current path (detail page)
             else if (crumb.to === currentPath) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing current path breadcrumb:', crumb)
-                console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Found current path crumb', { hasRecordTitle: !!recordTitle })
                 // Update it with record title (only if recordTitle is provided)
                 if (recordTitle) {
-                    console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Updating current path with recordTitle')
                     updatedCrumbs.push({ label: recordTitle, to: currentPath })
                     foundRecordCrumb = true
-                } else {
-                    // If no recordTitle provided, skip this breadcrumb (it will be added later when record is loaded)
-                    debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Skipping current path breadcrumb (no recordTitle yet)')
-                    console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Skipping current path (no recordTitle)')
                 }
             }
             // Keep other breadcrumbs, but translate if needed
             else {
                 const translatedLabel = translateLabel(crumb.label)
-                console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Keeping breadcrumb', { original: crumb.label, translated: translatedLabel })
                 updatedCrumbs.push({ label: translatedLabel, to: crumb.to })
             }
         }
         
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After loop', {
-            foundModelCrumb,
-            foundRecordCrumb,
-            updatedCrumbs: updatedCrumbs.map(c => ({ label: c.label, to: c.to }))
-        })
-        
         // If we didn't find a model breadcrumb, add one
         if (!foundModelCrumb && listPath) {
-            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding model breadcrumb')
-            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Adding new model breadcrumb')
             updatedCrumbs.push({ label: modelTitle, to: listPath })
         }
         
         // If we didn't find the record breadcrumb, add it
         if (!foundRecordCrumb && recordTitle) {
-            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding record breadcrumb')
-            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Adding new record breadcrumb')
             updatedCrumbs.push({ label: recordTitle, to: currentPath })
         }
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Before deduplication', {
-            updatedCrumbs: updatedCrumbs.map(c => ({ label: c.label, to: c.to }))
-        })
         
         // Remove duplicate consecutive breadcrumbs with the same label
         const deduplicatedCrumbs: Breadcrumb[] = []
@@ -454,75 +403,13 @@ export function useCRUD6Breadcrumbs() {
             
             // Skip if this crumb has the same label as the previous one
             if (prevCrumb && prevCrumb.label === crumb.label) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Skipping duplicate breadcrumb:', crumb)
-                console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Skipping duplicate', { label: crumb.label })
                 continue
             }
             deduplicatedCrumbs.push(crumb)
         }
         
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] FINAL RESULT', {
-            deduplicatedCrumbs: deduplicatedCrumbs.map(c => ({ label: c.label, to: c.to }))
-        })
-        
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Final breadcrumbs:', deduplicatedCrumbs)
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] SETTING page.breadcrumbs now...')
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Before assignment, page.breadcrumbs =', {
-            current: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
-        })
-        
         page.breadcrumbs = deduplicatedCrumbs
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] IMMEDIATELY after assignment, page.breadcrumbs =', {
-            assigned: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
-            length: page.breadcrumbs.length,
-            isArray: Array.isArray(page.breadcrumbs),
-            isProxy: page.breadcrumbs.constructor.name
-        })
-        
-        // Wait for Vue reactivity to settle after setting breadcrumbs
-        await nextTick()
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 1st nextTick, page.breadcrumbs =', {
-            breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
-            length: page.breadcrumbs.length
-        })
-        
-        await nextTick()
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 2nd nextTick, page.breadcrumbs =', {
-            breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
-            length: page.breadcrumbs.length
-        })
-        
-        // Set a timeout to check breadcrumbs after all reactive updates
-        setTimeout(() => {
-            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 100ms timeout, page.breadcrumbs =', {
-                breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
-                length: page.breadcrumbs.length
-            })
-        }, 100)
-        
-        setTimeout(() => {
-            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 500ms timeout, page.breadcrumbs =', {
-                breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
-                length: page.breadcrumbs.length
-            })
-        }, 500)
-        
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] END')
     }
-
-    // Add a watcher to track breadcrumb changes
-    // This helps debug when something else modifies breadcrumbs after we set them
-    watch(() => page.breadcrumbs, (newValue, oldValue) => {
-        console.log('[BREADCRUMB DEBUG - WATCHER] Breadcrumbs changed!', {
-            before: oldValue?.map(b => ({ label: b.label, to: b.to })),
-            after: newValue?.map(b => ({ label: b.label, to: b.to })),
-            stackTrace: new Error().stack
-        })
-    }, { deep: true })
 
     return {
         updateBreadcrumbs,

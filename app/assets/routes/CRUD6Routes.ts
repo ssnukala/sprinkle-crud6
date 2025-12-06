@@ -3,26 +3,23 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            // Remove title from parent - it should be on child routes only
             description: 'CRUD6.PAGE_DESCRIPTION'
         },
+        component: () => import('../views/PageList.vue'),
+        beforeEnter: (to, from, next) => {
+            // If ID param exists, skip to child route - prevents PageList from mounting on detail routes
+            if (to.params.id) {
+                next()
+            } else {
+                next()
+            }
+        },
         children: [
-            {
-                path: '',
-                name: 'crud6.list',
-                meta: {
-                    permission: {
-                        slug: 'uri_crud6'
-                    }
-                    // NO title - PageList.vue sets it dynamically
-                },
-                component: () => import('../views/PageList.vue')
-            },
             {
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    title: 'CRUD6.PAGE',  // Title on view route for breadcrumb placeholder
+                    title: 'CRUD6.PAGE',
                     description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'

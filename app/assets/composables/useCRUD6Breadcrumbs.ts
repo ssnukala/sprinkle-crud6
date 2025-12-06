@@ -1,4 +1,4 @@
-import { nextTick, getCurrentInstance } from 'vue'
+import { nextTick, getCurrentInstance, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageMeta } from '@userfrosting/sprinkle-core/stores'
 import { debugLog, debugWarn } from '../utils/debug'

@@ -348,7 +348,8 @@ export function useCRUD6Breadcrumbs() {
         console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] START', { modelTitle, recordTitle, listPath })
         debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Called with:', { modelTitle, recordTitle, listPath })
         
-        // Wait for next tick to ensure usePageMeta has finished its refresh
+        // Wait for multiple ticks to ensure usePageMeta and all other reactive updates have finished
+        await nextTick()
         await nextTick()
         
         const currentPath = route.path
@@ -466,6 +467,10 @@ export function useCRUD6Breadcrumbs() {
         
         debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Final breadcrumbs:', deduplicatedCrumbs)
         page.breadcrumbs = deduplicatedCrumbs
+        
+        // Wait for Vue reactivity to settle after setting breadcrumbs
+        await nextTick()
+        await nextTick()
         
         console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] END - page.breadcrumbs set to', {
             breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))

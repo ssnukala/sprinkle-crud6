@@ -3,7 +3,7 @@ export default [
         path: '/crud6/:model',
         meta: {
             auth: {},
-            title: 'CRUD6.PAGE',  // Restored - needed for initial breadcrumb structure
+            // Remove title from parent - it should be on child routes only
             description: 'CRUD6.PAGE_DESCRIPTION'
         },
         children: [
@@ -14,6 +14,7 @@ export default [
                     permission: {
                         slug: 'uri_crud6'
                     }
+                    // NO title - PageList.vue sets it dynamically
                 },
                 component: () => import('../views/PageList.vue')
             },
@@ -21,8 +22,7 @@ export default [
                 path: ':id',
                 name: 'crud6.view',
                 meta: {
-                    // Note: title is NOT set here to avoid duplicate breadcrumbs
-                    // The record name is added dynamically by PageRow.vue via useCRUD6Breadcrumbs
+                    title: 'CRUD6.PAGE',  // Title on view route for breadcrumb placeholder
                     description: 'CRUD6.INFO_PAGE',
                     permission: {
                         slug: 'uri_crud6'

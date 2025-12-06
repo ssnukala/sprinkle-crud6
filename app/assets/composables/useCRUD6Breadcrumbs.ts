@@ -466,16 +466,63 @@ export function useCRUD6Breadcrumbs() {
         })
         
         debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Final breadcrumbs:', deduplicatedCrumbs)
+        
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] SETTING page.breadcrumbs now...')
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] Before assignment, page.breadcrumbs =', {
+            current: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
+        })
+        
         page.breadcrumbs = deduplicatedCrumbs
+        
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] IMMEDIATELY after assignment, page.breadcrumbs =', {
+            assigned: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
+            length: page.breadcrumbs.length,
+            isArray: Array.isArray(page.breadcrumbs),
+            isProxy: page.breadcrumbs.constructor.name
+        })
         
         // Wait for Vue reactivity to settle after setting breadcrumbs
         await nextTick()
+        
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 1st nextTick, page.breadcrumbs =', {
+            breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
+            length: page.breadcrumbs.length
+        })
+        
         await nextTick()
         
-        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] END - page.breadcrumbs set to', {
-            breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to }))
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 2nd nextTick, page.breadcrumbs =', {
+            breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
+            length: page.breadcrumbs.length
         })
+        
+        // Set a timeout to check breadcrumbs after all reactive updates
+        setTimeout(() => {
+            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 100ms timeout, page.breadcrumbs =', {
+                breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
+                length: page.breadcrumbs.length
+            })
+        }, 100)
+        
+        setTimeout(() => {
+            console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] After 500ms timeout, page.breadcrumbs =', {
+                breadcrumbs: page.breadcrumbs.map(b => ({ label: b.label, to: b.to })),
+                length: page.breadcrumbs.length
+            })
+        }, 500)
+        
+        console.log('[BREADCRUMB DEBUG - setDetailBreadcrumbs] END')
     }
+
+    // Add a watcher to track breadcrumb changes
+    // This helps debug when something else modifies breadcrumbs after we set them
+    watch(() => page.breadcrumbs, (newValue, oldValue) => {
+        console.log('[BREADCRUMB DEBUG - WATCHER] Breadcrumbs changed!', {
+            before: oldValue?.map(b => ({ label: b.label, to: b.to })),
+            after: newValue?.map(b => ({ label: b.label, to: b.to })),
+            stackTrace: new Error().stack
+        })
+    }, { deep: true })
 
     return {
         updateBreadcrumbs,

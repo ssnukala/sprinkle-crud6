@@ -76,22 +76,22 @@ return [
         // Panel/Breadcrumb translations (nested under CRUD6 to match dot notation)
         'ADMIN_PANEL' => 'Panneau d\'administration CRUD6',
 
+        // Validation translations used in forms and modals (nested under CRUD6 for proper scoping)
+        'VALIDATION' => [
+            'ENTER_VALUE'         => 'Entrer une valeur',
+            'CONFIRM'             => 'Confirmer',
+            'CONFIRM_PLACEHOLDER' => 'Confirmer la valeur',
+            'MIN_LENGTH_HINT'     => 'Minimum {{min}} caractères',
+            'MATCH_HINT'          => 'Les valeurs doivent correspondre',
+            'FIELDS_MUST_MATCH'   => 'Les champs doivent correspondre',
+            'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
+        ],
+
     ],
 
     // Action translations used in modals
     'ACTION' => [
         'CANNOT_UNDO' => 'Cette action ne peut pas être annulée.',
-    ],
-
-    // Validation translations used in forms and modals
-    'VALIDATION' => [
-        'ENTER_VALUE'         => 'Entrer une valeur',
-        'CONFIRM'             => 'Confirmer',
-        'CONFIRM_PLACEHOLDER' => 'Confirmer la valeur',
-        'MIN_LENGTH_HINT'     => 'Minimum {{min}} caractères',
-        'MATCH_HINT'          => 'Les valeurs doivent correspondre',
-        'FIELDS_MUST_MATCH'   => 'Les champs doivent correspondre',
-        'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
     ],
 
     // Panel/Breadcrumb translations (flat keys for backward compatibility)

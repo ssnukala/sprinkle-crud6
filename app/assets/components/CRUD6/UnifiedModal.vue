@@ -113,18 +113,20 @@ const translationContext = computed(() => {
  * Computed - Translated validation strings
  */
 const validationStrings = computed(() => ({
-    enterValue: translator.translate('VALIDATION.ENTER_VALUE') || 'Enter value',
-    confirm: translator.translate('VALIDATION.CONFIRM') || 'Confirm',
-    confirmPlaceholder: translator.translate('VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
-    minLengthHint: (min: number) => translator.translate('VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
-    matchHint: translator.translate('VALIDATION.MATCH_HINT') || 'Values must match'
+    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE') || 'Enter value',
+    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM') || 'Confirm',
+    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
+    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
+    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT') || 'Values must match'
 }))
 
 /**
  * Computed - Modal ID for UIKit toggle
  */
 const modalId = computed(() => {
-    return `action-modal-${props.action.key}`
+    // Include record ID to ensure uniqueness when same action appears in multiple rows
+    const recordId = props.record?.id ?? 'new'
+    return `action-modal-${props.action.key}-${recordId}`
 })
 
 /**
@@ -462,14 +464,14 @@ function handleConfirmed() {
         
         // Check match validation
         if (requiresMatch(config) && value !== confirmValues.value[field.key]) {
-            error.value = translator.translate('VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
+            error.value = translator.translate('CRUD6.VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
             return
         }
         
         // Check min length
         const minLen = getMinLength(config)
         if (minLen && String(value || '').length < minLen) {
-            error.value = translator.translate('VALIDATION.MIN_LENGTH', { min: minLen }) || `Minimum ${minLen} characters required`
+            error.value = translator.translate('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen }) || `Minimum ${minLen} characters required`
             return
         }
     }
@@ -513,8 +515,9 @@ function resetForm() {
 </script>
 
 <template>
-    <!-- Trigger link styled as button for UIKit modal toggle -->
-    <slot name="trigger" :modal-id="modalId">
+    <div>
+        <!-- Trigger link styled as button for UIKit modal toggle -->
+        <slot name="trigger" :modal-id="modalId">
         <a
             :href="`#${modalId}`"
             uk-toggle
@@ -570,12 +573,12 @@ function resetForm() {
                     <!-- Input fields (for input type) -->
                     <template v-if="fieldsToRender.length > 0">
                         <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
-                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}`">
+                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`">
                                 {{ getFieldLabel(field.key, field.config) }}
                             </label>
                             <div class="uk-form-controls">
                                 <input
-                                    :id="`field-${action.key}-${field.key}`"
+                                    :id="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`"
                                     v-model="fieldValues[field.key]"
                                     :type="getInputType(field.config)"
                                     class="uk-input"
@@ -587,12 +590,12 @@ function resetForm() {
                             
                             <!-- Confirm field for match validation -->
                             <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
-                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}`">
+                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`">
                                     {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
-                                        :id="`confirm-${action.key}-${field.key}`"
+                                        :id="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`"
                                         v-model="confirmValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
@@ -647,6 +650,7 @@ function resetForm() {
                 </button>
             </div>
         </div>
+    </div>
     </div>
 </template>
 

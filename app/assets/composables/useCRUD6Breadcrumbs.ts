@@ -345,17 +345,12 @@ export function useCRUD6Breadcrumbs() {
      * @param listPath - Optional path to the list page for the model breadcrumb
      */
     async function setDetailBreadcrumbs(modelTitle: string, recordTitle: string, listPath?: string): Promise<void> {
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Called with:', { modelTitle, recordTitle, listPath })
-        
-        // Wait for next tick to ensure usePageMeta has finished its refresh
+        // Wait for Vue reactivity to settle
+        await nextTick()
         await nextTick()
         
         const currentPath = route.path
         const existingCrumbs: Breadcrumb[] = [...page.breadcrumbs]
-        
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Existing breadcrumbs:', existingCrumbs)
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Current path:', currentPath)
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] List path:', listPath)
         
         // Replace CRUD6.PAGE or {{model}} placeholders and update paths
         const updatedCrumbs: Breadcrumb[] = []
@@ -365,17 +360,23 @@ export function useCRUD6Breadcrumbs() {
         for (const crumb of existingCrumbs) {
             // Check if this is the model placeholder that needs replacement
             if (crumb.label === 'CRUD6.PAGE' || crumb.label === '{{model}}' || crumb.label.includes('{{model}}') || crumb.to.includes(':model')) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found model placeholder/pattern breadcrumb:', crumb)
                 // Replace with model title pointing to list path
                 updatedCrumbs.push({ label: modelTitle, to: listPath || `/crud6/${route.params.model}` })
                 foundModelCrumb = true
             }
+            // Check if this breadcrumb points to the list path (existing model breadcrumb)
+            else if (listPath && crumb.to === listPath) {
+                // Update with current model title
+                updatedCrumbs.push({ label: modelTitle, to: listPath })
+                foundModelCrumb = true
+            }
             // Check if this is already the current path (detail page)
             else if (crumb.to === currentPath) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Found existing current path breadcrumb:', crumb)
-                // Update it with record title
-                updatedCrumbs.push({ label: recordTitle, to: currentPath })
-                foundRecordCrumb = true
+                // Update it with record title (only if recordTitle is provided)
+                if (recordTitle) {
+                    updatedCrumbs.push({ label: recordTitle, to: currentPath })
+                    foundRecordCrumb = true
+                }
             }
             // Keep other breadcrumbs, but translate if needed
             else {
@@ -386,13 +387,11 @@ export function useCRUD6Breadcrumbs() {
         
         // If we didn't find a model breadcrumb, add one
         if (!foundModelCrumb && listPath) {
-            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding model breadcrumb')
             updatedCrumbs.push({ label: modelTitle, to: listPath })
         }
         
         // If we didn't find the record breadcrumb, add it
         if (!foundRecordCrumb && recordTitle) {
-            debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Adding record breadcrumb')
             updatedCrumbs.push({ label: recordTitle, to: currentPath })
         }
         
@@ -404,13 +403,11 @@ export function useCRUD6Breadcrumbs() {
             
             // Skip if this crumb has the same label as the previous one
             if (prevCrumb && prevCrumb.label === crumb.label) {
-                debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Skipping duplicate breadcrumb:', crumb)
                 continue
             }
             deduplicatedCrumbs.push(crumb)
         }
         
-        debugLog('[useCRUD6Breadcrumbs.setDetailBreadcrumbs] Final breadcrumbs:', deduplicatedCrumbs)
         page.breadcrumbs = deduplicatedCrumbs
     }
 

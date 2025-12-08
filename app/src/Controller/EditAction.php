@@ -179,6 +179,14 @@ class EditAction extends Base
             // Calculate breadcrumb display name using title_field from schema
             $breadcrumbName = $this->calculateBreadcrumbName($crudSchema, $recordData, $recordId);
             
+            $this->debugLog("CRUD6 [EditAction] ===== BREADCRUMB CALCULATION =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'title_field' => $crudSchema['title_field'] ?? 'NOT SET',
+                'breadcrumb_value' => $breadcrumbName,
+                'record_data_keys' => array_keys($recordData),
+            ]);
+            
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $crudSchema['model'],
@@ -193,10 +201,12 @@ class EditAction extends Base
                 $responseData['details'] = $details;
             }
 
-            $this->debugLog("CRUD6 [EditAction] Read response prepared", [
+            $this->debugLog("CRUD6 [EditAction] ===== READ RESPONSE PREPARED =====", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'response_keys' => array_keys($responseData),
+                'breadcrumb_in_response' => isset($responseData['breadcrumb']) ? 'YES' : 'NO',
+                'breadcrumb_value_in_response' => $responseData['breadcrumb'] ?? 'NOT SET',
             ]);
 
             $response->getBody()->write(json_encode($responseData));
@@ -381,13 +391,28 @@ class EditAction extends Base
     {
         $titleField = $crudSchema['title_field'] ?? null;
         
+        $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] ===== START =====", [
+            'record_id' => $recordId,
+            'title_field' => $titleField ?? 'NULL',
+            'title_field_exists_in_data' => $titleField && isset($recordData[$titleField]) ? 'YES' : 'NO',
+            'title_field_value' => $titleField && isset($recordData[$titleField]) ? $recordData[$titleField] : 'N/A',
+        ]);
+        
         // If title_field is defined and exists in record data, use it with ID suffix
         if ($titleField && isset($recordData[$titleField]) && !empty($recordData[$titleField])) {
-            return $recordData[$titleField] . ' (' . $recordId . ')';
+            $result = $recordData[$titleField] . ' (' . $recordId . ')';
+            $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] Using title_field", [
+                'result' => $result,
+            ]);
+            return $result;
         }
         
         // Fall back to just the record ID
-        return (string) $recordId;
+        $result = (string) $recordId;
+        $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] Fallback to ID", [
+            'result' => $result,
+        ]);
+        return $result;
     }
 
     /**

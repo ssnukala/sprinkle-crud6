@@ -217,9 +217,20 @@ const modelTitle = computed(() => {
  */
 async function fetch() {
     if (recordId.value && fetchRow) {
+        debugLog('[PageRow.fetch] ===== STARTING FETCH =====', {
+            recordId: recordId.value,
+            model: model.value,
+        })
+        
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then(async (fetchedRow) => {
+                debugLog('[PageRow.fetch] ===== FETCH COMPLETED =====', {
+                    fetchedRowKeys: Object.keys(fetchedRow),
+                    has_breadcrumb: '_breadcrumb' in fetchedRow ? 'YES' : 'NO',
+                    _breadcrumb_value: (fetchedRow as any)._breadcrumb ?? 'NOT PRESENT',
+                })
+                
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
@@ -229,20 +240,27 @@ async function fetch() {
                 // The breadcrumb is attached as _breadcrumb property by fetchRow
                 let recordName = (fetchedRow as any)._breadcrumb
                 
+                debugLog('[PageRow.fetch] ===== BREADCRUMB RESOLUTION =====', {
+                    step1_fetchedRow_breadcrumb: (fetchedRow as any)._breadcrumb ?? 'NULL',
+                    step2_recordBreadcrumb_value: recordBreadcrumb.value ?? 'NULL',
+                    step3_recordId: recordId.value,
+                })
+                
                 if (!recordName) {
+                    debugLog('[PageRow.fetch] Step 1 failed, trying recordBreadcrumb.value')
                     // Fallback to reactive ref (should be set by now)
                     recordName = recordBreadcrumb.value
                 }
                 
                 if (!recordName) {
+                    debugLog('[PageRow.fetch] Step 2 failed, using recordId fallback')
                     // Final fallback to record ID
                     recordName = recordId.value
                 }
                 
-                debugLog('[PageRow.fetch] Using breadcrumb:', {
-                    fromFetchedRow: (fetchedRow as any)._breadcrumb,
-                    fromReactiveRef: recordBreadcrumb.value,
-                    final: recordName
+                debugLog('[PageRow.fetch] ===== FINAL BREADCRUMB =====', {
+                    recordName,
+                    modelTitle: modelTitle.value,
                 })
                 
                 // Update breadcrumbs with model title and record name
@@ -251,8 +269,12 @@ async function fetch() {
                 
                 // Set page.title AFTER breadcrumbs to prevent usePageMeta interference
                 page.title = recordName
+                
+                debugLog('[PageRow.fetch] ===== PAGE TITLE SET =====', {
+                    pageTitle: page.title,
+                })
             }).catch((error) => {
-                debugError('Failed to fetch CRUD6 row:', error)
+                debugError('[PageRow.fetch] ===== FETCH FAILED =====', error)
             })
         }
     }

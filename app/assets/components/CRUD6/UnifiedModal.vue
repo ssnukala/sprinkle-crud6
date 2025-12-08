@@ -529,123 +529,123 @@ function resetForm() {
             </a>
         </slot>
 
-    <!-- Unified Modal -->
-    <div :id="modalId" uk-modal :data-test="`modal-action-${action.key}`">
-        <div class="uk-modal-dialog">
-            <button class="uk-modal-close-default" type="button" uk-close @click="resetForm"></button>
-            
-            <!-- Modal Header -->
-            <div class="uk-modal-header">
-                <h2 class="uk-modal-title">{{ modalTitle }}</h2>
-            </div>
-            
-            <!-- Modal Body -->
-            <div class="uk-modal-body">
-                <!-- Full CRUD Form (for form type) -->
-                <template v-if="modalConfig.type === 'form'">
-                    <CRUD6Form
-                        :crud6="record"
-                        :model="model"
-                        :schema="schema"
-                        @success="handleFormSuccess()" />
-                </template>
+        <!-- Unified Modal -->
+        <div :id="modalId" uk-modal :data-test="`modal-action-${action.key}`">
+            <div class="uk-modal-dialog">
+                <button class="uk-modal-close-default" type="button" uk-close @click="resetForm"></button>
                 
-                <!-- Input/Confirm Form (for input/confirm types) -->
-                <form v-else @submit.prevent="handleConfirmed">
-                    <!-- Confirmation message (for confirm type or when confirm prop exists) -->
-                    <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
-                        <p>
-                            <font-awesome-icon 
-                                icon="triangle-exclamation" 
-                                class="uk-text-warning fa-4x" />
-                        </p>
-                        <div v-html="promptMessage"></div>
-                        <div v-if="warningMessage" class="uk-text-meta">
-                            {{ warningMessage }}
-                        </div>
-                    </div>
+                <!-- Modal Header -->
+                <div class="uk-modal-header">
+                    <h2 class="uk-modal-title">{{ modalTitle }}</h2>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="uk-modal-body">
+                    <!-- Full CRUD Form (for form type) -->
+                    <template v-if="modalConfig.type === 'form'">
+                        <CRUD6Form
+                            :crud6="record"
+                            :model="model"
+                            :schema="schema"
+                            @success="handleFormSuccess()" />
+                    </template>
                     
-                    <!-- Input fields (for input type) -->
-                    <template v-if="fieldsToRender.length > 0">
-                        <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
-                            <label class="uk-form-label" :for="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`">
-                                {{ getFieldLabel(field.key, field.config) }}
-                            </label>
-                            <div class="uk-form-controls">
-                                <input
-                                    :id="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`"
-                                    v-model="fieldValues[field.key]"
-                                    :type="getInputType(field.config)"
-                                    class="uk-input"
-                                    :placeholder="validationStrings.enterValue"
-                                    :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
-                                    required
-                                    :minlength="getMinLength(field.config) || undefined" />
+                    <!-- Input/Confirm Form (for input/confirm types) -->
+                    <form v-else @submit.prevent="handleConfirmed">
+                        <!-- Confirmation message (for confirm type or when confirm prop exists) -->
+                        <div v-if="promptMessage" class="uk-text-center uk-margin-bottom">
+                            <p>
+                                <font-awesome-icon 
+                                    icon="triangle-exclamation" 
+                                    class="uk-text-warning fa-4x" />
+                            </p>
+                            <div v-html="promptMessage"></div>
+                            <div v-if="warningMessage" class="uk-text-meta">
+                                {{ warningMessage }}
                             </div>
-                            
-                            <!-- Confirm field for match validation -->
-                            <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
-                                <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`">
-                                    {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
+                        </div>
+                        
+                        <!-- Input fields (for input type) -->
+                        <template v-if="fieldsToRender.length > 0">
+                            <div v-for="field in fieldsToRender" :key="field.key" class="uk-margin">
+                                <label class="uk-form-label" :for="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`">
+                                    {{ getFieldLabel(field.key, field.config) }}
                                 </label>
                                 <div class="uk-form-controls">
                                     <input
-                                        :id="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`"
-                                        v-model="confirmValues[field.key]"
+                                        :id="`field-${action.key}-${field.key}-${record?.id ?? 'new'}`"
+                                        v-model="fieldValues[field.key]"
                                         :type="getInputType(field.config)"
                                         class="uk-input"
-                                        :placeholder="validationStrings.confirmPlaceholder"
+                                        :placeholder="validationStrings.enterValue"
                                         :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
-                                        required />
+                                        required
+                                        :minlength="getMinLength(field.config) || undefined" />
+                                </div>
+                                
+                                <!-- Confirm field for match validation -->
+                                <div v-if="requiresMatch(field.config)" class="uk-margin-small-top">
+                                    <label class="uk-form-label" :for="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`">
+                                        {{ validationStrings.confirm }} {{ getFieldLabel(field.key, field.config) }}
+                                    </label>
+                                    <div class="uk-form-controls">
+                                        <input
+                                            :id="`confirm-${action.key}-${field.key}-${record?.id ?? 'new'}`"
+                                            v-model="confirmValues[field.key]"
+                                            :type="getInputType(field.config)"
+                                            class="uk-input"
+                                            :placeholder="validationStrings.confirmPlaceholder"
+                                            :autocomplete="getAutocompleteAttribute(field.key, field.config?.type)"
+                                            required />
+                                    </div>
                                 </div>
                             </div>
+                        </template>
+                        
+                        <!-- Error message -->
+                        <div v-if="error" class="uk-alert-danger" uk-alert>
+                            <p>{{ error }}</p>
                         </div>
-                    </template>
-                    
-                    <!-- Error message -->
-                    <div v-if="error" class="uk-alert-danger" uk-alert>
-                        <p>{{ error }}</p>
-                    </div>
-                    
-                    <!-- Validation hints -->
-                    <div v-if="fieldsToRender.some(f => getMinLength(f.config) || requiresMatch(f.config))" 
-                         class="uk-text-small uk-text-muted">
-                        <ul class="uk-list">
-                            <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
-                                <li v-if="getMinLength(field.config)" 
-                                    :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
-                                    {{ validationStrings.minLengthHint(getMinLength(field.config)) }}
-                                </li>
-                                <li v-if="requiresMatch(field.config)" 
-                                    :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
-                                    {{ validationStrings.matchHint }}
-                                </li>
-                            </template>
-                        </ul>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Modal Footer with schema-driven buttons (not shown for form type) -->
-            <div v-if="modalConfig.type !== 'form'" class="uk-modal-footer uk-text-right">
-                <button
-                    v-for="(button, index) in resolvedButtons"
-                    :key="index"
-                    class="uk-button uk-margin-small-left"
-                    :class="[
-                        getButtonClass(button.style),
-                        { 'uk-modal-close': button.closeModal }
-                    ]"
-                    type="button"
-                    :disabled="shouldDisableButton(button)"
-                    @click="handleButtonClick(button)"
-                    :data-test="`btn-${button.action}-${action.key}`">
-                    <font-awesome-icon v-if="button.icon" :icon="button.icon" fixed-width />
-                    {{ translator.translate(button.label, translationContext) }}
-                </button>
+                        
+                        <!-- Validation hints -->
+                        <div v-if="fieldsToRender.some(f => getMinLength(f.config) || requiresMatch(f.config))" 
+                             class="uk-text-small uk-text-muted">
+                            <ul class="uk-list">
+                                <template v-for="field in fieldsToRender" :key="`hint-${field.key}`">
+                                    <li v-if="getMinLength(field.config)" 
+                                        :class="{ 'uk-text-success': (fieldValues[field.key] || '').length >= getMinLength(field.config) }">
+                                        {{ validationStrings.minLengthHint(getMinLength(field.config)) }}
+                                    </li>
+                                    <li v-if="requiresMatch(field.config)" 
+                                        :class="{ 'uk-text-success': fieldValues[field.key] && confirmValues[field.key] && fieldValues[field.key] === confirmValues[field.key] }">
+                                        {{ validationStrings.matchHint }}
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Modal Footer with schema-driven buttons (not shown for form type) -->
+                <div v-if="modalConfig.type !== 'form'" class="uk-modal-footer uk-text-right">
+                    <button
+                        v-for="(button, index) in resolvedButtons"
+                        :key="index"
+                        class="uk-button uk-margin-small-left"
+                        :class="[
+                            getButtonClass(button.style),
+                            { 'uk-modal-close': button.closeModal }
+                        ]"
+                        type="button"
+                        :disabled="shouldDisableButton(button)"
+                        @click="handleButtonClick(button)"
+                        :data-test="`btn-${button.action}-${action.key}`">
+                        <font-awesome-icon v-if="button.icon" :icon="button.icon" fixed-width />
+                        {{ translator.translate(button.label, translationContext) }}
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 </template>
 

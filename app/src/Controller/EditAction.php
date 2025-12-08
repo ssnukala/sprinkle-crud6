@@ -176,12 +176,16 @@ class EditAction extends Base
                 $details = $this->loadDetailsFromSchema($crudSchema, $crudModel, $recordId);
             }
             
+            // Calculate breadcrumb display name using title_field from schema
+            $breadcrumbName = $this->calculateBreadcrumbName($crudSchema, $recordData, $recordId);
+            
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $crudSchema['model'],
                 'modelDisplayName' => $modelDisplayName,
                 'id' => $recordId,
-                'data' => $recordData
+                'data' => $recordData,
+                'breadcrumb' => $breadcrumbName  // Pre-computed breadcrumb display name
             ];
             
             // Add details to response if loaded
@@ -358,6 +362,31 @@ class EditAction extends Base
         ]);
 
         return $crudModel;
+    }
+
+    /**
+     * Calculate breadcrumb display name for a record.
+     * 
+     * Uses the title_field from schema to determine which field to use as the display name.
+     * Falls back to the record ID if title_field is not defined or field value is empty.
+     * 
+     * @param array $crudSchema The schema configuration
+     * @param array $recordData The record data
+     * @param mixed $recordId   The record ID
+     * 
+     * @return string The breadcrumb display name
+     */
+    protected function calculateBreadcrumbName(array $crudSchema, array $recordData, $recordId): string
+    {
+        $titleField = $crudSchema['title_field'] ?? null;
+        
+        // If title_field is defined and exists in record data, use it
+        if ($titleField && isset($recordData[$titleField]) && !empty($recordData[$titleField])) {
+            return (string) $recordData[$titleField];
+        }
+        
+        // Fall back to record ID
+        return (string) $recordId;
     }
 
     /**

@@ -53,7 +53,8 @@ const {
     apiLoading,
     apiError,
     formData,
-    resetForm
+    resetForm,
+    recordBreadcrumb  // Get pre-computed breadcrumb from API
 } = useCRUD6Api()
 
 // Helper function to create initial object based on schema
@@ -223,17 +224,9 @@ async function fetch() {
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 
-                // Wait for schema to be available before calculating record name
-                let retries = 0
-                const maxRetries = 20 // Max 2 seconds
-                while (!flattenedSchema.value?.title && retries < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, 100))
-                    retries++
-                }
-                
-                // Calculate record name using title_field from schema
-                const titleField = flattenedSchema.value?.title_field
-                let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                // Use pre-computed breadcrumb from API response
+                // This eliminates the need to wait for schema and calculate the display name
+                const recordName = recordBreadcrumb.value || recordId.value
                 
                 // Update breadcrumbs with model title and record name
                 const listPath = `/crud6/${model.value}`

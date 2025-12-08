@@ -112,6 +112,7 @@ export function useCRUD6Api(modelName?: string) {
     const apiLoading = ref<boolean>(false)
     const apiError = ref<ApiErrorResponse | null>(null)
     const formData = ref<CRUD6CreateRequest>(defaultFormData())
+    const recordBreadcrumb = ref<string | null>(null)  // Store breadcrumb from API response
 
     const route = useRoute()
     const model = modelName || (route.params.model as string)
@@ -197,6 +198,14 @@ export function useCRUD6Api(modelName?: string) {
                         recordData: response.data.data,
                         timestamp: new Date().toISOString()
                     })
+                    
+                    // Store breadcrumb from API response if available
+                    if ('breadcrumb' in response.data && response.data.breadcrumb) {
+                        recordBreadcrumb.value = response.data.breadcrumb as string
+                        debugLog('[useCRUD6Api] Breadcrumb stored from API response', {
+                            breadcrumb: recordBreadcrumb.value
+                        })
+                    }
                     
                     return response.data.data as CRUD6Response
                 }
@@ -488,6 +497,7 @@ export function useCRUD6Api(modelName?: string) {
         formData,
         r$,
         resetForm,
-        slugLocked
+        slugLocked,
+        recordBreadcrumb  // Expose breadcrumb data
     }
 }

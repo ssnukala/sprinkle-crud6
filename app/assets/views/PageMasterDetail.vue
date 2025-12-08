@@ -62,7 +62,8 @@ const {
     apiLoading,
     apiError,
     formData,
-    resetForm
+    resetForm,
+    recordBreadcrumb  // Get pre-computed breadcrumb from API
 } = useCRUD6Api()
 
 // Master-detail composable - will be initialized when schema is loaded
@@ -190,10 +191,10 @@ async function fetch() {
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
-                // Update page title with record name if available
-                // Use title_field from schema, or fall back to ID
-                const titleField = schema.value?.title_field
-                const recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                
+                // Use pre-computed breadcrumb from API response
+                // This eliminates the need to calculate the display name from schema
+                const recordName = recordBreadcrumb.value || recordId.value
                 
                 page.title = `${recordName} - ${modelLabel.value}`
                 

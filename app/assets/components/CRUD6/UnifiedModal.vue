@@ -515,24 +515,25 @@ function resetForm() {
 </script>
 
 <template>
-    <div>
+    <!-- Wrapper div to fix Vue 3 fragment root warning -->
+    <div class="crud6-unified-modal-wrapper">
         <!-- Trigger link styled as button for UIKit modal toggle -->
         <slot name="trigger" :modal-id="modalId">
-        <a
-            :href="`#${modalId}`"
-            uk-toggle
-            :data-test="`btn-action-${action.key}`"
-            :class="[
-                'uk-width-1-1',
-                'uk-margin-small-bottom',
-                'uk-button',
-                'uk-button-small',
-                action.style ? `uk-button-${action.style}` : 'uk-button-default'
-            ]">
-            <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
-            {{ actionLabel }}
-        </a>
-    </slot>
+            <a
+                :href="`#${modalId}`"
+                uk-toggle
+                :data-test="`btn-action-${action.key}`"
+                :class="[
+                    'uk-width-1-1',
+                    'uk-margin-small-bottom',
+                    'uk-button',
+                    'uk-button-small',
+                    action.style ? `uk-button-${action.style}` : 'uk-button-default'
+                ]">
+                <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
+                {{ actionLabel }}
+            </a>
+        </slot>
 
     <!-- Unified Modal -->
     <div :id="modalId" uk-modal :data-test="`modal-action-${action.key}`">
@@ -655,6 +656,11 @@ function resetForm() {
 </template>
 
 <style scoped>
+/* Wrapper shouldn't affect layout - display as contents makes it transparent to layout */
+.crud6-unified-modal-wrapper {
+    display: contents;
+}
+
 .uk-list li {
     margin-bottom: 0.25rem;
 }

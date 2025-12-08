@@ -649,21 +649,12 @@ function resetForm() {
     </div>
 </template>
 
-<style scoped>
-/* 
- * Wrapper fix for Vue 3 fragment root warning
- * Using display: contents makes the wrapper transparent to layout/flexbox/grid
- * but doesn't make it transparent to CSS selectors like uk-nav li > a
- */
-.crud6-unified-modal-wrapper {
-    display: contents;
-}
-
+<!-- Non-scoped styles for nav dropdown integration -->
+<style>
 /* 
  * Match UIKit nav dropdown styling for links inside the wrapper
- * This ensures actions wrapped in crud6-unified-modal-wrapper match the "View" link styling
- * UIKit's uk-dropdown-nav applies these styles to uk-nav li > a
- * We need to apply the same to uk-nav li .crud6-unified-modal-wrapper > a
+ * These styles must be non-scoped to work with parent selectors from PageList.vue
+ * The .uk-nav and .uk-dropdown-nav classes are on parent elements in PageList.vue
  * 
  * Reference: UIKit 3 uk-nav default styles
  * Note: Colors are hard-coded to match UIKit's internal styles (#999, #666)
@@ -702,6 +693,17 @@ function resetForm() {
 .uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button:hover,
 .uk-nav .crud6-unified-modal-wrapper > .uk-button:hover {
     color: #666;
+}
+</style>
+
+<style scoped>
+/* 
+ * Wrapper fix for Vue 3 fragment root warning
+ * Using display: contents makes the wrapper transparent to layout/flexbox/grid
+ * but doesn't make it transparent to CSS selectors like uk-nav li > a
+ */
+.crud6-unified-modal-wrapper {
+    display: contents;
 }
 
 .uk-list li {

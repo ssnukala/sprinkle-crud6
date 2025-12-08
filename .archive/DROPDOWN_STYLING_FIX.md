@@ -38,10 +38,11 @@ The action dropdown in PageList.vue had inconsistent styling between different a
 
 ## Solution
 
-Added CSS rules to explicitly style links inside the wrapper to match UIKit's nav dropdown styling:
+Added CSS rules in a **non-scoped** style block to explicitly style links inside the wrapper to match UIKit's nav dropdown styling:
 
 ```css
-/* Match UIKit nav dropdown styling for links inside the wrapper */
+/* Non-scoped styles - required for cross-component selector matching */
+<style>
 .uk-dropdown-nav .crud6-unified-modal-wrapper > a,
 .uk-nav .crud6-unified-modal-wrapper > a {
     display: block;
@@ -54,14 +55,23 @@ Added CSS rules to explicitly style links inside the wrapper to match UIKit's na
 .uk-nav .crud6-unified-modal-wrapper > a:hover {
     color: #666;
 }
+</style>
 ```
 
 ### Why This Works
 
 1. **Keeps wrapper div** - No Vue 3 warnings
 2. **Maintains `display: contents`** - Wrapper transparent to layout
-3. **Adds explicit styles** - Links styled consistently regardless of wrapper
-4. **Matches UIKit defaults** - Uses same padding, colors, and hover states
+3. **Uses non-scoped styles** - Critical for cross-component selector matching (`.uk-nav` is in PageList.vue)
+4. **Adds explicit styles** - Links styled consistently regardless of wrapper
+5. **Matches UIKit defaults** - Uses same padding, colors, and hover states
+
+### Why Non-Scoped is Required
+
+Vue's scoped styles add unique attributes to elements and transform selectors. This breaks the ability to match parent selectors from other components:
+- `.uk-nav` and `.uk-dropdown-nav` are on elements in `PageList.vue`
+- Scoped styles in `UnifiedModal.vue` can't reach across component boundaries
+- Non-scoped styles allow proper parent-child selector matching
 
 ## Files Changed
 

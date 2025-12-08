@@ -523,7 +523,8 @@ function resetForm() {
                 :href="`#${modalId}`"
                 uk-toggle
                 :data-test="`btn-action-${action.key}`"
-                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-small uk-button-default">
+                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-small"
+                :class="getButtonClass(action.style)">
                 <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
                 {{ actionLabel }}
             </a>
@@ -649,8 +650,65 @@ function resetForm() {
     </div>
 </template>
 
+<!-- Non-scoped styles for nav dropdown integration -->
+<style>
+/* 
+ * Match UIKit nav dropdown styling for links inside the wrapper
+ * These styles must be non-scoped to work with parent selectors from PageList.vue
+ * The .uk-nav and .uk-dropdown-nav classes are on parent elements in PageList.vue
+ * 
+ * IMPORTANT: These styles ONLY apply when the wrapper is inside a ul.uk-nav or ul.uk-dropdown-nav
+ * to avoid affecting buttons in other contexts (like action buttons on detail pages)
+ * 
+ * Reference: UIKit 3 uk-nav default styles
+ * Note: Colors are hard-coded to match UIKit's internal styles (#999, #666)
+ * These are not exposed as CSS variables in UIKit 3.x
+ */
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > a,
+ul.uk-nav .crud6-unified-modal-wrapper > a {
+    display: block;
+    padding: 5px 0;
+    color: #999;
+    text-decoration: none;
+}
+
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > a:hover,
+ul.uk-nav .crud6-unified-modal-wrapper > a:hover {
+    color: #666;
+}
+
+/* 
+ * Also ensure button-styled triggers in wrapper match nav link styles when in dropdown context
+ * This handles cases where the default trigger slot is used (which has button classes)
+ * Reset button styles and apply nav link styles instead
+ * 
+ * ONLY applies to buttons inside ul.uk-nav / ul.uk-dropdown-nav to preserve normal button
+ * styling in other contexts (like action buttons on detail pages)
+ */
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button,
+ul.uk-nav .crud6-unified-modal-wrapper > .uk-button {
+    /* Reset button styling */
+    all: unset;
+    /* Apply nav link styling */
+    display: block;
+    padding: 5px 0;
+    color: #999;
+    cursor: pointer;
+    text-align: left;
+}
+
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button:hover,
+ul.uk-nav .crud6-unified-modal-wrapper > .uk-button:hover {
+    color: #666;
+}
+</style>
+
 <style scoped>
-/* Wrapper shouldn't affect layout - display as contents makes it transparent to layout */
+/* 
+ * Wrapper fix for Vue 3 fragment root warning
+ * Using display: contents makes the wrapper transparent to layout/flexbox/grid
+ * but doesn't make it transparent to CSS selectors like uk-nav li > a
+ */
 .crud6-unified-modal-wrapper {
     display: contents;
 }

@@ -207,7 +207,13 @@ export function useCRUD6Api(modelName?: string) {
                         })
                     }
                     
-                    return response.data.data as CRUD6Response
+                    // Attach breadcrumb to the returned data for immediate access
+                    const recordData = response.data.data as any
+                    if ('breadcrumb' in response.data) {
+                        recordData._breadcrumb = response.data.breadcrumb
+                    }
+                    
+                    return recordData as CRUD6Response
                 }
                 
                 debugLog('[useCRUD6Api] Returning full response data (no data property found)', {

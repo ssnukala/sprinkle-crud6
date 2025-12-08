@@ -193,8 +193,25 @@ async function fetch() {
                 originalRecord.value = { ...fetchedRow }
                 
                 // Use pre-computed breadcrumb from API response
-                // This eliminates the need to calculate the display name from schema
-                const recordName = recordBreadcrumb.value || recordId.value
+                // Access it directly from the fetched row data to avoid timing issues
+                // The breadcrumb is attached as _breadcrumb property by fetchRow
+                let recordName = (fetchedRow as any)._breadcrumb
+                
+                if (!recordName) {
+                    // Fallback to reactive ref (should be set by now)
+                    recordName = recordBreadcrumb.value
+                }
+                
+                if (!recordName) {
+                    // Final fallback to record ID
+                    recordName = recordId.value
+                }
+                
+                debugLog('[PageMasterDetail.fetch] Using breadcrumb:', {
+                    fromFetchedRow: (fetchedRow as any)._breadcrumb,
+                    fromReactiveRef: recordBreadcrumb.value,
+                    final: recordName
+                })
                 
                 page.title = `${recordName} - ${modelLabel.value}`
                 

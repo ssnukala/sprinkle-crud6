@@ -98,7 +98,8 @@
             "type": "field_update",
             "field": "flag_enabled",
             "toggle": true,
-            "permission": "update_user_field"
+            "permission": "update_user_field",
+            "style": "primary"
         },
         {
             "key": "toggle_verified",
@@ -107,7 +108,8 @@
             "type": "field_update",
             "field": "flag_verified",
             "toggle": true,
-            "permission": "update_user_field"
+            "permission": "update_user_field",
+            "style": "secondary"
         },
         {
             "key": "reset_password",

@@ -43,17 +43,29 @@ Added CSS rules in a **non-scoped** style block to explicitly style links inside
 ```css
 /* Non-scoped styles - required for cross-component selector matching */
 <style>
-.uk-dropdown-nav .crud6-unified-modal-wrapper > a,
-.uk-nav .crud6-unified-modal-wrapper > a {
+/* IMPORTANT: Use ul.uk-dropdown-nav and ul.uk-nav to scope ONLY to nav contexts */
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > a,
+ul.uk-nav .crud6-unified-modal-wrapper > a {
     display: block;
     padding: 5px 0;
     color: #999;
     text-decoration: none;
 }
 
-.uk-dropdown-nav .crud6-unified-modal-wrapper > a:hover,
-.uk-nav .crud6-unified-modal-wrapper > a:hover {
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > a:hover,
+ul.uk-nav .crud6-unified-modal-wrapper > a:hover {
     color: #666;
+}
+
+/* Button reset ONLY in nav context to preserve normal button styling elsewhere */
+ul.uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button,
+ul.uk-nav .crud6-unified-modal-wrapper > .uk-button {
+    all: unset;
+    display: block;
+    padding: 5px 0;
+    color: #999;
+    cursor: pointer;
+    text-align: left;
 }
 </style>
 ```
@@ -65,6 +77,7 @@ Added CSS rules in a **non-scoped** style block to explicitly style links inside
 3. **Uses non-scoped styles** - Critical for cross-component selector matching (`.uk-nav` is in PageList.vue)
 4. **Adds explicit styles** - Links styled consistently regardless of wrapper
 5. **Matches UIKit defaults** - Uses same padding, colors, and hover states
+6. **Scoped to nav context ONLY** - Uses `ul.uk-nav` and `ul.uk-dropdown-nav` to prevent affecting buttons in other contexts
 
 ### Why Non-Scoped is Required
 
@@ -72,6 +85,10 @@ Vue's scoped styles add unique attributes to elements and transform selectors. T
 - `.uk-nav` and `.uk-dropdown-nav` are on elements in `PageList.vue`
 - Scoped styles in `UnifiedModal.vue` can't reach across component boundaries
 - Non-scoped styles allow proper parent-child selector matching
+
+### Critical Fix for Button Styling
+
+The selectors were updated to use `ul.uk-nav` and `ul.uk-dropdown-nav` (instead of just `.uk-nav` and `.uk-dropdown-nav`) to ensure the styles ONLY apply in dropdown nav contexts. This preserves normal button styling with different colors (primary, danger, warning) for action buttons on detail pages.
 
 ## Files Changed
 

@@ -200,6 +200,17 @@ const modelLabel = computed(() => {
     return model.value ? model.value.charAt(0).toUpperCase() + model.value.slice(1) : 'Record'
 })
 
+// Model title for breadcrumbs - use plural title (e.g., "Users" for list page link)
+// This is used in breadcrumb trails when linking back to the list page
+const modelTitle = computed(() => {
+    if (flattenedSchema.value?.title) {
+        // Try to translate - if key doesn't exist, returns the original value
+        return translator.translate(flattenedSchema.value.title)
+    }
+    // Fallback to modelLabel if title is not available
+    return modelLabel.value
+})
+
 /**
  * Methods - Fetch record
  */
@@ -212,29 +223,24 @@ async function fetch() {
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 
-                // Update page title with record name if available
-                // Use title_field from schema, or fall back to ID
+                // Wait for schema to be available before calculating record name
+                let retries = 0
+                const maxRetries = 20 // Max 2 seconds
+                while (!flattenedSchema.value?.title && retries < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 100))
+                    retries++
+                }
+                
+                // Calculate record name using title_field from schema
                 const titleField = flattenedSchema.value?.title_field
                 let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
                 
-                debugLog('[PageRow.fetch] Record fetched:', {
-                    recordId: recordId.value,
-                    titleField,
-                    recordName,
-                    availableFields: Object.keys(fetchedRow).slice(0, 10), // Limit to first 10 for performance
-                    modelLabel: modelLabel.value
-                })
-                
                 // Update breadcrumbs with model title and record name
-                // Don't set page.title here as it will cause usePageMeta to add a breadcrumb automatically
-                // setDetailBreadcrumbs will handle the breadcrumb trail correctly
                 const listPath = `/crud6/${model.value}`
-                await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
+                await setDetailBreadcrumbs(modelTitle.value, recordName, listPath)
                 
-                // Set page title for display after breadcrumbs are updated
+                // Set page.title AFTER breadcrumbs to prevent usePageMeta interference
                 page.title = recordName
-                
-                debugLog('[PageRow.fetch] Breadcrumbs updated with record name')
             }).catch((error) => {
                 debugError('Failed to fetch CRUD6 row:', error)
             })
@@ -336,16 +342,10 @@ watch(
 let currentModel = ''
 watch(model, async (newModel) => {
     if (newModel && loadSchema && newModel !== currentModel) {
-        debugLog('[PageRow] Schema loading triggered - model:', newModel, 'currentModel:', currentModel)
-        
         currentModel = newModel
-        // Request all contexts needed by detail page in one consolidated API call
-        // This prevents child components (Info, EditModal) from making separate schema calls
-        // Include related schemas to eliminate separate requests for detail models (activities, roles, permissions)
         const schemaPromise = loadSchema(newModel, false, 'list,detail,form', true)
         if (schemaPromise && typeof schemaPromise.then === 'function') {
             await schemaPromise
-            debugLog('[PageRow] Schema loaded successfully for model:', newModel)
             
             // Update page title and description with translation support
             if (flattenedSchema.value) {
@@ -359,25 +359,14 @@ watch(model, async (newModel) => {
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.CREATE.SUCCESS', { model: modelLabel.value })
                     
-                    // Update breadcrumbs for create mode
                     await updateBreadcrumbs(schemaTitle)
                 } else if (recordId.value) {
-                    // Set page description
                     page.description = flattenedSchema.value.description 
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Set initial breadcrumbs with model title immediately
-                    // This ensures the breadcrumb trail shows "UserFrosting / Admin Panel / User" on first load
-                    // The record name will be added after fetch completes
-                    const listPath = `/crud6/${model.value}`
-                    await setDetailBreadcrumbs(schemaTitle, '', listPath)
-                    
-                    // Clear page.title to prevent auto-breadcrumb generation by usePageMeta
-                    // It will be updated with the record name after fetch() completes
+                    // Breadcrumbs will be set by fetch() after loading the record
                     page.title = ''
-                    
-                    // Note: Record breadcrumb will be added by setDetailBreadcrumbs after fetch()
                 }
             }
         }

@@ -369,23 +369,24 @@ class EditAction extends Base
      * 
      * Uses the title_field from schema to determine which field to use as the display name.
      * Falls back to the record ID if title_field is not defined or field value is empty.
+     * Always appends the ID in parentheses for clarity (e.g., "John Doe (123)").
      * 
      * @param array $crudSchema The schema configuration
      * @param array $recordData The record data
      * @param mixed $recordId   The record ID
      * 
-     * @return string The breadcrumb display name
+     * @return string The breadcrumb display name with ID suffix
      */
     protected function calculateBreadcrumbName(array $crudSchema, array $recordData, $recordId): string
     {
         $titleField = $crudSchema['title_field'] ?? null;
         
-        // If title_field is defined and exists in record data, use it
+        // If title_field is defined and exists in record data, use it with ID suffix
         if ($titleField && isset($recordData[$titleField]) && !empty($recordData[$titleField])) {
-            return (string) $recordData[$titleField];
+            return $recordData[$titleField] . ' (' . $recordId . ')';
         }
         
-        // Fall back to record ID
+        // Fall back to just the record ID
         return (string) $recordId;
     }
 

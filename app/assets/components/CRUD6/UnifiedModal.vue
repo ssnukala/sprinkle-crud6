@@ -526,7 +526,7 @@ function resetForm() {
                 'uk-margin-small-bottom',
                 'uk-button',
                 'uk-button-small',
-                action.style ? `uk-button-${action.style}` : 'uk-button-primary'
+                action.style ? `uk-button-${action.style}` : 'uk-button-default'
             ]">
             <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
             {{ actionLabel }}

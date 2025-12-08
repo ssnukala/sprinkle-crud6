@@ -650,9 +650,54 @@ function resetForm() {
 </template>
 
 <style scoped>
-/* Wrapper shouldn't affect layout - display as contents makes it transparent to layout */
+/* 
+ * Wrapper fix for Vue 3 fragment root warning
+ * Using display: contents makes the wrapper transparent to layout/flexbox/grid
+ * but doesn't make it transparent to CSS selectors like uk-nav li > a
+ */
 .crud6-unified-modal-wrapper {
     display: contents;
+}
+
+/* 
+ * Match UIKit nav dropdown styling for links inside the wrapper
+ * This ensures actions wrapped in crud6-unified-modal-wrapper match the "View" link styling
+ * UIKit's uk-dropdown-nav applies these styles to uk-nav li > a
+ * We need to apply the same to uk-nav li .crud6-unified-modal-wrapper > a
+ * 
+ * Reference: UIKit 3 uk-nav default styles
+ */
+.uk-dropdown-nav .crud6-unified-modal-wrapper > a,
+.uk-nav .crud6-unified-modal-wrapper > a {
+    display: block;
+    padding: 5px 0;
+    color: #999;
+    text-decoration: none;
+}
+
+.uk-dropdown-nav .crud6-unified-modal-wrapper > a:hover,
+.uk-nav .crud6-unified-modal-wrapper > a:hover {
+    color: #666;
+}
+
+/* Also ensure button-styled triggers in wrapper match nav link styles when in dropdown context */
+.uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button,
+.uk-nav .crud6-unified-modal-wrapper > .uk-button {
+    /* Override button styling to match nav link styling */
+    display: block;
+    padding: 5px 0;
+    background: none;
+    border: none;
+    color: #999;
+    text-align: left;
+    box-shadow: none;
+    text-transform: none;
+}
+
+.uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button:hover,
+.uk-nav .crud6-unified-modal-wrapper > .uk-button:hover {
+    background: none;
+    color: #666;
 }
 
 .uk-list li {

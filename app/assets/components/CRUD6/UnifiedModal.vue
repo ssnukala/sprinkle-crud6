@@ -666,6 +666,8 @@ function resetForm() {
  * We need to apply the same to uk-nav li .crud6-unified-modal-wrapper > a
  * 
  * Reference: UIKit 3 uk-nav default styles
+ * Note: Colors are hard-coded to match UIKit's internal styles (#999, #666)
+ * These are not exposed as CSS variables in UIKit 3.x
  */
 .uk-dropdown-nav .crud6-unified-modal-wrapper > a,
 .uk-nav .crud6-unified-modal-wrapper > a {
@@ -680,23 +682,25 @@ function resetForm() {
     color: #666;
 }
 
-/* Also ensure button-styled triggers in wrapper match nav link styles when in dropdown context */
+/* 
+ * Also ensure button-styled triggers in wrapper match nav link styles when in dropdown context
+ * This handles cases where the default trigger slot is used (which has button classes)
+ * Reset button styles and apply nav link styles instead
+ */
 .uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button,
 .uk-nav .crud6-unified-modal-wrapper > .uk-button {
-    /* Override button styling to match nav link styling */
+    /* Reset button styling */
+    all: unset;
+    /* Apply nav link styling */
     display: block;
     padding: 5px 0;
-    background: none;
-    border: none;
     color: #999;
+    cursor: pointer;
     text-align: left;
-    box-shadow: none;
-    text-transform: none;
 }
 
 .uk-dropdown-nav .crud6-unified-modal-wrapper > .uk-button:hover,
 .uk-nav .crud6-unified-modal-wrapper > .uk-button:hover {
-    background: none;
     color: #666;
 }
 

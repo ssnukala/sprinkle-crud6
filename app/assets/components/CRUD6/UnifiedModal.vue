@@ -523,13 +523,7 @@ function resetForm() {
                 :href="`#${modalId}`"
                 uk-toggle
                 :data-test="`btn-action-${action.key}`"
-                :class="[
-                    'uk-width-1-1',
-                    'uk-margin-small-bottom',
-                    'uk-button',
-                    'uk-button-small',
-                    action.style ? `uk-button-${action.style}` : 'uk-button-default'
-                ]">
+                class="uk-width-1-1 uk-margin-small-bottom uk-button uk-button-small uk-button-default">
                 <font-awesome-icon v-if="action.icon" :icon="action.icon" fixed-width />
                 {{ actionLabel }}
             </a>

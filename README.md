@@ -551,7 +551,7 @@ The master-detail form includes:
 - Single save operation that processes both master and details
 - Automatic foreign key population for detail records
 
-See [Master-Detail Usage Guide](examples/master-detail-usage.md) for detailed examples and code samples.
+See [Master-Detail Usage Guide](examples/docs/master-detail-usage.md) for detailed examples and code samples.
 
 ### Many-to-Many Relationship Configuration
 
@@ -866,7 +866,7 @@ The AutoLookup component provides a searchable auto-complete interface for selec
 
 **Basic Usage:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   display-field="name"
@@ -878,7 +878,7 @@ The AutoLookup component provides a searchable auto-complete interface for selec
 
 **With Multiple Display Fields:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   :display-fields="['sku', 'name']"
@@ -889,7 +889,7 @@ The AutoLookup component provides a searchable auto-complete interface for selec
 
 **With Custom Display Format:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   :display-format="(item) => `${item.sku} - ${item.name} ($${item.price})`"
@@ -1172,7 +1172,7 @@ Control warning display via `modal_config.warning`:
 ### Documentation
 
 - **Complete Guide**: [docs/NESTED_TRANSLATION_USAGE_GUIDE.md](docs/NESTED_TRANSLATION_USAGE_GUIDE.md)
-- **Example Schema**: [examples/schema/users-translation-example.json](examples/schema/users-translation-example.json)
+- **Example Schema**: [examples/schema/products-unified-modal.json](examples/schema/products-unified-modal.json)
 - **Example Locale**: [examples/locale/translation-example-messages.php](examples/locale/translation-example-messages.php)
 
 ## Migration Guide

@@ -75,10 +75,8 @@ return [
             'DETACH_SUCCESS' => '{{count}} {{relation}} détaché(s) avec succès de {{model}}',
         ],
 
-        // Panel/Breadcrumb translations (nested under CRUD6 to match dot notation)
         'ADMIN_PANEL' => 'Panneau d\'administration CRUD6',
 
-        // Validation translations used in forms and modals (nested under CRUD6 for proper scoping)
         'VALIDATION' => [
             'ENTER_VALUE'         => 'Entrer une valeur',
             'CONFIRM'             => 'Confirmer',
@@ -89,33 +87,14 @@ return [
             'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
         ],
 
-    ],
+        'ACTION' => [
+            'SUCCESS'       => 'Action effectuée avec succès.',
+            'SUCCESS_TITLE' => 'Succès',
+            'CANNOT_UNDO'   => 'Cette action ne peut pas être annulée.',
+        ],
 
-    // Action translations used in modals (backward compatibility - kept at root for legacy support)
-    // Note: New code should use WARNING_CANNOT_UNDONE from UserFrosting core instead
-    'ACTION' => [
-        'CANNOT_UNDO' => 'Cette action ne peut pas être annulée.',
+        'API' => [
+            'SUCCESS' => 'Schéma de {{model}} récupéré avec succès',
+        ],
     ],
-
-    // Validation translations (backward compatibility - duplicated at root for legacy support)
-    // Note: New code should use CRUD6.VALIDATION.* keys for proper namespacing
-    // IMPORTANT: This duplication is intentional to support both namespace structures:
-    //   - New code: CRUD6.VALIDATION.ENTER_VALUE (preferred)
-    //   - Old code: VALIDATION.ENTER_VALUE (backward compatible)
-    // The translateWithFallback() helper tries CRUD6.* first, then falls back to root level
-    // Keep these in sync with CRUD6.VALIDATION.* keys above
-    'VALIDATION' => [
-        'ENTER_VALUE'         => 'Entrer une valeur',
-        'CONFIRM'             => 'Confirmer',
-        'CONFIRM_PLACEHOLDER' => 'Confirmer la valeur',
-        'MIN_LENGTH_HINT'     => 'Minimum {{min}} caractères',
-        'MATCH_HINT'          => 'Les valeurs doivent correspondre',
-        'FIELDS_MUST_MATCH'   => 'Les champs doivent correspondre',
-        'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
-    ],
-
-    // Panel/Breadcrumb translations (flat keys for backward compatibility)
-    'CRUD6_PANEL'               => 'Gestion CRUD6',
-    'C6ADMIN_PANEL'             => 'Panneau d\'administration CRUD6',
-    'CRUD6_ADMIN_PANEL'         => 'Panneau d\'administration CRUD6',  // Fallback for CRUD6.ADMIN_PANEL
 ];

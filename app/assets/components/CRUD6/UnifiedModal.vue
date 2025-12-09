@@ -137,14 +137,27 @@ const translationContext = computed(() => {
 })
 
 /**
+ * Helper to get translated string with fallback
+ * Checks if translation returned the key itself (translation missing)
+ */
+function t(key: string, params?: Record<string, any>, fallback?: string): string {
+    const result = translator.translate(key, params)
+    // If result equals the key, translation was not found
+    if (result === key) {
+        return fallback || key
+    }
+    return result
+}
+
+/**
  * Computed - Translated validation strings
  */
 const validationStrings = computed(() => ({
-    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE') || 'Enter value',
-    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM') || 'Confirm',
-    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
-    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
-    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT') || 'Values must match'
+    enterValue: t('CRUD6.VALIDATION.ENTER_VALUE', undefined, 'Enter value'),
+    confirm: t('CRUD6.VALIDATION.CONFIRM', undefined, 'Confirm'),
+    confirmPlaceholder: t('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER', undefined, 'Confirm value'),
+    minLengthHint: (min: number) => t('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }, `Minimum ${min} characters`),
+    matchHint: t('CRUD6.VALIDATION.MATCH_HINT', undefined, 'Values must match')
 }))
 
 /**
@@ -491,14 +504,14 @@ function handleConfirmed() {
         
         // Check match validation
         if (requiresMatch(config) && value !== confirmValues.value[field.key]) {
-            error.value = translator.translate('CRUD6.VALIDATION.FIELDS_MUST_MATCH') || 'Fields must match'
+            error.value = t('CRUD6.VALIDATION.FIELDS_MUST_MATCH', undefined, 'Fields must match')
             return
         }
         
         // Check min length
         const minLen = getMinLength(config)
         if (minLen && String(value || '').length < minLen) {
-            error.value = translator.translate('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen }) || `Minimum ${minLen} characters required`
+            error.value = t('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen }, `Minimum ${minLen} characters required`)
             return
         }
     }

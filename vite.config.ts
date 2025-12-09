@@ -9,8 +9,8 @@ import ViteYaml from '@modyfi/vite-plugin-yaml'
 export default defineConfig({
     plugins: [vue(), ViteYaml()],
     optimizeDeps: {
-        // Include CommonJS dependencies that need to be pre-bundled
-        // limax uses lodash.deburr which is a CommonJS module
+        // Pre-bundle limax and its dependencies for optimal performance
+        // This improves Vite cold-start time and ensures consistent behavior
         include: ['limax', 'lodash.deburr']
     },
     test: {

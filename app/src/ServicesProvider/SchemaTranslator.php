@@ -113,14 +113,13 @@ class SchemaTranslator
      * 
      * Values that don't match this pattern are returned as-is (plain text labels).
      * 
-     * IMPORTANT: Placeholders {{variable}} are preserved during translation.
-     * Strategy: Replace {{ with ## and }} with @@ before interpolation would occur,
-     * then restore them in the final result. This allows backend translation while
-     * preserving placeholders for frontend interpolation with actual record data.
+     * IMPORTANT: If the translation template contains placeholders {{variable}},
+     * the original translation KEY is returned instead of the translated value.
+     * This allows the frontend to translate with proper record context data.
      * 
      * @param string $value The value to potentially translate
      * 
-     * @return string The translated value with placeholders intact, or original if not a translation key
+     * @return string The translation KEY if template has placeholders, translated value otherwise
      */
     protected function translateValue(string $value): string
     {
@@ -128,45 +127,39 @@ class SchemaTranslator
         // Translation keys: contain uppercase letters, dots, underscores, numbers
         // Must contain at least one dot to distinguish from plain text
         if (preg_match('/^[A-Z][A-Z0-9_.]+\.[A-Z0-9_.]+$/', $value)) {
-            // Translate the key to get the template string
-            $translated = $this->translator->translate($value);
+            // Get the raw translation template without any interpolation
+            // Pass empty array to prevent placeholder interpolation
+            $template = $this->translator->translate($value, []);
             
             // If translation returns the same key, the key doesn't exist
-            if ($translated === $value) {
+            if ($template === $value) {
                 $this->debugLog("[CRUD6 SchemaTranslator] Translation key not found", [
                     'key' => $value,
                 ]);
-                return $translated;
+                return $template;
             }
             
-            // Check if the translated template contains placeholders that got interpolated with empty values
-            // Common patterns indicating empty interpolation:
-            // - "()" or "( )" - empty parentheses (common when {{first_name}} {{last_name}} removed)
-            // - "  " - two or more consecutive spaces (placeholder removed leaving spaces)
-            // This catches: "Create ", "Delete ", "from  ?", "for  ", etc.
-            if (preg_match('/\(\s*\)|\s{2,}/', $translated)) {
-                // Placeholders were interpolated with empty values
-                // Return the translation KEY for frontend to translate with proper context
-                $this->debugLog("[CRUD6 SchemaTranslator] Empty placeholder interpolation detected - frontend will handle", [
+            // Check if the template contains {{placeholder}} syntax
+            // If it does, return the KEY for frontend to translate with record context
+            if (preg_match('/\{\{[^}]+\}\}/', $template)) {
+                $this->debugLog("[CRUD6 SchemaTranslator] Template has placeholders - frontend will translate with context", [
                     'key' => $value,
-                    'translated' => $translated,
-                    'pattern_match' => 'empty_parens_or_double_spaces',
+                    'template' => $template,
+                    'has_placeholders' => true,
                 ]);
                 
-                // Return the translation KEY for frontend to translate with context
+                // Return the translation KEY for frontend to translate with proper context
                 return $value;
             }
             
-            // Check if template still has {{}} placeholders (not interpolated)
-            $hasPlaceholders = preg_match('/\{\{[^}]+\}\}/', $translated);
-            
-            $this->debugLog("[CRUD6 SchemaTranslator] Translation successful", [
+            // Template has no placeholders - safe to use backend translation
+            $this->debugLog("[CRUD6 SchemaTranslator] Translation successful - no placeholders", [
                 'key' => $value,
-                'translated' => $translated,
-                'has_placeholders' => $hasPlaceholders,
+                'translated' => $template,
+                'has_placeholders' => false,
             ]);
             
-            return $translated;
+            return $template;
         }
         
         // Not a translation key, return as-is

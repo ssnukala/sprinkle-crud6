@@ -70,11 +70,6 @@ class ApiAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        
-        //$modelName = $this->getModelNameFromRequest($request);
-        ///$schema = $this->getSchema($modelName);
-        //$this->validateAccess($modelName, 'read');
-
         // Get context parameter from query string
         $queryParams = $request->getQueryParams();
         $context = $queryParams['context'] ?? null;

@@ -67,6 +67,8 @@ return [
             'ERROR_TITLE'   => 'Erreur de mise à jour',
         ],
         'UPDATE_FIELD_SUCCESSFUL' => '{{field}} mis à jour avec succès pour {{model}}',
+        'TOGGLE_CONFIRM' => 'Êtes-vous sûr de vouloir basculer <strong>{{field}}</strong> pour <strong>{{title}}</strong>?',
+        'TOGGLE_SUCCESS' => 'Basculé {{field}} avec succès',
         'RELATIONSHIP' => [
             '@TRANSLATION'  => 'Relations',
             'ATTACH_SUCCESS' => '{{count}} {{relation}} attaché(s) avec succès à {{model}}',
@@ -89,9 +91,22 @@ return [
 
     ],
 
-    // Action translations used in modals
+    // Action translations used in modals (backward compatibility - kept at root for legacy support)
+    // Note: New code should use WARNING_CANNOT_UNDONE from UserFrosting core instead
     'ACTION' => [
         'CANNOT_UNDO' => 'Cette action ne peut pas être annulée.',
+    ],
+
+    // Validation translations (backward compatibility - duplicated at root for legacy support)
+    // Note: New code should use CRUD6.VALIDATION.* keys for proper namespacing
+    'VALIDATION' => [
+        'ENTER_VALUE'         => 'Entrer une valeur',
+        'CONFIRM'             => 'Confirmer',
+        'CONFIRM_PLACEHOLDER' => 'Confirmer la valeur',
+        'MIN_LENGTH_HINT'     => 'Minimum {{min}} caractères',
+        'MATCH_HINT'          => 'Les valeurs doivent correspondre',
+        'FIELDS_MUST_MATCH'   => 'Les champs doivent correspondre',
+        'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
     ],
 
     // Panel/Breadcrumb translations (flat keys for backward compatibility)

@@ -137,50 +137,14 @@ const translationContext = computed(() => {
 })
 
 /**
- * Helper to translate with fallback
- * UserFrosting translator returns the key itself when translation is missing,
- * so we need to check if the result equals the key to apply fallback
- */
-function translateWithFallback(key: string, params?: Record<string, any>, fallback?: string): string {
-    const result = translator.translate(key, params)
-    
-    // If translation not found, translator returns the key itself
-    // Check if result equals the original key
-    if (result === key) {
-        return fallback || key
-    }
-    
-    // Check if params weren't interpolated (still contains placeholders)
-    if (params && result.includes('{{')) {
-        return fallback || key
-    }
-    
-    // Check if result starts with namespace (partial translation match)
-    // This handles cases where translator returns a namespace prefix
-    const firstPart = key.split('.')[0]
-    if (firstPart && result.startsWith(firstPart + '.')) {
-        return fallback || key
-    }
-    
-    return result
-}
-
-/**
  * Computed - Translated validation strings
- * Tries CRUD6.VALIDATION.* first, then falls back to VALIDATION.* for compatibility
- * with both app locale structure and examples locale structure
  */
 const validationStrings = computed(() => ({
-    enterValue: translateWithFallback('CRUD6.VALIDATION.ENTER_VALUE', undefined, 
-        translateWithFallback('VALIDATION.ENTER_VALUE', undefined, 'Enter value')),
-    confirm: translateWithFallback('CRUD6.VALIDATION.CONFIRM', undefined,
-        translateWithFallback('VALIDATION.CONFIRM', undefined, 'Confirm')),
-    confirmPlaceholder: translateWithFallback('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER', undefined,
-        translateWithFallback('VALIDATION.CONFIRM_PLACEHOLDER', undefined, 'Confirm value')),
-    minLengthHint: (min: number) => translateWithFallback('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min },
-        translateWithFallback('VALIDATION.MIN_LENGTH_HINT', { min }, `Minimum ${min} characters`)),
-    matchHint: translateWithFallback('CRUD6.VALIDATION.MATCH_HINT', undefined,
-        translateWithFallback('VALIDATION.MATCH_HINT', undefined, 'Values must match'))
+    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE') || 'Enter value',
+    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM') || 'Confirm',
+    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER') || 'Confirm value',
+    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }) || `Minimum ${min} characters`,
+    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT') || 'Values must match'
 }))
 
 /**

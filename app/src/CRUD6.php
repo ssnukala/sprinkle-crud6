@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6;
 use UserFrosting\Sprinkle\Account\Account;
 use UserFrosting\Sprinkle\Admin\Admin;
 use UserFrosting\Sprinkle\Core\Core;
+use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\LocaleRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\MigrationRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
@@ -36,7 +37,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
  * - Sortable and filterable data queries
  * - Frontend-agnostic design for Vue.js integration
  */
-class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
+class CRUD6 implements SprinkleRecipe, LocaleRecipe, MigrationRecipe, SeedRecipe
 {
     /**
      * {@inheritdoc}
@@ -73,6 +74,16 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
     {
         return [
             CRUD6Routes::class,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getLocales(): array
+    {
+        return [
+            __DIR__ . '/../locale',
         ];
     }
 

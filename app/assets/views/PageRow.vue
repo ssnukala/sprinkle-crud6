@@ -397,8 +397,8 @@ watch(model, async (newModel) => {
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Breadcrumbs will be set by fetch() after loading the record
-                    page.title = ''
+                    // Breadcrumbs and page.title will be set by fetch() after loading the record
+                    // Do NOT set page.title here as it may race with fetch() setting the breadcrumb
                 }
             }
         }

@@ -105,9 +105,12 @@ class SchemaTranslator
      * 
      * Values that don't match this pattern are returned as-is (plain text labels).
      * 
+     * IMPORTANT: Translations are returned WITHOUT interpolating placeholders.
+     * The frontend will interpolate {{variable}} placeholders with actual record data.
+     * 
      * @param string $value The value to potentially translate
      * 
-     * @return string The translated value, or original if not a translation key
+     * @return string The translated value with placeholders intact, or original if not a translation key
      */
     protected function translateValue(string $value): string
     {
@@ -115,7 +118,9 @@ class SchemaTranslator
         // Translation keys: contain uppercase letters, dots, underscores, numbers
         // Must contain at least one dot to distinguish from plain text
         if (preg_match('/^[A-Z][A-Z0-9_.]+\.[A-Z0-9_.]+$/', $value)) {
-            $translated = $this->translator->translate($value);
+            // Translate but preserve placeholders by not passing context
+            // The translator should return the template string with {{}} intact
+            $translated = $this->translator->translate($value, []);
             
             // If translation returns the same key, the key doesn't exist
             // In this case, return the original value
@@ -123,7 +128,18 @@ class SchemaTranslator
                 $this->debugLog("[CRUD6 SchemaTranslator] Translation key not found", [
                     'key' => $value,
                 ]);
+                return $translated;
             }
+            
+            // Check if the translated value contains placeholders
+            // Placeholders are in the format {{variable_name}}
+            $hasPlaceholders = preg_match('/\{\{[^}]+\}\}/', $translated);
+            
+            $this->debugLog("[CRUD6 SchemaTranslator] Translation successful", [
+                'key' => $value,
+                'translated' => $translated,
+                'has_placeholders' => $hasPlaceholders,
+            ]);
             
             return $translated;
         }

@@ -79,10 +79,35 @@ const modelLabel = computed(() => {
  * For toggle actions, also translate the field label
  */
 const translationContext = computed(() => {
+    // Build base context with model label
     const context: Record<string, any> = {
-        model: modelLabel.value,
-        ...(props.record || {})
+        model: modelLabel.value
     }
+    
+    // Spread all record fields into context
+    // This makes record fields like first_name, last_name, user_name available as {{first_name}}, etc.
+    if (props.record) {
+        // Explicitly copy all properties to avoid Vue proxy issues
+        Object.assign(context, props.record)
+    }
+    
+    // Debug: Log what we're putting in the translation context
+    debugLog('[UnifiedModal] Building translation context:', {
+        actionKey: props.action.key,
+        modelLabel: modelLabel.value,
+        hasRecord: !!props.record,
+        recordKeys: props.record ? Object.keys(props.record) : [],
+        contextKeys: Object.keys(context),
+        // Sample a few common fields to verify data
+        sampleContext: {
+            id: context.id,
+            user_name: context.user_name,
+            first_name: context.first_name,
+            last_name: context.last_name,
+            name: context.name,
+            title: context.title
+        }
+    })
     
     // For toggle actions, translate the field label if present
     if (props.action.field_label) {
@@ -105,6 +130,8 @@ const translationContext = computed(() => {
         // Fallback to id (always available from route parameter)
         context.title = props.record.id
     }
+    
+    debugLog('[UnifiedModal] Final translation context:', context)
     
     return context
 })

@@ -69,20 +69,20 @@ public function getSprinkles(): array
 }
 ```
 
-4. Configure Vite to handle CommonJS dependencies. In your `vite.config.ts`, add:
+4. Configure Vite for optimal performance. In your `vite.config.ts`, add:
 ```typescript
 export default defineConfig({
     // ... other config
     optimizeDeps: {
         include: [
             'limax',         // Used by CRUD6 for slug generation
-            'lodash.deburr'  // CommonJS dependency of limax
+            'lodash.deburr'  // Dependency of limax
         ]
     }
 })
 ```
 
-> **Why is this needed?** CRUD6 uses the `limax` package for slug generation, which depends on `lodash.deburr` (a CommonJS module). Vite needs to pre-bundle these CommonJS modules for proper ES module compatibility.
+> **Why is this recommended?** CRUD6 uses the `limax` package for slug generation. Pre-bundling limax and its dependencies improves Vite cold-start performance and ensures consistent behavior across different Vite versions.
 
 ## Configuration
 

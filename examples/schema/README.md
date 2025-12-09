@@ -9,30 +9,37 @@ This directory contains example JSON schema files for the CRUD6 sprinkle.
 ### Local Examples
 These are example schemas demonstrating CRUD6 features:
 
-- `products.json` - Product catalog with various field types
+- `products.json` - Product catalog with various field types and features
+- `products-1column.json` - Product form with 1-column layout
+- `products-2column.json` - Product form with 2-column layout (default)
+- `products-3column.json` - Product form with 3-column layout
+- `products-optimized.json` - Optimized product schema with smart defaults
+- `products-template-file.json` - Product schema using external template file
+- `products-vue-template.json` - Product schema with inline Vue template
+- `products-unified-modal.json` - Product schema with unified modal system
 - `categories.json` - Product categories
 - `product_categories.json` - Many-to-many relationship between products and categories
 - `orders.json` - Order management
 - `order_details.json` - Order line items
-- `analytics.json` - Analytics tracking
-- `users.json` - Basic user schema
-- `users-extended.json` - Extended user schema with details and actions
-- `users-boolean-test.json` - Demonstrates all three boolean field types
-- `users-translation-example.json` - **NEW** Demonstrates nested translation pattern with `{{&KEY}}` syntax
+- `activities.json` - Activity tracking
+- `users.json` - User management with roles, permissions, and activities relationships
+- `groups.json` - User groups
+- `roles.json` - User roles with permissions relationship
+- `permissions.json` - Permission management
 - `contacts.json` - Contact management with boolean-yn field
 - `field-template-example.json` - Field template demonstration
 - `smartlookup-example.json` - Smart lookup field example
-- `products-template-file.json` - Product schema with template file
-- `products-vue-template.json` - Product schema with Vue template
+- `smartlookup-legacy-example.json` - Legacy smart lookup pattern for reference
 
-### C6Admin Schemas (from sprinkle-c6admin)
-These schemas are from the sprinkle-c6admin project and demonstrate integration with UserFrosting 6 account tables:
+### Relationship Examples
+The following schemas demonstrate working relationships that match UserFrosting 6 database structure:
 
-- `c6admin-users.json` - User management with roles and permissions relationships
-- `c6admin-groups.json` - User groups
-- `c6admin-roles.json` - User roles with permissions relationship
-- `c6admin-permissions.json` - Permission management
-- `c6admin-activities.json` - User activity log
+- `users.json` - Demonstrates:
+  - Many-to-many with roles
+  - Belongs-to-many-through with permissions (via roles)
+  - One-to-many with activities
+- `roles.json` - Many-to-many with permissions
+- `groups.json` - Example group relationships
 
 ## Modal Button Configurations
 
@@ -354,12 +361,15 @@ For automatic pivot table management (like assigning default roles on user creat
 
 ## Testing Relationships
 
-The c6admin schemas demonstrate working relationships that match UserFrosting 6 database structure:
+The schemas in this directory demonstrate working relationships that match UserFrosting 6 database structure:
 
-- `c6admin-users.json` shows how to configure:
-  - Many-to-many with roles
-  - Belongs-to-many-through with permissions (via roles)
-  - One-to-many with activities
+- `users.json` shows how to configure:
+  - Many-to-many with roles (via `role_users` pivot table)
+  - Belongs-to-many-through with permissions (via roles → `permission_roles`)
+  - One-to-many with activities (user has many activities)
+- `roles.json` shows:
+  - Many-to-many with permissions (via `permission_roles` pivot table)
+- `groups.json` shows group relationships
 
 See the corresponding migration files in `examples/Migrations/` for the database schema these JSON schemas reference.
 
@@ -394,12 +404,13 @@ Breadcrumb will show: **Home** > **Users** > **john_doe** (instead of "8")
 
 The example schemas in this directory demonstrate different use cases:
 
-- **users01.json**: `"title_field": "user_name"` - Shows username in breadcrumb
+- **users.json**: `"title_field": "user_name"` - Shows username in breadcrumb
 - **products.json**: `"title_field": "name"` - Shows product name
 - **orders.json**: `"title_field": "order_number"` - Shows order number (more meaningful than ID)
 - **contacts.json**: `"title_field": "last_name"` - Shows last name
 - **groups.json**: `"title_field": "name"` - Shows group name
 - **categories.json**: `"title_field": "name"` - Shows category name
+- **roles.json**: `"title_field": "name"` - Shows role name
 
 #### Common Patterns
 

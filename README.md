@@ -11,22 +11,28 @@ A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserF
 - **Generic Model System**: Dynamic Eloquent models for any database table without pre-defined model classes
 - **RESTful API**: Full REST API support for all CRUD operations (`/api/crud6/{model}`)
 - **Complete Frontend Integration**: Full-featured Vue.js components and views included
-- **Vue Components**: Pre-built modals, forms, and data tables for CRUD operations
+- **Unified Modal System**: Single modal component for all CRUD operations (create, edit, delete, custom actions)
+  - Schema-driven modal configuration with multiple types (form, confirm, input, delete)
+  - Configurable button combinations (yes_no, save_cancel, ok_cancel, confirm_cancel)
+  - Full translation support with model and record context
+  - Automatic default actions (create, edit, delete) from schema permissions
+- **Scope-Based Action Filtering**: Control where actions appear (list view, detail view, or both)
+- **Custom Action Buttons**: Schema-driven buttons for custom operations (field updates, API calls, navigation)
 - **Multi-Column Form Layouts**: Configurable 1, 2, or 3 column form layouts with 2-column as default for better space utilization
 - **AutoLookup Component**: Generic searchable auto-complete for selecting records from any model
 - **Master-Detail Data Entry**: Create and edit master records with their detail records in a single form
 - **Dynamic Detail Sections**: Configure one-to-many relationships declaratively in schemas
 - **Multiple Detail Sections**: Display multiple related tables on a single detail page
-- **Custom Action Buttons**: Schema-driven buttons for custom operations (field updates, API calls, navigation)
 - **Inline Editable Grids**: Edit detail records with add/edit/delete capabilities
-- **Flexible Permissions**: Schema-based permission system
-- **Data Validation**: Built-in validation based on field definitions
+- **Flexible Permissions**: Schema-based permission system with automatic enforcement
+- **Data Validation**: Built-in validation based on field definitions with client and server-side checks
 - **Sorting & Filtering**: Automatic sortable and filterable columns
 - **Soft Delete Support**: Optional soft delete functionality
 - **Type System**: Support for various field types (string, integer, boolean, date, json, password with automatic hashing, etc.)
-- **Pagination**: Built-in pagination support
+- **Pagination**: Built-in pagination support with configurable page sizes
 - **Eloquent ORM Integration**: Full Eloquent ORM support with dynamic model configuration
 - **Responsive Design**: All forms and layouts are fully responsive and mobile-friendly
+- **Translation Support**: Full i18n support following UserFrosting 6 standards
 
 ## Installation
 
@@ -333,72 +339,169 @@ When viewing a detail page, related records will be automatically displayed in d
 
 See [Detail Section Feature Documentation](docs/DETAIL_SECTION_FEATURE.md) and [Multiple Details Feature](docs/MULTIPLE_DETAILS_FEATURE.md) for more information.
 
-### Custom Action Buttons (NEW!)
+### Custom Action Buttons
 
-Add schema-driven custom action buttons to detail pages for operations beyond standard Edit/Delete:
+Add schema-driven custom action buttons to list and detail pages for operations beyond standard CRUD. The unified modal system automatically handles all action types with configurable scope-based filtering.
+
+#### Default Actions
+
+CRUD6 automatically generates default actions based on schema permissions:
 
 ```json
 {
   "model": "users",
-  "title": "User Management",
-  "table": "users",
-  "actions": [
-    {
-      "key": "toggle_enabled",
-      "label": "Toggle Enabled",
-      "icon": "power-off",
-      "type": "field_update",
-      "field": "flag_enabled",
-      "toggle": true,
-      "style": "default",
-      "permission": "update_user_field",
-      "success_message": "User status updated successfully"
-    },
-    {
-      "key": "reset_password",
-      "label": "Reset Password",
-      "icon": "envelope",
-      "type": "api_call",
-      "endpoint": "/api/users/{id}/password/reset",
-      "method": "POST",
-      "style": "secondary",
-      "permission": "update_user_field",
-      "confirm": "Send password reset email?",
-      "success_message": "Password reset email sent"
-    },
-    {
-      "key": "change_password",
-      "label": "Change Password",
-      "icon": "key",
-      "type": "route",
-      "route": "user.password",
-      "style": "primary",
-      "permission": "update_user_field"
-    }
-  ],
-  "fields": {
-    "flag_enabled": { "type": "boolean", "label": "Enabled" }
+  "permissions": {
+    "create": "create_user",
+    "update": "update_user_field",
+    "delete": "delete_user"
   }
 }
 ```
 
-**Action Types:**
-- **`field_update`**: Update a single field value (toggle boolean or set specific value)
-- **`route`**: Navigate to a specific route/page
-- **`api_call`**: Make a custom API call to a backend endpoint
-- **`modal`**: Display a custom modal (future implementation)
+This automatically generates:
+- **Create** button in list view (`scope: ['list']`)
+- **Edit** button in detail view (`scope: ['detail']`)
+- **Delete** button in detail view (`scope: ['detail']`)
 
-**Common Action Properties:**
-- **key** (required): Unique identifier for the action
-- **label** (required): Button text displayed to users
-- **type** (required): Action type (field_update, route, api_call, modal)
-- **icon** (optional): FontAwesome icon name
-- **style** (optional): Button style (primary, secondary, default, danger)
-- **permission** (optional): Required permission to see/use the action
-- **confirm** (optional): Confirmation message before executing
-- **success_message** (optional): Message shown on successful completion
+To disable default actions, add `"default_actions": false` to your schema.
 
-See [Custom Actions Feature Documentation](docs/CUSTOM_ACTIONS_FEATURE.md) for complete reference and examples.
+#### Scope-Based Action Filtering
+
+Control where actions appear using the `scope` property:
+
+```json
+{
+  "model": "users",
+  "actions": [
+    {
+      "key": "import_users",
+      "label": "Import Users",
+      "scope": ["list"],          // Only appears in list view
+      "type": "route",
+      "route": "users.import"
+    },
+    {
+      "key": "reset_password",
+      "label": "Reset Password",
+      "scope": ["detail"],        // Only appears in detail view
+      "type": "field_update",
+      "field": "password"
+    },
+    {
+      "key": "export_data",
+      "label": "Export",
+      "scope": ["list", "detail"] // Appears in both views
+    }
+  ]
+}
+```
+
+**Scope Options:**
+- `["list"]` - Action appears only in list view
+- `["detail"]` - Action appears only in detail view  
+- `["list", "detail"]` - Action appears in both views
+- No scope property - Action appears in all views (backward compatible)
+
+#### Custom Action Examples
+
+**Toggle Field with Confirmation:**
+```json
+{
+  "key": "toggle_enabled",
+  "label": "Toggle Enabled",
+  "icon": "power-off",
+  "type": "field_update",
+  "field": "flag_enabled",
+  "toggle": true,
+  "style": "default",
+  "scope": ["detail"],
+  "permission": "update_user_field",
+  "confirm": "USER.TOGGLE_ENABLED_CONFIRM",
+  "success_message": "User status updated successfully"
+}
+```
+
+**API Call Action:**
+```json
+{
+  "key": "reset_password",
+  "label": "Reset Password",
+  "icon": "envelope",
+  "type": "api_call",
+  "endpoint": "/api/users/{id}/password/reset",
+  "method": "POST",
+  "style": "secondary",
+  "scope": ["detail"],
+  "permission": "update_user_field",
+  "confirm": "Send password reset email?",
+  "success_message": "Password reset email sent"
+}
+```
+
+**Route Navigation:**
+```json
+{
+  "key": "change_password",
+  "label": "Change Password",
+  "icon": "key",
+  "type": "route",
+  "route": "user.password",
+  "style": "primary",
+  "scope": ["detail"],
+  "permission": "update_user_field"
+}
+```
+
+**Input Form Action:**
+```json
+{
+  "key": "set_password",
+  "label": "Set Password",
+  "type": "input",
+  "scope": ["detail"],
+  "modal_config": {
+    "type": "input",
+    "fields": ["password"],
+    "buttons": "save_cancel"
+  },
+  "confirm": "Set new password for {{user_name}}?",
+  "permission": "update_user_field"
+}
+```
+
+#### Modal Configuration
+
+All actions use the UnifiedModal component with configurable modal behavior:
+
+**Modal Types:**
+- `form` - Full CRUD form (auto-detected for create/edit actions)
+- `confirm` - Simple Yes/No confirmation (auto-detected for delete/toggle actions)
+- `input` - Input fields with validation
+- `message` - Display message with OK button
+
+**Button Presets:**
+- `yes_no` - For confirmations (Yes/No buttons)
+- `save_cancel` - For forms and inputs (Save/Cancel buttons)
+- `ok_cancel` - For messages (OK/Cancel buttons)
+- `confirm_cancel` - Customizable confirm action
+- Custom array - Define your own button combinations
+
+**Example with Full Modal Configuration:**
+```json
+{
+  "key": "custom_action",
+  "label": "Custom Action",
+  "type": "input",
+  "scope": ["detail"],
+  "modal_config": {
+    "type": "input",
+    "title": "CUSTOM_ACTION.TITLE",
+    "fields": ["field1", "field2"],
+    "buttons": "save_cancel",
+    "warning": "CUSTOM_ACTION.WARNING"
+  }
+}
+```
 
 ### Master-Detail Data Entry Configuration
 
@@ -448,7 +551,7 @@ The master-detail form includes:
 - Single save operation that processes both master and details
 - Automatic foreign key population for detail records
 
-See [Master-Detail Usage Guide](examples/master-detail-usage.md) for detailed examples and code samples.
+See [Master-Detail Usage Guide](examples/docs/master-detail-usage.md) for detailed examples and code samples.
 
 ### Many-to-Many Relationship Configuration
 
@@ -615,21 +718,69 @@ GET /api/crud6/users?size=50&page=2&sorts[user_name]=asc&filters[group_id]=1&sea
 
 This sprinkle includes a complete set of Vue.js components and views for building CRUD interfaces. The components follow UserFrosting 6 patterns and integrate seamlessly with the framework.
 
+#### Unified Modal Architecture
+
+CRUD6 uses a **unified modal system** that consolidates all CRUD operations into a single, flexible component. This provides:
+
+**Key Advantages:**
+- **Single Component**: One modal handles create, edit, delete, and all custom actions
+- **Schema-Driven**: Modal behavior configured entirely through JSON schemas
+- **Automatic Actions**: Default create/edit/delete actions generated from permissions
+- **Scope Filtering**: Actions automatically filtered for list or detail views
+- **Consistent UX**: All operations follow the same patterns and translations
+- **Reduced Code**: Eliminates duplicate modal components and logic
+
+**How It Works:**
+1. Schema defines permissions and custom actions
+2. Backend automatically generates default actions (create, edit, delete)
+3. Actions filtered by scope (list view vs detail view)
+4. UnifiedModal renders appropriate form/confirmation based on action type
+5. All translations use consistent model and record context
+
+**Example Schema:**
+```json
+{
+  "model": "users",
+  "permissions": {
+    "create": "create_user",
+    "update": "update_user_field",
+    "delete": "delete_user"
+  },
+  "actions": [
+    {
+      "key": "toggle_enabled",
+      "type": "field_update",
+      "field": "flag_enabled",
+      "toggle": true,
+      "scope": ["detail"]
+    }
+  ]
+}
+```
+
+This automatically provides:
+- Create button in list view
+- Edit and Delete buttons in detail view
+- Custom toggle action in detail view
+- All with proper modals and confirmations
+
 #### Included Components
 
 **Views:**
 - `PageList.vue` - List view with data table, filtering, and pagination
 - `PageRow.vue` - Detail view with edit functionality
 
-**Modals:**
-- `CreateModal.vue` - Create new records
-- `EditModal.vue` - Edit existing records
-- `DeleteModal.vue` - Delete confirmation
+**Unified Modal:**
+- `UnifiedModal.vue` - Schema-driven unified modal for all CRUD operations (create, edit, delete, custom actions)
+  - Replaces separate CreateModal, EditModal, DeleteModal components
+  - Supports multiple modal types: form, confirm, input, delete
+  - Configurable button combinations: yes_no, save_cancel, ok_cancel, confirm_cancel
+  - Full translation support with model and record context
 
 **Form Components:**
 - `Form.vue` - Dynamic form generation based on schema
 - `Info.vue` - Display record information with edit/delete actions
-- `Users.vue` - Related users display (for group/role management)
+- `Details.vue` - Display related records in detail sections
 
 **Master-Detail Components:**
 - `MasterDetailForm.vue` - Complete master-detail form for creating/editing records with their details
@@ -638,29 +789,55 @@ This sprinkle includes a complete set of Vue.js components and views for buildin
 **Lookup Components:**
 - `AutoLookup.vue` - Generic searchable auto-complete component for selecting records from any model
 
-#### Component Registration
+#### Component Usage
 
-Components are automatically registered globally when the sprinkle is installed. You can use them directly in your templates:
+Components are available for import and use in your Vue applications. Import them directly from the package:
 
 ```vue
+<script setup>
+import { 
+  CRUD6UnifiedModal, 
+  CRUD6Form, 
+  CRUD6Info,
+  CRUD6MasterDetailForm,
+  CRUD6DetailGrid,
+  CRUD6AutoLookup
+} from '@ssnukala/sprinkle-crud6/components'
+</script>
+
 <template>
-  <!-- Use the pre-built page components -->
-  <UFCRUD6ListPage />
-  <UFCRUD6RowPage />
+  <!-- Use the unified modal for all CRUD operations -->
+  <CRUD6UnifiedModal
+    :action="createAction"
+    :model="'users'"
+    :schema="schema"
+    @saved="refresh"
+  />
   
-  <!-- Use individual components -->
-  <UFCRUD6CreateModal :model="'users'" :schema="schema" @saved="refresh" />
-  <UFCRUD6EditModal :crud6="record" :model="'users'" :schema="schema" @saved="refresh" />
+  <CRUD6UnifiedModal
+    :action="editAction"
+    :record="user"
+    :model="'users'"
+    :schema="schema"
+    @saved="refresh"
+  />
+  
+  <CRUD6UnifiedModal
+    :action="deleteAction"
+    :record="user"
+    :model="'users'"
+    @confirmed="handleDelete"
+  />
   
   <!-- Use master-detail components -->
-  <UFCRUD6MasterDetailForm 
+  <CRUD6MasterDetailForm 
     model="orders" 
     :record-id="orderId"
     :detail-config="detailConfig" 
     @saved="handleSaved"
   />
   
-  <UFCRUD6DetailGrid
+  <CRUD6DetailGrid
     v-model="detailRecords"
     :detail-schema="detailSchema"
     :fields="['line_number', 'sku', 'quantity', 'price']"
@@ -670,7 +847,7 @@ Components are automatically registered globally when the sprinkle is installed.
   />
   
   <!-- Use lookup components for searchable selection -->
-  <UFCRUD6AutoLookup
+  <CRUD6AutoLookup
     model="products"
     id-field="id"
     :display-fields="['sku', 'name']"
@@ -681,13 +858,15 @@ Components are automatically registered globally when the sprinkle is installed.
 </template>
 ```
 
+> **Note**: The unified modal automatically handles create, edit, delete, and custom action operations based on the action configuration. Default actions are automatically generated from schema permissions.
+
 ##### AutoLookup Component
 
 The AutoLookup component provides a searchable auto-complete interface for selecting records from any CRUD6 model. Perfect for product lookups, category selection, or any scenario where you need to search and select from a large dataset.
 
 **Basic Usage:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   display-field="name"
@@ -699,7 +878,7 @@ The AutoLookup component provides a searchable auto-complete interface for selec
 
 **With Multiple Display Fields:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   :display-fields="['sku', 'name']"
@@ -710,7 +889,7 @@ The AutoLookup component provides a searchable auto-complete interface for selec
 
 **With Custom Display Format:**
 ```vue
-<UFCRUD6AutoLookup
+<CRUD6AutoLookup
   model="products"
   id-field="id"
   :display-format="(item) => `${item.sku} - ${item.name} ($${item.price})`"
@@ -781,7 +960,7 @@ const { schema, loading, error, loadSchema, hasPermission } = useCRUD6Schema()
 // Custom actions
 const { executeAction, loading, error } = useCRUD6Actions('users')
 
-// Execute a custom action
+// Execute a custom action (the unified modal uses this internally)
 const success = await executeAction(actionConfig, recordId, currentRecord)
 
 // Many-to-many relationship management
@@ -814,13 +993,15 @@ await saveMasterWithDetails(
 )
 ```
 
+> **Note**: The `useCRUD6Actions` composable is used internally by UnifiedModal to execute custom actions. You can use it directly for programmatic action execution.
+
 #### Routes
 
 Frontend routes are automatically registered:
 - `/crud6/{model}` - List view for any model
 - `/crud6/{model}/{id}` - Detail view for a specific record
 
-These routes follow UserFrosting 6 patterns and integrate with the authentication and authorization system.
+These routes follow UserFrosting 6 patterns and integrate with the authentication and authorization system. The unified modal system handles all CRUD operations (create, edit, delete) without requiring separate route configurations.
 
 ### Soft Delete
 
@@ -927,6 +1108,7 @@ CRUD6 follows **UserFrosting 6 standards** for translations, ensuring consistenc
 // app/locale/en_US/messages.php
 'USER' => [
     'DISABLE_CONFIRM' => 'Are you sure you want to disable <strong>{{first_name}} {{last_name}} ({{user_name}})</strong>?',
+    'TOGGLE_ENABLED_CONFIRM' => 'Toggle enabled status for {{user_name}}?',
 ],
 // WARNING_CANNOT_UNDONE is from UF6 core - no need to define it
 ```
@@ -943,12 +1125,34 @@ CRUD6 follows **UserFrosting 6 standards** for translations, ensuring consistenc
 }
 ```
 
+### UnifiedModal Translation Context
+
+The unified modal system provides rich translation context including both model and record data:
+
+```javascript
+{
+  model: 'User',           // Model label (singular_title or capitalized model name)
+  user_name: 'john_doe',   // All record fields available
+  first_name: 'John',
+  last_name: 'Doe',
+  id: 8,
+  // ... all other record fields
+}
+```
+
+This allows translations to use specific field placeholders:
+```
+"Are you sure you want to delete {{model}} <strong>{{user_name}}</strong>?"
+"Toggle {{field}} for {{first_name}} {{last_name}}?"
+```
+
 ### Key Principles
 
 1. **Use specific field placeholders**: `{{first_name}}`, `{{last_name}}`, `{{user_name}}` (not generic `{{name}}`)
 2. **Use `WARNING_CANNOT_UNDONE`**: Standard warning key from UserFrosting 6 core
 3. **Separate warnings from messages**: Warnings handled by modal component, not locale strings
 4. **Follow UF6 patterns**: Matches sprinkle-admin and theme-pink-cupcake conventions
+5. **Model context**: `{{model}}` placeholder available in all translations
 
 ### Warning Configuration
 
@@ -968,8 +1172,59 @@ Control warning display via `modal_config.warning`:
 ### Documentation
 
 - **Complete Guide**: [docs/NESTED_TRANSLATION_USAGE_GUIDE.md](docs/NESTED_TRANSLATION_USAGE_GUIDE.md)
-- **Example Schema**: [examples/schema/users-translation-example.json](examples/schema/users-translation-example.json)
+- **Example Schema**: [examples/schema/products-unified-modal.json](examples/schema/products-unified-modal.json)
 - **Example Locale**: [examples/locale/translation-example-messages.php](examples/locale/translation-example-messages.php)
+
+## Migration Guide
+
+### Upgrading to UnifiedModal
+
+If you're upgrading from an earlier version of CRUD6 that used separate modal components (`CreateModal`, `EditModal`, `DeleteModal`), the unified modal system provides:
+
+**Benefits:**
+- Single component for all CRUD operations
+- Automatic default actions from schema permissions
+- Scope-based action filtering
+- Consistent translations and UX
+- Reduced code duplication
+
+**Migration Steps:**
+1. **Schemas**: No changes required - existing schemas work automatically
+2. **Components**: Import `CRUD6UnifiedModal` instead of separate modal components
+3. **Actions**: Optionally add `scope` property to control where actions appear
+4. **Default Actions**: Automatically generated from permissions (can disable with `default_actions: false`)
+
+**Old Approach:**
+```vue
+<UFCRUD6CreateModal :model="'users'" :schema="schema" @saved="refresh" />
+<UFCRUD6EditModal :crud6="record" :model="'users'" :schema="schema" @saved="refresh" />
+<UFCRUD6DeleteModal :crud6="record" :model="'users'" @confirmed="handleDelete" />
+```
+
+**New Approach:**
+```vue
+<CRUD6UnifiedModal
+  :action="createAction"
+  :model="'users'"
+  :schema="schema"
+  @saved="refresh"
+/>
+<CRUD6UnifiedModal
+  :action="editAction"
+  :record="record"
+  :model="'users'"
+  :schema="schema"
+  @saved="refresh"
+/>
+<CRUD6UnifiedModal
+  :action="deleteAction"
+  :record="record"
+  :model="'users'"
+  @confirmed="handleDelete"
+/>
+```
+
+> **Note**: Actions are automatically filtered by scope and provided in the schema contexts. See [.archive/UNIFIED_MODAL_MIGRATION_GUIDE.md](.archive/UNIFIED_MODAL_MIGRATION_GUIDE.md) for detailed migration instructions.
 
 ## Contributing
 

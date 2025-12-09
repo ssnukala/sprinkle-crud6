@@ -141,18 +141,16 @@ class SchemaTranslator
             
             // Check if the translated template contains placeholders that got interpolated with empty values
             // Common patterns indicating empty interpolation:
-            // - "()" or "( )" - empty parentheses
-            // - "  " - two or more consecutive spaces (placeholder was removed leaving spaces)
-            // - "Create " or "Delete " - action words ending with space (should have {{model}})
-            // - "from  ?" - prepositions followed by multiple spaces
-            // - "<strong>  (" - HTML tags with excessive spacing
-            if (preg_match('/\(\s*\)|<strong>\s+\(|>\s{2,}<|\s{2,}/', $translated)) {
+            // - "()" or "( )" - empty parentheses (common when {{first_name}} {{last_name}} removed)
+            // - "  " - two or more consecutive spaces (placeholder removed leaving spaces)
+            // This catches: "Create ", "Delete ", "from  ?", "for  ", etc.
+            if (preg_match('/\(\s*\)|\s{2,}/', $translated)) {
                 // Placeholders were interpolated with empty values
                 // Return the translation KEY for frontend to translate with proper context
                 $this->debugLog("[CRUD6 SchemaTranslator] Empty placeholder interpolation detected - frontend will handle", [
                     'key' => $value,
                     'translated' => $translated,
-                    'pattern_match' => 'double_space_or_empty_parens',
+                    'pattern_match' => 'empty_parens_or_double_spaces',
                 ]);
                 
                 // Return the translation KEY for frontend to translate with context

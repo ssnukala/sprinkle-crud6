@@ -61,7 +61,8 @@ class SchemaTranslator
         ]);
 
         // Recursively translate all string values that look like translation keys
-        $schema = $this->translateArrayRecursive($schema);
+        // Skip action confirm messages to preserve placeholders for frontend interpolation
+        $schema = $this->translateArrayRecursive($schema, '');
 
         $this->debugLog("[CRUD6 SchemaTranslator] Schema translation complete", [
             'model' => $schema['model'] ?? 'unknown',
@@ -76,18 +77,35 @@ class SchemaTranslator
      * This method traverses the entire array structure and translates any string value
      * that matches the translation key pattern (uppercase with dots).
      * 
+     * IMPORTANT: Action confirm messages are NOT translated here to preserve placeholders.
+     * The frontend will translate them with the proper record context for interpolation.
+     * 
      * @param array $data The array to translate
+     * @param string $parentKey The parent key to track context (for skipping specific fields)
      * 
      * @return array The array with all translation keys translated
      */
-    protected function translateArrayRecursive(array $data): array
+    protected function translateArrayRecursive(array $data, string $parentKey = ''): array
     {
         foreach ($data as $key => $value) {
+            $currentPath = $parentKey ? "$parentKey.$key" : $key;
+            
             if (is_array($value)) {
                 // Recursively translate nested arrays
-                $data[$key] = $this->translateArrayRecursive($value);
+                $data[$key] = $this->translateArrayRecursive($value, $currentPath);
             } elseif (is_string($value)) {
-                // Translate string values that look like translation keys
+                // Skip translating action confirm messages - frontend will handle with record context
+                // This preserves {{placeholder}} variables for proper interpolation
+                if ($key === 'confirm' && str_contains($parentKey, 'actions')) {
+                    $this->debugLog("[CRUD6 SchemaTranslator] Skipping action confirm message - frontend will translate with context", [
+                        'key' => $key,
+                        'value' => $value,
+                        'path' => $currentPath,
+                    ]);
+                    continue; // Keep the translation key for frontend to translate
+                }
+                
+                // Translate other string values that look like translation keys
                 $data[$key] = $this->translateValue($value);
             }
             // Non-string, non-array values are left as-is

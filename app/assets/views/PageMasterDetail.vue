@@ -62,7 +62,8 @@ const {
     apiLoading,
     apiError,
     formData,
-    resetForm
+    resetForm,
+    recordBreadcrumb  // Get pre-computed breadcrumb from API
 } = useCRUD6Api()
 
 // Master-detail composable - will be initialized when schema is loaded
@@ -184,24 +185,63 @@ const detailConfigs = computed(() => {
  */
 async function fetch() {
     if (recordId.value && fetchRow) {
+        debugLog('[PageMasterDetail.fetch] ===== STARTING FETCH =====', {
+            recordId: recordId.value,
+            model: model.value,
+        })
+        
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then(async (fetchedRow) => {
+                debugLog('[PageMasterDetail.fetch] ===== FETCH COMPLETED =====', {
+                    fetchedRowKeys: Object.keys(fetchedRow),
+                    has_breadcrumb: '_breadcrumb' in fetchedRow ? 'YES' : 'NO',
+                    _breadcrumb_value: (fetchedRow as any)._breadcrumb ?? 'NOT PRESENT',
+                })
+                
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
-                // Update page title with record name if available
-                // Use title_field from schema, or fall back to ID
-                const titleField = schema.value?.title_field
-                const recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                
+                // Use pre-computed breadcrumb from API response
+                // Access it directly from the fetched row data to avoid timing issues
+                // The breadcrumb is attached as _breadcrumb property by fetchRow
+                let recordName = (fetchedRow as any)._breadcrumb
+                
+                debugLog('[PageMasterDetail.fetch] ===== BREADCRUMB RESOLUTION =====', {
+                    step1_fetchedRow_breadcrumb: (fetchedRow as any)._breadcrumb ?? 'NULL',
+                    step2_recordBreadcrumb_value: recordBreadcrumb.value ?? 'NULL',
+                    step3_recordId: recordId.value,
+                })
+                
+                if (!recordName) {
+                    debugLog('[PageMasterDetail.fetch] Step 1 failed, trying recordBreadcrumb.value')
+                    // Fallback to reactive ref (should be set by now)
+                    recordName = recordBreadcrumb.value
+                }
+                
+                if (!recordName) {
+                    debugLog('[PageMasterDetail.fetch] Step 2 failed, using recordId fallback')
+                    // Final fallback to record ID
+                    recordName = recordId.value
+                }
+                
+                debugLog('[PageMasterDetail.fetch] ===== FINAL BREADCRUMB =====', {
+                    recordName,
+                    modelLabel: modelLabel.value,
+                })
                 
                 page.title = `${recordName} - ${modelLabel.value}`
+                
+                debugLog('[PageMasterDetail.fetch] ===== PAGE TITLE SET =====', {
+                    pageTitle: page.title,
+                })
                 
                 // Update breadcrumbs with model title and record name
                 const listPath = `/crud6/${model.value}`
                 await setDetailBreadcrumbs(modelLabel.value, recordName, listPath)
             }).catch((error) => {
-                debugError('Failed to fetch CRUD6 row:', error)
+                debugError('[PageMasterDetail.fetch] ===== FETCH FAILED =====', error)
             })
         }
     }

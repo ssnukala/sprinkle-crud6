@@ -53,7 +53,8 @@ const {
     apiLoading,
     apiError,
     formData,
-    resetForm
+    resetForm,
+    recordBreadcrumb  // Get pre-computed breadcrumb from API
 } = useCRUD6Api()
 
 // Helper function to create initial object based on schema
@@ -216,24 +217,51 @@ const modelTitle = computed(() => {
  */
 async function fetch() {
     if (recordId.value && fetchRow) {
+        debugLog('[PageRow.fetch] ===== STARTING FETCH =====', {
+            recordId: recordId.value,
+            model: model.value,
+        })
+        
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then(async (fetchedRow) => {
+                debugLog('[PageRow.fetch] ===== FETCH COMPLETED =====', {
+                    fetchedRowKeys: Object.keys(fetchedRow),
+                    has_breadcrumb: '_breadcrumb' in fetchedRow ? 'YES' : 'NO',
+                    _breadcrumb_value: (fetchedRow as any)._breadcrumb ?? 'NOT PRESENT',
+                })
+                
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
                 
-                // Wait for schema to be available before calculating record name
-                let retries = 0
-                const maxRetries = 20 // Max 2 seconds
-                while (!flattenedSchema.value?.title && retries < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, 100))
-                    retries++
+                // Use pre-computed breadcrumb from API response
+                // Access it directly from the fetched row data to avoid timing issues
+                // The breadcrumb is attached as _breadcrumb property by fetchRow
+                let recordName = (fetchedRow as any)._breadcrumb
+                
+                debugLog('[PageRow.fetch] ===== BREADCRUMB RESOLUTION =====', {
+                    step1_fetchedRow_breadcrumb: (fetchedRow as any)._breadcrumb ?? 'NULL',
+                    step2_recordBreadcrumb_value: recordBreadcrumb.value ?? 'NULL',
+                    step3_recordId: recordId.value,
+                })
+                
+                if (!recordName) {
+                    debugLog('[PageRow.fetch] Step 1 failed, trying recordBreadcrumb.value')
+                    // Fallback to reactive ref (should be set by now)
+                    recordName = recordBreadcrumb.value
                 }
                 
-                // Calculate record name using title_field from schema
-                const titleField = flattenedSchema.value?.title_field
-                let recordName = titleField ? (fetchedRow[titleField] || recordId.value) : recordId.value
+                if (!recordName) {
+                    debugLog('[PageRow.fetch] Step 2 failed, using recordId fallback')
+                    // Final fallback to record ID
+                    recordName = recordId.value
+                }
+                
+                debugLog('[PageRow.fetch] ===== FINAL BREADCRUMB =====', {
+                    recordName,
+                    modelTitle: modelTitle.value,
+                })
                 
                 // Update breadcrumbs with model title and record name
                 const listPath = `/crud6/${model.value}`
@@ -241,8 +269,12 @@ async function fetch() {
                 
                 // Set page.title AFTER breadcrumbs to prevent usePageMeta interference
                 page.title = recordName
+                
+                debugLog('[PageRow.fetch] ===== PAGE TITLE SET =====', {
+                    pageTitle: page.title,
+                })
             }).catch((error) => {
-                debugError('Failed to fetch CRUD6 row:', error)
+                debugError('[PageRow.fetch] ===== FETCH FAILED =====', error)
             })
         }
     }
@@ -365,8 +397,8 @@ watch(model, async (newModel) => {
                         ? translator.translate(flattenedSchema.value.description) 
                         : translator.translate('CRUD6.INFO_PAGE', { model: modelLabel.value })
                     
-                    // Breadcrumbs will be set by fetch() after loading the record
-                    page.title = ''
+                    // Breadcrumbs and page.title will be set by fetch() after loading the record
+                    // Do NOT set page.title here as it may race with fetch() setting the breadcrumb
                 }
             }
         }

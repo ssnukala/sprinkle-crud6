@@ -124,6 +124,39 @@ class EditActionTest extends AdminTestCase
     }
 
     /**
+     * Test GET /api/crud6/users/{id} includes breadcrumb with ID suffix
+     */
+    public function testReadUserIncludesBreadcrumbWithIdSuffix(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['uri_users']);
+
+        /** @var User */
+        $testUser = User::factory()->create([
+            'user_name' => 'johndoe',
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+        ]);
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/' . $testUser->id);
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(200, $response);
+        
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertIsArray($body);
+        
+        // Check that breadcrumb field exists in response
+        $this->assertArrayHasKey('breadcrumb', $body);
+        
+        // Breadcrumb should be in format "username (id)"
+        // Users schema has title_field set to "user_name"
+        $expectedBreadcrumb = 'johndoe (' . $testUser->id . ')';
+        $this->assertEquals($expectedBreadcrumb, $body['breadcrumb']);
+    }
+
+    /**
      * Test GET /api/crud6/users/{id} returns 404 for non-existent user
      */
     public function testReadNonExistentUserReturns404(): void

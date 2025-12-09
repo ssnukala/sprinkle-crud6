@@ -134,7 +134,11 @@ class ApiAction extends Base
             'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $modelDisplayName]),
             'model' => $filteredSchema['model'],
             'modelDisplayName' => $modelDisplayName,
-            'schema' => $filteredSchema
+            'schema' => $filteredSchema,
+            'breadcrumb' => [
+                'modelTitle' => $filteredSchema['title'] ?? ucfirst($filteredSchema['model']),
+                'singularTitle' => $filteredSchema['singular_title'] ?? ($filteredSchema['title'] ?? ucfirst($filteredSchema['model']))
+            ]
         ];
 
         $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [

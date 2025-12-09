@@ -176,12 +176,24 @@ class EditAction extends Base
                 $details = $this->loadDetailsFromSchema($crudSchema, $crudModel, $recordId);
             }
             
+            // Calculate breadcrumb display name using title_field from schema
+            $breadcrumbName = $this->calculateBreadcrumbName($crudSchema, $recordData, $recordId);
+            
+            $this->debugLog("CRUD6 [EditAction] ===== BREADCRUMB CALCULATION =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'title_field' => $crudSchema['title_field'] ?? 'NOT SET',
+                'breadcrumb_value' => $breadcrumbName,
+                'record_data_keys' => array_keys($recordData),
+            ]);
+            
             $responseData = [
                 'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
                 'model' => $crudSchema['model'],
                 'modelDisplayName' => $modelDisplayName,
                 'id' => $recordId,
-                'data' => $recordData
+                'data' => $recordData,
+                'breadcrumb' => $breadcrumbName  // Pre-computed breadcrumb display name
             ];
             
             // Add details to response if loaded
@@ -189,10 +201,12 @@ class EditAction extends Base
                 $responseData['details'] = $details;
             }
 
-            $this->debugLog("CRUD6 [EditAction] Read response prepared", [
+            $this->debugLog("CRUD6 [EditAction] ===== READ RESPONSE PREPARED =====", [
                 'model' => $crudSchema['model'],
                 'record_id' => $recordId,
                 'response_keys' => array_keys($responseData),
+                'breadcrumb_in_response' => isset($responseData['breadcrumb']) ? 'YES' : 'NO',
+                'breadcrumb_value_in_response' => $responseData['breadcrumb'] ?? 'NOT SET',
             ]);
 
             $response->getBody()->write(json_encode($responseData));
@@ -358,6 +372,47 @@ class EditAction extends Base
         ]);
 
         return $crudModel;
+    }
+
+    /**
+     * Calculate breadcrumb display name for a record.
+     * 
+     * Uses the title_field from schema to determine which field to use as the display name.
+     * Falls back to the record ID if title_field is not defined or field value is empty.
+     * Always appends the ID in parentheses for clarity (e.g., "John Doe (123)").
+     * 
+     * @param array $crudSchema The schema configuration
+     * @param array $recordData The record data
+     * @param mixed $recordId   The record ID
+     * 
+     * @return string The breadcrumb display name with ID suffix
+     */
+    protected function calculateBreadcrumbName(array $crudSchema, array $recordData, $recordId): string
+    {
+        $titleField = $crudSchema['title_field'] ?? null;
+        
+        $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] ===== START =====", [
+            'record_id' => $recordId,
+            'title_field' => $titleField ?? 'NULL',
+            'title_field_exists_in_data' => $titleField && isset($recordData[$titleField]) ? 'YES' : 'NO',
+            'title_field_value' => $titleField && isset($recordData[$titleField]) ? $recordData[$titleField] : 'N/A',
+        ]);
+        
+        // If title_field is defined and exists in record data, use it with ID suffix
+        if ($titleField && isset($recordData[$titleField]) && !empty($recordData[$titleField])) {
+            $result = $recordData[$titleField] . ' (' . $recordId . ')';
+            $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] Using title_field", [
+                'result' => $result,
+            ]);
+            return $result;
+        }
+        
+        // Fall back to just the record ID
+        $result = (string) $recordId;
+        $this->debugLog("CRUD6 [EditAction::calculateBreadcrumbName] Fallback to ID", [
+            'result' => $result,
+        ]);
+        return $result;
     }
 
     /**

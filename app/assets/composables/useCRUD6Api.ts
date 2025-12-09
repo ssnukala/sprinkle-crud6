@@ -112,6 +112,7 @@ export function useCRUD6Api(modelName?: string) {
     const apiLoading = ref<boolean>(false)
     const apiError = ref<ApiErrorResponse | null>(null)
     const formData = ref<CRUD6CreateRequest>(defaultFormData())
+    const recordBreadcrumb = ref<string | null>(null)  // Store breadcrumb from API response
 
     const route = useRoute()
     const model = modelName || (route.params.model as string)
@@ -198,7 +199,36 @@ export function useCRUD6Api(modelName?: string) {
                         timestamp: new Date().toISOString()
                     })
                     
-                    return response.data.data as CRUD6Response
+                    debugLog('[useCRUD6Api] ===== BREADCRUMB FROM API =====', {
+                        hasBreadcrumbInResponse: 'breadcrumb' in response.data ? 'YES' : 'NO',
+                        breadcrumbValue: response.data.breadcrumb ?? 'NOT PRESENT',
+                        breadcrumbType: typeof response.data.breadcrumb,
+                    })
+                    
+                    // Store breadcrumb from API response if available
+                    if ('breadcrumb' in response.data && response.data.breadcrumb) {
+                        recordBreadcrumb.value = response.data.breadcrumb as string
+                        debugLog('[useCRUD6Api] Breadcrumb stored in reactive ref', {
+                            breadcrumb: recordBreadcrumb.value
+                        })
+                    } else {
+                        debugLog('[useCRUD6Api] ⚠️ NO BREADCRUMB in API response', {
+                            responseKeys: Object.keys(response.data),
+                        })
+                    }
+                    
+                    // Attach breadcrumb to the returned data for immediate access
+                    const recordData = response.data.data as any
+                    if ('breadcrumb' in response.data) {
+                        recordData._breadcrumb = response.data.breadcrumb
+                        debugLog('[useCRUD6Api] ===== ATTACHED _breadcrumb to recordData =====', {
+                            _breadcrumb: recordData._breadcrumb,
+                        })
+                    } else {
+                        debugLog('[useCRUD6Api] ⚠️ NOT attaching _breadcrumb (not in response)', {})
+                    }
+                    
+                    return recordData as CRUD6Response
                 }
                 
                 debugLog('[useCRUD6Api] Returning full response data (no data property found)', {
@@ -488,6 +518,7 @@ export function useCRUD6Api(modelName?: string) {
         formData,
         r$,
         resetForm,
-        slugLocked
+        slugLocked,
+        recordBreadcrumb  // Expose breadcrumb data
     }
 }

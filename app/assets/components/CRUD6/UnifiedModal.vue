@@ -143,11 +143,25 @@ const translationContext = computed(() => {
  */
 function translateWithFallback(key: string, params?: Record<string, any>, fallback?: string): string {
     const result = translator.translate(key, params)
+    
     // If translation not found, translator returns the key itself
-    // Check both with and without params interpolation
-    if (result === key || (params && result.includes('{{')) || result.startsWith(key.split('.')[0] + '.')) {
+    // Check if result equals the original key
+    if (result === key) {
         return fallback || key
     }
+    
+    // Check if params weren't interpolated (still contains placeholders)
+    if (params && result.includes('{{')) {
+        return fallback || key
+    }
+    
+    // Check if result starts with namespace (partial translation match)
+    // This handles cases where translator returns a namespace prefix
+    const firstPart = key.split('.')[0]
+    if (firstPart && result.startsWith(firstPart + '.')) {
+        return fallback || key
+    }
+    
     return result
 }
 

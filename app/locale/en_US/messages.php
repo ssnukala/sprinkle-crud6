@@ -89,6 +89,10 @@ return [
             'MIN_LENGTH'          => 'Minimum {{min}} characters required',
         ],
 
+        'ACTION' => [
+            "SUCCESS"      => 'Action completed successfully.',
+            'CANNOT_UNDO' => 'This action cannot be undone.',
+        ],
     ],
 
     // Action translations used in modals (backward compatibility - kept at root for legacy support)

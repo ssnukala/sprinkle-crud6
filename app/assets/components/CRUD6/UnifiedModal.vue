@@ -240,7 +240,7 @@ const modalConfig = computed((): ModalConfig => {
     // Use UserFrosting 6 standard WARNING_CANNOT_UNDONE from sprinkle-core
     let defaultWarningKey: string | undefined
     if (modalType === 'confirm') {
-        defaultWarningKey = 'WARNING_CANNOT_UNDONE'
+        defaultWarningKey = 'CRUD6.ACTION.CANNOT_UNDO'
     }
     
     return {

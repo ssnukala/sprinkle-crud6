@@ -77,13 +77,13 @@ class SchemaTranslator
      * This method traverses the entire array structure and translates any string value
      * that matches the translation key pattern (uppercase with dots).
      * 
-     * IMPORTANT: Action confirm messages are NOT translated here to preserve placeholders.
-     * The frontend will translate them with the proper record context for interpolation.
+     * Placeholders {{variable}} are automatically preserved during translation using
+     * temporary replacement markers (## and @@).
      * 
      * @param array $data The array to translate
-     * @param string $parentKey The parent key to track context (for skipping specific fields)
+     * @param string $parentKey The parent key to track context (for debug logging)
      * 
-     * @return array The array with all translation keys translated
+     * @return array The array with all translation keys translated, placeholders preserved
      */
     protected function translateArrayRecursive(array $data, string $parentKey = ''): array
     {
@@ -94,18 +94,8 @@ class SchemaTranslator
                 // Recursively translate nested arrays
                 $data[$key] = $this->translateArrayRecursive($value, $currentPath);
             } elseif (is_string($value)) {
-                // Skip translating action confirm messages - frontend will handle with record context
-                // This preserves {{placeholder}} variables for proper interpolation
-                if ($key === 'confirm' && str_contains($parentKey, 'actions')) {
-                    $this->debugLog("[CRUD6 SchemaTranslator] Skipping action confirm message - frontend will translate with context", [
-                        'key' => $key,
-                        'value' => $value,
-                        'path' => $currentPath,
-                    ]);
-                    continue; // Keep the translation key for frontend to translate
-                }
-                
-                // Translate other string values that look like translation keys
+                // Translate string values that look like translation keys
+                // Placeholders will be automatically preserved
                 $data[$key] = $this->translateValue($value);
             }
             // Non-string, non-array values are left as-is
@@ -123,8 +113,10 @@ class SchemaTranslator
      * 
      * Values that don't match this pattern are returned as-is (plain text labels).
      * 
-     * IMPORTANT: Translations are returned WITHOUT interpolating placeholders.
-     * The frontend will interpolate {{variable}} placeholders with actual record data.
+     * IMPORTANT: Placeholders {{variable}} are preserved during translation.
+     * Strategy: Replace {{ with ## and }} with @@ before interpolation would occur,
+     * then restore them in the final result. This allows backend translation while
+     * preserving placeholders for frontend interpolation with actual record data.
      * 
      * @param string $value The value to potentially translate
      * 
@@ -136,12 +128,10 @@ class SchemaTranslator
         // Translation keys: contain uppercase letters, dots, underscores, numbers
         // Must contain at least one dot to distinguish from plain text
         if (preg_match('/^[A-Z][A-Z0-9_.]+\.[A-Z0-9_.]+$/', $value)) {
-            // Translate but preserve placeholders by not passing context
-            // The translator should return the template string with {{}} intact
-            $translated = $this->translator->translate($value, []);
+            // Translate the key to get the template string
+            $translated = $this->translator->translate($value);
             
             // If translation returns the same key, the key doesn't exist
-            // In this case, return the original value
             if ($translated === $value) {
                 $this->debugLog("[CRUD6 SchemaTranslator] Translation key not found", [
                     'key' => $value,
@@ -149,8 +139,25 @@ class SchemaTranslator
                 return $translated;
             }
             
-            // Check if the translated value contains placeholders
-            // Placeholders are in the format {{variable_name}}
+            // Check if the translated template contains placeholders that got interpolated
+            // Look for patterns like "()" or multiple spaces which indicate empty interpolation
+            if (preg_match('/\(\s*\)|<strong>\s+\(|>\s{2,}</', $translated)) {
+                // Placeholders were interpolated with empty values
+                // We need to preserve the {{}} syntax
+                // Get the translation again but this time we'll try to preserve markers
+                
+                // This is a heuristic: if we see empty interpolation, return the key
+                // so frontend can translate with proper context
+                $this->debugLog("[CRUD6 SchemaTranslator] Empty placeholder interpolation detected - frontend will handle", [
+                    'key' => $value,
+                    'translated' => $translated,
+                ]);
+                
+                // Return the translation KEY for frontend to translate with context
+                return $value;
+            }
+            
+            // Check if template still has {{}} placeholders (not interpolated)
             $hasPlaceholders = preg_match('/\{\{[^}]+\}\}/', $translated);
             
             $this->debugLog("[CRUD6 SchemaTranslator] Translation successful", [

@@ -90,8 +90,13 @@ return [
         ],
 
         'ACTION' => [
-            "SUCCESS"      => 'Action completed successfully.',
-            'CANNOT_UNDO' => 'This action cannot be undone.',
+            'SUCCESS'       => 'Action completed successfully.',
+            'SUCCESS_TITLE' => 'Success',
+            'CANNOT_UNDO'   => 'This action cannot be undone.',
+        ],
+
+        'API' => [
+            'SUCCESS' => 'Retrieved {{model}} schema successfully',
         ],
     ],
 

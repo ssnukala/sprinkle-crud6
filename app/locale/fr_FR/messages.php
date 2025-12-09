@@ -89,6 +89,15 @@ return [
             'MIN_LENGTH'          => 'Minimum {{min}} caractères requis',
         ],
 
+        'ACTION' => [
+            'SUCCESS'       => 'Action effectuée avec succès.',
+            'SUCCESS_TITLE' => 'Succès',
+            'CANNOT_UNDO'   => 'Cette action ne peut pas être annulée.',
+        ],
+
+        'API' => [
+            'SUCCESS' => 'Schéma de {{model}} récupéré avec succès',
+        ],
     ],
 
     // Action translations used in modals (backward compatibility - kept at root for legacy support)

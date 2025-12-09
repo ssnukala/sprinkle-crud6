@@ -117,6 +117,11 @@ class SchemaTranslator
      * the original translation KEY is returned instead of the translated value.
      * This allows the frontend to translate with proper record context data.
      * 
+     * UserFrosting 6 Translator Pattern:
+     * - Passing empty array [] to translate() preserves {{placeholder}} syntax
+     * - This is the official UserFrosting 6 pattern for getting raw templates
+     * - See: https://github.com/userfrosting/framework/blob/6.0/src/I18n/Translator.php
+     * 
      * @param string $value The value to potentially translate
      * 
      * @return string The translation KEY if template has placeholders, translated value otherwise
@@ -127,8 +132,9 @@ class SchemaTranslator
         // Translation keys: contain uppercase letters, dots, underscores, numbers
         // Must contain at least one dot to distinguish from plain text
         if (preg_match('/^[A-Z][A-Z0-9_.]+\.[A-Z0-9_.]+$/', $value)) {
-            // Get the raw translation template without any interpolation
-            // Pass empty array to prevent placeholder interpolation
+            // Get the raw translation template with placeholders preserved
+            // UserFrosting 6 pattern: Pass empty array [] to preserve {{placeholder}} syntax
+            // The translator will return the template string without interpolating placeholders
             $template = $this->translator->translate($value, []);
             
             // If translation returns the same key, the key doesn't exist

@@ -91,6 +91,29 @@ return [
 
     ],
 
+    // Action translations used in modals (backward compatibility - kept at root for legacy support)
+    // Note: New code should use WARNING_CANNOT_UNDONE from UserFrosting core instead
+    'ACTION' => [
+        'CANNOT_UNDO' => 'This action cannot be undone.',
+    ],
+
+    // Validation translations (backward compatibility - duplicated at root for legacy support)
+    // Note: New code should use CRUD6.VALIDATION.* keys for proper namespacing
+    // IMPORTANT: This duplication is intentional to support both namespace structures:
+    //   - New code: CRUD6.VALIDATION.ENTER_VALUE (preferred)
+    //   - Old code: VALIDATION.ENTER_VALUE (backward compatible)
+    // The translateWithFallback() helper tries CRUD6.* first, then falls back to root level
+    // Keep these in sync with CRUD6.VALIDATION.* keys above
+    'VALIDATION' => [
+        'ENTER_VALUE'         => 'Enter value',
+        'CONFIRM'             => 'Confirm',
+        'CONFIRM_PLACEHOLDER' => 'Confirm value',
+        'MIN_LENGTH_HINT'     => 'Minimum {{min}} characters',
+        'MATCH_HINT'          => 'Values must match',
+        'FIELDS_MUST_MATCH'   => 'Fields must match',
+        'MIN_LENGTH'          => 'Minimum {{min}} characters required',
+    ],
+
     // Panel/Breadcrumb translations (flat keys for backward compatibility)
     'CRUD6_PANEL'               => 'CRUD6 Management',
     'C6ADMIN_PANEL'             => 'CRUD6 Admin Panel',

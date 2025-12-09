@@ -6,9 +6,11 @@ This directory contains examples, documentation, and reference materials for the
 
 ### `/schema/` - JSON Schema Examples
 Contains CRUD6 JSON schema files demonstrating various features and integrations:
-- **Local examples**: Product catalog, orders, categories with various field types and relationships
-- **C6Admin schemas**: UserFrosting 6 integration examples (users, roles, permissions, groups, activities)
-- **Translation example**: `users-translation-example.json` - Demonstrates proper nested translation usage
+- **Product examples**: Various product schemas with different layouts and features
+- **Relationship examples**: Users, roles, permissions, groups with UserFrosting 6 integration
+- **Order management**: Orders and order details
+- **Smart lookup examples**: AutoLookup field demonstrations
+- **Field templates**: Template file and inline template examples
 
 See [schema/README.md](schema/README.md) for detailed schema documentation.
 
@@ -43,23 +45,23 @@ See [Migrations/README.md](Migrations/README.md) for details.
 
 ### Test & Validation Scripts
 
-Development and validation scripts for testing CRUD6 functionality:
+Development and validation scripts for testing CRUD6 functionality. These are **reference scripts** used during sprinkle development and are not meant for end-user execution:
 
 **Test Scripts:**
-- `test-c6admin-relationships.php` - Test UserFrosting admin relationship integration
-- `test-c6admin-schema.php` - Test UserFrosting admin schema compatibility
-- `test-nested-lookup.php` - Test nested lookup functionality
-- `test-relationship-fix.php` - Test relationship fixes
+- `test-c6admin-relationships.php` - Tests UserFrosting admin relationship integration (requires sprinkle-c6admin)
+- `test-c6admin-schema.php` - Tests UserFrosting admin schema compatibility (requires sprinkle-c6admin)
+- `test-nested-lookup.php` - Tests nested lookup functionality
+- `test-relationship-fix.php` - Tests belongs_to_many_through relationship fixes
 
 **Validation Scripts:**
-- `validate-autolookup.php` - Validate AutoLookup component functionality
-- `validate-changes.php` - Validate code changes
-- `validate-fix.php` - Validate bug fixes
-- `verify-debug-mode.php` - Verify debug mode configuration
-- `verify-api-calls.sh` - Verify API endpoint functionality
+- `validate-autolookup.php` - Validates AutoLookup component file structure
+- `validate-changes.php` - Validates schema optimization and field template features
+- `validate-fix.php` - Validates belongs_to_many_through fix
+- `verify-debug-mode.php` - Demonstrates debug mode configuration
+- `verify-api-calls.sh` - Shell script for verifying API endpoint functionality
 - `verify-frontend-debug.html` - Frontend debug verification page
 
-> **Note:** These scripts are for development/testing purposes and are not included in production packages.
+> **Note:** These scripts are for **sprinkle development and testing purposes only**. They are included as examples and references but are not necessary for using CRUD6 in your application. They are not included in production packages (see `package.json` `files` section).
 
 ## Quick Start
 
@@ -72,9 +74,9 @@ Development and validation scripts for testing CRUD6 functionality:
 ### Understanding Relationships
 
 Check these schemas for relationship examples:
-- **Many-to-many**: `schema/c6admin-users.json` (users ↔ roles)
-- **Belongs-to-many-through**: `schema/c6admin-users.json` (users → roles → permissions)
-- **One-to-many**: `schema/c6admin-users.json` (users → activities)
+- **Many-to-many**: `schema/users.json` (users ↔ roles via `role_users`)
+- **Belongs-to-many-through**: `schema/users.json` (users → roles → permissions via `role_users` and `permission_roles`)
+- **One-to-many**: `schema/users.json` (users → activities)
 
 ### Frontend Integration
 
@@ -90,7 +92,6 @@ See the Vue component examples for:
 
 The CRUD6 sprinkle supports nested translations using the `{{&KEY}}` syntax. This allows you to embed translation keys within locale messages, and they will be recursively translated at render time.
 
-**Example Schema**: `schema/users-translation-example.json`
 **Example Locale**: `locale/translation-example-messages.php`
 
 **Key Pattern:**

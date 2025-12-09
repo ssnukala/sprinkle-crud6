@@ -92,8 +92,10 @@ const translationContext = computed(() => {
     }
     
     // Debug: Log what we're putting in the translation context
-    debugLog('[UnifiedModal] Building translation context:', {
+    debugLog('[DynamicModal-Translations] Building translation context:', {
         actionKey: props.action.key,
+        actionLabel: props.action.label,
+        actionConfirm: props.action.confirm,
         modelLabel: modelLabel.value,
         hasRecord: !!props.record,
         recordKeys: props.record ? Object.keys(props.record) : [],
@@ -131,7 +133,7 @@ const translationContext = computed(() => {
         context.title = props.record.id
     }
     
-    debugLog('[UnifiedModal] Final translation context:', context)
+    debugLog('[DynamicModal-Translations] Final translation context:', context)
     
     return context
 })
@@ -140,13 +142,34 @@ const translationContext = computed(() => {
  * Computed - Translated validation strings
  * All strings come from locale files - no hardcoded fallbacks
  */
-const validationStrings = computed(() => ({
-    enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE'),
-    confirm: translator.translate('CRUD6.VALIDATION.CONFIRM'),
-    confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER'),
-    minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }),
-    matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT')
-}))
+const validationStrings = computed(() => {
+    const translations = {
+        enterValue: translator.translate('CRUD6.VALIDATION.ENTER_VALUE'),
+        confirm: translator.translate('CRUD6.VALIDATION.CONFIRM'),
+        confirmPlaceholder: translator.translate('CRUD6.VALIDATION.CONFIRM_PLACEHOLDER'),
+        minLengthHint: (min: number) => translator.translate('CRUD6.VALIDATION.MIN_LENGTH_HINT', { min }),
+        matchHint: translator.translate('CRUD6.VALIDATION.MATCH_HINT')
+    }
+    
+    // Debug logging for translation diagnostics
+    debugLog('[DynamicModal-Translations] Validation strings translated:', {
+        actionKey: props.action.key,
+        translations: {
+            enterValue: { key: 'CRUD6.VALIDATION.ENTER_VALUE', value: translations.enterValue },
+            confirm: { key: 'CRUD6.VALIDATION.CONFIRM', value: translations.confirm },
+            confirmPlaceholder: { key: 'CRUD6.VALIDATION.CONFIRM_PLACEHOLDER', value: translations.confirmPlaceholder },
+            matchHint: { key: 'CRUD6.VALIDATION.MATCH_HINT', value: translations.matchHint }
+        },
+        translationsWorking: {
+            enterValue: translations.enterValue !== 'CRUD6.VALIDATION.ENTER_VALUE',
+            confirm: translations.confirm !== 'CRUD6.VALIDATION.CONFIRM',
+            confirmPlaceholder: translations.confirmPlaceholder !== 'CRUD6.VALIDATION.CONFIRM_PLACEHOLDER',
+            matchHint: translations.matchHint !== 'CRUD6.VALIDATION.MATCH_HINT'
+        }
+    })
+    
+    return translations
+})
 
 /**
  * Computed - Modal ID for UIKit toggle
@@ -234,7 +257,19 @@ const modalConfig = computed((): ModalConfig => {
  */
 const promptMessage = computed(() => {
     if (!props.action.confirm) return ''
-    return translator.translate(props.action.confirm, translationContext.value)
+    
+    const translated = translator.translate(props.action.confirm, translationContext.value)
+    
+    debugLog('[DynamicModal-Translations] Prompt message translated:', {
+        actionKey: props.action.key,
+        confirmKey: props.action.confirm,
+        translatedValue: translated,
+        context: translationContext.value,
+        contextKeys: Object.keys(translationContext.value),
+        isTranslated: translated !== props.action.confirm
+    })
+    
+    return translated
 })
 
 /**
@@ -243,7 +278,17 @@ const promptMessage = computed(() => {
  */
 const actionLabel = computed(() => {
     if (!props.action.label) return ''
-    return translator.translate(props.action.label, translationContext.value)
+    
+    const translated = translator.translate(props.action.label, translationContext.value)
+    
+    debugLog('[DynamicModal-Translations] Action label translated:', {
+        actionKey: props.action.key,
+        labelKey: props.action.label,
+        translatedValue: translated,
+        isTranslated: translated !== props.action.label
+    })
+    
+    return translated
 })
 
 /**
@@ -418,8 +463,23 @@ const getMinLength = (fieldConfig?: SchemaField) => {
  */
 const getFieldLabel = (fieldKey: string, fieldConfig?: SchemaField) => {
     if (fieldConfig?.label) {
-        return translator.translate(fieldConfig.label)
+        const translated = translator.translate(fieldConfig.label)
+        
+        debugLog('[DynamicModal-Translations] Field label translated:', {
+            fieldKey,
+            labelKey: fieldConfig.label,
+            translatedValue: translated,
+            isTranslated: translated !== fieldConfig.label
+        })
+        
+        return translated
     }
+    
+    debugLog('[DynamicModal-Translations] Field label using key as fallback:', {
+        fieldKey,
+        noLabelConfig: true
+    })
+    
     return fieldKey
 }
 
@@ -492,14 +552,31 @@ function handleConfirmed() {
         
         // Check match validation
         if (requiresMatch(config) && value !== confirmValues.value[field.key]) {
-            error.value = translator.translate('CRUD6.VALIDATION.FIELDS_MUST_MATCH')
+            const errorMsg = translator.translate('CRUD6.VALIDATION.FIELDS_MUST_MATCH')
+            
+            debugLog('[DynamicModal-Translations] Error message translated (FIELDS_MUST_MATCH):', {
+                key: 'CRUD6.VALIDATION.FIELDS_MUST_MATCH',
+                translatedValue: errorMsg,
+                isTranslated: errorMsg !== 'CRUD6.VALIDATION.FIELDS_MUST_MATCH'
+            })
+            
+            error.value = errorMsg
             return
         }
         
         // Check min length
         const minLen = getMinLength(config)
         if (minLen && String(value || '').length < minLen) {
-            error.value = translator.translate('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen })
+            const errorMsg = translator.translate('CRUD6.VALIDATION.MIN_LENGTH', { min: minLen })
+            
+            debugLog('[DynamicModal-Translations] Error message translated (MIN_LENGTH):', {
+                key: 'CRUD6.VALIDATION.MIN_LENGTH',
+                params: { min: minLen },
+                translatedValue: errorMsg,
+                isTranslated: errorMsg !== 'CRUD6.VALIDATION.MIN_LENGTH'
+            })
+            
+            error.value = errorMsg
             return
         }
     }

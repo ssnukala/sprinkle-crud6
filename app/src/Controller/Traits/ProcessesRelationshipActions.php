@@ -9,15 +9,15 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
 /**
  * Trait for processing relationship actions on model operations.
- * 
+ *
  * Provides automatic management of pivot table entries when creating,
  * updating, or deleting records with many-to-many relationships.
- * 
+ *
  * Actions are defined in the schema's relationship configuration:
  * - on_create: Triggered after creating a record
  * - on_update: Triggered after updating a record
  * - on_delete: Triggered before deleting a record
- * 
+ *
  * This trait uses Eloquent's BelongsToMany relationship methods (attach/sync/detach)
  * which are dynamically created on CRUD6Model based on schema configuration.
  * When configureFromSchema() is called, relationships defined in the schema become
@@ -27,15 +27,15 @@ trait ProcessesRelationshipActions
 {
     /**
      * Process relationship actions for a given event.
-     * 
+     *
      * Executes the configured actions (attach, sync, detach) on the model's
      * relationships based on the event type (on_create, on_update, on_delete).
-     * 
+     *
      * @param CRUD6ModelInterface $model  The model instance to process
      * @param array               $schema The schema configuration
      * @param array               $data   The request data (for sync operations)
      * @param string              $event  The event type ('on_create', 'on_update', 'on_delete')
-     * 
+     *
      * @return void
      */
     protected function processRelationshipActions(
@@ -89,7 +89,7 @@ trait ProcessesRelationshipActions
                     'relationship' => $relationName,
                     'error' => $e->getMessage(),
                 ]);
-                
+
                 // Re-throw exception to rollback transaction
                 throw $e;
             }
@@ -98,13 +98,13 @@ trait ProcessesRelationshipActions
 
     /**
      * Find relationship configuration by name in the schema.
-     * 
+     *
      * Searches through the schema's relationships array to find the configuration
      * for a specific relationship by name.
-     * 
+     *
      * @param array  $schema       The schema configuration
      * @param string $relationName The name of the relationship to find
-     * 
+     *
      * @return array|null The relationship configuration, or null if not found
      */
     protected function findRelationshipConfig(array $schema, string $relationName): ?array
@@ -124,18 +124,18 @@ trait ProcessesRelationshipActions
 
     /**
      * Process attach action to add related records.
-     * 
+     *
      * Attaches one or more related records to the model's relationship
      * using Eloquent's BelongsToMany::attach() method. The relationship
      * method (e.g., roles()) is dynamically available on the model after
      * configureFromSchema() has been called.
-     * 
+     *
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
      * @param string              $relationName The name of the relationship
      * @param array               $attachConfig Array of records to attach
      * @param string              $event        The event type
-     * 
+     *
      * @return void
      */
     protected function processAttachAction(
@@ -177,18 +177,18 @@ trait ProcessesRelationshipActions
 
     /**
      * Process sync action to synchronize related records.
-     * 
+     *
      * Synchronizes the model's relationship with the IDs provided in the
      * request data using Eloquent's BelongsToMany::sync() method. This will
      * attach new records, keep existing ones, and detach any that are not
      * in the provided list.
-     * 
+     *
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
      * @param string              $relationName The name of the relationship
      * @param mixed               $syncConfig   Sync configuration (boolean or field name)
      * @param array               $data         The request data
-     * 
+     *
      * @return void
      */
     protected function processSyncAction(
@@ -233,16 +233,16 @@ trait ProcessesRelationshipActions
 
     /**
      * Process detach action to remove related records.
-     * 
+     *
      * Detaches related records from the model's relationship using Eloquent's
      * BelongsToMany::detach() method. Can detach all records or specific ones by ID.
-     * 
+     *
      * @param CRUD6ModelInterface $model        The model instance
      * @param array               $schema       The schema configuration
      * @param string              $relationName The name of the relationship
      * @param mixed               $detachConfig Detach configuration ('all' or array of IDs)
      * @param string              $event        The event type
-     * 
+     *
      * @return void
      */
     protected function processDetachAction(
@@ -285,14 +285,14 @@ trait ProcessesRelationshipActions
 
     /**
      * Process special values in pivot data.
-     * 
+     *
      * Replaces special placeholder values with actual values:
      * - "now" -> current timestamp
      * - "current_user" -> authenticated user's ID
      * - "current_date" -> current date (Y-m-d format)
-     * 
+     *
      * @param array $pivotData The pivot data to process
-     * 
+     *
      * @return array The processed pivot data
      */
     protected function processPivotData(array $pivotData): array
@@ -317,25 +317,25 @@ trait ProcessesRelationshipActions
 
     /**
      * Delete child records based on schema's "details" configuration.
-     * 
+     *
      * This method implements cascade deletion by:
      * 1. Reading the "details" section from the schema
      * 2. Identifying child tables that have foreign key references to this model
      * 3. Deleting all child records before the parent is deleted
-     * 
+     *
      * This prevents foreign key constraint violations when deleting records
      * that have dependent child records.
-     * 
+     *
      * For soft deletes:
      * - If the child model supports soft deletes, it will be soft deleted
      * - If the child model doesn't support soft deletes, it will be hard deleted
      * - This can be overridden in the schema using "cascade_delete_mode" in details
-     * 
+     *
      * @param CRUD6ModelInterface $model         The parent model instance to cascade delete from
      * @param array               $schema        The schema configuration
      * @param mixed               $schemaService The schema service for loading child schemas
      * @param bool                $softDelete    Whether this is a soft delete operation
-     * 
+     *
      * @return void
      */
     protected function cascadeDeleteChildRecords(
@@ -368,7 +368,7 @@ trait ProcessesRelationshipActions
 
             $childModel = $detail['model'];
             $foreignKey = $detail['foreign_key'];
-            
+
             // Check if cascade delete is explicitly disabled for this child
             if (isset($detail['cascade_delete']) && $detail['cascade_delete'] === false) {
                 $this->debugLog("CRUD6 [CascadeDelete] Cascade delete disabled for child", [
@@ -380,10 +380,11 @@ trait ProcessesRelationshipActions
 
             try {
                 // Create a new instance of the child model
-                // Use the model name to create a CRUD6Model instance
+                // In CRUD6, all models are CRUD6Model instances configured from schema
+                // This is the standard pattern used throughout the system
                 $childModelInstance = new \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model();
-                
-                // Load schema for the child model to get table name
+
+                // Load schema for the child model to get table name and configuration
                 $childSchema = $schemaService->getSchema($childModel);
                 if (!$childSchema) {
                     $this->logger->warning("CRUD6 [CascadeDelete] Child model schema not found", [
@@ -394,36 +395,41 @@ trait ProcessesRelationshipActions
                 }
 
                 // Configure the child model with its schema
+                // This sets table name, columns, relationships, etc.
                 $childModelInstance->configureFromSchema($childSchema);
 
                 // Determine delete strategy
                 $childSupportsSoftDelete = $childModelInstance->hasSoftDeletes();
                 $deleteMode = $detail['cascade_delete_mode'] ?? 'auto';
-                
+
                 // Get all matching child records
                 $childRecords = $childModelInstance
                     ->where($foreignKey, '=', $parentId)
                     ->get();
 
                 $deletedCount = 0;
-                
+
                 // Delete child records based on strategy
                 foreach ($childRecords as $childRecord) {
                     if ($softDelete && $childSupportsSoftDelete && $deleteMode !== 'hard') {
                         // Soft delete child record
+                        // CRUD6Model has custom softDelete() method (doesn't use Laravel's SoftDeletes trait)
+                        // This manually sets the deleted_at timestamp
                         $childRecord->softDelete();
                         $deletedCount++;
-                        
+
                         $this->debugLog("CRUD6 [CascadeDelete] Soft deleted child record", [
                             'model' => $schema['model'],
                             'child_model' => $childModel,
                             'child_id' => $childRecord->getAttribute($childSchema['primary_key'] ?? 'id'),
                         ]);
                     } else {
-                        // Hard delete child record (either parent is hard delete, child doesn't support soft delete, or forced hard)
+                        // Hard delete child record
+                        // Either parent is hard delete, child doesn't support soft delete, or forced hard
+                        // Note: CRUD6Model's delete() performs hard delete (doesn't use SoftDeletes trait)
                         $childRecord->delete();
                         $deletedCount++;
-                        
+
                         $this->debugLog("CRUD6 [CascadeDelete] Hard deleted child record", [
                             'model' => $schema['model'],
                             'child_model' => $childModel,
@@ -449,7 +455,7 @@ trait ProcessesRelationshipActions
                     'foreign_key' => $foreignKey,
                     'error' => $e->getMessage(),
                 ]);
-                
+
                 // Re-throw exception to rollback transaction
                 throw $e;
             }
@@ -463,10 +469,10 @@ trait ProcessesRelationshipActions
 
     /**
      * Log debug message (abstract method that must be implemented by using class).
-     * 
+     *
      * @param string $message The log message
      * @param array  $context Additional context data
-     * 
+     *
      * @return void
      */
     abstract protected function debugLog(string $message, array $context = []): void;

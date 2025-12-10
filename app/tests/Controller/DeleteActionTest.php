@@ -23,7 +23,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * CRUD6 Delete Action Integration Test
  *
  * Tests DELETE /api/crud6/{model}/{id} endpoint for deleting records.
- * 
+ *
  * Features tested:
  * - Authentication and authorization
  * - Hard delete (permanent)
@@ -178,7 +178,7 @@ class DeleteActionTest extends AdminTestCase
 
     /**
      * Test cascade delete of child records (activities) when deleting user
-     * 
+     *
      * This test verifies that:
      * 1. Child records (activities) are deleted before parent (user)
      * 2. No foreign key constraint violations occur
@@ -200,7 +200,7 @@ class DeleteActionTest extends AdminTestCase
         // Create some activities for the test user using the Activity model
         // Note: We're using the database directly since Activity factory might not exist
         $db = $this->ci->get(\Illuminate\Database\Connection::class);
-        
+
         // Insert activities directly
         for ($i = 0; $i < 3; $i++) {
             $db->table('activities')->insert([

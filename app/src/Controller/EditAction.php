@@ -160,6 +160,9 @@ class EditAction extends Base
             // Get a display name for the model
             $modelDisplayName = $this->getModelDisplayName($crudSchema);
             
+            // Translate the model display name if it's a translation key
+            $translatedModel = $this->translator->translate($modelDisplayName);
+            
             $recordData = $crudModel->toArray();
             
             $this->debugLog("CRUD6 [EditAction] Record data retrieved", [
@@ -188,7 +191,7 @@ class EditAction extends Base
             ]);
             
             $responseData = [
-                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $modelDisplayName]),
+                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $translatedModel]),
                 'model' => $crudSchema['model'],
                 'modelDisplayName' => $modelDisplayName,
                 'id' => $recordId,
@@ -262,10 +265,13 @@ class EditAction extends Base
 
         // Get a display name for the model
         $modelDisplayName = $this->getModelDisplayName($crudSchema);
+        
+        // Translate the model display name if it's a translation key
+        $translatedModel = $this->translator->translate($modelDisplayName);
 
         // Write response with title and description
         $title = $this->translator->translate('CRUD6.UPDATE.SUCCESS_TITLE');
-        $description = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $modelDisplayName]);
+        $description = $this->translator->translate('CRUD6.UPDATE.SUCCESS', ['model' => $translatedModel]);
         $payload = new ApiResponse($title, $description);
         
         $this->debugLog("CRUD6 [EditAction] Update response prepared", [

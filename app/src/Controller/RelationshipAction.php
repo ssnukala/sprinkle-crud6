@@ -168,9 +168,15 @@ class RelationshipAction extends Base
         }
 
         // Success message
+        // Translate model and relation titles if they are translation keys
+        $modelTitle = $crudSchema['title'] ?? $crudSchema['model'];
+        $relationTitle = $relationshipConfig['title'] ?? $relationName;
+        $translatedModel = $this->translator->translate($modelTitle);
+        $translatedRelation = $this->translator->translate($relationTitle);
+        
         $message = $this->translator->translate($messageKey, [
-            'model'    => $crudSchema['title'] ?? $crudSchema['model'],
-            'relation' => $relationshipConfig['title'] ?? $relationName,
+            'model'    => $translatedModel,
+            'relation' => $translatedRelation,
             'count'    => count($relatedIds),
         ]);
 

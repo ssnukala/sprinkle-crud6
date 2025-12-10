@@ -87,10 +87,13 @@ class CreateAction extends Base
 
             // Get a display name for the model
             $modelDisplayName = $this->getModelDisplayName($crudSchema);
+            
+            // Translate the model display name if it's a translation key
+            $translatedModel = $this->translator->translate($modelDisplayName);
 
             // Write response with title and description
             $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
-            $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $modelDisplayName]);
+            $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $translatedModel]);
             
             $this->debugLog("CRUD6 [CreateAction] Response prepared successfully", [
                 'model' => $crudSchema['model'],

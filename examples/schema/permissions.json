@@ -123,6 +123,7 @@
             "type": "text",
             "label": "CRUD6.PERMISSION.CONDITIONS",
             "required": false,
+            "default": "",
             "show_in": [
                 "form",
                 "detail"

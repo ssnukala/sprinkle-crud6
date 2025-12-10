@@ -291,6 +291,7 @@
             "type": "integer",
             "label": "CRUD6.USER.GROUP",
             "required": false,
+            "default": 1,
             "show_in": [
                 "form",
                 "detail"

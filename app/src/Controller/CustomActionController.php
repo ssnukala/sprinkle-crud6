@@ -135,9 +135,14 @@ class CustomActionController extends Base
 
             // Prepare success response
             $title = $this->translator->translate('CRUD6.ACTION.SUCCESS_TITLE') ?: 'Success';
+            
+            // Translate action label if it's a translation key
+            $actionLabel = $actionConfig['label'] ?? $actionKey;
+            $translatedAction = $this->translator->translate($actionLabel);
+            
             $description = $this->translator->translate(
                 $actionConfig['success_message'] ?? 'CRUD6.ACTION.SUCCESS',
-                ['action' => $actionConfig['label'] ?? $actionKey]
+                ['action' => $translatedAction]
             );
 
             $this->debugLog("CRUD6 [CustomActionController] Action executed successfully", [

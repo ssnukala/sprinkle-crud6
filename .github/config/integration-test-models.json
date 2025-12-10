@@ -1,13 +1,22 @@
 {
   "description": "Model definitions for generating integration test paths",
   "version": "1.0",
+  "security_notes": {
+    "reserved_ids": {
+      "user_id_1": "Reserved for system admin user - NEVER use in DELETE/DISABLE tests",
+      "group_id_1": "Reserved for admin group - NEVER use in DELETE/DISABLE tests"
+    },
+    "test_data_range": "All test IDs start from 2 to avoid conflicts with system records",
+    "safe_operations": "DELETE and DISABLE operations should only target IDs >= 2"
+  },
   "models": {
     "users": {
       "name": "users",
       "singular": "user",
       "api_prefix": "/api/crud6",
       "frontend_prefix": "/crud6",
-      "test_id": 1,
+      "test_id": 2,
+      "safe_test_id_note": "Uses ID 2+ to avoid admin user (ID 1)",
       "api_validation_keys": ["id", "user_name", "email"],
       "list_validation_keys": ["rows"],
       "enabled": true,
@@ -51,7 +60,8 @@
       "singular": "group",
       "api_prefix": "/api/crud6",
       "frontend_prefix": "/crud6",
-      "test_id": 1,
+      "test_id": 2,
+      "safe_test_id_note": "Uses ID 2+ to avoid admin group (ID 1)",
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
       "enabled": true,
@@ -74,7 +84,8 @@
       "singular": "role",
       "api_prefix": "/api/crud6",
       "frontend_prefix": "/crud6",
-      "test_id": 1,
+      "test_id": 2,
+      "safe_test_id_note": "Uses ID 2+ for safe testing",
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
       "enabled": true,
@@ -101,7 +112,8 @@
       "singular": "permission",
       "api_prefix": "/api/crud6",
       "frontend_prefix": "/crud6",
-      "test_id": 1,
+      "test_id": 2,
+      "safe_test_id_note": "Uses ID 2+ for safe testing",
       "api_validation_keys": ["id", "slug", "name"],
       "list_validation_keys": ["rows"],
       "enabled": true,
@@ -130,7 +142,8 @@
       "singular": "activity",
       "api_prefix": "/api/crud6",
       "frontend_prefix": "/crud6",
-      "test_id": 1,
+      "test_id": 2,
+      "safe_test_id_note": "Uses ID 2+ for safe testing",
       "api_validation_keys": ["id", "type"],
       "list_validation_keys": ["rows"],
       "enabled": true

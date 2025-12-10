@@ -222,9 +222,17 @@ class UpdateFieldAction extends Base
             ]);
 
             // Success message
+            // Translate the model title and field label first, then pass to the success message
+            $modelTitle = $crudSchema['title'] ?? $crudSchema['model'];
+            $fieldLabel = $fieldConfig['label'] ?? $fieldName;
+            
+            // If they look like translation keys, translate them
+            $translatedModel = $this->translator->translate($modelTitle);
+            $translatedField = $this->translator->translate($fieldLabel);
+            
             $message = $this->translator->translate('CRUD6.UPDATE_FIELD_SUCCESSFUL', [
-                'model' => $crudSchema['title'] ?? $crudSchema['model'],
-                'field' => $fieldConfig['label'] ?? $fieldName,
+                'model' => $translatedModel,
+                'field' => $translatedField,
             ]);
             
             $this->debugLog("CRUD6 [UpdateFieldAction] Update field response prepared", [

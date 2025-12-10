@@ -73,10 +73,13 @@ class DeleteAction extends Base
         try {
             $modelDisplayName = $this->getModelDisplayName($crudSchema);
             $this->handle($crudSchema, $crudModel);
+            
+            // Translate the model display name if it's a translation key
+            $translatedModel = $this->translator->translate($modelDisplayName);
 
             // Write response with title and description
             $title = $this->translator->translate('CRUD6.DELETE.SUCCESS_TITLE');
-            $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $modelDisplayName]);
+            $description = $this->translator->translate('CRUD6.DELETE.SUCCESS', ['model' => $translatedModel]);
             
             $this->debugLog("CRUD6 [DeleteAction] Delete response prepared", [
                 'model' => $crudSchema['model'],

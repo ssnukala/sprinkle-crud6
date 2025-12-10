@@ -93,6 +93,7 @@
             "type": "string",
             "label": "CRUD6.GROUP.ICON",
             "required": false,
+            "default": "fas fa-user",
             "show_in": [
                 "form",
                 "detail"

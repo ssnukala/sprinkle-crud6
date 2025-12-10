@@ -127,6 +127,7 @@ class CustomActionController extends Base
                 "User {$currentUser->user_name} executed action '{$actionKey}' on {$crudSchema['model']} {$recordId}.",
                 [
                     'type'    => "crud6_{$crudSchema['model']}_custom_action",
+                    'user_id' => $currentUser->id,
                     'model'   => $crudSchema['model'],
                     'id'      => $recordId,
                     'action'  => $actionKey,

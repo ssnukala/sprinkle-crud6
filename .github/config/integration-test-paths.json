@@ -102,7 +102,7 @@
             "acceptable_statuses": [200, 403]
           },
           "payload": {
-            "related_ids": [1]
+            "ids": [1]
           },
           "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },
@@ -116,7 +116,7 @@
             "acceptable_statuses": [200, 403]
           },
           "payload": {
-            "related_ids": [1]
+            "ids": [1]
           },
           "note": "Uses user ID 2 (testuser) to avoid modifying the logged-in admin user"
         },

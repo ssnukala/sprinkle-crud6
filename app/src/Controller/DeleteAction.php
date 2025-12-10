@@ -131,11 +131,19 @@ class DeleteAction extends Base
 
         // Begin transaction - DB will be rolled back if an exception occurs
         $this->db->transaction(function () use ($crudSchema, $crudModel, $currentUser, $recordId) {
+            // Determine if this is a soft delete operation
+            $isSoftDelete = $crudSchema['soft_delete'] ?? false;
+            
+            // Cascade delete child records based on schema's "details" configuration
+            // This prevents foreign key constraint violations
+            // For soft deletes, child records that support soft delete will also be soft deleted
+            $this->cascadeDeleteChildRecords($crudModel, $crudSchema, $this->schemaService, $isSoftDelete);
+
             // Process relationship actions for on_delete event (before deleting the record)
             $this->processRelationshipActions($crudModel, $crudSchema, [], 'on_delete');
 
             // Delete the record (supports soft delete if configured)
-            if ($crudSchema['soft_delete'] ?? false) {
+            if ($isSoftDelete) {
                 $crudModel->softDelete();
                 $this->debugLog("CRUD6 [DeleteAction] Soft deleted record", [
                     'model' => $crudSchema['model'],

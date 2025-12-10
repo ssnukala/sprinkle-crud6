@@ -23,7 +23,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * CRUD6 Delete Action Integration Test
  *
  * Tests DELETE /api/crud6/{model}/{id} endpoint for deleting records.
- * 
+ *
  * Features tested:
  * - Authentication and authorization
  * - Hard delete (permanent)
@@ -174,5 +174,67 @@ class DeleteActionTest extends AdminTestCase
             in_array($response->getStatusCode(), [400, 403, 500]),
             'Should not allow self-deletion'
         );
+    }
+
+    /**
+     * Test cascade delete of child records (activities) when deleting user
+     *
+     * This test verifies that:
+     * 1. Child records (activities) are deleted before parent (user)
+     * 2. No foreign key constraint violations occur
+     * 3. The cascade is done automatically based on schema's "details" configuration
+     */
+    public function testCascadeDeleteChildRecords(): void
+    {
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: ['delete_user', 'create_activity']);
+
+        /** @var User */
+        $testUser = User::factory()->create([
+            'user_name' => 'user_with_activities',
+        ]);
+
+        $userId = $testUser->id;
+
+        // Create some activities for the test user using the Activity model
+        // Note: We're using the database directly since Activity factory might not exist
+        $db = $this->ci->get(\Illuminate\Database\Connection::class);
+
+        // Insert activities directly
+        for ($i = 0; $i < 3; $i++) {
+            $db->table('activities')->insert([
+                'user_id' => $userId,
+                'type' => 'test_activity_' . $i,
+                'occurred_at' => date('Y-m-d H:i:s'),
+                'description' => 'Test activity for cascade delete',
+                'ip_address' => '127.0.0.1',
+            ]);
+        }
+
+        // Verify activities exist
+        $activityCount = $db->table('activities')->where('user_id', $userId)->count();
+        $this->assertEquals(3, $activityCount, 'Should have 3 activities before delete');
+
+        // Delete the user - should cascade delete activities
+        $request = $this->createJsonRequest('DELETE', '/api/crud6/users/' . $testUser->id);
+        $response = $this->handleRequestWithTracking($request);
+
+        // Assert successful deletion
+        $this->assertResponseStatus(200, $response, 'Delete should succeed with cascade');
+        $this->assertJson((string) $response->getBody());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertArrayHasKey('title', $body);
+        $this->assertArrayHasKey('description', $body);
+
+        // Verify user was soft deleted
+        $deletedUser = User::withTrashed()->find($userId);
+        $this->assertNotNull($deletedUser);
+        $this->assertNotNull($deletedUser->deleted_at, 'User should be soft deleted');
+
+        // Verify activities were deleted (hard delete since activities table doesn't support soft delete)
+        $activityCountAfter = $db->table('activities')->where('user_id', $userId)->count();
+        $this->assertEquals(0, $activityCountAfter, 'All activities should be deleted (cascade)');
     }
 }

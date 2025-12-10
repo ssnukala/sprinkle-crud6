@@ -609,6 +609,109 @@ jobs:
           echo "Note: Authenticated API and frontend paths tested via screenshots step"
           echo "========================================="
 
+      - name: Copy schema and locale to sprinkle-crud6 for test generation
+        run: |
+          cd sprinkle-crud6
+          
+          echo "========================================="
+          echo "Preparing sprinkle-crud6 for Test Generation"
+          echo "========================================="
+          
+          # Copy schema files from examples to app/schema/crud6
+          echo ""
+          echo "Copying schema files from examples/schema to app/schema/crud6..."
+          mkdir -p app/schema/crud6
+          
+          # Define the schema files needed for integration tests
+          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
+          
+          for schema in $REQUIRED_SCHEMAS; do
+            if [ -f "examples/schema/$schema" ]; then
+              cp "examples/schema/$schema" "app/schema/crud6/"
+              echo "  ✅ Copied: $schema"
+            else
+              echo "  ⚠️  WARNING: Schema file not found: $schema"
+            fi
+          done
+          
+          echo ""
+          echo "Schemas copied to app/schema/crud6/:"
+          ls -la app/schema/crud6/
+          
+          # Copy locale messages from examples to app/locale
+          echo ""
+          echo "Copying locale messages from examples/locale to app/locale..."
+          
+          # Check if app/locale/en_US/messages.php already exists
+          if [ -f "app/locale/en_US/messages.php" ]; then
+            echo "  ℹ️  app/locale/en_US/messages.php already exists"
+          fi
+          
+          # Copy example locale messages for model-specific translations
+          if [ -f "examples/locale/en_US/messages.php" ]; then
+            # Create a PHP script to merge the message files
+            cat > /tmp/merge-sprinkle-messages.php << 'MERGE_SCRIPT'
+          <?php
+          /**
+           * Merge example messages with existing app/locale messages.php
+           */
+          
+          $examplesPath = $argv[1] ?? '';
+          $appLocalePath = $argv[2] ?? '';
+          
+          if (empty($examplesPath) || empty($appLocalePath)) {
+              echo "Usage: php merge-sprinkle-messages.php <examples_messages_path> <app_locale_messages_path>\n";
+              exit(1);
+          }
+          
+          // Load example messages (model-specific translations)
+          if (!file_exists($examplesPath)) {
+              echo "❌ ERROR: Examples messages file not found: $examplesPath\n";
+              exit(1);
+          }
+          $examplesMessages = include $examplesPath;
+          
+          // Load or create app locale messages
+          $appMessages = [];
+          if (file_exists($appLocalePath)) {
+              $appMessages = include $appLocalePath;
+              echo "  ℹ️  Loaded existing app/locale messages\n";
+          } else {
+              echo "  ℹ️  Creating new app/locale messages file\n";
+          }
+          
+          // Merge messages (example messages take precedence for models)
+          $merged = array_merge($appMessages, $examplesMessages);
+          
+          // Write merged messages
+          $output = "<?php\n\n/**\n * Merged locale messages for CRUD6 integration testing\n * Combined from app/locale and examples/locale\n */\n\nreturn " . var_export($merged, true) . ";\n";
+          
+          if (!is_dir(dirname($appLocalePath))) {
+              mkdir(dirname($appLocalePath), 0755, true);
+          }
+          
+          if (file_put_contents($appLocalePath, $output)) {
+              echo "  ✅ Merged messages written to: $appLocalePath\n";
+              echo "  ℹ️  Total message keys: " . count($merged) . "\n";
+          } else {
+              echo "❌ ERROR: Failed to write merged messages\n";
+              exit(1);
+          }
+          MERGE_SCRIPT
+            
+            # Run the merge script
+            php /tmp/merge-sprinkle-messages.php \
+              "examples/locale/en_US/messages.php" \
+              "app/locale/en_US/messages.php"
+            
+            echo "  ✅ Locale messages merged successfully"
+          else
+            echo "  ⚠️  WARNING: examples/locale/en_US/messages.php not found"
+          fi
+          
+          echo ""
+          echo "✅ sprinkle-crud6 prepared for test generation"
+
       - name: Generate Schema-Driven Tests
         run: |
           cd sprinkle-crud6

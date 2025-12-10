@@ -970,6 +970,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Upload PHP error logs as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-error-logs
+          path: |
+            userfrosting/app/logs/*.log
+            userfrosting/app/storage/logs/*.log
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Stop servers
         if: always()
         run: |
@@ -1045,6 +1056,13 @@ jobs:
           echo "   Download 'network-requests-summary' artifact"
           echo "   Contains detailed information about CRUD6 API calls only (non-CRUD6 requests filtered out)"
           echo "   Reports include: users, groups, roles, permissions, activities API calls"
+          echo ""
+          echo "📋 **View Complete PHP Error Logs:**"
+          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "   Look for 'Artifacts' section at the bottom of the page"
+          echo "   Download 'php-error-logs' artifact"
+          echo "   Contains complete UserFrosting log files (userfrosting.log and any other .log files)"
+          echo "   Note: Workflow output shows last 50 lines; artifact contains full logs for detailed debugging"
 
           # Add to GitHub Actions Summary with direct link
           cat >> $GITHUB_STEP_SUMMARY << 'EOF'
@@ -1145,6 +1163,26 @@ jobs:
              - Summary of total vs filtered request counts
 
           > **Note:** Network summary is retained for 30 days
+
+          ### 📋 View Complete PHP Error Logs
+          Complete UserFrosting log files have been uploaded for detailed debugging.
+
+          **To view the complete PHP error logs:**
+          1. Scroll to the bottom of the workflow run page (link above)
+          2. Look for the **Artifacts** section
+          3. Click on **php-error-logs** to download
+          4. Extract the ZIP file to view complete log files:
+             - \`userfrosting.log\` - Main UserFrosting application log
+             - Any other \`.log\` files from \`app/logs/\` and \`app/storage/logs/\`
+          5. Note: The workflow output displays last 50 lines; artifact contains full logs
+
+          **What's included:**
+          - Complete \`userfrosting.log\` file with all PHP errors, warnings, and debug messages
+          - All log files from \`userfrosting/app/logs/\` directory
+          - All log files from \`userfrosting/app/storage/logs/\` directory
+          - Full stack traces and error details for comprehensive debugging
+
+          > **Note:** PHP error logs are retained for 30 days
 
           ---
 

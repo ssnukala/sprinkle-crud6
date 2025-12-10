@@ -316,6 +316,152 @@ trait ProcessesRelationshipActions
     }
 
     /**
+     * Delete child records based on schema's "details" configuration.
+     * 
+     * This method implements cascade deletion by:
+     * 1. Reading the "details" section from the schema
+     * 2. Identifying child tables that have foreign key references to this model
+     * 3. Deleting all child records before the parent is deleted
+     * 
+     * This prevents foreign key constraint violations when deleting records
+     * that have dependent child records.
+     * 
+     * For soft deletes:
+     * - If the child model supports soft deletes, it will be soft deleted
+     * - If the child model doesn't support soft deletes, it will be hard deleted
+     * - This can be overridden in the schema using "cascade_delete_mode" in details
+     * 
+     * @param CRUD6ModelInterface $model         The parent model instance to cascade delete from
+     * @param array               $schema        The schema configuration
+     * @param mixed               $schemaService The schema service for loading child schemas
+     * @param bool                $softDelete    Whether this is a soft delete operation
+     * 
+     * @return void
+     */
+    protected function cascadeDeleteChildRecords(
+        CRUD6ModelInterface $model,
+        array $schema,
+        $schemaService,
+        bool $softDelete = false
+    ): void {
+        // Skip if no details defined in schema
+        if (!isset($schema['details']) || !is_array($schema['details'])) {
+            return;
+        }
+
+        $primaryKey = $schema['primary_key'] ?? 'id';
+        $parentId = $model->getAttribute($primaryKey);
+
+        $this->debugLog("CRUD6 [CascadeDelete] Starting cascade delete for child records", [
+            'model' => $schema['model'],
+            'parent_id' => $parentId,
+            'details_count' => count($schema['details']),
+            'soft_delete' => $softDelete,
+        ]);
+
+        // Process each detail configuration
+        foreach ($schema['details'] as $detail) {
+            // Skip if no foreign_key defined (not a parent-child relationship)
+            if (!isset($detail['foreign_key']) || !isset($detail['model'])) {
+                continue;
+            }
+
+            $childModel = $detail['model'];
+            $foreignKey = $detail['foreign_key'];
+            
+            // Check if cascade delete is explicitly disabled for this child
+            if (isset($detail['cascade_delete']) && $detail['cascade_delete'] === false) {
+                $this->debugLog("CRUD6 [CascadeDelete] Cascade delete disabled for child", [
+                    'model' => $schema['model'],
+                    'child_model' => $childModel,
+                ]);
+                continue;
+            }
+
+            try {
+                // Create a new instance of the child model
+                // Use the model name to create a CRUD6Model instance
+                $childModelInstance = new \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model();
+                
+                // Load schema for the child model to get table name
+                $childSchema = $schemaService->getSchema($childModel);
+                if (!$childSchema) {
+                    $this->logger->warning("CRUD6 [CascadeDelete] Child model schema not found", [
+                        'model' => $schema['model'],
+                        'child_model' => $childModel,
+                    ]);
+                    continue;
+                }
+
+                // Configure the child model with its schema
+                $childModelInstance->configureFromSchema($childSchema);
+
+                // Determine delete strategy
+                $childSupportsSoftDelete = $childModelInstance->hasSoftDeletes();
+                $deleteMode = $detail['cascade_delete_mode'] ?? 'auto';
+                
+                // Get all matching child records
+                $childRecords = $childModelInstance
+                    ->where($foreignKey, '=', $parentId)
+                    ->get();
+
+                $deletedCount = 0;
+                
+                // Delete child records based on strategy
+                foreach ($childRecords as $childRecord) {
+                    if ($softDelete && $childSupportsSoftDelete && $deleteMode !== 'hard') {
+                        // Soft delete child record
+                        $childRecord->softDelete();
+                        $deletedCount++;
+                        
+                        $this->debugLog("CRUD6 [CascadeDelete] Soft deleted child record", [
+                            'model' => $schema['model'],
+                            'child_model' => $childModel,
+                            'child_id' => $childRecord->getAttribute($childSchema['primary_key'] ?? 'id'),
+                        ]);
+                    } else {
+                        // Hard delete child record (either parent is hard delete, child doesn't support soft delete, or forced hard)
+                        $childRecord->delete();
+                        $deletedCount++;
+                        
+                        $this->debugLog("CRUD6 [CascadeDelete] Hard deleted child record", [
+                            'model' => $schema['model'],
+                            'child_model' => $childModel,
+                            'child_id' => $childRecord->getAttribute($childSchema['primary_key'] ?? 'id'),
+                            'reason' => !$softDelete ? 'parent_hard_delete' : (!$childSupportsSoftDelete ? 'child_no_soft_delete' : 'forced_hard'),
+                        ]);
+                    }
+                }
+
+                $this->debugLog("CRUD6 [CascadeDelete] Completed cascade delete for child model", [
+                    'model' => $schema['model'],
+                    'parent_id' => $parentId,
+                    'child_model' => $childModel,
+                    'foreign_key' => $foreignKey,
+                    'deleted_count' => $deletedCount,
+                    'delete_type' => $softDelete && $childSupportsSoftDelete ? 'soft' : 'hard',
+                ]);
+            } catch (\Exception $e) {
+                $this->logger->error("CRUD6 [CascadeDelete] Failed to delete child records", [
+                    'model' => $schema['model'],
+                    'parent_id' => $parentId,
+                    'child_model' => $childModel,
+                    'foreign_key' => $foreignKey,
+                    'error' => $e->getMessage(),
+                ]);
+                
+                // Re-throw exception to rollback transaction
+                throw $e;
+            }
+        }
+
+        $this->debugLog("CRUD6 [CascadeDelete] Completed cascade delete for all child records", [
+            'model' => $schema['model'],
+            'parent_id' => $parentId,
+        ]);
+    }
+
+    /**
      * Log debug message (abstract method that must be implemented by using class).
      * 
      * @param string $message The log message

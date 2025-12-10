@@ -52,7 +52,6 @@
             ".git",
             ".gitignore",
             "docs",
-            "examples",
             "node_modules",
             "vendor",
             "*.tgz",

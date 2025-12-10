@@ -329,7 +329,10 @@ trait ProcessesRelationshipActions
      * For soft deletes:
      * - If the child model supports soft deletes, it will be soft deleted
      * - If the child model doesn't support soft deletes, it will be hard deleted
-     * - This can be overridden in the schema using "cascade_delete_mode" in details
+     * - This can be overridden in the schema using "cascade_delete_mode" in details:
+     *   - "auto" (default): Soft delete if parent is soft deleted AND child supports it
+     *   - "hard": Always hard delete child records
+     *   - "soft": Always soft delete child records (if child supports it)
      *
      * @param CRUD6ModelInterface $model         The parent model instance to cascade delete from
      * @param array               $schema        The schema configuration

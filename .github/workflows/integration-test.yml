@@ -900,15 +900,17 @@ jobs:
           echo "Network Request Summary"
           echo "========================================="
           # Check if network summary file exists and show basic info
-          if [ -f /tmp/network-requests-summary.txt ]; then
-            echo "✅ Network request summary generated"
-            ls -lh /tmp/network-requests-summary.txt
-            echo ""
-            echo "Preview of summary (first 30 lines):"
-            head -n 30 /tmp/network-requests-summary.txt
-          else
-            echo "⚠️  Network request summary not found"
-          fi
+
+          # SN : Commenting out detailed display to avoid excessive logs
+          #if [ -f /tmp/network-requests-summary.txt ]; then
+          #  echo "✅ Network request summary generated"
+          #  ls -lh /tmp/network-requests-summary.txt
+          #  echo ""
+          #  echo "Preview of summary (first 30 lines):"
+          #  head -n 30 /tmp/network-requests-summary.txt
+          #else
+          #  echo "⚠️  Network request summary not found"
+          #fi
 
       - name: Capture and display PHP error logs
         if: always()

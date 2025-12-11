@@ -40,7 +40,7 @@ for log_path in "${log_locations[@]}"; do
             echo "─────────────────────────────────────────"
             echo "Last 50 lines of $log_path:"
             echo "─────────────────────────────────────────"
-            tail -n 50 "$log_path"
+            # tail -n 50 "$log_path"
             echo "─────────────────────────────────────────"
             found_errors=true
         else
@@ -64,7 +64,7 @@ for pattern in "${uf_log_locations[@]}"; do
                 echo "─────────────────────────────────────────"
                 echo "Last 50 lines of $log_file:"
                 echo "─────────────────────────────────────────"
-                tail -n 50 "$log_file"
+                # tail -n 50 "$log_file"
                 echo "─────────────────────────────────────────"
                 found_errors=true
             else

@@ -1,0 +1,50 @@
+{
+  "sprinkle": {
+    "name": "YOUR_SPRINKLE_NAME",
+    "composer_package": "yourvendor/your-sprinkle",
+    "npm_package": "@yourvendor/your-sprinkle",
+    "namespace": "YourVendor\\Sprinkle\\YourSprinkle"
+  },
+  "schemas": {
+    "path": "app/schema/crud6",
+    "comment": "Leave empty to use default app/schema/crud6/, or specify custom path like 'examples/schema'"
+  },
+  "routes": {
+    "pattern": "simple",
+    "comment": "Options: 'simple' (array spread), 'factory' (createRoutes function), 'custom'",
+    "import": {
+      "module": "@yourvendor/your-sprinkle/routes",
+      "name": "YourSprinkleRoutes",
+      "comment": "For 'factory' pattern, use function name like 'createYourSprinkleRoutes'"
+    },
+    "factory": {
+      "enabled": false,
+      "layout_component": "Layout",
+      "comment": "Only used if pattern is 'factory'"
+    },
+    "custom_setup": {
+      "enabled": false,
+      "commands": [],
+      "comment": "Optional array of bash commands for complex route setup"
+    }
+  },
+  "custom_test_data": {
+    "enabled": false,
+    "path": "app/tests/test-data.sql",
+    "comment": "Optional SQL file for additional test data beyond schemas"
+  },
+  "framework": {
+    "version": "main",
+    "comment": "Framework branch/version to use. Usually 'main' for latest stable"
+  },
+  "testing": {
+    "php_version": "8.1",
+    "node_version": "20",
+    "mysql_version": "8.0",
+    "userfrosting_version": "^6.0-beta"
+  },
+  "vite": {
+    "optimize_deps": ["limax", "lodash.deburr"],
+    "comment": "Additional dependencies to optimize in vite.config.ts"
+  }
+}

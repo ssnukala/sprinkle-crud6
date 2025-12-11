@@ -1,29 +1,85 @@
 # UserFrosting 6 Sprinkle Integration Testing Framework
 
-A reusable, configuration-driven integration testing framework for UserFrosting 6 sprinkles.
+**Integration testing as simple as CRUD6 itself!**
 
-## 🎯 What This Is
+Just like CRUD6 makes CRUD operations configurable with JSON files, this framework makes integration testing fully configurable with JSON.
 
-This is a **complete integration testing framework** that can be used by any UserFrosting 6 sprinkle. Instead of replicating testing infrastructure across every sprinkle, you can use this framework by:
+## 🎯 Philosophy
 
-1. **Quick Option**: Copy a ready-to-use workflow template (5 minutes)
-2. **Custom Option**: Run installer script and customize for your needs
-3. Using the same proven testing scripts that CRUD6 uses
+```json
+// CRUD6: Define models with JSON
+{
+  "model": "Product",
+  "fields": { "name": "string" }
+}
 
-## ⚡ Quick Start: Copy Workflow Template
-
-**Fastest way to get started:**
-
-```bash
-# For CRUD6 testing in your sprinkle:
-cp /path/to/crud6/.github/testing-framework/crud6-workflow-template.yml \
-   .github/workflows/crud6-integration-test.yml
-
-# Edit the 3 environment variables at the top
-# Push and you're done!
+// Testing: Define tests with JSON
+{
+  "sprinkle": { "name": "my-sprinkle" },
+  "routes": { "pattern": "simple" }
+}
 ```
 
-See [WORKFLOW_TEMPLATES.md](WORKFLOW_TEMPLATES.md) for complete guide.
+**Same simplicity. Same power. Pure configuration.**
+
+## ⚡ Quick Start: JSON-Driven (NEW!)
+
+**3 steps to complete integration testing:**
+
+### Step 1: Create Configuration
+
+```bash
+cp .github/testing-framework/config/integration-test-config.json \
+   integration-test-config.json
+```
+
+### Step 2: Edit JSON
+
+```json
+{
+  "sprinkle": {
+    "name": "my-sprinkle",
+    "composer_package": "vendor/my-sprinkle",
+    "npm_package": "@vendor/my-sprinkle"
+  },
+  "routes": {
+    "pattern": "simple",
+    "import": {
+      "module": "@vendor/my-sprinkle/routes",
+      "name": "MyRoutes"
+    }
+  }
+}
+```
+
+### Step 3: Generate Workflow
+
+```bash
+node .github/testing-framework/scripts/generate-workflow.js \
+  integration-test-config.json \
+  .github/workflows/integration-test.yml
+```
+
+**Done!** Complete integration testing configured with ~50 lines of JSON.
+
+See [JSON_DRIVEN_TESTING.md](docs/JSON_DRIVEN_TESTING.md) for complete guide.
+
+## 📋 What Gets Automated
+
+With JSON configuration, **everything** is automated:
+
+- ✅ PHP, Node.js, MySQL setup
+- ✅ UserFrosting installation
+- ✅ Composer and NPM configuration
+- ✅ Application configuration (MyApp.php, main.ts, vite.config.ts)
+- ✅ Route configuration (from JSON!)
+- ✅ **Schema-driven SQL generation**
+- ✅ Database migrations and seeds
+- ✅ API and frontend testing
+- ✅ Screenshot capture
+
+**You configure**: One JSON file
+**Framework handles**: Everything else
 
 ## 📦 What's Included
 

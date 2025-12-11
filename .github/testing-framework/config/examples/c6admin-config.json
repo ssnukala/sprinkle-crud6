@@ -1,0 +1,38 @@
+{
+  "sprinkle": {
+    "name": "sprinkle-c6admin",
+    "composer_package": "ssnukala/sprinkle-c6admin",
+    "npm_package": "@ssnukala/sprinkle-c6admin",
+    "namespace": "C6Admin"
+  },
+  "schemas": {
+    "path": ""
+  },
+  "routes": {
+    "pattern": "factory",
+    "import": {
+      "module": "@ssnukala/sprinkle-c6admin/routes",
+      "name": "createC6AdminRoutes"
+    },
+    "factory": {
+      "enabled": true,
+      "layout_component": "Layout"
+    }
+  },
+  "custom_test_data": {
+    "enabled": true,
+    "path": "app/tests/test-data.sql"
+  },
+  "framework": {
+    "version": "main"
+  },
+  "testing": {
+    "php_version": "8.1",
+    "node_version": "20",
+    "mysql_version": "8.0",
+    "userfrosting_version": "^6.0-beta"
+  },
+  "vite": {
+    "optimize_deps": ["limax", "lodash.deburr"]
+  }
+}

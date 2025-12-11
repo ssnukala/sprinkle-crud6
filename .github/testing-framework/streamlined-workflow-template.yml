@@ -1,0 +1,388 @@
+name: CRUD6 Integration Test (Streamlined)
+
+# Minimal workflow template for CRUD6 integration testing
+# Most complexity is handled by the framework - you just configure!
+#
+# To use:
+# 1. Copy to .github/workflows/crud6-integration-test.yml
+# 2. Update the 4 env variables below
+# 3. Customize the "Configure routes" step if needed (only custom step!)
+# 4. Push and run!
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  # ========================================================================
+  # CUSTOMIZE THESE 4 VALUES - That's it!
+  # ========================================================================
+  SPRINKLE_DIR: YOUR_SPRINKLE_NAME          # Your sprinkle directory
+  COMPOSER_PACKAGE: YOUR_COMPOSER_PACKAGE    # e.g., yourvendor/your-sprinkle
+  NPM_PACKAGE: YOUR_NPM_PACKAGE             # e.g., @yourvendor/your-sprinkle
+  SCHEMA_PATH: ""                           # Leave empty for app/schema/crud6/
+  
+  # ========================================================================
+  # Framework configuration (no changes needed)
+  # ========================================================================
+  FRAMEWORK_REPO: ssnukala/sprinkle-crud6
+  FRAMEWORK_BRANCH: main
+  UF_VERSION: "^6.0-beta"
+  PHP_VERSION: "8.1"
+  NODE_VERSION: "20"
+  MYSQL_VERSION: "8.0"
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:${{ env.MYSQL_VERSION }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: userfrosting_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    
+    steps:
+      # ========================================================================
+      # Common Setup (No customization needed)
+      # ========================================================================
+      - name: Checkout sprinkle
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.SPRINKLE_DIR }}
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, gd, pdo_mysql
+          coverage: none
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      # ========================================================================
+      # Install Testing Framework (Auto-install from sprinkle-crud6)
+      # ========================================================================
+      - name: Install testing framework
+        run: |
+          cd ${{ env.SPRINKLE_DIR }}
+          
+          if [ -d ".github/crud6-framework" ]; then
+            echo "✅ Using local framework"
+          else
+            echo "📦 Installing framework from ${{ env.FRAMEWORK_REPO }}..."
+            git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
+              https://github.com/${{ env.FRAMEWORK_REPO }}.git /tmp/crud6-repo
+            mkdir -p .github/crud6-framework
+            cp -r /tmp/crud6-repo/.github/testing-framework/* .github/crud6-framework/
+            chmod +x .github/crud6-framework/scripts/*.php
+            echo "✅ Framework installed"
+          fi
+          
+          # Copy CRUD6 test configs
+          mkdir -p .github/config
+          if [ -d "/tmp/crud6-repo/.github/config" ]; then
+            cp /tmp/crud6-repo/.github/config/integration-test-*.json .github/config/ 2>/dev/null || true
+          fi
+      
+      # ========================================================================
+      # Create UserFrosting Project (Common setup)
+      # ========================================================================
+      - name: Create UserFrosting project
+        run: |
+          composer create-project userfrosting/userfrosting userfrosting "${{ env.UF_VERSION }}" \
+            --no-scripts --no-install --ignore-platform-reqs
+          
+          cd userfrosting/app
+          mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
+          chmod -R 777 storage sessions logs cache
+          touch logs/userfrosting.log
+      
+      # ========================================================================
+      # Configure Composer (Common + sprinkle-specific)
+      # ========================================================================
+      - name: Configure and install Composer dependencies
+        run: |
+          cd userfrosting
+          
+          # Add CRUD6
+          if [ -d "/tmp/crud6-repo" ]; then
+            composer config repositories.crud6 path /tmp/crud6-repo
+          fi
+          composer require ssnukala/sprinkle-crud6:@dev --no-update
+          
+          # Add your sprinkle
+          composer config repositories.local path ../${{ env.SPRINKLE_DIR }}
+          composer require ${{ env.COMPOSER_PACKAGE }}:@dev --no-update
+          
+          # Configure for beta packages
+          composer config minimum-stability beta
+          composer config prefer-stable true
+          
+          # Install
+          composer install --no-interaction --prefer-dist
+      
+      # ========================================================================
+      # Configure NPM (Common + sprinkle-specific)
+      # ========================================================================
+      - name: Configure and install NPM dependencies
+        run: |
+          cd userfrosting
+          npm update
+          
+          # Package and install CRUD6
+          if [ -d "/tmp/crud6-repo" ]; then
+            cd /tmp/crud6-repo
+            npm pack
+            mv ssnukala-sprinkle-crud6-*.tgz "$GITHUB_WORKSPACE/userfrosting/"
+            cd "$GITHUB_WORKSPACE/userfrosting"
+            npm install ./ssnukala-sprinkle-crud6-*.tgz
+          fi
+          
+          # Package and install your sprinkle
+          cd "$GITHUB_WORKSPACE/${{ env.SPRINKLE_DIR }}"
+          npm pack 2>/dev/null || true
+          if ls *.tgz 1> /dev/null 2>&1; then
+            mv *.tgz "$GITHUB_WORKSPACE/userfrosting/"
+            cd "$GITHUB_WORKSPACE/userfrosting"
+            npm install ./*.tgz 2>/dev/null || echo "Sprinkle NPM package optional"
+          fi
+      
+      # ========================================================================
+      # Configure UserFrosting App (Common)
+      # ========================================================================
+      - name: Configure MyApp.php
+        run: |
+          cd userfrosting
+          
+          # Add CRUD6 sprinkle
+          sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;' app/src/MyApp.php
+          sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
+          
+          # Add your sprinkle (extract namespace from composer package)
+          NAMESPACE=$(echo "${{ env.COMPOSER_PACKAGE }}" | sed 's/\//-/g' | sed -r 's/(^|-)(\w)/\U\2/g')
+          echo "Auto-detected namespace: $NAMESPACE"
+          # Note: You may need to customize namespace detection for complex cases
+      
+      # ========================================================================
+      # Configure Frontend (Common + ONE custom step)
+      # ========================================================================
+      - name: Configure main.ts
+        run: |
+          cd userfrosting
+          
+          # Add CRUD6
+          sed -i "/import AdminSprinkle from '@userfrosting\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\/sprinkle-crud6'" app/assets/main.ts
+          sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
+      
+      # ========================================================================
+      # ONLY CUSTOM STEP: Configure routes for your sprinkle's pattern
+      # ========================================================================
+      - name: Configure routes (CUSTOMIZE THIS STEP!)
+        run: |
+          cd userfrosting
+          
+          # Default pattern: Simple array import (like CRUD6)
+          # Uncomment and customize based on your sprinkle's route pattern
+          
+          # Pattern 1: Simple array (CRUD6 style)
+          sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import CRUD6Routes from '@ssnukala\/sprinkle-crud6\/routes'" app/assets/router/index.ts
+          sed -i '/\.\.\.AccountRoutes,/a \            ...CRUD6Routes,' app/assets/router/index.ts
+          
+          # Pattern 2: Factory function (C6Admin style) - comment out Pattern 1 and use this:
+          # sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import { createC6AdminRoutes } from '@yourvendor\/your-sprinkle\/routes'" app/assets/router/index.ts
+          # sed -i "/import Layout from '@userfrosting\/theme-adminlte\/layouts\/Layout.vue'/a const C6AdminRoutes = createC6AdminRoutes({ layoutComponent: Layout });" app/assets/router/index.ts
+          # sed -i '/\.\.\.AccountRoutes,/a \            ...C6AdminRoutes,' app/assets/router/index.ts
+          
+          # Pattern 3: Nested routes - customize as needed
+          
+          cat app/assets/router/index.ts
+      
+      - name: Configure vite.config.ts
+        run: |
+          cd userfrosting
+          
+          # Add CRUD6 dependencies (limax, lodash.deburr)
+          if grep -q "optimizeDeps:" vite.config.ts; then
+            if grep -q "include:" vite.config.ts; then
+              sed -i "/include: \[/a \            'limax',\n            'lodash.deburr'," vite.config.ts
+            else
+              sed -i "/optimizeDeps: {/a \        include: ['limax', 'lodash.deburr']," vite.config.ts
+            fi
+          else
+            sed -i "/plugins: \[/,/\],/a \    optimizeDeps: {\n        include: ['limax', 'lodash.deburr']\n    }," vite.config.ts
+          fi
+      
+      # ========================================================================
+      # Environment and Database (Common)
+      # ========================================================================
+      - name: Setup environment
+        run: |
+          cd userfrosting
+          cp app/.env.example app/.env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
+          sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env
+          sed -i 's/DB_PORT=.*/DB_PORT="3306"/' app/.env
+          sed -i 's/DB_NAME=.*/DB_NAME="userfrosting_test"/' app/.env
+          sed -i 's/DB_USER=.*/DB_USER="root"/' app/.env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
+          echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
+          echo "TEST_SESSION_HANDLER=database" >> app/.env
+      
+      - name: Run migrations
+        run: |
+          cd userfrosting
+          php bakery migrate --force
+      
+      # ========================================================================
+      # Schema-Driven SQL Generation (Common - fully automated!)
+      # ========================================================================
+      - name: Generate and load SQL seed data from schemas
+        run: |
+          cd userfrosting
+          
+          # Determine schema path
+          if [ -n "${{ env.SCHEMA_PATH }}" ]; then
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
+          else
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
+          fi
+          
+          if [ ! -d "$SCHEMA_DIR" ]; then
+            echo "❌ ERROR: Schema directory not found: $SCHEMA_DIR"
+            echo "Please set SCHEMA_PATH or ensure app/schema/crud6/ exists"
+            exit 1
+          fi
+          
+          echo "✅ Using schemas from: $SCHEMA_DIR"
+          
+          # Generate SQL from schemas (framework script)
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-seed-sql.js \
+            "$SCHEMA_DIR" \
+            seed-data.sql
+          
+          # Load generated SQL
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+            seed-data.sql
+          
+          echo "✅ Schema-driven SQL seed data loaded"
+      
+      # ========================================================================
+      # Custom SQL Support (Optional - for additional test data)
+      # ========================================================================
+      - name: Load custom test data (optional)
+        run: |
+          cd userfrosting
+          
+          CUSTOM_SQL="../${{ env.SPRINKLE_DIR }}/app/tests/test-data.sql"
+          
+          if [ -f "$CUSTOM_SQL" ]; then
+            echo "📝 Loading custom test data from app/tests/test-data.sql"
+            php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+              "$CUSTOM_SQL"
+            echo "✅ Custom test data loaded"
+          else
+            echo "ℹ️  No custom test data (app/tests/test-data.sql not found - this is optional)"
+          fi
+      
+      # ========================================================================
+      # Run Seeds, Validate, Test (Common - framework handles it all!)
+      # ========================================================================
+      - name: Run PHP seeds
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
+      - name: Validate seed data
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/check-seeds-modular.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
+      - name: Test seed idempotency
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
+      # ========================================================================
+      # Build Frontend (Common)
+      # ========================================================================
+      - name: Build frontend assets
+        run: |
+          cd userfrosting
+          npm run uf-bundle
+      
+      # ========================================================================
+      # Run Tests (Common - framework scripts handle everything!)
+      # ========================================================================
+      - name: Test API and frontend paths
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+      
+      - name: Install Playwright
+        run: |
+          cd userfrosting
+          npx playwright install chromium
+      
+      - name: Capture screenshots
+        run: |
+          cd userfrosting
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            screenshots
+      
+      # ========================================================================
+      # Upload Artifacts (Common)
+      # ========================================================================
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-screenshots
+          path: userfrosting/screenshots/
+          retention-days: 7
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-logs
+          path: userfrosting/app/logs/
+          retention-days: 7
+
+# ============================================================================
+# That's it! Only 4 env variables + 1 custom step (routes)
+# ============================================================================
+# Everything else is automated:
+# - PHP, MySQL, Node setup
+# - UserFrosting installation
+# - Composer and NPM configuration
+# - Vite configuration
+# - Database migrations
+# - SQL generation from schemas
+# - Seed execution and validation
+# - Path testing
+# - Screenshot capture
+# - Artifact upload
+#
+# Custom test data: app/tests/test-data.sql (optional)
+# Custom route pattern: Modify "Configure routes" step
+# ============================================================================

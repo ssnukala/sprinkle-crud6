@@ -1,0 +1,49 @@
+{
+  "name": "@ssnukala/uf6-testing-framework",
+  "version": "1.0.0",
+  "description": "Reusable integration testing framework for UserFrosting 6 sprinkles",
+  "main": "install.sh",
+  "scripts": {
+    "install": "chmod +x install.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ssnukala/sprinkle-crud6.git",
+    "directory": ".github/testing-framework"
+  },
+  "keywords": [
+    "userfrosting",
+    "userfrosting6",
+    "testing",
+    "integration-testing",
+    "framework",
+    "sprinkle",
+    "php",
+    "javascript",
+    "playwright",
+    "ci-cd",
+    "github-actions"
+  ],
+  "author": "Srini Nukala <ssnukala@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ssnukala/sprinkle-crud6/issues"
+  },
+  "homepage": "https://github.com/ssnukala/sprinkle-crud6/tree/main/.github/testing-framework#readme",
+  "files": [
+    "README.md",
+    "install.sh",
+    "config/",
+    "scripts/",
+    "docs/"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "peerDependencies": {
+    "playwright": "^1.40.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -8,7 +8,8 @@ name: CRUD6 Integration Test
 # 2. Replace YOUR_SPRINKLE_NAME with your sprinkle directory name
 # 3. Replace YOUR_COMPOSER_PACKAGE with your composer package name (e.g., yourvendor/your-sprinkle)
 # 4. Replace YOUR_NPM_PACKAGE with your npm package name (e.g., @yourvendor/your-sprinkle)
-# 5. The workflow will auto-install the framework and use CRUD6's test configuration
+# 5. If your schemas are NOT in app/schema/crud6/, set SCHEMA_PATH to the correct path
+# 6. The workflow will auto-install the framework and use CRUD6's test configuration
 #
 # This workflow focuses ONLY on CRUD6 functionality testing
 # Create separate workflows for your sprinkle-specific features
@@ -25,6 +26,16 @@ env:
   SPRINKLE_DIR: YOUR_SPRINKLE_NAME          # Your sprinkle directory name
   COMPOSER_PACKAGE: YOUR_COMPOSER_PACKAGE    # e.g., yourvendor/your-sprinkle
   NPM_PACKAGE: YOUR_NPM_PACKAGE             # e.g., @yourvendor/your-sprinkle
+  
+  # SCHEMA CONFIGURATION
+  # If your sprinkle has schemas in app/schema/crud6/, leave this empty
+  # If schemas are elsewhere, set the path relative to sprinkle root
+  # Examples: 
+  #   - "examples/schema" (for sprinkle-crud6 itself)
+  #   - "app/schema/custom" (custom location)
+  #   - "" (use app/schema/crud6/ - default for most sprinkles)
+  SCHEMA_PATH: ""  # Leave empty to use app/schema/crud6/
+  
   # Framework will be auto-installed from sprinkle-crud6
   FRAMEWORK_REPO: ssnukala/sprinkle-crud6
   FRAMEWORK_BRANCH: main
@@ -160,32 +171,14 @@ jobs:
           fi
       
       # ========================================================================
-      # Copy Schema Files for CRUD6 Testing
+      # NOTE: Schema Files
       # ========================================================================
-      - name: Copy CRUD6 schema files
-        run: |
-          cd ${{ env.SPRINKLE_DIR }}
-          
-          echo "========================================="
-          echo "Copying CRUD6 Schema Files"
-          echo "========================================="
-          echo ""
-          
-          # Create schema directory
-          mkdir -p app/schema/crud6
-          
-          # Copy CRUD6 example schemas from the cloned repo
-          if [ -d "/tmp/crud6-repo/examples/schema" ]; then
-            cp /tmp/crud6-repo/examples/schema/*.json app/schema/crud6/ 2>/dev/null || true
-            echo "Copied schemas:"
-            ls -1 app/schema/crud6/
-          else
-            echo "⚠️  Schema files not found in framework"
-          fi
-          
-          echo ""
-          echo "✅ Schema files ready"
-      
+      # Your sprinkle should already have schema files in app/schema/crud6/
+      # This workflow assumes your sprinkle contains CRUD6 schema definitions
+      # 
+      # Example: https://github.com/ssnukala/sprinkle-c6admin/tree/main/app/schema/crud6
+      # 
+      # If your sprinkle doesn't have schemas yet, add them before running this workflow
       # ========================================================================
       # Create UserFrosting Project
       # ========================================================================
@@ -307,6 +300,135 @@ jobs:
         run: |
           cd userfrosting
           php bakery migrate --force
+      
+      # ========================================================================
+      # Generate SQL Seed Data from Schemas (Common for all CRUD6 sprinkles)
+      # ========================================================================
+      - name: Generate SQL seed data from schemas
+        run: |
+          cd userfrosting
+          
+          echo "========================================="
+          echo "Generating SQL Seed Data from Schemas"
+          echo "========================================="
+          echo ""
+          
+          # Determine schema path
+          if [ -z "${{ env.SCHEMA_PATH }}" ]; then
+            # Default: use app/schema/crud6/ in the sprinkle
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
+            SCHEMA_SOURCE="app/schema/crud6 (default location)"
+          else
+            # Custom path specified
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
+            SCHEMA_SOURCE="${{ env.SCHEMA_PATH }} (custom location)"
+          fi
+          
+          echo "Schema directory: $SCHEMA_SOURCE"
+          echo "Full path: $SCHEMA_DIR"
+          echo ""
+          
+          # Check if schema directory exists
+          if [ ! -d "$SCHEMA_DIR" ]; then
+            echo "❌ ERROR: Schema directory not found!"
+            echo ""
+            echo "Expected location: $SCHEMA_DIR"
+            echo ""
+            echo "CONFIGURATION REQUIRED:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "Your sprinkle needs CRUD6 schema JSON files for testing."
+            echo ""
+            echo "Option 1: Standard location (recommended)"
+            echo "  - Create schemas at: ${{ env.SPRINKLE_DIR }}/app/schema/crud6/"
+            echo "  - Example: https://github.com/ssnukala/sprinkle-c6admin/tree/main/app/schema/crud6"
+            echo "  - Leave SCHEMA_PATH empty in workflow"
+            echo ""
+            echo "Option 2: Custom location"
+            echo "  - Put your schemas in a different folder"
+            echo "  - Set SCHEMA_PATH in the workflow env section"
+            echo "  - Example: SCHEMA_PATH: \"examples/schema\""
+            echo ""
+            echo "Option 3: Copy from examples (sprinkle-crud6 only)"
+            echo "  - If your sprinkle IS sprinkle-crud6 itself"
+            echo "  - Set SCHEMA_PATH: \"examples/schema\""
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          fi
+          
+          # Count schema files
+          SCHEMA_COUNT=$(ls -1 $SCHEMA_DIR/*.json 2>/dev/null | wc -l)
+          if [ "$SCHEMA_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: No schema JSON files found!"
+            echo ""
+            echo "Searched in: $SCHEMA_DIR"
+            echo ""
+            echo "Please add CRUD6 schema JSON files to this directory."
+            echo "Each schema defines a model's structure, fields, and validation rules."
+            echo ""
+            echo "Example schemas: https://github.com/ssnukala/sprinkle-crud6/tree/main/examples/schema"
+            exit 1
+          fi
+          
+          echo "✅ Found $SCHEMA_COUNT schema file(s):"
+          ls -1 $SCHEMA_DIR/*.json
+          echo ""
+          
+          # Create output directory
+          mkdir -p app/sql/seeds
+          
+          # Copy generate-seed-sql.js from CRUD6 repo
+          if [ -f "/tmp/crud6-repo/.github/scripts/generate-seed-sql.js" ]; then
+            cp /tmp/crud6-repo/.github/scripts/generate-seed-sql.js .
+            
+            # Generate SQL from schemas
+            echo "Generating SQL seed data from schemas..."
+            node generate-seed-sql.js $SCHEMA_DIR app/sql/seeds/crud6-test-data.sql
+            
+            echo ""
+            echo "✅ Generated SQL seed data:"
+            ls -lh app/sql/seeds/crud6-test-data.sql
+            
+            # Show preview
+            echo ""
+            echo "Preview (first 15 lines):"
+            head -15 app/sql/seeds/crud6-test-data.sql
+          else
+            echo "❌ ERROR: generate-seed-sql.js not found in CRUD6 framework"
+            exit 1
+          fi
+      
+      # ========================================================================
+      # Load SQL Seed Data (if generated)
+      # ========================================================================
+      - name: Load SQL seed data
+        run: |
+          cd userfrosting
+          
+          # Check if SQL file was generated
+          if [ -f "app/sql/seeds/crud6-test-data.sql" ]; then
+            echo "========================================="
+            echo "Loading SQL Seed Data"
+            echo "========================================="
+            echo ""
+            
+            # Copy load-seed-sql.php from CRUD6 repo
+            if [ -f "/tmp/crud6-repo/.github/scripts/load-seed-sql.php" ]; then
+              cp /tmp/crud6-repo/.github/scripts/load-seed-sql.php .
+              
+              # Load SQL into database
+              php load-seed-sql.php app/sql/seeds/crud6-test-data.sql
+              
+              echo ""
+              echo "✅ SQL seed data loaded successfully"
+            else
+              echo "⚠️  WARNING: load-seed-sql.php not found"
+              echo "   Skipping SQL load - will use PHP seeds only"
+            fi
+          else
+            echo "ℹ️  No SQL seed file found - will use PHP seeds only"
+          fi
       
       # ========================================================================
       # Run CRUD6 Seeds Using Framework

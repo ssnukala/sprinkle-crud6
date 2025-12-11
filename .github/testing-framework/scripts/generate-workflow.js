@@ -70,6 +70,9 @@ function generateWorkflow(config) {
   const vite = config.vite;
   const customSteps = config.custom_steps;
   
+  // Extract versions with defaults
+  const mysqlVersion = testing?.mysql_version || '8.0';
+  
   return `name: ${s.name} Integration Test
 
 # AUTO-GENERATED from integration-test-config.json
@@ -92,7 +95,6 @@ env:
   UF_VERSION: "${testing?.userfrosting_version || '^6.0-beta'}"
   PHP_VERSION: "${testing?.php_version || '8.1'}"
   NODE_VERSION: "${testing?.node_version || '20'}"
-  MYSQL_VERSION: "${testing?.mysql_version || '8.0'}"
 
 jobs:
   integration-test:
@@ -100,7 +102,7 @@ jobs:
     
     services:
       mysql:
-        image: mysql:\${{ env.MYSQL_VERSION }}
+        image: mysql:${mysqlVersion}
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: userfrosting_test

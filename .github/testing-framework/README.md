@@ -160,6 +160,17 @@ php .github/scripts/test-paths.php .github/config/integration-test-paths.json
 node .github/scripts/take-screenshots-modular.js .github/config/integration-test-paths.json
 ```
 
+## ⚠️ Frontend Integration Nuances
+
+**Important:** Different sprinkles have different frontend integration patterns. The framework provides basic examples, but you may need to customize based on your sprinkle's specific needs.
+
+**Common patterns:**
+- **Simple Array Import** (CRUD6): `import CRUD6Routes from '...'` then `...CRUD6Routes`
+- **Factory Function** (C6Admin): `import { createC6AdminRoutes }` then `...createC6AdminRoutes({ layoutComponent: Layout })`
+- **Nested Routes**: Using parent components with children routes
+
+See [Frontend Integration Patterns](docs/FRONTEND_INTEGRATION_PATTERNS.md) for complete guide on handling different patterns.
+
 ## 🔧 GitHub Actions Integration
 
 Add to your `.github/workflows/integration-test.yml`:
@@ -193,6 +204,7 @@ See the [complete workflow example](docs/WORKFLOW_EXAMPLE.md) for a full GitHub 
 - **[Installation Guide](docs/INSTALLATION.md)** - Detailed installation instructions
 - **[Configuration Guide](docs/CONFIGURATION.md)** - How to customize for your sprinkle
 - **[Workflow Example](docs/WORKFLOW_EXAMPLE.md)** - Complete GitHub Actions workflow
+- **[Frontend Integration Patterns](docs/FRONTEND_INTEGRATION_PATTERNS.md)** - Handle different route configuration patterns
 - **[Migration Guide](docs/MIGRATION.md)** - Migrating from hardcoded tests
 - **[API Reference](docs/API_REFERENCE.md)** - Script usage and parameters
 

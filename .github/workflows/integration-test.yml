@@ -13,14 +13,13 @@ on:
 env:
   SPRINKLE_DIR: sprinkle-crud6
   COMPOSER_PACKAGE: ssnukala/sprinkle-crud6
-  NPM_PACKAGE: "@ssnukala/sprinkle-crud6"
+  NPM_PACKAGE: @ssnukala/sprinkle-crud6
   SCHEMA_PATH: "examples/schema"
   FRAMEWORK_REPO: ssnukala/sprinkle-crud6
   FRAMEWORK_BRANCH: main
   UF_VERSION: "^6.0-beta"
   PHP_VERSION: "8.1"
   NODE_VERSION: "20"
-  MYSQL_VERSION: "8.0"
 
 jobs:
   integration-test:
@@ -28,7 +27,7 @@ jobs:
     
     services:
       mysql:
-        image: mysql:${{ env.MYSQL_VERSION }}
+        image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: userfrosting_test
@@ -224,7 +223,7 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-      
+
       - name: Build frontend assets
         run: |
           cd userfrosting
@@ -235,19 +234,19 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
-      
+
       - name: Install Playwright
         run: |
           cd userfrosting
           npx playwright install chromium
-      
+
       - name: Capture screenshots
         run: |
           cd userfrosting
           node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             screenshots
-      
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

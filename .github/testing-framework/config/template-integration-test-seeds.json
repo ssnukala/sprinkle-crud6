@@ -1,0 +1,85 @@
+{
+  "description": "TEMPLATE: Integration test seeds configuration - Copy and modify for your sprinkle",
+  "seeds": {
+    "account": {
+      "description": "Account sprinkle base seeds (required for all UserFrosting projects)",
+      "order": 1,
+      "seeds": [
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultGroups",
+          "description": "Create default user groups",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultPermissions",
+          "description": "Create default permissions",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\DefaultRoles",
+          "description": "Create default roles",
+          "required": true
+        },
+        {
+          "class": "UserFrosting\\Sprinkle\\Account\\Database\\Seeds\\UpdatePermissions",
+          "description": "Update permissions for existing roles",
+          "required": true
+        }
+      ]
+    },
+    "yoursprinkle": {
+      "description": "Your sprinkle seeds - REPLACE WITH YOUR SPRINKLE NAME",
+      "order": 2,
+      "seeds": [
+        {
+          "class": "Your\\Sprinkle\\Namespace\\Database\\Seeds\\YourRolesSeed",
+          "description": "Create your sprinkle-specific roles",
+          "required": true,
+          "validation": {
+            "type": "role",
+            "slug": "your-role-slug",
+            "expected_count": 1
+          }
+        },
+        {
+          "class": "Your\\Sprinkle\\Namespace\\Database\\Seeds\\YourPermissionsSeed",
+          "description": "Create your sprinkle permissions and assign to roles",
+          "required": true,
+          "validation": {
+            "type": "permissions",
+            "slugs": [
+              "your_permission_1",
+              "your_permission_2",
+              "your_permission_3"
+            ],
+            "expected_count": 3,
+            "role_assignments": {
+              "your-role-slug": 3,
+              "site-admin": 3
+            }
+          }
+        }
+      ]
+    }
+  },
+  "validation": {
+    "idempotency": {
+      "enabled": true,
+      "description": "Test that seeds can be run multiple times without duplicates",
+      "test_seeds": ["yoursprinkle"]
+    },
+    "relationships": {
+      "enabled": true,
+      "description": "Validate that permissions are assigned to correct roles"
+    }
+  },
+  "admin_user": {
+    "enabled": true,
+    "username": "admin",
+    "password": "admin123",
+    "email": "admin@example.com",
+    "firstName": "Admin",
+    "lastName": "User",
+    "description": "Create admin user for testing authenticated routes"
+  }
+}

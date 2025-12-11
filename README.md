@@ -1226,6 +1226,104 @@ If you're upgrading from an earlier version of CRUD6 that used separate modal co
 
 > **Note**: Actions are automatically filtered by scope and provided in the schema contexts. See [.archive/UNIFIED_MODAL_MIGRATION_GUIDE.md](.archive/UNIFIED_MODAL_MIGRATION_GUIDE.md) for detailed migration instructions.
 
+## Integration Testing Framework
+
+CRUD6 includes a **reusable integration testing framework** that can be used by any UserFrosting 6 sprinkle. Instead of duplicating testing infrastructure across every sprinkle, you can use this battle-tested framework with minimal setup.
+
+### 🎯 Quick Start
+
+Install the framework into your sprinkle with one command:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/ssnukala/sprinkle-crud6/main/.github/testing-framework/install.sh | bash -s -- your-sprinkle-name
+```
+
+This will:
+- ✅ Create `.github/config/` and `.github/scripts/` directories
+- ✅ Copy template configuration files with your sprinkle name
+- ✅ Install all reusable testing scripts
+- ✅ Create documentation
+
+### 📦 What's Included
+
+- **Configuration-Driven Testing** - Define tests in JSON, not code
+- **Reusable Scripts** - Same scripts work for all sprinkles
+- **GitHub Actions Ready** - Complete CI/CD workflow included
+- **Screenshot Capture** - Automated frontend screenshots with Playwright
+- **Seed Management** - Database seed testing with idempotency checks
+- **API & Frontend Testing** - Test both authenticated and unauthenticated access
+
+### 📚 Documentation
+
+Complete documentation for the testing framework:
+
+- **[Framework README](.github/testing-framework/README.md)** - Overview and quick start
+- **[Installation Guide](.github/testing-framework/docs/INSTALLATION.md)** - Detailed installation instructions
+- **[Configuration Guide](.github/testing-framework/docs/CONFIGURATION.md)** - How to customize for your sprinkle
+- **[Workflow Example](.github/testing-framework/docs/WORKFLOW_EXAMPLE.md)** - GitHub Actions integration
+
+### 🎓 Example Usage
+
+After installation, customize JSON configuration files for your sprinkle:
+
+**API Endpoint Testing** (`integration-test-paths.json`):
+```json
+{
+  "authenticated": {
+    "api": {
+      "products_list": {
+        "method": "GET",
+        "path": "/api/myapp/products",
+        "expected_status": 200
+      }
+    }
+  }
+}
+```
+
+**Database Seed Testing** (`integration-test-seeds.json`):
+```json
+{
+  "seeds": {
+    "myapp": {
+      "seeds": [
+        {
+          "class": "MyApp\\Database\\Seeds\\DefaultRoles",
+          "validation": {
+            "type": "role",
+            "slug": "myapp-admin"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Then run tests:
+```bash
+php .github/scripts/test-paths.php .github/config/integration-test-paths.json
+php .github/scripts/check-seeds-modular.php .github/config/integration-test-seeds.json
+```
+
+### 🆚 Benefits Over Manual Testing
+
+| Aspect | Manual Approach | Framework Approach |
+|--------|----------------|-------------------|
+| Setup Time | Hours to days | Minutes |
+| Code Duplication | High - copy across sprinkles | Zero - reuse same scripts |
+| Maintenance | Update each sprinkle separately | Update JSON configs only |
+| Consistency | Varies by developer | Standardized |
+| CI/CD Integration | Custom workflow per sprinkle | Copy & customize template |
+
+### 🔄 Used By
+
+This framework is production-tested and used by:
+- [sprinkle-crud6](https://github.com/ssnukala/sprinkle-crud6) - The original implementation
+- [sprinkle-c6admin](https://github.com/ssnukala/sprinkle-c6admin) - Coming soon
+
+Want to use it for your sprinkle? See the [Installation Guide](.github/testing-framework/docs/INSTALLATION.md).
+
 ## Contributing
 
 1. Fork the repository

@@ -22,7 +22,7 @@ env:
   # ========================================================================
   SPRINKLE_DIR: YOUR_SPRINKLE_NAME          # Your sprinkle directory
   COMPOSER_PACKAGE: YOUR_COMPOSER_PACKAGE    # e.g., yourvendor/your-sprinkle
-  NPM_PACKAGE: YOUR_NPM_PACKAGE             # e.g., @yourvendor/your-sprinkle
+  NPM_PACKAGE: "YOUR_NPM_PACKAGE"           # e.g., "@yourvendor/your-sprinkle"
   SCHEMA_PATH: ""                           # Leave empty for app/schema/crud6/
   
   # ========================================================================

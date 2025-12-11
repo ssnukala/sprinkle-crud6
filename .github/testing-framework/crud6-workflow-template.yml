@@ -25,7 +25,7 @@ env:
   # CUSTOMIZE THESE VALUES FOR YOUR SPRINKLE
   SPRINKLE_DIR: YOUR_SPRINKLE_NAME          # Your sprinkle directory name
   COMPOSER_PACKAGE: YOUR_COMPOSER_PACKAGE    # e.g., yourvendor/your-sprinkle
-  NPM_PACKAGE: YOUR_NPM_PACKAGE             # e.g., @yourvendor/your-sprinkle
+  NPM_PACKAGE: "YOUR_NPM_PACKAGE"           # e.g., "@yourvendor/your-sprinkle"
   
   # SCHEMA CONFIGURATION
   # If your sprinkle has schemas in app/schema/crud6/, leave this empty

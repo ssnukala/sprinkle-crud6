@@ -1201,6 +1201,89 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`Skipped: ${skippedApiTests}`);
             console.log('');
             
+            // Generate comprehensive table of all API test results
+            console.log('=========================================');
+            console.log('API Test Results by Schema and Activity (Table Format)');
+            console.log('=========================================');
+            console.log('');
+            
+            // Collect all schemas
+            const allApiSchemas = new Set([
+                ...Object.keys(apiSuccessBySchema),
+                ...Object.keys(apiFailuresBySchema)
+            ]);
+            
+            if (allApiSchemas.size > 0) {
+                // Create table data
+                const tableRows = [];
+                
+                for (const schema of Array.from(allApiSchemas).sort()) {
+                    const successActions = apiSuccessBySchema[schema] || {};
+                    const failureActions = apiFailuresBySchema[schema] || {};
+                    
+                    // Add successful actions
+                    for (const action of Object.keys(successActions).sort()) {
+                        tableRows.push({
+                            schema: schema,
+                            activity: action,
+                            result: 'PASS',
+                            status: '200',
+                            message: 'Success'
+                        });
+                    }
+                    
+                    // Add failed actions
+                    for (const action of Object.keys(failureActions).sort()) {
+                        const errorInfo = failureActions[action];
+                        tableRows.push({
+                            schema: schema,
+                            activity: action,
+                            result: 'FAIL',
+                            status: String(errorInfo.status || 'N/A'),
+                            message: errorInfo.message || 'Unknown error'
+                        });
+                    }
+                }
+                
+                // Calculate column widths
+                const maxSchemaLen = Math.max(10, ...tableRows.map(r => r.schema.length));
+                const maxActivityLen = Math.max(12, ...tableRows.map(r => r.activity.length));
+                const maxResultLen = 9; // "Pass/Fail"
+                const maxStatusLen = 8; // "Status"
+                const maxMessageLen = 50; // Fixed width for message to keep table readable
+                
+                // Print table header
+                const headerSchema = 'Schema'.padEnd(maxSchemaLen);
+                const headerActivity = 'Activity'.padEnd(maxActivityLen);
+                const headerResult = 'Pass/Fail'.padEnd(maxResultLen);
+                const headerStatus = 'Status'.padEnd(maxStatusLen);
+                const headerMessage = 'Message'.padEnd(maxMessageLen);
+                
+                console.log(`| ${headerSchema} | ${headerActivity} | ${headerResult} | ${headerStatus} | ${headerMessage} |`);
+                console.log(`|-${'-'.repeat(maxSchemaLen)}-|-${'-'.repeat(maxActivityLen)}-|-${'-'.repeat(maxResultLen)}-|-${'-'.repeat(maxStatusLen)}-|-${'-'.repeat(maxMessageLen)}-|`);
+                
+                // Print table rows
+                for (const row of tableRows) {
+                    const schema = row.schema.padEnd(maxSchemaLen);
+                    const activity = row.activity.padEnd(maxActivityLen);
+                    const result = row.result.padEnd(maxResultLen);
+                    const status = row.status.padEnd(maxStatusLen);
+                    // Truncate message if too long
+                    let message = row.message;
+                    if (message.length > maxMessageLen) {
+                        message = message.substring(0, maxMessageLen - 3) + '...';
+                    }
+                    message = message.padEnd(maxMessageLen);
+                    
+                    console.log(`| ${schema} | ${activity} | ${result} | ${status} | ${message} |`);
+                }
+                
+                console.log('');
+            } else {
+                console.log('No API test results to display');
+                console.log('');
+            }
+            
             // Print detailed failure report by schema for API tests
             if (Object.keys(apiFailuresBySchema).length > 0) {
                 console.log('=========================================');

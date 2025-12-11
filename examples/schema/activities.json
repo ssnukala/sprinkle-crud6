@@ -6,6 +6,7 @@
     "description": "CRUD6.ACTIVITY.PAGE_DESCRIPTION",
     "table": "activities",
     "primary_key": "id",
+    "timestamps": false,
     "permissions": {
         "read": "uri_activities",
         "create": "create_activity",

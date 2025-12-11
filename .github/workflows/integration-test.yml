@@ -224,6 +224,71 @@ jobs:
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
 
+      - name: Create admin user (from configuration)
+        run: |
+          cd userfrosting
+          # Admin user details from integration-test-seeds.json config
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+          echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
+
+      - name: Create test user for modification tests
+        run: |
+          cd userfrosting
+          # Create a second user that can be safely modified/deleted in tests
+          # This prevents issues with modifying the logged-in admin user (ID 1)
+          php bakery create:user \
+            --username=testuser \
+            --password=TestPass123 \
+            --email=testuser@example.com \
+            --firstName=Test \
+            --lastName=User
+          echo "✅ Test user created (testuser) - will be used for modification/deletion tests"
+
+      - name: Test schema loading
+        run: |
+          cd userfrosting
+          php -r "
+          require 'vendor/autoload.php';
+
+          // Test loading all CRUD6 schemas from examples/schema
+          \$schemaPath = '../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}';
+          if (!is_dir(\$schemaPath)) {
+              echo 'Schema directory not found: ' . \$schemaPath . '\n';
+              exit(1);
+          }
+
+          \$schemas = glob(\$schemaPath . '/*.json');
+          if (empty(\$schemas)) {
+              echo 'No schema files found in: ' . \$schemaPath . '\n';
+              exit(1);
+          }
+
+          foreach (\$schemas as \$schemaFile) {
+              \$schemaName = basename(\$schemaFile, '.json');
+              \$schema = json_decode(file_get_contents(\$schemaFile), true);
+              if (!\$schema) {
+                  echo 'Failed to load schema: ' . \$schemaFile . '\n';
+                  exit(1);
+              }
+
+              echo '✅ Schema loaded: ' . \$schemaName . '\n';
+              if (isset(\$schema['model'])) echo '   Model: ' . \$schema['model'] . '\n';
+              if (isset(\$schema['table'])) echo '   Table: ' . \$schema['table'] . '\n';
+          }
+
+          echo '\n✅ All CRUD6 schemas loaded successfully\n';
+          "
+
+      - name: Test database connection
+        run: |
+          cd userfrosting
+          mysql -h 127.0.0.1 -uroot -proot userfrosting_test -e "SELECT * FROM \`groups\` LIMIT 5;"
+
       - name: Verify runtime directories
         run: |
           cd userfrosting
@@ -249,7 +314,7 @@ jobs:
           
           echo "✅ All runtime directories verified and writable"
 
-      - name: Install Playwright
+      - name: Install Playwright browsers for screenshots
         run: |
           cd userfrosting
           npm install playwright
@@ -258,9 +323,9 @@ jobs:
       - name: Build frontend assets
         run: |
           cd userfrosting
-          # UserFrosting 6 uses npm run uf-bundle to build assets via Vite
-          # Note: Even though we build, we still need vite dev server for proper asset serving
-          npm run uf-bundle || echo "⚠️ Build failed but continuing with tests"
+          # UserFrosting 6 uses bakery bake to build assets via Vite
+          # Note: Even though we bake, we still need vite dev server for proper asset serving
+          php bakery bake || echo "⚠️ Build failed but continuing with tests"
       
       - name: Start PHP development server
         run: |

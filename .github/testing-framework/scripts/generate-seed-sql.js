@@ -17,8 +17,8 @@
  * Features:
  * - Automatically generates test data based on field types
  * - Respects field validation rules (required, unique, length, etc.)
- * - EXCLUDES user ID 1 and group ID 1 (reserved for admin/system)
- * - Starts test data from ID 2 to avoid conflicts with system records
+ * - EXCLUDES user ID 1 ONLY (reserved for admin user)
+ * - Starts test data from ID 2 (safe for all tables including users, groups, roles, permissions)
  * - Generates relationship data for many-to-many tables
  * - Creates idempotent SQL with INSERT...ON DUPLICATE KEY UPDATE
  * - Safe for re-seeding (won't duplicate or conflict with existing data)
@@ -66,7 +66,7 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             if (field.auto_increment) {
                 return 'NULL'; // Let DB auto-increment
             }
-            return recordIndex + 1; // Start from 2 to avoid ID 1
+            return recordIndex; // Use recordIndex directly (starts from 2)
             
         case 'string':
             const maxLength = validation.length?.max || 255;
@@ -181,8 +181,9 @@ function generateInsertSQL(schema, recordCount = 3) {
     }
     
     // Generate INSERT statements
+    // Start from ID 2 - only user ID 1 is reserved for admin
     for (let i = 0; i < recordCount; i++) {
-        const recordIndex = i + 2; // Start from 2 to avoid ID 1
+        const recordIndex = i + 2; // Start from 2 (only user ID 1 is reserved)
         const values = [];
         
         for (const fieldName of insertFields) {

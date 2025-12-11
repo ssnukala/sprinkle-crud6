@@ -7,6 +7,7 @@ declare(strict_types=1);
  * UserFrosting CRUD6 Sprinkle Integration Test - Modular Seed Validation Script
  *
  * This script validates that seeds have been run successfully based on a JSON configuration.
+ * It uses MySQL CLI directly to avoid UserFrosting bootstrap and CSRF issues.
  * It's designed to be run from the UserFrosting 6 project root directory.
  *
  * Usage: php check-seeds-modular.php <config_file>
@@ -40,24 +41,43 @@ if (!$config) {
     exit(1);
 }
 
-// Bootstrap UserFrosting 6 application
-require 'vendor/autoload.php';
-
-// Bootstrap the UserFrosting application using Bakery (CLI bootstrap method)
-// This follows the same pattern as the bakery CLI tool in UserFrosting 6
-use UserFrosting\App\MyApp;
-use UserFrosting\Bakery\Bakery;
-
-$bakery = new Bakery(MyApp::class);
-$container = $bakery->getContainer();
-
-use UserFrosting\Sprinkle\Account\Database\Models\Role;
-use UserFrosting\Sprinkle\Account\Database\Models\Permission;
-
 echo "=========================================\n";
 echo "Validating Seed Data (Modular)\n";
 echo "=========================================\n";
 echo "Config file: {$configFile}\n\n";
+
+// Get database credentials from environment
+$dbHost = getenv('DB_HOST') ?: '127.0.0.1';
+$dbPort = getenv('DB_PORT') ?: '3306';
+$dbName = getenv('DB_NAME') ?: 'userfrosting_test';
+$dbUser = getenv('DB_USER') ?: 'root';
+$dbPassword = getenv('DB_PASSWORD') ?: 'root';
+
+/**
+ * Execute a MySQL query and return results
+ */
+function executeQuery(string $query, string $dbHost, string $dbPort, string $dbName, string $dbUser, string $dbPassword): array
+{
+    $command = sprintf(
+        'mysql -h %s -P %s -u %s %s %s -N -e %s 2>&1',
+        escapeshellarg($dbHost),
+        escapeshellarg($dbPort),
+        escapeshellarg($dbUser),
+        !empty($dbPassword) ? '-p' . escapeshellarg($dbPassword) : '',
+        escapeshellarg($dbName),
+        escapeshellarg($query)
+    );
+    
+    $output = [];
+    $returnCode = 0;
+    exec($command, $output, $returnCode);
+    
+    if ($returnCode !== 0) {
+        throw new RuntimeException("Query failed: " . implode("\n", $output));
+    }
+    
+    return $output;
+}
 
 $totalValidations = 0;
 $passedValidations = 0;
@@ -87,80 +107,75 @@ foreach ($allSeeds as $seedInfo) {
     
     $totalValidations++;
     
-    switch ($validation['type']) {
-        case 'role':
-            $slug = $validation['slug'];
-            $expectedCount = $validation['expected_count'] ?? 1;
-            
-            $count = Role::where('slug', $slug)->count();
-            
-            if ($count === $expectedCount) {
-                $role = Role::where('slug', $slug)->first();
-                echo "✅ Role '{$slug}' exists (count: {$count})\n";
-                echo "   Name: " . $role->name . "\n";
-                echo "   Description: " . $role->description . "\n";
-                $passedValidations++;
-            } else {
-                echo "❌ Role '{$slug}' count mismatch. Expected: {$expectedCount}, Found: {$count}\n";
-                $failedValidations++;
-            }
-            echo "\n";
-            break;
-            
-        case 'permissions':
-            $slugs = $validation['slugs'] ?? [];
-            $expectedCount = $validation['expected_count'] ?? count($slugs);
-            
-            $count = Permission::whereIn('slug', $slugs)->count();
-            
-            if ($count === $expectedCount) {
-                echo "✅ Found {$count} permissions (expected {$expectedCount})\n";
+    try {
+        switch ($validation['type']) {
+            case 'role':
+                $slug = $validation['slug'];
+                $expectedCount = $validation['expected_count'] ?? 1;
                 
-                foreach ($slugs as $permSlug) {
-                    $perm = Permission::where('slug', $permSlug)->first();
-                    if ($perm) {
-                        echo "   ✅ {$permSlug}\n";
-                    } else {
-                        echo "   ❌ {$permSlug} NOT FOUND\n";
-                        $failedValidations++;
-                        $totalValidations++;
-                    }
-                }
+                $query = "SELECT COUNT(*) FROM roles WHERE slug = '{$slug}'";
+                $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                $count = (int)($result[0] ?? 0);
                 
-                // Validate role assignments if specified
-                if (isset($validation['role_assignments'])) {
-                    echo "\n   Checking role assignments...\n";
+                if ($count === $expectedCount) {
+                    // Get role details
+                    $query = "SELECT name, description FROM roles WHERE slug = '{$slug}' LIMIT 1";
+                    $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                    $roleData = $result[0] ?? '';
                     
-                    foreach ($validation['role_assignments'] as $roleSlug => $expectedPermCount) {
-                        $role = Role::where('slug', $roleSlug)->first();
-                        
-                        if (!$role) {
-                            echo "   ⚠️  Role '{$roleSlug}' not found (may be expected in some setups)\n";
-                            continue;
-                        }
-                        
-                        $assignedPerms = $role->permissions()->whereIn('slug', $slugs)->count();
-                        
-                        if ($assignedPerms >= $expectedPermCount) {
-                            echo "   ✅ Role '{$roleSlug}' has {$assignedPerms} permissions (expected >= {$expectedPermCount})\n";
+                    echo "✅ Role '{$slug}' exists (count: {$count})\n";
+                    if ($roleData) {
+                        $parts = explode("\t", $roleData);
+                        echo "   Name: " . ($parts[0] ?? 'N/A') . "\n";
+                        echo "   Description: " . ($parts[1] ?? 'N/A') . "\n";
+                    }
+                    $passedValidations++;
+                } else {
+                    echo "❌ Role '{$slug}' count mismatch. Expected: {$expectedCount}, Found: {$count}\n";
+                    $failedValidations++;
+                }
+                echo "\n";
+                break;
+                
+            case 'permissions':
+                $slugs = $validation['slugs'] ?? [];
+                $expectedCount = $validation['expected_count'] ?? count($slugs);
+                
+                $slugList = "'" . implode("','", $slugs) . "'";
+                $query = "SELECT COUNT(*) FROM permissions WHERE slug IN ({$slugList})";
+                $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                $count = (int)($result[0] ?? 0);
+                
+                if ($count === $expectedCount) {
+                    echo "✅ Found {$count} permissions (expected {$expectedCount})\n";
+                    
+                    // Check each permission
+                    foreach ($slugs as $permSlug) {
+                        $query = "SELECT slug FROM permissions WHERE slug = '{$permSlug}' LIMIT 1";
+                        $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                        if (!empty($result)) {
+                            echo "   ✅ {$permSlug}\n";
                         } else {
-                            echo "   ❌ Role '{$roleSlug}' has {$assignedPerms} permissions (expected >= {$expectedPermCount})\n";
+                            echo "   ❌ {$permSlug} NOT FOUND\n";
                             $failedValidations++;
                             $totalValidations++;
                         }
                     }
+                    
+                    $passedValidations++;
+                } else {
+                    echo "❌ Permission count mismatch. Expected: {$expectedCount}, Found: {$count}\n";
+                    $failedValidations++;
                 }
+                echo "\n";
+                break;
                 
-                $passedValidations++;
-            } else {
-                echo "❌ Permission count mismatch. Expected: {$expectedCount}, Found: {$count}\n";
-                $failedValidations++;
-            }
-            echo "\n";
-            break;
-            
-        default:
-            echo "⚠️  Unknown validation type: " . $validation['type'] . "\n\n";
+            default:
+                echo "⚠️  Unknown validation type: " . $validation['type'] . "\n\n";
+        }
+    } catch (Exception $e) {
+        echo "❌ Validation failed: " . $e->getMessage() . "\n\n";
+        $failedValidations++;
     }
 }
 

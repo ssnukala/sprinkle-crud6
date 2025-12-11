@@ -4,20 +4,22 @@
 declare(strict_types=1);
 
 /**
- * Load SQL seed data for integration tests
+ * Load SQL seed data for integration tests using MySQL directly
  *
- * This script loads SQL seed data generated from CRUD6 schemas.
- * It should be run AFTER admin user creation and BEFORE path testing.
+ * This script loads SQL seed data generated from CRUD6 schemas by running
+ * the SQL file directly through MySQL CLI. This bypasses UserFrosting entirely,
+ * avoiding any session/CSRF issues and following the intended design of the
+ * generate-seed-sql.js script.
  *
  * EXECUTION ORDER:
  * 1. Migrations (php bakery migrate)
  * 2. Admin user creation (php bakery create:admin-user)
- * 3. THIS SCRIPT (loads test data from SQL)
+ * 3. THIS SCRIPT (loads test data from SQL via MySQL)
  * 4. Unauthenticated path testing
  * 5. Authenticated path testing
  *
  * Usage: php load-seed-sql.php <sql_file>
- * Example: php load-seed-sql.php app/sql/seeds/crud6-test-data.sql
+ * Example: php load-seed-sql.php seed-data.sql
  */
 
 // Parse command line arguments
@@ -25,7 +27,7 @@ $sqlFile = $argv[1] ?? null;
 
 if (!$sqlFile) {
     echo "Usage: php load-seed-sql.php <sql_file>\n";
-    echo "Example: php load-seed-sql.php app/sql/seeds/crud6-test-data.sql\n";
+    echo "Example: php load-seed-sql.php seed-data.sql\n";
     exit(1);
 }
 
@@ -40,123 +42,59 @@ echo "════════════════════════�
 echo "SQL file: {$sqlFile}\n";
 echo "\n";
 
-// Load UserFrosting application
-require 'vendor/autoload.php';
+// Get database credentials from environment (set by .env file)
+$dbHost = getenv('DB_HOST') ?: '127.0.0.1';
+$dbPort = getenv('DB_PORT') ?: '3306';
+$dbName = getenv('DB_NAME') ?: 'userfrosting_test';
+$dbUser = getenv('DB_USER') ?: 'root';
+$dbPassword = getenv('DB_PASSWORD') ?: 'root';
 
-// Bootstrap the UserFrosting application using Bakery (CLI bootstrap method)
-// This follows the same pattern as the bakery CLI tool in UserFrosting 6
-use UserFrosting\App\MyApp;
-use UserFrosting\Bakery\Bakery;
+echo "📊 Database connection:\n";
+echo "   Host: {$dbHost}:{$dbPort}\n";
+echo "   Database: {$dbName}\n";
+echo "   User: {$dbUser}\n";
+echo "\n";
 
-$bakery = new Bakery(MyApp::class);
-$container = $bakery->getContainer();
+// Build MySQL command
+// Use mysql CLI directly as recommended by generate-seed-sql.js
+$command = sprintf(
+    'mysql -h %s -P %s -u %s %s %s < %s 2>&1',
+    escapeshellarg($dbHost),
+    escapeshellarg($dbPort),
+    escapeshellarg($dbUser),
+    !empty($dbPassword) ? '-p' . escapeshellarg($dbPassword) : '',
+    escapeshellarg($dbName),
+    escapeshellarg($sqlFile)
+);
 
-// Get database connection
-$db = $container->get(\Illuminate\Database\Capsule\Manager::class);
-$pdo = $db->getConnection()->getPdo();
+echo "🔄 Executing SQL via MySQL CLI...\n";
+echo "\n";
 
-// Read SQL file
-$sql = file_get_contents($sqlFile);
-if (!$sql) {
-    echo "ERROR: Failed to read SQL file\n";
+// Execute the command
+$output = [];
+$returnCode = 0;
+exec($command, $output, $returnCode);
+
+// Display output
+if (!empty($output)) {
+    foreach ($output as $line) {
+        echo "   {$line}\n";
+    }
+    echo "\n";
+}
+
+if ($returnCode !== 0) {
+    echo "═══════════════════════════════════════════════════════════════\n";
+    echo "❌ SQL execution failed!\n";
+    echo "═══════════════════════════════════════════════════════════════\n";
+    echo "Return code: {$returnCode}\n";
+    echo "\n";
     exit(1);
 }
 
-echo "📄 SQL file loaded (" . number_format(strlen($sql)) . " bytes)\n";
-echo "\n";
-
-// Split SQL into individual statements
-// We need to handle multi-line statements properly
-$statements = [];
-$currentStatement = '';
-$lines = explode("\n", $sql);
-
-foreach ($lines as $line) {
-    $trimmedLine = trim($line);
-    
-    // Skip comments and empty lines
-    if (empty($trimmedLine) || str_starts_with($trimmedLine, '--')) {
-        continue;
-    }
-    
-    // Add line to current statement
-    $currentStatement .= $line . "\n";
-    
-    // Check if statement is complete (ends with semicolon)
-    if (str_ends_with($trimmedLine, ';')) {
-        $statements[] = trim($currentStatement);
-        $currentStatement = '';
-    }
-}
-
-echo "📊 Parsed " . count($statements) . " SQL statements\n";
-echo "\n";
-
-// Execute statements
-$executed = 0;
-$failed = 0;
-
-echo "🔄 Executing SQL statements...\n";
-echo "\n";
-
-try {
-    // Start transaction
-    $pdo->beginTransaction();
-    
-    foreach ($statements as $index => $statement) {
-        try {
-            // Skip SET statements in output
-            $isSetStatement = str_starts_with(trim($statement), 'SET ');
-            
-            if (!$isSetStatement) {
-                // Extract table name for progress display
-                if (preg_match('/INSERT INTO `?(\w+)`?/i', $statement, $matches)) {
-                    echo "   → Inserting into table: {$matches[1]}\n";
-                }
-            }
-            
-            $pdo->exec($statement);
-            $executed++;
-            
-        } catch (\PDOException $e) {
-            $failed++;
-            echo "   ❌ Failed to execute statement " . ($index + 1) . ":\n";
-            echo "      " . substr($statement, 0, 100) . "...\n";
-            echo "      Error: {$e->getMessage()}\n";
-            
-            // For testing, we continue on error but track failures
-            // In production, you might want to rollback
-        }
-    }
-    
-    // Commit transaction
-    $pdo->commit();
-    
-} catch (\Exception $e) {
-    // Rollback on error
-    $pdo->rollBack();
-    echo "\n";
-    echo "❌ Transaction failed: {$e->getMessage()}\n";
-    exit(1);
-}
-
-echo "\n";
 echo "═══════════════════════════════════════════════════════════════\n";
-echo "Seed Data Load Summary\n";
+echo "✅ SQL seed data loaded successfully!\n";
 echo "═══════════════════════════════════════════════════════════════\n";
-echo "Total statements: " . count($statements) . "\n";
-echo "Executed successfully: {$executed}\n";
-echo "Failed: {$failed}\n";
-echo "\n";
-
-if ($failed > 0) {
-    echo "⚠️  Some statements failed (this may be expected for duplicate records)\n";
-    echo "   Review output above for details.\n";
-    echo "\n";
-    exit(0); // Don't fail the build for duplicate key errors
-}
-
-echo "✅ All SQL seed data loaded successfully!\n";
 echo "\n";
 echo "IMPORTANT REMINDERS:\n";
 echo "  - User ID 1 is RESERVED for admin (do not delete/disable)\n";

@@ -7,6 +7,7 @@ declare(strict_types=1);
  * UserFrosting CRUD6 Sprinkle Integration Test - Modular Seed Idempotency Test Script
  *
  * This script tests that seeds are idempotent (can be run multiple times) based on JSON configuration.
+ * It uses MySQL CLI directly to avoid UserFrosting bootstrap and CSRF issues.
  * It's designed to be run from the UserFrosting 6 project root directory.
  *
  * Usage: php test-seed-idempotency-modular.php <config_file> [after] [expected_counts]
@@ -48,23 +49,43 @@ if (!($config['validation']['idempotency']['enabled'] ?? false)) {
     exit(0);
 }
 
-// Bootstrap UserFrosting 6 application
-require 'vendor/autoload.php';
-
-// Bootstrap the UserFrosting application using Bakery (CLI bootstrap method)
-use UserFrosting\App\MyApp;
-use UserFrosting\Bakery\Bakery;
-
-$bakery = new Bakery(MyApp::class);
-$container = $bakery->getContainer();
-
-use UserFrosting\Sprinkle\Account\Database\Models\Role;
-use UserFrosting\Sprinkle\Account\Database\Models\Permission;
-
 echo "=========================================\n";
 echo "Testing Seed Idempotency (Modular)\n";
 echo "=========================================\n";
 echo "Config file: {$configFile}\n\n";
+
+// Get database credentials from environment
+$dbHost = getenv('DB_HOST') ?: '127.0.0.1';
+$dbPort = getenv('DB_PORT') ?: '3306';
+$dbName = getenv('DB_NAME') ?: 'userfrosting_test';
+$dbUser = getenv('DB_USER') ?: 'root';
+$dbPassword = getenv('DB_PASSWORD') ?: 'root';
+
+/**
+ * Execute a MySQL query and return results
+ */
+function executeQuery(string $query, string $dbHost, string $dbPort, string $dbName, string $dbUser, string $dbPassword): array
+{
+    $command = sprintf(
+        'mysql -h %s -P %s -u %s %s %s -N -e %s 2>&1',
+        escapeshellarg($dbHost),
+        escapeshellarg($dbPort),
+        escapeshellarg($dbUser),
+        !empty($dbPassword) ? '-p' . escapeshellarg($dbPassword) : '',
+        escapeshellarg($dbName),
+        escapeshellarg($query)
+    );
+    
+    $output = [];
+    $returnCode = 0;
+    exec($command, $output, $returnCode);
+    
+    if ($returnCode !== 0) {
+        throw new RuntimeException("Query failed: " . implode("\n", $output));
+    }
+    
+    return $output;
+}
 
 // Get test seeds from config
 $testSeedSprinkles = $config['validation']['idempotency']['test_seeds'] ?? [];
@@ -86,21 +107,30 @@ foreach ($testSeedSprinkles as $sprinkleName) {
         
         $validation = $seedConfig['validation'];
         
-        switch ($validation['type']) {
-            case 'role':
-                $slug = $validation['slug'];
-                $count = Role::where('slug', $slug)->count();
-                $counts[$slug] = $count;
-                echo "Role '{$slug}': {$count}\n";
-                break;
-                
-            case 'permissions':
-                $slugs = $validation['slugs'] ?? [];
-                $count = Permission::whereIn('slug', $slugs)->count();
-                $key = 'permissions_' . implode('_', array_slice($slugs, 0, 2));
-                $counts[$key] = $count;
-                echo "Permissions (first {$count}): " . implode(', ', array_slice($slugs, 0, 3)) . "...\n";
-                break;
+        try {
+            switch ($validation['type']) {
+                case 'role':
+                    $slug = $validation['slug'];
+                    $query = "SELECT COUNT(*) FROM roles WHERE slug = '{$slug}'";
+                    $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                    $count = (int)($result[0] ?? 0);
+                    $counts[$slug] = $count;
+                    echo "Role '{$slug}': {$count}\n";
+                    break;
+                    
+                case 'permissions':
+                    $slugs = $validation['slugs'] ?? [];
+                    $slugList = "'" . implode("','", $slugs) . "'";
+                    $query = "SELECT COUNT(*) FROM permissions WHERE slug IN ({$slugList})";
+                    $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+                    $count = (int)($result[0] ?? 0);
+                    $key = 'permissions_' . implode('_', array_slice($slugs, 0, 2));
+                    $counts[$key] = $count;
+                    echo "Permissions (first {$count}): " . implode(', ', array_slice($slugs, 0, 3)) . "...\n";
+                    break;
+            }
+        } catch (Exception $e) {
+            echo "ERROR: Failed to count {$validation['type']}: " . $e->getMessage() . "\n";
         }
     }
 }

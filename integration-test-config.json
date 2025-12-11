@@ -1,0 +1,33 @@
+{
+  "sprinkle": {
+    "name": "sprinkle-crud6",
+    "composer_package": "ssnukala/sprinkle-crud6",
+    "npm_package": "@ssnukala/sprinkle-crud6",
+    "namespace": "UserFrosting\\Sprinkle\\CRUD6"
+  },
+  "schemas": {
+    "path": "examples/schema"
+  },
+  "routes": {
+    "pattern": "simple",
+    "import": {
+      "module": "@ssnukala/sprinkle-crud6/routes",
+      "name": "CRUD6Routes"
+    }
+  },
+  "custom_test_data": {
+    "enabled": false
+  },
+  "framework": {
+    "version": "main"
+  },
+  "testing": {
+    "php_version": "8.1",
+    "node_version": "20",
+    "mysql_version": "8.0",
+    "userfrosting_version": "^6.0-beta"
+  },
+  "vite": {
+    "optimize_deps": ["limax", "lodash.deburr"]
+  }
+}

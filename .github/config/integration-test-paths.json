@@ -1,7 +1,7 @@
 {
   "description": "Integration test paths configuration for CRUD6 sprinkle (auto-generated from models)",
-  "generated_from": ".github/config/integration-test-models.json",
-  "generated_at": "2025-12-10T22:47:59.997Z",
+  "generated_from": "integration-test-models.json",
+  "generated_at": "2025-12-11T00:08:42.936Z",
   "paths": {
     "authenticated": {
       "api": {
@@ -43,7 +43,14 @@
             ]
           },
           "requires_permission": "create_user",
-          "note": "Requires payload with model-specific fields"
+          "note": "Requires payload with model-specific fields",
+          "payload": {
+            "user_name": "apitest",
+            "first_name": "API",
+            "last_name": "Test",
+            "email": "apitest@example.com",
+            "password": "TestPassword123"
+          }
         },
         "users_single": {
           "method": "GET",
@@ -68,22 +75,28 @@
             "type": "json"
           },
           "requires_permission": "update_user_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "user_name": "apitest"
+          }
         },
-        "users_update_field": {
+        "users_update_field_user_name": {
           "method": "PUT",
-          "path": "/api/crud6/users/2/{field}",
+          "path": "/api/crud6/users/2/user_name",
           "description": "Update single field for user",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_user_field",
-          "note": "Field name and value depend on model schema"
+          "note": "Field name and value depend on model schema (field='user_name')",
+          "payload": {
+            "user_name": "apitest"
+          }
         },
-        "users_custom_action": {
+        "users_custom_action_toggle_enabled": {
           "method": "POST",
-          "path": "/api/crud6/users/2/a/{actionKey}",
+          "path": "/api/crud6/users/2/a/toggle_enabled",
           "description": "Execute custom action on user",
           "expected_status": 200,
           "validation": {
@@ -94,11 +107,92 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema"
+          "note": "Action keys defined in model schema (actionKey='toggle_enabled')",
+          "payload": {}
         },
-        "users_relationship_attach": {
+        "users_custom_action_toggle_verified": {
           "method": "POST",
-          "path": "/api/crud6/users/2/{relation}",
+          "path": "/api/crud6/users/2/a/toggle_verified",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema (actionKey='toggle_verified')",
+          "payload": {}
+        },
+        "users_custom_action_reset_password": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/a/reset_password",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema (actionKey='reset_password')",
+          "payload": {}
+        },
+        "users_custom_action_password_action": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/a/password_action",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema (actionKey='password_action')",
+          "payload": {}
+        },
+        "users_custom_action_disable_user": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/a/disable_user",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema (actionKey='disable_user')",
+          "payload": {}
+        },
+        "users_custom_action_enable_user": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/a/enable_user",
+          "description": "Execute custom action on user",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema (actionKey='enable_user')",
+          "payload": {}
+        },
+        "users_relationship_attach_roles": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/roles",
           "description": "Attach related items to user (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -108,11 +202,35 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')",
+          "payload": {
+            "roles_ids": [
+              1
+            ]
+          }
         },
-        "users_relationship_detach": {
+        "users_relationship_attach_permissions": {
+          "method": "POST",
+          "path": "/api/crud6/users/2/permissions",
+          "description": "Attach related items to user (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='permissions')",
+          "payload": {
+            "permissions_ids": [
+              1
+            ]
+          }
+        },
+        "users_relationship_detach_roles": {
           "method": "DELETE",
-          "path": "/api/crud6/users/2/{relation}",
+          "path": "/api/crud6/users/2/roles",
           "description": "Detach related items from user (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -122,17 +240,41 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')"
         },
-        "users_nested_relationship": {
+        "users_relationship_detach_permissions": {
+          "method": "DELETE",
+          "path": "/api/crud6/users/2/permissions",
+          "description": "Detach related items from user (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='permissions')"
+        },
+        "users_nested_relationship_roles": {
           "method": "GET",
-          "path": "/api/crud6/users/2/{relation}",
+          "path": "/api/crud6/users/2/roles",
           "description": "Get related items for user (nested endpoint)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')"
+        },
+        "users_nested_relationship_permissions": {
+          "method": "GET",
+          "path": "/api/crud6/users/2/permissions",
+          "description": "Get related items for user (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema (relation='permissions')"
         },
         "users_delete": {
           "method": "DELETE",
@@ -182,7 +324,13 @@
             ]
           },
           "requires_permission": "create_group",
-          "note": "Requires payload with model-specific fields"
+          "note": "Requires payload with model-specific fields",
+          "payload": {
+            "slug": "api_test_group",
+            "name": "API Test Group",
+            "description": "Group created via API test",
+            "icon": "fa-users"
+          }
         },
         "groups_single": {
           "method": "GET",
@@ -207,37 +355,28 @@
             "type": "json"
           },
           "requires_permission": "update_group_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "api_test_group"
+          }
         },
-        "groups_update_field": {
+        "groups_update_field_slug": {
           "method": "PUT",
-          "path": "/api/crud6/groups/2/{field}",
+          "path": "/api/crud6/groups/2/slug",
           "description": "Update single field for group",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_group_field",
-          "note": "Field name and value depend on model schema"
+          "note": "Field name and value depend on model schema (field='slug')",
+          "payload": {
+            "slug": "api_test_group"
+          }
         },
-        "groups_custom_action": {
+        "groups_relationship_attach_users": {
           "method": "POST",
-          "path": "/api/crud6/groups/2/a/{actionKey}",
-          "description": "Execute custom action on group",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              404,
-              500
-            ]
-          },
-          "note": "Action keys defined in model schema"
-        },
-        "groups_relationship_attach": {
-          "method": "POST",
-          "path": "/api/crud6/groups/2/{relation}",
+          "path": "/api/crud6/groups/2/users",
           "description": "Attach related items to group (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -247,11 +386,16 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='users')",
+          "payload": {
+            "users_ids": [
+              1
+            ]
+          }
         },
-        "groups_relationship_detach": {
+        "groups_relationship_detach_users": {
           "method": "DELETE",
-          "path": "/api/crud6/groups/2/{relation}",
+          "path": "/api/crud6/groups/2/users",
           "description": "Detach related items from group (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -261,17 +405,17 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='users')"
         },
-        "groups_nested_relationship": {
+        "groups_nested_relationship_users": {
           "method": "GET",
-          "path": "/api/crud6/groups/2/{relation}",
+          "path": "/api/crud6/groups/2/users",
           "description": "Get related items for group (nested endpoint)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='users')"
         },
         "groups_delete": {
           "method": "DELETE",
@@ -321,7 +465,12 @@
             ]
           },
           "requires_permission": "create_role",
-          "note": "Requires payload with model-specific fields"
+          "note": "Requires payload with model-specific fields",
+          "payload": {
+            "slug": "api_test_role",
+            "name": "API Test Role",
+            "description": "Role created via API test"
+          }
         },
         "roles_single": {
           "method": "GET",
@@ -346,37 +495,28 @@
             "type": "json"
           },
           "requires_permission": "update_role_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "api_test_role"
+          }
         },
-        "roles_update_field": {
+        "roles_update_field_slug": {
           "method": "PUT",
-          "path": "/api/crud6/roles/2/{field}",
+          "path": "/api/crud6/roles/2/slug",
           "description": "Update single field for role",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_role_field",
-          "note": "Field name and value depend on model schema"
+          "note": "Field name and value depend on model schema (field='slug')",
+          "payload": {
+            "slug": "api_test_role"
+          }
         },
-        "roles_custom_action": {
+        "roles_relationship_attach_permissions": {
           "method": "POST",
-          "path": "/api/crud6/roles/2/a/{actionKey}",
-          "description": "Execute custom action on role",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              404,
-              500
-            ]
-          },
-          "note": "Action keys defined in model schema"
-        },
-        "roles_relationship_attach": {
-          "method": "POST",
-          "path": "/api/crud6/roles/2/{relation}",
+          "path": "/api/crud6/roles/2/permissions",
           "description": "Attach related items to role (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -386,11 +526,35 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='permissions')",
+          "payload": {
+            "permissions_ids": [
+              1
+            ]
+          }
         },
-        "roles_relationship_detach": {
+        "roles_relationship_attach_users": {
+          "method": "POST",
+          "path": "/api/crud6/roles/2/users",
+          "description": "Attach related items to role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='users')",
+          "payload": {
+            "users_ids": [
+              1
+            ]
+          }
+        },
+        "roles_relationship_detach_permissions": {
           "method": "DELETE",
-          "path": "/api/crud6/roles/2/{relation}",
+          "path": "/api/crud6/roles/2/permissions",
           "description": "Detach related items from role (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -400,17 +564,41 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='permissions')"
         },
-        "roles_nested_relationship": {
+        "roles_relationship_detach_users": {
+          "method": "DELETE",
+          "path": "/api/crud6/roles/2/users",
+          "description": "Detach related items from role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='users')"
+        },
+        "roles_nested_relationship_permissions": {
           "method": "GET",
-          "path": "/api/crud6/roles/2/{relation}",
+          "path": "/api/crud6/roles/2/permissions",
           "description": "Get related items for role (nested endpoint)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='permissions')"
+        },
+        "roles_nested_relationship_users": {
+          "method": "GET",
+          "path": "/api/crud6/roles/2/users",
+          "description": "Get related items for role (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema (relation='users')"
         },
         "roles_delete": {
           "method": "DELETE",
@@ -460,7 +648,12 @@
             ]
           },
           "requires_permission": "create_permission",
-          "note": "Requires payload with model-specific fields"
+          "note": "Requires payload with model-specific fields",
+          "payload": {
+            "slug": "api_test_permission",
+            "name": "API Test Permission",
+            "description": "Permission created via API test"
+          }
         },
         "permissions_single": {
           "method": "GET",
@@ -485,37 +678,28 @@
             "type": "json"
           },
           "requires_permission": "update_permission_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "api_test_permission"
+          }
         },
-        "permissions_update_field": {
+        "permissions_update_field_slug": {
           "method": "PUT",
-          "path": "/api/crud6/permissions/2/{field}",
+          "path": "/api/crud6/permissions/2/slug",
           "description": "Update single field for permission",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_permission_field",
-          "note": "Field name and value depend on model schema"
+          "note": "Field name and value depend on model schema (field='slug')",
+          "payload": {
+            "slug": "api_test_permission"
+          }
         },
-        "permissions_custom_action": {
+        "permissions_relationship_attach_roles": {
           "method": "POST",
-          "path": "/api/crud6/permissions/2/a/{actionKey}",
-          "description": "Execute custom action on permission",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              404,
-              500
-            ]
-          },
-          "note": "Action keys defined in model schema"
-        },
-        "permissions_relationship_attach": {
-          "method": "POST",
-          "path": "/api/crud6/permissions/2/{relation}",
+          "path": "/api/crud6/permissions/2/roles",
           "description": "Attach related items to permission (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -525,11 +709,35 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')",
+          "payload": {
+            "roles_ids": [
+              1
+            ]
+          }
         },
-        "permissions_relationship_detach": {
+        "permissions_relationship_attach_users": {
+          "method": "POST",
+          "path": "/api/crud6/permissions/2/users",
+          "description": "Attach related items to permission (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='users')",
+          "payload": {
+            "users_ids": [
+              1
+            ]
+          }
+        },
+        "permissions_relationship_detach_roles": {
           "method": "DELETE",
-          "path": "/api/crud6/permissions/2/{relation}",
+          "path": "/api/crud6/permissions/2/roles",
           "description": "Detach related items from permission (many-to-many)",
           "expected_status": 200,
           "validation": {
@@ -539,17 +747,41 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')"
         },
-        "permissions_nested_relationship": {
+        "permissions_relationship_detach_users": {
+          "method": "DELETE",
+          "path": "/api/crud6/permissions/2/users",
+          "description": "Detach related items from permission (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema (relation='users')"
+        },
+        "permissions_nested_relationship_roles": {
           "method": "GET",
-          "path": "/api/crud6/permissions/2/{relation}",
+          "path": "/api/crud6/permissions/2/roles",
           "description": "Get related items for permission (nested endpoint)",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema"
+          "note": "Relation names defined in model schema (relation='roles')"
+        },
+        "permissions_nested_relationship_users": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/2/users",
+          "description": "Get related items for permission (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema (relation='users')"
         },
         "permissions_delete": {
           "method": "DELETE",
@@ -599,7 +831,13 @@
             ]
           },
           "requires_permission": "create_activity",
-          "note": "Requires payload with model-specific fields"
+          "note": "Requires payload with model-specific fields",
+          "payload": {
+            "user_id": 2,
+            "type": "test_activity",
+            "occurred_at": "2024-01-01 12:00:00",
+            "description": "Activity created via API test"
+          }
         },
         "activities_single": {
           "method": "GET",
@@ -623,71 +861,24 @@
             "type": "json"
           },
           "requires_permission": "update_activity_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "type": "test_activity"
+          }
         },
-        "activities_update_field": {
+        "activities_update_field_ip_address": {
           "method": "PUT",
-          "path": "/api/crud6/activities/2/{field}",
+          "path": "/api/crud6/activities/2/ip_address",
           "description": "Update single field for activity",
           "expected_status": 200,
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_activity_field",
-          "note": "Field name and value depend on model schema"
-        },
-        "activities_custom_action": {
-          "method": "POST",
-          "path": "/api/crud6/activities/2/a/{actionKey}",
-          "description": "Execute custom action on activity",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              404,
-              500
-            ]
-          },
-          "note": "Action keys defined in model schema"
-        },
-        "activities_relationship_attach": {
-          "method": "POST",
-          "path": "/api/crud6/activities/2/{relation}",
-          "description": "Attach related items to activity (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema"
-        },
-        "activities_relationship_detach": {
-          "method": "DELETE",
-          "path": "/api/crud6/activities/2/{relation}",
-          "description": "Detach related items from activity (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema"
-        },
-        "activities_nested_relationship": {
-          "method": "GET",
-          "path": "/api/crud6/activities/2/{relation}",
-          "description": "Get related items for activity (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema"
+          "note": "Field name and value depend on model schema (field='ip_address')",
+          "payload": {
+            "ip_address": "test_value_1765411722943"
+          }
         },
         "activities_delete": {
           "method": "DELETE",
@@ -790,6 +981,13 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "user_name": "apitest",
+            "first_name": "API",
+            "last_name": "Test",
+            "email": "apitest@example.com",
+            "password": "TestPassword123"
           }
         },
         "users_single": {
@@ -808,6 +1006,9 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "user_name": "apitest"
           }
         },
         "users_delete": {
@@ -844,6 +1045,12 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_group",
+            "name": "API Test Group",
+            "description": "Group created via API test",
+            "icon": "fa-users"
           }
         },
         "groups_single": {
@@ -862,6 +1069,9 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_group"
           }
         },
         "groups_delete": {
@@ -898,6 +1108,11 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_role",
+            "name": "API Test Role",
+            "description": "Role created via API test"
           }
         },
         "roles_single": {
@@ -916,6 +1131,9 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_role"
           }
         },
         "roles_delete": {
@@ -952,6 +1170,11 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_permission",
+            "name": "API Test Permission",
+            "description": "Permission created via API test"
           }
         },
         "permissions_single": {
@@ -970,6 +1193,9 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "slug": "api_test_permission"
           }
         },
         "permissions_delete": {
@@ -1006,6 +1232,12 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "user_id": 2,
+            "type": "test_activity",
+            "occurred_at": "2024-01-01 12:00:00",
+            "description": "Activity created via API test"
           }
         },
         "activities_single": {
@@ -1024,6 +1256,9 @@
           "expected_status": 401,
           "validation": {
             "type": "status_only"
+          },
+          "payload": {
+            "type": "test_activity"
           }
         },
         "activities_delete": {

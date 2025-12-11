@@ -146,7 +146,13 @@
       "safe_test_id_note": "Uses ID 2+ for safe testing",
       "api_validation_keys": ["id", "type"],
       "list_validation_keys": ["rows"],
-      "enabled": true
+      "enabled": true,
+      "create_payload": {
+        "user_id": 2,
+        "type": "test_activity",
+        "occurred_at": "2024-01-01 12:00:00",
+        "description": "Activity created via API test"
+      }
     }
   },
   "path_templates": {

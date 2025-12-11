@@ -147,7 +147,7 @@ jobs:
           # Configure vite.config.ts to handle CommonJS dependencies (limax and lodash.deburr)
           # sprinkle-crud6 uses limax which depends on lodash.deburr (CommonJS modules)
           # These need to be pre-bundled by Vite to work properly
-          
+
           # Check if already configured
           if grep -q "'limax'" vite.config.ts || grep -q '"limax"' vite.config.ts; then
             echo "limax already in vite.config.ts, skipping configuration"
@@ -213,7 +213,7 @@ jobs:
               {print}
             ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
           fi
-          
+
           echo ""
           echo "✅ Vite configuration updated for CommonJS dependencies"
           echo "Updated vite.config.ts:"
@@ -225,19 +225,19 @@ jobs:
           echo "========================================="
           echo "Copying CRUD6 Schema Files from Examples"
           echo "========================================="
-          
+
           # Create schema directory if it doesn't exist
           mkdir -p app/schema/crud6
-          
+
           # Define the schema files needed for integration tests
           REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
-          
+
           # Check that source directory exists
           if [ ! -d "../sprinkle-crud6/examples/schema" ]; then
             echo "❌ ERROR: Source schema directory not found: ../sprinkle-crud6/examples/schema"
             exit 1
           fi
-          
+
           # Copy required schema files
           echo ""
           echo "Copying required schema files..."
@@ -249,14 +249,14 @@ jobs:
               echo "  ⚠️  WARNING: Schema file not found: $schema"
             fi
           done
-          
+
           # Verify schemas were copied
           echo ""
           echo "========================================="
           echo "Schemas copied to app/schema/crud6/:"
           echo "========================================="
           ls -la app/schema/crud6/
-          
+
           # Validate all required schemas are present
           echo ""
           echo "Validating required schemas..."
@@ -267,7 +267,7 @@ jobs:
               MISSING=1
             fi
           done
-          
+
           if [ $MISSING -eq 1 ]; then
             echo "❌ ERROR: Some required schema files are missing!"
             exit 1
@@ -281,27 +281,27 @@ jobs:
           echo "========================================="
           echo "Merging Locale Messages from Examples"
           echo "========================================="
-          
+
           # Create locale directory if it doesn't exist
           mkdir -p app/locale/en_US
-          
+
           # Check that source messages file exists
           if [ ! -f "../sprinkle-crud6/examples/locale/en_US/messages.php" ]; then
             echo "❌ ERROR: Source messages file not found: ../sprinkle-crud6/examples/locale/en_US/messages.php"
             exit 1
           fi
-          
+
           # Check if destination messages file already exists in sprinkle-crud6's app/locale
           if [ -f "../sprinkle-crud6/app/locale/en_US/messages.php" ]; then
             echo "Found existing app/locale messages file, copying to userfrosting app..."
             cp "../sprinkle-crud6/app/locale/en_US/messages.php" "app/locale/en_US/messages.php"
             echo "  ✅ Copied: messages.php from sprinkle-crud6/app/locale"
           fi
-          
+
           # Now merge example messages (append model-specific translations)
           echo ""
           echo "Merging example messages (model-specific translations)..."
-          
+
           # Create a PHP script to merge the message files
           cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
           <?php
@@ -309,22 +309,22 @@ jobs:
            * Merge example messages with existing messages.php
            * This adds model-specific translations for CRUD6 testing
            */
-          
+
           $examplesPath = $argv[1] ?? '';
           $destPath = $argv[2] ?? '';
-          
+
           if (empty($examplesPath) || empty($destPath)) {
               echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
               exit(1);
           }
-          
+
           // Load existing messages if they exist
           $existingMessages = [];
           if (file_exists($destPath)) {
               $existingMessages = require $destPath;
               echo "  Loaded existing messages from: $destPath\n";
           }
-          
+
           // Load example messages
           if (!file_exists($examplesPath)) {
               echo "  ❌ Examples messages file not found: $examplesPath\n";
@@ -332,7 +332,7 @@ jobs:
           }
           $exampleMessages = require $examplesPath;
           echo "  Loaded example messages from: $examplesPath\n";
-          
+
           // Deep merge function
           function deepMerge(array $base, array $override): array {
               foreach ($override as $key => $value) {
@@ -344,10 +344,10 @@ jobs:
               }
               return $base;
           }
-          
+
           // Merge messages (example messages override existing)
           $mergedMessages = deepMerge($existingMessages, $exampleMessages);
-          
+
           // Generate the merged PHP file
           $output = "<?php\n\n";
           $output .= "/*\n";
@@ -364,11 +364,11 @@ jobs:
           $output .= " * @author Alexander Weissman\n";
           $output .= " */\n";
           $output .= "return " . var_export($mergedMessages, true) . ";\n";
-          
+
           // Write merged messages
           file_put_contents($destPath, $output);
           echo "  ✅ Merged messages written to: $destPath\n";
-          
+
           // Verify the file is valid PHP
           exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
           if ($lintReturnCode !== 0) {
@@ -378,12 +378,12 @@ jobs:
           }
           echo "  ✅ Syntax validation passed\n";
           MERGE_SCRIPT
-          
+
           # Run the merge script
           php /tmp/merge-messages.php \
             "../sprinkle-crud6/examples/locale/en_US/messages.php" \
             "app/locale/en_US/messages.php"
-          
+
           echo ""
           echo "========================================="
           echo "Locale Messages Merge Complete"
@@ -413,27 +413,6 @@ jobs:
           echo "" >> app/.env
           echo "# Testing Configuration" >> app/.env
           echo "TEST_SESSION_HANDLER=database" >> app/.env
-          
-          # Create CRUD6 test configuration to enable debug mode
-          echo "Creating CRUD6 test configuration with debug mode enabled..."
-          mkdir -p app/config
-          cat > app/config/crud6-test.php << 'EOF'
-          <?php
-          declare(strict_types=1);
-          
-          /**
-           * CRUD6 test configuration
-           * Enables debug mode for comprehensive backend logging during CI tests
-           */
-          return [
-              'crud6' => [
-                  'debug_mode' => true,
-              ],
-          ];
-          EOF
-          
-          echo "✅ CRUD6 debug mode configuration created"
-          cat app/config/crud6-test.php
 
       - name: Run migrations
         run: |
@@ -579,15 +558,15 @@ jobs:
           php bakery assets:vite &
           VITE_PID=$!
           echo $VITE_PID > /tmp/vite.pid
-          
+
           # Wait longer for Vite to fully start up
           echo "Waiting for Vite server to start..."
           sleep 20
-          
+
           # Try to verify Vite is running by checking if the page loads properly
           echo "Testing if frontend is accessible..."
           curl -f http://localhost:8080 || echo "⚠️  Page load test after Vite start"
-          
+
           echo "✅ Vite server started"
 
       - name: Test Unauthenticated API paths
@@ -612,19 +591,19 @@ jobs:
       - name: Copy schema and locale to sprinkle-crud6 for test generation
         run: |
           cd sprinkle-crud6
-          
+
           echo "========================================="
           echo "Preparing sprinkle-crud6 for Test Generation"
           echo "========================================="
-          
+
           # Copy schema files from examples to app/schema/crud6
           echo ""
           echo "Copying schema files from examples/schema to app/schema/crud6..."
           mkdir -p app/schema/crud6
-          
+
           # Define the schema files needed for integration tests
           REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
-          
+
           for schema in $REQUIRED_SCHEMAS; do
             if [ -f "examples/schema/$schema" ]; then
               cp "examples/schema/$schema" "app/schema/crud6/"
@@ -633,20 +612,20 @@ jobs:
               echo "  ⚠️  WARNING: Schema file not found: $schema"
             fi
           done
-          
+
           echo ""
           echo "Schemas copied to app/schema/crud6/:"
           ls -la app/schema/crud6/
-          
+
           # Copy locale messages from examples to app/locale
           echo ""
           echo "Copying locale messages from examples/locale to app/locale..."
-          
+
           # Check if app/locale/en_US/messages.php already exists
           if [ -f "app/locale/en_US/messages.php" ]; then
             echo "  ℹ️  app/locale/en_US/messages.php already exists"
           fi
-          
+
           # Copy example locale messages for model-specific translations
           if [ -f "examples/locale/en_US/messages.php" ]; then
             # Create a PHP script to merge the message files
@@ -655,22 +634,22 @@ jobs:
           /**
            * Merge example messages with existing app/locale messages.php
            */
-          
+
           $examplesPath = $argv[1] ?? '';
           $appLocalePath = $argv[2] ?? '';
-          
+
           if (empty($examplesPath) || empty($appLocalePath)) {
               echo "Usage: php merge-sprinkle-messages.php <examples_messages_path> <app_locale_messages_path>\n";
               exit(1);
           }
-          
+
           // Load example messages (model-specific translations)
           if (!file_exists($examplesPath)) {
               echo "❌ ERROR: Examples messages file not found: $examplesPath\n";
               exit(1);
           }
           $examplesMessages = include $examplesPath;
-          
+
           // Load or create app locale messages
           $appMessages = [];
           if (file_exists($appLocalePath)) {
@@ -679,17 +658,17 @@ jobs:
           } else {
               echo "  ℹ️  Creating new app/locale messages file\n";
           }
-          
+
           // Merge messages (example messages take precedence for models)
           $merged = array_merge($appMessages, $examplesMessages);
-          
+
           // Write merged messages
           $output = "<?php\n\n/**\n * Merged locale messages for CRUD6 integration testing\n * Combined from app/locale and examples/locale\n */\n\nreturn " . var_export($merged, true) . ";\n";
-          
+
           if (!is_dir(dirname($appLocalePath))) {
               mkdir(dirname($appLocalePath), 0755, true);
           }
-          
+
           if (file_put_contents($appLocalePath, $output)) {
               echo "  ✅ Merged messages written to: $appLocalePath\n";
               echo "  ℹ️  Total message keys: " . count($merged) . "\n";
@@ -708,7 +687,7 @@ jobs:
           else
             echo "  ⚠️  WARNING: examples/locale/en_US/messages.php not found"
           fi
-          
+
           echo ""
           echo "✅ sprinkle-crud6 prepared for test generation"
 

@@ -6,9 +6,24 @@ A reusable, configuration-driven integration testing framework for UserFrosting 
 
 This is a **complete integration testing framework** that can be used by any UserFrosting 6 sprinkle. Instead of replicating testing infrastructure across every sprinkle, you can use this framework by:
 
-1. Running an installer script that adapts it for your sprinkle
-2. Customizing JSON configuration files for your specific needs
-3. Running the same proven testing scripts that CRUD6 uses
+1. **Quick Option**: Copy a ready-to-use workflow template (5 minutes)
+2. **Custom Option**: Run installer script and customize for your needs
+3. Using the same proven testing scripts that CRUD6 uses
+
+## ⚡ Quick Start: Copy Workflow Template
+
+**Fastest way to get started:**
+
+```bash
+# For CRUD6 testing in your sprinkle:
+cp /path/to/crud6/.github/testing-framework/crud6-workflow-template.yml \
+   .github/workflows/crud6-integration-test.yml
+
+# Edit the 3 environment variables at the top
+# Push and you're done!
+```
+
+See [WORKFLOW_TEMPLATES.md](WORKFLOW_TEMPLATES.md) for complete guide.
 
 ## 📦 What's Included
 
@@ -201,6 +216,11 @@ See the [complete workflow example](docs/WORKFLOW_EXAMPLE.md) for a full GitHub 
 
 ## 📚 Documentation
 
+### Quick Start
+- **[Workflow Templates](WORKFLOW_TEMPLATES.md)** - ⭐ Ready-to-copy workflow files (FASTEST)
+- **[Quick Reference](QUICK_REFERENCE.md)** - One-page cheat sheet
+
+### Detailed Guides
 - **[Installation Guide](docs/INSTALLATION.md)** - Detailed installation instructions
 - **[Configuration Guide](docs/CONFIGURATION.md)** - How to customize for your sprinkle
 - **[Workflow Example](docs/WORKFLOW_EXAMPLE.md)** - Complete GitHub Actions workflow

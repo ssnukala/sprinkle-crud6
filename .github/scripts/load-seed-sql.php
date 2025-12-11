@@ -43,13 +43,16 @@ echo "\n";
 // Load UserFrosting application
 require 'vendor/autoload.php';
 
-use UserFrosting\UserFrosting;
+// Bootstrap the UserFrosting application using Bakery (CLI bootstrap method)
+// This follows the same pattern as the bakery CLI tool in UserFrosting 6
+use UserFrosting\App\MyApp;
+use UserFrosting\Bakery\Bakery;
 
-// Boot UserFrosting
-$uf = new UserFrosting();
+$bakery = new Bakery(MyApp::class);
+$container = $bakery->getContainer();
 
 // Get database connection
-$db = $uf->getContainer()->get(\Illuminate\Database\Capsule\Manager::class);
+$db = $container->get(\Illuminate\Database\Capsule\Manager::class);
 $pdo = $db->getConnection()->getPdo();
 
 // Read SQL file

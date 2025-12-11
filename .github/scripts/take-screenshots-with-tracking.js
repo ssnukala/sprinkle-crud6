@@ -692,8 +692,16 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         page.on("console", (msg) => {
             const type = msg.type();
             const text = msg.text();
-            // Log all console messages (not just errors/warnings)
-            console.log(`   🖥️  Browser ${type}: ${text}`);
+            // Only log browser errors (not log/debug/warning messages)
+            // Other messages are still captured for the error report file
+            if (type === "error") {
+                console.log(`   🖥️  Browser ${type}: ${text}`);
+            }
+            // Commenting out non-error logs to reduce noise during integration testing
+            // Uncomment these when debugging is needed:
+            // if (type === "log" || type === "debug" || type === "warning") {
+            //     console.log(`   🖥️  Browser ${type}: ${text}`);
+            // }
             // Store errors and warnings for later analysis
             if (type === "error" || type === "warning") {
                 consoleErrors.push({ type, text, timestamp: Date.now() });

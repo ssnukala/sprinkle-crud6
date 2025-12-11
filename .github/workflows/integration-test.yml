@@ -182,6 +182,20 @@ jobs:
           cd userfrosting
           php bakery migrate --force
       
+      - name: Create admin user (BEFORE loading seed data)
+        run: |
+          cd userfrosting
+          # CRITICAL: Admin user MUST be created BEFORE SQL seed data
+          # SQL seed generator expects user ID 1 to exist (reserved for admin)
+          # Test data starts from ID 2
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+          echo "✅ Admin user created (ID 1 reserved)"
+
       - name: Generate and load SQL seed data
         run: |
           cd userfrosting
@@ -204,7 +218,7 @@ jobs:
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
             seed-data.sql
           
-          echo "✅ Schema-driven SQL loaded"
+          echo "✅ Schema-driven SQL loaded (test data IDs >= 2)"
 
       - name: Run PHP seeds
         run: |
@@ -223,18 +237,6 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-
-      - name: Create admin user (from configuration)
-        run: |
-          cd userfrosting
-          # Admin user details from integration-test-seeds.json config
-          php bakery create:admin-user \
-            --username=admin \
-            --password=admin123 \
-            --email=admin@example.com \
-            --firstName=Admin \
-            --lastName=User
-          echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
 
       - name: Create test user for modification tests
         run: |

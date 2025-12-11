@@ -88,7 +88,7 @@ on:
 env:
   SPRINKLE_DIR: ${s.name}
   COMPOSER_PACKAGE: ${s.composer_package}
-  NPM_PACKAGE: ${s.npm_package || ''}
+  NPM_PACKAGE: "${s.npm_package || ''}"
   SCHEMA_PATH: "${schemas.path || ''}"
   FRAMEWORK_REPO: ssnukala/sprinkle-crud6
   FRAMEWORK_BRANCH: ${config.framework?.version || 'main'}

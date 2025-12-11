@@ -1,0 +1,104 @@
+{
+  "description": "TEMPLATE: Integration test paths configuration - Copy and modify for your sprinkle",
+  "paths": {
+    "authenticated": {
+      "api": {
+        "your_model_list": {
+          "method": "GET",
+          "path": "/api/yoursprinkle/yourmodel",
+          "description": "Get list of your model via API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["rows"]
+          }
+        },
+        "your_model_single": {
+          "method": "GET",
+          "path": "/api/yoursprinkle/yourmodel/1",
+          "description": "Get single model by ID via API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": ["id", "name"]
+          }
+        },
+        "your_model_create": {
+          "method": "POST",
+          "path": "/api/yoursprinkle/yourmodel",
+          "description": "Create new model via API",
+          "expected_status": 200,
+          "skip": true,
+          "skip_reason": "Requires request body payload"
+        }
+      },
+      "frontend": {
+        "your_model_list": {
+          "path": "/yoursprinkle/yourmodel",
+          "description": "Your model list page",
+          "screenshot": true,
+          "screenshot_name": "yourmodel_list"
+        },
+        "your_model_detail": {
+          "path": "/yoursprinkle/yourmodel/1",
+          "description": "Single model detail page",
+          "screenshot": true,
+          "screenshot_name": "yourmodel_detail"
+        }
+      }
+    },
+    "unauthenticated": {
+      "api": {
+        "your_model_list": {
+          "method": "GET",
+          "path": "/api/yoursprinkle/yourmodel",
+          "description": "Attempt to access model list without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        },
+        "your_model_single": {
+          "method": "GET",
+          "path": "/api/yoursprinkle/yourmodel/1",
+          "description": "Attempt to access single model without authentication",
+          "expected_status": 401,
+          "validation": {
+            "type": "status_only"
+          }
+        }
+      },
+      "frontend": {
+        "your_model_list": {
+          "path": "/yoursprinkle/yourmodel",
+          "description": "Attempt to access model list page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        },
+        "your_model_detail": {
+          "path": "/yoursprinkle/yourmodel/1",
+          "description": "Attempt to access model detail page without authentication (should redirect to login)",
+          "expected_status": 200,
+          "validation": {
+            "type": "redirect_to_login",
+            "contains": ["/account/sign-in", "login"]
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "base_url": "http://localhost:8080",
+    "auth": {
+      "username": "admin",
+      "password": "admin123"
+    },
+    "timeout": {
+      "api": 10,
+      "frontend": 30
+    }
+  }
+}

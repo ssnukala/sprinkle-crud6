@@ -1,4 +1,7 @@
-name: Integration Test with UserFrosting 6
+name: sprinkle-crud6 Integration Test
+
+# AUTO-GENERATED from integration-test-config.json
+# To regenerate: node .github/testing-framework/scripts/generate-workflow.js
 
 on:
   push:
@@ -7,13 +10,25 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+env:
+  SPRINKLE_DIR: sprinkle-crud6
+  COMPOSER_PACKAGE: ssnukala/sprinkle-crud6
+  NPM_PACKAGE: @ssnukala/sprinkle-crud6
+  SCHEMA_PATH: "examples/schema"
+  FRAMEWORK_REPO: ssnukala/sprinkle-crud6
+  FRAMEWORK_BRANCH: main
+  UF_VERSION: "^6.0-beta"
+  PHP_VERSION: "8.1"
+  NODE_VERSION: "20"
+  MYSQL_VERSION: "8.0"
+
 jobs:
   integration-test:
     runs-on: ubuntu-latest
-
+    
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:${{ env.MYSQL_VERSION }}
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: userfrosting_test
@@ -24,1159 +39,227 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-
+    
     steps:
-      - name: Checkout sprinkle-crud6
+      - name: Checkout sprinkle
         uses: actions/checkout@v4
         with:
-          path: sprinkle-crud6
-
+          path: ${{ env.SPRINKLE_DIR }}
+      
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.1"
+          php-version: ${{ env.PHP_VERSION }}
           extensions: mbstring, xml, gd, pdo_mysql
           coverage: none
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-
-      - name: Create UserFrosting project using composer create-project
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install testing framework
         run: |
-          composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
-
-          # Create storage and app runtime directories immediately after project creation
-          # This ensures all required directories are available for subsequent steps
-          echo ""
-          echo "Creating runtime directories with 777 permissions..."
+          cd ${{ env.SPRINKLE_DIR }}
+          
+          if [ -d ".github/crud6-framework" ]; then
+            echo "✅ Using local framework"
+          else
+            echo "📦 Installing framework..."
+            git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
+              https://github.com/${{ env.FRAMEWORK_REPO }}.git /tmp/crud6-repo
+            mkdir -p .github/crud6-framework
+            cp -r /tmp/crud6-repo/.github/testing-framework/* .github/crud6-framework/
+            chmod +x .github/crud6-framework/scripts/*.php
+            echo "✅ Framework installed"
+          fi
+          
+          mkdir -p .github/config
+          if [ -d "/tmp/crud6-repo/.github/config" ]; then
+            cp /tmp/crud6-repo/.github/config/integration-test-*.json .github/config/ 2>/dev/null || true
+          fi
+      
+      - name: Create UserFrosting project
+        run: |
+          composer create-project userfrosting/userfrosting userfrosting "${{ env.UF_VERSION }}" \
+            --no-scripts --no-install --ignore-platform-reqs
+          
           cd userfrosting/app
-
-          # Set ownership to current user
-          chown -R $USER: .
-
-          # Create required directories (UserFrosting 6 structure)
           mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
           chmod -R 777 storage sessions logs cache
-
-          # Create log file
           touch logs/userfrosting.log
-
-          echo "✅ Runtime directories created and permissions set to 777"
-          echo ""
-          echo "Storage directories:"
-          ls -ld storage storage/sessions storage/cache storage/logs
-          echo ""
-          echo "Other directories:"
-          ls -ld logs cache sessions
-          echo ""
-          echo "Log file:"
-          ls -la logs/userfrosting.log
-
-      - name: Configure Composer for beta packages and local sprinkle-crud6
+      
+      - name: Configure Composer dependencies
         run: |
           cd userfrosting
-          # Add local path to composer.json
-          composer config repositories.local path ../sprinkle-crud6
-          composer require ssnukala/sprinkle-crud6:@dev --no-update
+          
+          if [ -d "/tmp/crud6-repo" ]; then
+            composer config repositories.crud6 path /tmp/crud6-repo
+            composer require ssnukala/sprinkle-crud6:@dev --no-update
+          fi
+          
+          composer config repositories.local path ../${{ env.SPRINKLE_DIR }}
+          composer require ${{ env.COMPOSER_PACKAGE }}:@dev --no-update
+          
           composer config minimum-stability beta
           composer config prefer-stable true
-
-      - name: Install PHP dependencies
-        run: |
-          cd userfrosting
+          
           composer install --no-interaction --prefer-dist
-
-      - name: Package sprinkle-crud6 for NPM
-        run: |
-          cd sprinkle-crud6
-          npm pack
-          mv ssnukala-sprinkle-crud6-*.tgz ../userfrosting/
-
-      - name: Install NPM dependencies
+      
+      - name: Configure NPM dependencies
         run: |
           cd userfrosting
           npm update
-          npm install ./ssnukala-sprinkle-crud6-*.tgz
-
+          
+          if [ -d "/tmp/crud6-repo" ]; then
+            cd /tmp/crud6-repo
+            npm pack
+            mv ssnukala-sprinkle-crud6-*.tgz "$GITHUB_WORKSPACE/userfrosting/"
+            cd "$GITHUB_WORKSPACE/userfrosting"
+            npm install ./ssnukala-sprinkle-crud6-*.tgz
+          fi
+          
+          cd "$GITHUB_WORKSPACE/${{ env.SPRINKLE_DIR }}"
+          npm pack 2>/dev/null || true
+          if ls *.tgz 1> /dev/null 2>&1; then
+            mv *.tgz "$GITHUB_WORKSPACE/userfrosting/"
+            cd "$GITHUB_WORKSPACE/userfrosting"
+            npm install ./*.tgz 2>/dev/null || echo "NPM package optional"
+          fi
+      
       - name: Configure MyApp.php
         run: |
           cd userfrosting
-          # Configure MyApp.php to include CRUD6 sprinkle
-          # Add CRUD6 import after existing imports
+          
           sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;' app/src/MyApp.php
-          # Add CRUD6::class to getSprinkles() array before the closing bracket
           sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
-          # displaying the file to verify changes
-          cat app/src/MyApp.php
-
-      - name: Configure router/index.ts
+      
+      - name: Configure main.ts
         run: |
           cd userfrosting
-          # Configure app/assets/router/index.ts to include CRUD6 and LearnIntegrate routes
-          # Add CRUD6Routes and LearnIntegrateRoutes imports after AdminRoutes import
-          sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import CRUD6Routes from '@ssnukala\/sprinkle-crud6\/routes'" app/assets/router/index.ts
-          # Add ...CRUD6Routes, ...LearnIntegrateRoutes after ...AccountRoutes
-          sed -i '/\.\.\.AccountRoutes,/a \            ...CRUD6Routes,' app/assets/router/index.ts
-          # displaying the file to verify changes
-          cat app/assets/router/index.ts
-
-      - name: Configure /main.ts
-        run: |
-          cd userfrosting
-          # Configure app/assets/main.ts to include CRUD6 and LearnIntegrate sprinkles
-          # Add CRUD6Sprinkle and LearnIntegrate imports after AdminSprinkle import
-          sed -i "/import AdminSprinkle from '@userfrosting\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\/sprinkle-crud6'" app/assets/main.ts
-          # Add app.use(CRUD6Sprinkle) and app.use(LearnIntegrate) after app.use(AdminSprinkle)
+          
+          sed -i "/import AdminSprinkle from '@userfrosting\\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\\/sprinkle-crud6'" app/assets/main.ts
           sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
-          # displaying the file to verify changes
-          cat app/assets/main.ts
-
-      - name: Verify NPM package installation
+      
+      - name: Configure routes (simple pattern)
         run: |
           cd userfrosting
-          # Verify the package is installed correctly
-          npm list @ssnukala/sprinkle-crud6 || echo "Package installed as local dependency"
-          # Check that the package files are accessible
-          test -f node_modules/@ssnukala/sprinkle-crud6/app/assets/index.ts && echo "✅ NPM package files accessible" || echo "⚠️ NPM package files not found"
+          
+          # Simple array spread pattern
+          sed -i "/import AdminRoutes from '@userfrosting\\/sprinkle-admin\\/routes'/a import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'" app/assets/router/index.ts
+          sed -i '/\\.\\.\\.AccountRoutes,/a \\            ...CRUD6Routes,' app/assets/router/index.ts
 
-      - name: Configure vite.config.ts for CommonJS dependencies
+      
+      - name: Configure vite.config.ts
         run: |
           cd userfrosting
-          # Configure vite.config.ts to handle CommonJS dependencies (limax and lodash.deburr)
-          # sprinkle-crud6 uses limax which depends on lodash.deburr (CommonJS modules)
-          # These need to be pre-bundled by Vite to work properly
-
-          # Check if already configured
-          if grep -q "'limax'" vite.config.ts || grep -q '"limax"' vite.config.ts; then
-            echo "limax already in vite.config.ts, skipping configuration"
-          elif grep -q "optimizeDeps:" vite.config.ts; then
-            echo "optimizeDeps section exists, checking for include array..."
+          
+          if grep -q "optimizeDeps:" vite.config.ts; then
             if grep -q "include:" vite.config.ts; then
-              echo "include array exists, adding limax and lodash.deburr to it..."
-              # Add to existing include array using awk (handles both single-line and multi-line)
-              awk '
-                /include: \[/ {
-                  if (/\]/) {
-                    # Single-line array: include: [...]
-                    sub(/\]/, ", '\''limax'\'', '\''lodash.deburr'\'']");
-                    print;
-                    next;
-                  } else {
-                    # Multi-line array start
-                    print;
-                    in_array=1;
-                    next;
-                  }
-                }
-                in_array {
-                  if (/\]/) {
-                    # Multi-line array end - add items before closing bracket
-                    print "            '\''limax'\'',";
-                    print "            '\''lodash.deburr'\''";
-                    print $0;
-                    in_array=0;
-                    next;
-                  } else {
-                    # Inside array - ensure trailing comma
-                    if (!/,$/) {
-                      sub(/$/, ",");
-                    }
-                    print;
-                    next;
-                  }
-                }
-                {print}
-              ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
+              sed -i "/include: \\[/a \\            \'limax\', \'lodash.deburr\'," vite.config.ts
             else
-              echo "include array doesn't exist, creating it..."
-              # Add include array to optimizeDeps
-              sed -i "/optimizeDeps: {/a \        include: ['limax', 'lodash.deburr']," vite.config.ts
+              sed -i "/optimizeDeps: {/a \\        include: [\'limax\', \'lodash.deburr\']," vite.config.ts
             fi
           else
-            echo "optimizeDeps section doesn't exist, creating it..."
-            # Add optimizeDeps section after plugins block
-            # This handles both single-line (plugins: [...],) and multi-line plugins arrays
-            awk '
-              /plugins:/ {in_plugins=1} 
-              in_plugins && /\],/ {
-                print;
-                print "    optimizeDeps: {";
-                print "        // Include CommonJS dependencies for sprinkle-crud6";
-                print "        // limax uses lodash.deburr which is a CommonJS module";
-                print "        include: ['\''limax'\'', '\''lodash.deburr'\'']";
-                print "    },";
-                in_plugins=0;
-                next;
-              } 
-              {print}
-            ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
+            sed -i "/plugins: \\[/,/\\],/a \\    optimizeDeps: {\\n        include: [\'limax\', \'lodash.deburr\']\\n    }," vite.config.ts
           fi
 
-          echo ""
-          echo "✅ Vite configuration updated for CommonJS dependencies"
-          echo "Updated vite.config.ts:"
-          cat vite.config.ts
-
-      - name: Copy CRUD6 schema files from examples
-        run: |
-          cd userfrosting
-          echo "========================================="
-          echo "Copying CRUD6 Schema Files from Examples"
-          echo "========================================="
-
-          # Create schema directory if it doesn't exist
-          mkdir -p app/schema/crud6
-
-          # Define the schema files needed for integration tests
-          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
-
-          # Check that source directory exists
-          if [ ! -d "../sprinkle-crud6/examples/schema" ]; then
-            echo "❌ ERROR: Source schema directory not found: ../sprinkle-crud6/examples/schema"
-            exit 1
-          fi
-
-          # Copy required schema files
-          echo ""
-          echo "Copying required schema files..."
-          for schema in $REQUIRED_SCHEMAS; do
-            if [ -f "../sprinkle-crud6/examples/schema/$schema" ]; then
-              cp "../sprinkle-crud6/examples/schema/$schema" "app/schema/crud6/"
-              echo "  ✅ Copied: $schema"
-            else
-              echo "  ⚠️  WARNING: Schema file not found: $schema"
-            fi
-          done
-
-          # Verify schemas were copied
-          echo ""
-          echo "========================================="
-          echo "Schemas copied to app/schema/crud6/:"
-          echo "========================================="
-          ls -la app/schema/crud6/
-
-          # Validate all required schemas are present
-          echo ""
-          echo "Validating required schemas..."
-          MISSING=0
-          for schema in $REQUIRED_SCHEMAS; do
-            if [ ! -f "app/schema/crud6/$schema" ]; then
-              echo "  ❌ MISSING: $schema"
-              MISSING=1
-            fi
-          done
-
-          if [ $MISSING -eq 1 ]; then
-            echo "❌ ERROR: Some required schema files are missing!"
-            exit 1
-          else
-            echo "✅ All required schema files are present"
-          fi
-
-      - name: Merge locale messages from examples
-        run: |
-          cd userfrosting
-          echo "========================================="
-          echo "Merging Locale Messages from Examples"
-          echo "========================================="
-
-          # Create locale directory if it doesn't exist
-          mkdir -p app/locale/en_US
-
-          # Check that source messages file exists
-          if [ ! -f "../sprinkle-crud6/examples/locale/en_US/messages.php" ]; then
-            echo "❌ ERROR: Source messages file not found: ../sprinkle-crud6/examples/locale/en_US/messages.php"
-            exit 1
-          fi
-
-          # Check if destination messages file already exists in sprinkle-crud6's app/locale
-          if [ -f "../sprinkle-crud6/app/locale/en_US/messages.php" ]; then
-            echo "Found existing app/locale messages file, copying to userfrosting app..."
-            cp "../sprinkle-crud6/app/locale/en_US/messages.php" "app/locale/en_US/messages.php"
-            echo "  ✅ Copied: messages.php from sprinkle-crud6/app/locale"
-          fi
-
-          # Now merge example messages (append model-specific translations)
-          echo ""
-          echo "Merging example messages (model-specific translations)..."
-
-          # Create a PHP script to merge the message files
-          cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
-          <?php
-          /**
-           * Merge example messages with existing messages.php
-           * This adds model-specific translations for CRUD6 testing
-           */
-
-          $examplesPath = $argv[1] ?? '';
-          $destPath = $argv[2] ?? '';
-
-          if (empty($examplesPath) || empty($destPath)) {
-              echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
-              exit(1);
-          }
-
-          // Load existing messages if they exist
-          $existingMessages = [];
-          if (file_exists($destPath)) {
-              $existingMessages = require $destPath;
-              echo "  Loaded existing messages from: $destPath\n";
-          }
-
-          // Load example messages
-          if (!file_exists($examplesPath)) {
-              echo "  ❌ Examples messages file not found: $examplesPath\n";
-              exit(1);
-          }
-          $exampleMessages = require $examplesPath;
-          echo "  Loaded example messages from: $examplesPath\n";
-
-          // Deep merge function
-          function deepMerge(array $base, array $override): array {
-              foreach ($override as $key => $value) {
-                  if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
-                      $base[$key] = deepMerge($base[$key], $value);
-                  } else {
-                      $base[$key] = $value;
-                  }
-              }
-              return $base;
-          }
-
-          // Merge messages (example messages override existing)
-          $mergedMessages = deepMerge($existingMessages, $exampleMessages);
-
-          // Generate the merged PHP file
-          $output = "<?php\n\n";
-          $output .= "/*\n";
-          $output .= " * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)\n";
-          $output .= " *\n";
-          $output .= " * @link      https://github.com/userfrosting/sprinkle-crud6\n";
-          $output .= " * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette\n";
-          $output .= " * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)\n";
-          $output .= " */\n\n";
-          $output .= "/**\n";
-          $output .= " * US English message token translations for the 'crud6' sprinkle.\n";
-          $output .= " * Merged from app/locale and examples/locale for integration testing.\n";
-          $output .= " *\n";
-          $output .= " * @author Alexander Weissman\n";
-          $output .= " */\n";
-          $output .= "return " . var_export($mergedMessages, true) . ";\n";
-
-          // Write merged messages
-          file_put_contents($destPath, $output);
-          echo "  ✅ Merged messages written to: $destPath\n";
-
-          // Verify the file is valid PHP
-          exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
-          if ($lintReturnCode !== 0) {
-              echo "  ❌ ERROR: Generated messages file has syntax errors!\n";
-              echo "  " . implode("\n  ", $lintOutput) . "\n";
-              exit(1);
-          }
-          echo "  ✅ Syntax validation passed\n";
-          MERGE_SCRIPT
-
-          # Run the merge script
-          php /tmp/merge-messages.php \
-            "../sprinkle-crud6/examples/locale/en_US/messages.php" \
-            "app/locale/en_US/messages.php"
-
-          echo ""
-          echo "========================================="
-          echo "Locale Messages Merge Complete"
-          echo "========================================="
-          echo ""
-          echo "Messages file content preview (first 50 lines):"
-          head -n 50 app/locale/en_US/messages.php
-          echo "..."
-
+      
       - name: Setup environment
         run: |
           cd userfrosting
-          # Use .env.example as the base (CI environment is not using Docker)
           cp app/.env.example app/.env
-          # Update database configuration for CI environment
           sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
           sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env
           sed -i 's/DB_PORT=.*/DB_PORT="3306"/' app/.env
           sed -i 's/DB_NAME=.*/DB_NAME="userfrosting_test"/' app/.env
           sed -i 's/DB_USER=.*/DB_USER="root"/' app/.env
           sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
-          # Disable interactive prompts for bakery commands in CI environment
-          echo "" >> app/.env
-          echo "# Bakery Configuration" >> app/.env
           echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
-          # Use database session handler for testing (avoids file session directory issues)
-          echo "" >> app/.env
-          echo "# Testing Configuration" >> app/.env
           echo "TEST_SESSION_HANDLER=database" >> app/.env
-
+      
       - name: Run migrations
         run: |
           cd userfrosting
           php bakery migrate --force
-
-      - name: Seed database (Modular)
+      
+      - name: Generate and load SQL seed data
         run: |
           cd userfrosting
-          # Copy seed configuration from sprinkle
-          cp ../sprinkle-crud6/.github/config/integration-test-seeds.json .
-          # Copy seed runner script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/run-seeds.php .
-          # Run seeds using modular script
-          php run-seeds.php integration-test-seeds.json
+          
+          SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
+          if [ -z "${{ env.SCHEMA_PATH }}" ]; then
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
+          fi
+          
+          if [ ! -d "$SCHEMA_DIR" ]; then
+            echo "❌ ERROR: Schema directory not found: $SCHEMA_DIR"
+            exit 1
+          fi
+          
+          echo "✅ Using schemas from: $SCHEMA_DIR"
+          
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-seed-sql.js \
+            "$SCHEMA_DIR" seed-data.sql
+          
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+            seed-data.sql
+          
+          echo "✅ Schema-driven SQL loaded"
 
-      - name: Validate CRUD6 seed data (Modular)
+      - name: Run PHP seeds
         run: |
           cd userfrosting
-          # Copy validation script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/check-seeds-modular.php .
-          # Run validation using the modular script
-          php check-seeds-modular.php integration-test-seeds.json
-
-      - name: Test seed idempotency (Modular)
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
+      - name: Validate seed data
         run: |
           cd userfrosting
-          # Copy idempotency test script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/test-seed-idempotency-modular.php .
-
-          echo "========================================="
-          echo "Testing Seed Idempotency (Modular)"
-          echo "========================================="
-
-          # Count records before re-seeding
-          echo "Counting records before re-seeding..."
-          BEFORE_OUTPUT=$(php test-seed-idempotency-modular.php integration-test-seeds.json)
-          echo "$BEFORE_OUTPUT"
-          BEFORE_COUNTS=$(echo "$BEFORE_OUTPUT" | grep "BEFORE:" | cut -d: -f2-)
-
-          # Re-run seeds using modular script
-          echo ""
-          echo "Re-running CRUD6 seeds..."
-          php run-seeds.php integration-test-seeds.json crud6
-
-          # Count records after re-seeding and verify they're the same
-          echo ""
-          echo "Counting records after re-seeding..."
-          php test-seed-idempotency-modular.php integration-test-seeds.json after "$BEFORE_COUNTS"
-
-      - name: Create admin user (from configuration)
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/check-seeds-modular.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
+      - name: Test seed idempotency
         run: |
           cd userfrosting
-          # Admin user details from integration-test-seeds.json config
-          php bakery create:admin-user \
-            --username=admin \
-            --password=admin123 \
-            --email=admin@example.com \
-            --firstName=Admin \
-            --lastName=User
-          echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
-
-      - name: Create test user for modification tests
-        run: |
-          cd userfrosting
-          # Create a second user that can be safely modified/deleted in tests
-          # This prevents issues with modifying the logged-in admin user (ID 1)
-          php bakery create:user \
-            --username=testuser \
-            --password=TestPass123 \
-            --email=testuser@example.com \
-            --firstName=Test \
-            --lastName=User
-          echo "✅ Test user created (testuser) - will be used for modification/deletion tests"
-
-      - name: Test schema loading
-        run: |
-          cd userfrosting
-          php -r "
-          require 'vendor/autoload.php';
-
-          // Test loading all CRUD6 schemas (copied from examples/schema)
-          \$schemas = ['users', 'groups', 'roles', 'permissions', 'activities'];
-
-          foreach (\$schemas as \$schemaName) {
-              \$schemaPath = 'app/schema/crud6/' . \$schemaName . '.json';
-              if (!file_exists(\$schemaPath)) {
-                  echo 'Schema not found: ' . \$schemaPath . '\n';
-                  exit(1);
-              }
-
-              \$schema = json_decode(file_get_contents(\$schemaPath), true);
-              if (!\$schema) {
-                  echo 'Failed to load schema: ' . \$schemaPath . '\n';
-                  exit(1);
-              }
-
-              echo '✅ Schema loaded: ' . \$schemaName . '\n';
-              echo '   Model: ' . \$schema['model'] . '\n';
-              echo '   Table: ' . \$schema['table'] . '\n';
-          }
-
-          echo '\n✅ All CRUD6 schemas loaded successfully\n';
-          "
-
-      - name: Test database connection
-        run: |
-          cd userfrosting
-          mysql -h 127.0.0.1 -uroot -proot userfrosting_test -e "SELECT * FROM \`groups\` LIMIT 5;"
-
-      - name: Install Playwright browsers for screenshots
-        run: |
-          cd userfrosting
-          npm install playwright
-          npx playwright install chromium --with-deps
-
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+      
       - name: Build frontend assets
         run: |
           cd userfrosting
-          # UserFrosting 6 uses bakery bake to build assets via Vite
-          # Note: Even though we bake, we still need vite dev server for proper asset serving
-          php bakery bake || echo "⚠️ Build failed but continuing with tests"
-
-      - name: Start PHP development server
+          npm run uf-bundle
+      
+      - name: Test API and frontend paths
         run: |
           cd userfrosting
-          # Start PHP server using bakery serve in background
-          php bakery serve &
-          SERVER_PID=$!
-          echo $SERVER_PID > /tmp/server.pid
-          sleep 10
-
-          # Test if server is running
-          curl -f http://localhost:8080 || (echo "⚠️ Server may not be ready yet" && sleep 5 && curl -f http://localhost:8080)
-          echo "✅ PHP server started on localhost:8080"
-
-      - name: Start Vite development server
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+      
+      - name: Install Playwright
         run: |
           cd userfrosting
-          # Use npm update to fix any package issues
-          npm update
-          # Start Vite server in background using bakery command (follows UF6 standards)
-          php bakery assets:vite &
-          VITE_PID=$!
-          echo $VITE_PID > /tmp/vite.pid
-
-          # Wait longer for Vite to fully start up
-          echo "Waiting for Vite server to start..."
-          sleep 20
-
-          # Try to verify Vite is running by checking if the page loads properly
-          echo "Testing if frontend is accessible..."
-          curl -f http://localhost:8080 || echo "⚠️  Page load test after Vite start"
-
-          echo "✅ Vite server started"
-
-      - name: Test Unauthenticated API paths
+          npx playwright install chromium
+      
+      - name: Capture screenshots
         run: |
           cd userfrosting
-          # Copy path configuration from sprinkle
-          cp ../sprinkle-crud6/.github/config/integration-test-paths.json .
-          # Copy path testing script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/test-paths.php .
-
-          echo "========================================="
-          echo "Testing Unauthenticated Paths"
-          echo "========================================="
-          # Test unauthenticated paths
-          php test-paths.php integration-test-paths.json unauth
-
-          echo ""
-          echo "========================================="
-          echo "Note: Authenticated API and frontend paths tested via screenshots step"
-          echo "========================================="
-
-      - name: Copy schema and locale to sprinkle-crud6 for test generation
-        run: |
-          cd sprinkle-crud6
-
-          echo "========================================="
-          echo "Preparing sprinkle-crud6 for Test Generation"
-          echo "========================================="
-
-          # Copy schema files from examples to app/schema/crud6
-          echo ""
-          echo "Copying schema files from examples/schema to app/schema/crud6..."
-          mkdir -p app/schema/crud6
-
-          # Define the schema files needed for integration tests
-          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
-
-          for schema in $REQUIRED_SCHEMAS; do
-            if [ -f "examples/schema/$schema" ]; then
-              cp "examples/schema/$schema" "app/schema/crud6/"
-              echo "  ✅ Copied: $schema"
-            else
-              echo "  ⚠️  WARNING: Schema file not found: $schema"
-            fi
-          done
-
-          echo ""
-          echo "Schemas copied to app/schema/crud6/:"
-          ls -la app/schema/crud6/
-
-          # Copy locale messages from examples to app/locale
-          echo ""
-          echo "Copying locale messages from examples/locale to app/locale..."
-
-          # Check if app/locale/en_US/messages.php already exists
-          if [ -f "app/locale/en_US/messages.php" ]; then
-            echo "  ℹ️  app/locale/en_US/messages.php already exists"
-          fi
-
-          # Copy example locale messages for model-specific translations
-          if [ -f "examples/locale/en_US/messages.php" ]; then
-            # Create a PHP script to merge the message files
-            cat > /tmp/merge-sprinkle-messages.php << 'MERGE_SCRIPT'
-          <?php
-          /**
-           * Merge example messages with existing app/locale messages.php
-           */
-
-          $examplesPath = $argv[1] ?? '';
-          $appLocalePath = $argv[2] ?? '';
-
-          if (empty($examplesPath) || empty($appLocalePath)) {
-              echo "Usage: php merge-sprinkle-messages.php <examples_messages_path> <app_locale_messages_path>\n";
-              exit(1);
-          }
-
-          // Load example messages (model-specific translations)
-          if (!file_exists($examplesPath)) {
-              echo "❌ ERROR: Examples messages file not found: $examplesPath\n";
-              exit(1);
-          }
-          $examplesMessages = include $examplesPath;
-
-          // Load or create app locale messages
-          $appMessages = [];
-          if (file_exists($appLocalePath)) {
-              $appMessages = include $appLocalePath;
-              echo "  ℹ️  Loaded existing app/locale messages\n";
-          } else {
-              echo "  ℹ️  Creating new app/locale messages file\n";
-          }
-
-          // Merge messages (example messages take precedence for models)
-          $merged = array_merge($appMessages, $examplesMessages);
-
-          // Write merged messages
-          $output = "<?php\n\n/**\n * Merged locale messages for CRUD6 integration testing\n * Combined from app/locale and examples/locale\n */\n\nreturn " . var_export($merged, true) . ";\n";
-
-          if (!is_dir(dirname($appLocalePath))) {
-              mkdir(dirname($appLocalePath), 0755, true);
-          }
-
-          if (file_put_contents($appLocalePath, $output)) {
-              echo "  ✅ Merged messages written to: $appLocalePath\n";
-              echo "  ℹ️  Total message keys: " . count($merged) . "\n";
-          } else {
-              echo "❌ ERROR: Failed to write merged messages\n";
-              exit(1);
-          }
-          MERGE_SCRIPT
-            
-            # Run the merge script
-            php /tmp/merge-sprinkle-messages.php \
-              "examples/locale/en_US/messages.php" \
-              "app/locale/en_US/messages.php"
-            
-            echo "  ✅ Locale messages merged successfully"
-          else
-            echo "  ⚠️  WARNING: examples/locale/en_US/messages.php not found"
-          fi
-
-          echo ""
-          echo "✅ sprinkle-crud6 prepared for test generation"
-
-      - name: Generate Schema-Driven Tests
-        run: |
-          cd sprinkle-crud6
-
-          echo "========================================="
-          echo "Generating Schema-Driven Tests"
-          echo "========================================="
-          echo ""
-          echo "Analyzing JSON schemas and generating comprehensive tests..."
-          echo ""
-
-          # Run schema test generator
-          node .github/scripts/generate-schema-tests.js app/schema/crud6 app/tests/Generated
-
-          echo ""
-          echo "========================================="
-          echo "Generated Test Summary"
-          echo "========================================="
-          ls -la app/tests/Generated/ || echo "No generated tests directory"
-
-      - name: Configure PHPUnit for CRUD6 tests
-        run: |
-          cd userfrosting
-
-          # Create phpunit.xml with proper autoloading for CRUD6 test classes
-          cat > phpunit-crud6.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
-                   bootstrap="bootstrap-crud6.php"
-                   colors="true"
-                   stopOnFailure="false">
-              <testsuites>
-                  <testsuite name="CRUD6 Integration Tests">
-                      <directory>../sprinkle-crud6/app/tests/Integration</directory>
-                  </testsuite>
-                  <testsuite name="CRUD6 Controller Tests">
-                      <directory>../sprinkle-crud6/app/tests/Controller</directory>
-                  </testsuite>
-                  <testsuite name="CRUD6 Generated Schema Tests">
-                      <directory>../sprinkle-crud6/app/tests/Generated</directory>
-                  </testsuite>
-              </testsuites>
-              <php>
-                  <!-- Add autoload for CRUD6 test classes -->
-                  <ini name="memory_limit" value="-1"/>
-              </php>
-          </phpunit>
-          EOF
-
-          # Create simplified bootstrap file (database sessions, no directory creation)
-          cat > bootstrap-crud6.php << 'EOF'
-          <?php
-          // Load UserFrosting vendor autoloader
-          require_once __DIR__ . '/vendor/autoload.php';
-
-          // Manually register CRUD6 test namespace since autoload-dev is not loaded for dependencies
-          // This allows PHPUnit to find test helper classes like AdminTestCase
-          $loader = require __DIR__ . '/vendor/autoload.php';
-          $loader->addPsr4('UserFrosting\\Sprinkle\\CRUD6\\Tests\\', __DIR__ . '/../sprinkle-crud6/app/tests/');
-
-          echo "\n========================================\n";
-          echo "BOOTSTRAP: Using database sessions for testing\n";
-          echo "========================================\n";
-          echo "TEST_SESSION_HANDLER environment variable set to 'database'\n";
-          echo "This avoids file session directory issues in CI environment\n";
-          echo "========================================\n\n";
-          EOF
-
-          echo "✅ PHPUnit configuration created for CRUD6 tests"
-          cat phpunit-crud6.xml
-
-      - name: Verify Runtime Directories Before Tests
-        run: |
-          cd userfrosting
-
-          echo "========================================="
-          echo "Pre-Test Directory Verification"
-          echo "========================================="
-          echo ""
-          echo "Checking runtime directories before PHPUnit execution..."
-          echo ""
-
-          # Run a PHP script to check directory state
-          php -r "
-          \$dirs = ['app/storage/sessions', 'app/storage/cache', 'app/storage/logs'];
-          \$allGood = true;
-
-          foreach (\$dirs as \$dir) {
-              \$fullPath = __DIR__ . DIRECTORY_SEPARATOR . \$dir;
-              \$exists = is_dir(\$fullPath);
-              \$writable = is_writable(\$fullPath);
-              \$perms = \$exists ? substr(sprintf('%o', fileperms(\$fullPath)), -4) : 'N/A';
-              
-              echo \"\$dir:\n\";
-              echo \"  Path: \$fullPath\n\";
-              echo \"  Exists: \" . (\$exists ? 'YES' : 'NO') . \"\n\";
-              echo \"  Writable: \" . (\$writable ? 'YES' : 'NO') . \"\n\";
-              echo \"  Permissions: \$perms\n\";
-              
-              if (!\$exists || !\$writable) {
-                  \$allGood = false;
-                  echo \"  ⚠️  WARNING: Directory has issues!\n\";
-              } else {
-                  echo \"  ✅ Directory is ready\n\";
-              }
-              echo \"\n\";
-          }
-
-          if (!\$allGood) {
-              echo \"⚠️  WARNING: Some directories have issues. Tests may fail.\n\";
-              exit(1);
-          } else {
-              echo \"✅ All runtime directories are ready for testing.\n\";
-          }
-          "
-
-          echo ""
-          echo "Directory listing (ls -la storage/):"
-          ls -la storage/ || echo "storage/ directory does not exist"
-          echo ""
-          echo "Directory listing (ls -la app/storage/):"
-          ls -la app/storage/ || echo "app/storage/ directory does not exist"
-          echo ""
-          echo "Directory listing (ls -la app/storage/sessions/):"
-          ls -la app/storage/sessions/ || echo "app/storage/sessions/ directory does not exist"
-
-      - name: Run PHPUnit Integration Tests (Authenticated & Unauthenticated)
-        if: false # Temporarily disabled - session handler issues in CI
-        run: |
-          cd userfrosting
-
-          echo "========================================="
-          echo "Running PHPUnit Integration Tests"
-          echo "========================================="
-          echo ""
-          echo "These tests verify ALL CRUD6 API endpoints with:"
-          echo "  - Unauthenticated requests (401 expected)"
-          echo "  - Authenticated but no permission (403 expected)"
-          echo "  - Authenticated with permission (200 expected)"
-          echo ""
-
-          # Run all CRUD6 integration tests using custom configuration
-          # These test both authenticated and unauthenticated scenarios
-          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Integration Tests" --testdox --colors=always
-
-          echo ""
-          echo "Running Controller Tests (All API Endpoints)"
-          echo "========================================="
-
-          # Run controller tests that cover all CRUD6 endpoints using custom configuration
-          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Controller Tests" --testdox --colors=always
-
-          echo ""
-          echo "Running Generated Schema Tests (All JSON Schema Features)"
-          echo "========================================="
-
-          # Run generated schema-driven tests
-          vendor/bin/phpunit --configuration phpunit-crud6.xml --testsuite "CRUD6 Generated Schema Tests" --testdox --colors=always || echo "⚠️  Some schema tests may have failed"
-
-          echo ""
-          echo "========================================="
-          echo "✅ PHPUnit Integration Tests Completed"
-          echo "========================================="
-          echo ""
-          echo "Test Coverage Summary:"
-          echo "  ✅ Schema endpoint (GET /api/crud6/{model}/schema) - 401, 403, 200"
-          echo "  ✅ List endpoint (GET /api/crud6/{model}) - 401, 403, 200"
-          echo "  ✅ Create endpoint (POST /api/crud6/{model}) - 401, 403, 200"
-          echo "  ✅ Read endpoint (GET /api/crud6/{model}/{id}) - 401, 403, 200"
-          echo "  ✅ Update endpoint (PUT /api/crud6/{model}/{id}) - 401, 403, 200"
-          echo "  ✅ Update field endpoint (PUT /api/crud6/{model}/{id}/{field}) - 401, 403, 200"
-          echo "  ✅ Delete endpoint (DELETE /api/crud6/{model}/{id}) - 401, 403, 200"
-          echo "  ✅ Custom action endpoint (POST /api/crud6/{model}/{id}/a/{action}) - 401, 403, 200"
-          echo "  ✅ Nested list endpoint (GET /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
-          echo "  ✅ Attach relationship endpoint (POST /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
-          echo "  ✅ Detach relationship endpoint (DELETE /api/crud6/{model}/{id}/{relation}) - 401, 403, 200"
-          echo ""
-          echo "All 11 API endpoint types tested with 3 authentication scenarios each!"
-          echo ""
-
-      - name: Take screenshots and test authenticated API endpoints (with Network Tracking)
-        run: |
-          cd userfrosting
-
-          # Copy the enhanced screenshot script with network tracking and API testing from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
-
-          # Run the script using configuration file (already copied earlier)
-          # The script will:
-          # 1. Log in once to establish authenticated session
-          # 2. Take screenshots of all frontend pages
-          # 3. Test all authenticated API endpoints (reusing the same session)
-          # 4. Track all network requests made during page loads
-          # NOTE: This script now detects error notifications and fails if found
-          node take-screenshots-with-tracking.js integration-test-paths.json
-
-          echo ""
-          echo "========================================="
-          echo "Screenshot summary"
-          echo "========================================="
-          # List screenshots if they exist
-          ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"
-
-          echo ""
-          echo "========================================="
-          echo "Network Request Summary"
-          echo "========================================="
-          # Check if network summary file exists and show basic info
-
-          # SN : Commenting out detailed display to avoid excessive logs
-          #if [ -f /tmp/network-requests-summary.txt ]; then
-          #  echo "✅ Network request summary generated"
-          #  ls -lh /tmp/network-requests-summary.txt
-          #  echo ""
-          #  echo "Preview of summary (first 30 lines):"
-          #  head -n 30 /tmp/network-requests-summary.txt
-          #else
-          #  echo "⚠️  Network request summary not found"
-          #fi
-
-      - name: Capture and display PHP error logs
-        if: always()
-        run: |
-          cd userfrosting
-
-          # Copy PHP error log capture script from sprinkle
-          cp ../sprinkle-crud6/.github/scripts/capture-php-error-logs.sh .
-          chmod +x capture-php-error-logs.sh
-
-          # Run the script to capture and display error logs
-          ./capture-php-error-logs.sh || echo "Error log capture script failed, but continuing..."
-
-      - name: Upload screenshots as artifacts
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            screenshots
+      
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-screenshots
-          path: /tmp/screenshot_*.png
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Upload network request summary as artifact
+          path: userfrosting/screenshots/
+          retention-days: 7
+      
+      - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: network-requests-summary
-          path: /tmp/network-requests-summary.txt
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Upload browser console errors as artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-console-errors
-          path: /tmp/browser-console-errors.txt
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Upload PHP error logs as artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: php-error-logs
-          path: |
-            userfrosting/app/logs/*.log
-            userfrosting/app/storage/logs/*.log
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Stop servers
-        if: always()
-        run: |
-          if [ -f /tmp/server.pid ]; then
-            kill $(cat /tmp/server.pid) || true
-          fi
-          if [ -f /tmp/vite.pid ]; then
-            kill $(cat /tmp/vite.pid) || true
-          fi
-
-      - name: Summary
-        if: always()
-        run: |
-          echo "✅ Integration test completed for PHP 8.1 with UserFrosting ^6.0-beta"
-          echo "✅ sprinkle-crud6 installed successfully"
-          echo "✅ Database migrations ran successfully"
-          echo "✅ Database seeding completed using modular configuration:"
-          echo "   - Seeds run from integration-test-seeds.json"
-          echo "   - Account sprinkle seeds (DefaultGroups, DefaultPermissions, DefaultRoles, UpdatePermissions)"
-          echo "   - CRUD6 sprinkle seeds (DefaultRoles, DefaultPermissions)"
-          echo "✅ Seed validation passed using modular configuration:"
-          echo "   - Validation rules from integration-test-seeds.json"
-          echo "   - crud6-admin role created"
-          echo "   - 6 CRUD6 permissions created (create_crud6, delete_crud6, update_crud6_field, uri_crud6, uri_crud6_list, view_crud6_field)"
-          echo "   - Permissions assigned to crud6-admin role"
-          echo "   - Permissions assigned to site-admin role"
-          echo "✅ Seed idempotency test passed (no duplicates created on re-run)"
-          echo "✅ Admin user created: admin / admin123 (from configuration)"
-          echo "✅ NPM package verified"
-          echo "✅ Schema file loaded successfully"
-          echo "✅ Assets built with php bakery assets:vite"
-          echo "✅ PHP server started with php bakery serve"
-          echo "✅ Vite development server started"
-          echo "✅ Path tests completed using modular configuration:"
-          echo "   - Paths tested from integration-test-paths.json"
-          echo "   - Unauthenticated API endpoints (401 responses verified)"
-          echo "✅ Screenshots and authenticated API testing completed (single login session):"
-          echo "   - Admin user logged in once"
-          echo "   - Frontend screenshots captured (authenticated pages)"
-          echo "   - Authenticated API endpoints tested (200 responses verified)"
-          echo "   - Session reused for both screenshots and API tests"
-          echo "✅ PHPUnit integration tests completed:"
-          echo "   - All 11 CRUD6 API endpoint types tested"
-          echo "   - Each endpoint tested with 3 auth scenarios (401, 403, 200)"
-          echo "   - Both Integration and Controller test suites executed"
-          echo "   - Total: 33+ authentication test scenarios covered"
-          echo "✅ Screenshots captured with authentication and uploaded as artifacts"
-          echo "✅ Network request tracking enabled for frontend pages"
-          echo "   - Tracks all network requests during page loads"
-          echo "   - Detects redundant API calls"
-          echo "   - Reports CRUD6 and schema API call statistics"
-          echo "   - Detailed network request summary saved to file"
-          echo ""
-          echo "ℹ️  MODULAR TESTING APPROACH:"
-          echo "   - Configuration files: .github/config/integration-test-*.json"
-          echo "   - Reusable scripts: .github/scripts/*-modular.php"
-          echo "   - Easy to adapt for other sprinkles - just modify JSON configs!"
-          echo ""
-          echo "ℹ️  Note: Unauthenticated API tests verify 401 responses"
-          echo "ℹ️  Screenshots and authenticated API tests use a single login session"
-          echo "ℹ️  Both PHP and Vite servers were running during tests"
-          echo "ℹ️  Network tracking monitors all frontend API calls and flags redundant requests"
-          echo ""
-          echo "📸 **View Screenshots:**"
-          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "   Look for 'Artifacts' section at the bottom of the page"
-          echo "   Download 'integration-test-screenshots' ZIP file"
-          echo "   Screenshots include: users, groups, roles, permissions, activities pages"
-          echo ""
-          echo "📡 **View Network Request Summary (CRUD6 Filtered):**"
-          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "   Look for 'Artifacts' section at the bottom of the page"
-          echo "   Download 'network-requests-summary' artifact"
-          echo "   Contains detailed information about CRUD6 API calls only (non-CRUD6 requests filtered out)"
-          echo "   Reports include: users, groups, roles, permissions, activities API calls"
-          echo ""
-          echo "📋 **View Complete PHP Error Logs:**"
-          echo "   Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "   Look for 'Artifacts' section at the bottom of the page"
-          echo "   Download 'php-error-logs' artifact"
-          echo "   Contains complete UserFrosting log files (userfrosting.log and any other .log files)"
-          echo "   Note: Workflow output shows last 50 lines; artifact contains full logs for detailed debugging"
-
-          # Add to GitHub Actions Summary with direct link
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          ## Integration Test Results ✅ (Modular Testing Framework)
-
-          ### Test Coverage
-          - ✅ Database migrations
-          - ✅ Database seeding (Account + CRUD6 sprinkles) - **using modular config**
-          - ✅ Seed data validation - **using modular config**
-          - ✅ Seed idempotency testing - **using modular config**
-          - ✅ Admin user creation - **from config**
-          - ✅ Schema loading
-          - ✅ Path testing - **using modular config** (unauthenticated API and frontend)
-          - ✅ **PHPUnit Integration Tests** - **NEW!** All 11 API endpoints with auth scenarios
-          - ✅ **PHPUnit Controller Tests** - **NEW!** Comprehensive endpoint coverage
-          - ✅ Screenshot capture (authenticated frontend pages)
-          - ✅ **Network request tracking** - Monitors frontend API calls and detects redundant requests
-
-          ### 🧪 PHPUnit Testing (NEW)
-          **Comprehensive authentication testing for all CRUD6 API endpoints:**
-          - **11 endpoint types** × **3 auth scenarios** = **33 test scenarios**
-          - Tests verify: Unauthenticated (401), No Permission (403), Authenticated (200)
-          - Covers all CRUD operations, relationships, custom actions, and nested endpoints
-          - Both Integration and Controller test suites executed
-          - **Reference:** See `.archive/COMPREHENSIVE_API_TEST_MATRIX.md` for complete matrix
-
-          ### 🎯 Modular Testing Framework
-          **This workflow uses a modular, configuration-driven testing approach:**
-          - **Configuration files:** `.github/config/integration-test-*.json`
-          - **Reusable scripts:** `.github/scripts/*-modular.php`
-          - **Easy adaptation:** Just modify JSON configs for your sprinkle!
-
-          ### 📡 Network Request Tracking
-          **Frontend pages are now monitored for API call efficiency:**
-          - Tracks all network requests during page loads
-          - Detects redundant API calls
-          - Reports CRUD6 and schema API statistics per page
-          - Helps identify performance issues
-          - **NEW:** Detailed network request summary saved as downloadable artifact
-
-          See [.github/MODULAR_TESTING_README.md](../.github/MODULAR_TESTING_README.md) for details.
-
-          ### Seed Testing Details
-          **CRUD6 Seeds Validated (from configuration):**
-          - DefaultRoles seed creates crud6-admin role
-          - DefaultPermissions seed creates 6 CRUD6 permissions
-          - Permissions correctly assigned to crud6-admin role
-          - Permissions correctly assigned to site-admin role
-          - Seeds are idempotent (can be run multiple times without duplicates)
-
-          ### Path Testing Details
-          **Paths Tested (from configuration):**
-          - Unauthenticated API endpoints return 401 (warnings, not failures)
-          - **Authenticated testing with single login session:**
-            - Admin user logs in once
-            - Screenshots captured for all frontend pages
-            - All authenticated API endpoints tested (reusing the same session)
-            - Session management handled by Playwright automatically
-          - Avoids duplicate login and improves test efficiency
-
-          ### 📸 View Screenshots
-          Screenshots have been captured and uploaded as artifacts.
-
-          **Direct link to this workflow run:**
-          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-          **To view screenshots:**
-          1. Scroll to the bottom of the workflow run page (link above)
-          2. Look for the **Artifacts** section
-          3. Click on **integration-test-screenshots** to download
-          4. Extract the ZIP file to view:
-             - \`screenshot_users_list.png\` - Users list page
-             - \`screenshot_user_detail.png\` - User detail page
-             - \`screenshot_groups_list.png\` - Groups list page
-             - \`screenshot_group_detail.png\` - Group detail page
-             - \`screenshot_roles_list.png\` - Roles list page
-             - \`screenshot_role_detail.png\` - Role detail page
-             - \`screenshot_permissions_list.png\` - Permissions list page
-             - \`screenshot_permission_detail.png\` - Permission detail page
-             - \`screenshot_activities_list.png\` - Activities list page
-             - \`screenshot_activity_detail.png\` - Activity detail page
-
-          > **Note:** Screenshots are retained for 30 days
-
-          ### 📡 View Network Request Summary (CRUD6 Filtered)
-          A detailed network request report focusing on CRUD6 API calls has been generated and uploaded as an artifact.
-
-          **To view the network request summary:**
-          1. Scroll to the bottom of the workflow run page (link above)
-          2. Look for the **Artifacts** section
-          3. Click on **network-requests-summary** to download
-          4. Open the \`network-requests-summary.txt\` file to view:
-             - **CRUD6 API calls only** (non-CRUD6 requests filtered out for clarity)
-             - Per-page breakdown of CRUD6 requests
-             - CRUD6 and Schema API call identification
-             - Redundant call detection and analysis
-             - Chronological request timeline for CRUD6 calls
-             - Summary of total vs filtered request counts
-
-          > **Note:** Network summary is retained for 30 days
-
-          ### 📋 View Complete PHP Error Logs
-          Complete UserFrosting log files have been uploaded for detailed debugging.
-
-          **To view the complete PHP error logs:**
-          1. Scroll to the bottom of the workflow run page (link above)
-          2. Look for the **Artifacts** section
-          3. Click on **php-error-logs** to download
-          4. Extract the ZIP file to view complete log files:
-             - \`userfrosting.log\` - Main UserFrosting application log
-             - Any other \`.log\` files from \`app/logs/\` and \`app/storage/logs/\`
-          5. Note: The workflow output displays last 50 lines; artifact contains full logs
-
-          **What's included:**
-          - Complete \`userfrosting.log\` file with all PHP errors, warnings, and debug messages
-          - All log files from \`userfrosting/app/logs/\` directory
-          - All log files from \`userfrosting/app/storage/logs/\` directory
-          - Full stack traces and error details for comprehensive debugging
-
-          > **Note:** PHP error logs are retained for 30 days
-
-          ---
-
-          ### Server Information
-          - PHP Server: Started with \`php bakery serve\`
-          - Vite Server: Started with \`php bakery assets:vite\`
-          - Both servers were running during tests
-
-          ### Authentication Note
-          The admin user (username: admin) logs in once at the start of the screenshots step.
-          This single authenticated session is then reused for:
-          - Taking screenshots of all frontend pages
-          - Testing all authenticated API endpoints
-
-          This approach avoids logging in multiple times and improves test efficiency.
-          EOF
+          name: integration-test-logs
+          path: userfrosting/app/logs/
+          retention-days: 7

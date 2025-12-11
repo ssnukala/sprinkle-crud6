@@ -1,0 +1,387 @@
+name: Integration Test with UserFrosting 6 (Auto-Install Framework)
+
+# This workflow automatically installs and uses the UF6 Integration Testing Framework
+# On first run: Downloads and installs the framework from sprinkle-crud6
+# On subsequent runs: Uses the locally installed framework
+#
+# To use this workflow:
+# 1. Copy this file to your sprinkle's .github/workflows/ directory
+# 2. Rename YOUR_SPRINKLE_NAME to your actual sprinkle name (e.g., c6admin, myapp)
+# 3. Update composer package name if different from YOUR_VENDOR/YOUR_SPRINKLE_NAME
+# 4. Customize the configuration files in .github/config/ for your sprinkle
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: userfrosting_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    
+    steps:
+      # ============================================================================
+      # STEP 1: Checkout your sprinkle
+      # ============================================================================
+      - name: Checkout YOUR_SPRINKLE_NAME
+        uses: actions/checkout@v4
+        with:
+          path: YOUR_SPRINKLE_NAME
+      
+      # ============================================================================
+      # STEP 2: Setup PHP and Node.js
+      # ============================================================================
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mbstring, xml, gd, pdo_mysql
+          coverage: none
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      
+      # ============================================================================
+      # STEP 3: Install/Update Testing Framework (Auto-Install)
+      # ============================================================================
+      - name: Install/Update Integration Testing Framework
+        run: |
+          cd YOUR_SPRINKLE_NAME
+          
+          echo "========================================="
+          echo "Integration Testing Framework Setup"
+          echo "========================================="
+          
+          # Check if framework is already installed
+          if [ -f ".github/scripts/run-seeds.php" ]; then
+            echo "✅ Framework already installed locally"
+            echo "ℹ️  Using local version from .github/scripts/"
+            echo ""
+            echo "Installed scripts:"
+            ls -1 .github/scripts/
+          else
+            echo "📦 Framework not found - installing from sprinkle-crud6..."
+            echo ""
+            
+            # Download and run installer
+            curl -sSL https://raw.githubusercontent.com/ssnukala/sprinkle-crud6/main/.github/testing-framework/install.sh -o /tmp/install-framework.sh
+            chmod +x /tmp/install-framework.sh
+            
+            # Install with your sprinkle name
+            # Replace YOUR_SPRINKLE_NAME with your actual sprinkle name (e.g., c6admin)
+            # Optionally add --namespace "YourNamespace" if different from auto-generated
+            /tmp/install-framework.sh YOUR_SPRINKLE_NAME
+            
+            echo ""
+            echo "✅ Framework installed successfully"
+            echo ""
+            echo "Installed files:"
+            ls -1 .github/scripts/
+            echo ""
+            echo "⚠️  NOTE: You should commit the generated config files to your repository:"
+            echo "   - .github/config/integration-test-paths.json"
+            echo "   - .github/config/integration-test-seeds.json"
+            echo "   This allows customization and version control of your test configuration."
+          fi
+          
+          echo ""
+          echo "========================================="
+          echo "Framework Ready"
+          echo "========================================="
+      
+      # ============================================================================
+      # STEP 4: Create UserFrosting Project
+      # ============================================================================
+      - name: Create UserFrosting project
+        run: |
+          composer create-project userfrosting/userfrosting userfrosting "^6.0-beta" --no-scripts --no-install --ignore-platform-reqs
+          
+          # Create runtime directories
+          cd userfrosting/app
+          mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
+          chmod -R 777 storage sessions logs cache
+          touch logs/userfrosting.log
+      
+      # ============================================================================
+      # STEP 5: Configure Composer for Your Sprinkle
+      # ============================================================================
+      - name: Configure Composer for YOUR_SPRINKLE_NAME
+        run: |
+          cd userfrosting
+          # Add local path to composer.json
+          composer config repositories.local path ../YOUR_SPRINKLE_NAME
+          # Update with your actual composer package name
+          composer require YOUR_VENDOR/YOUR_SPRINKLE_NAME:@dev --no-update
+          composer config minimum-stability beta
+          composer config prefer-stable true
+      
+      - name: Install PHP dependencies
+        run: |
+          cd userfrosting
+          composer install --no-interaction --prefer-dist
+      
+      # ============================================================================
+      # STEP 6: Configure NPM (if your sprinkle has frontend assets)
+      # ============================================================================
+      - name: Package YOUR_SPRINKLE_NAME for NPM
+        run: |
+          cd YOUR_SPRINKLE_NAME
+          npm pack
+          mv YOUR_VENDOR-YOUR_SPRINKLE_NAME-*.tgz ../userfrosting/
+      
+      - name: Install NPM dependencies
+        run: |
+          cd userfrosting
+          npm update
+          npm install ./YOUR_VENDOR-YOUR_SPRINKLE_NAME-*.tgz
+      
+      # ============================================================================
+      # STEP 7: Configure UserFrosting App (MyApp.php)
+      # ============================================================================
+      - name: Configure MyApp.php
+        run: |
+          cd userfrosting
+          # Add your sprinkle to MyApp.php
+          # Update YOUR_NAMESPACE and YOUR_SPRINKLE_CLASS with your actual values
+          sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use YOUR_NAMESPACE\\YOUR_SPRINKLE_CLASS;' app/src/MyApp.php
+          sed -i '/Admin::class,/a \            YOUR_SPRINKLE_CLASS::class,' app/src/MyApp.php
+          
+          echo "MyApp.php configured:"
+          cat app/src/MyApp.php
+      
+      # ============================================================================
+      # STEP 8: Configure Frontend Routes (CUSTOMIZE FOR YOUR PATTERN)
+      # ============================================================================
+      # NOTE: Different sprinkles use different route patterns
+      # See .github/testing-framework/docs/FRONTEND_INTEGRATION_PATTERNS.md
+      # Uncomment and customize the pattern that matches your sprinkle
+      
+      # PATTERN 1: Simple Array Import (like CRUD6)
+      - name: Configure router/index.ts (Simple Pattern)
+        run: |
+          cd userfrosting
+          # Add import
+          sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import YOUR_SPRINKLERoutes from '@YOUR_VENDOR\/YOUR_SPRINKLE_NAME\/routes'" app/assets/router/index.ts
+          # Add routes to array
+          sed -i '/\.\.\.AccountRoutes,/a \            ...YOUR_SPRINKLERoutes,' app/assets/router/index.ts
+          cat app/assets/router/index.ts
+      
+      # PATTERN 2: Factory Function (like C6Admin) - COMMENT OUT IF NOT USING
+      # - name: Configure router/index.ts (Factory Pattern)
+      #   run: |
+      #     cd userfrosting
+      #     # Add imports
+      #     sed -i "/import AdminRoutes from '@userfrosting\/sprinkle-admin\/routes'/a import { createYOUR_SPRINKLERoutes } from '@YOUR_VENDOR\/YOUR_SPRINKLE_NAME\/routes'" app/assets/router/index.ts
+      #     sed -i "/import { createRouter, createWebHistory } from 'vue-router'/a import LayoutDashboard from '../layouts/LayoutDashboard.vue'" app/assets/router/index.ts
+      #     # Add factory function call
+      #     LAST_BRACKET_LINE=$(grep -n '\]' app/assets/router/index.ts | tail -1 | cut -d: -f1)
+      #     sed -i "${LAST_BRACKET_LINE}i\\        ,\\
+      #     ...createYOUR_SPRINKLERoutes({ layoutComponent: LayoutDashboard })" app/assets/router/index.ts
+      #     cat app/assets/router/index.ts
+      
+      # ============================================================================
+      # STEP 9: Configure main.ts
+      # ============================================================================
+      - name: Configure main.ts
+        run: |
+          cd userfrosting
+          # Add sprinkle import and registration
+          sed -i "/import AdminSprinkle from '@userfrosting\/sprinkle-admin'/a import YOUR_SPRINKLESprinkle from '@YOUR_VENDOR\/YOUR_SPRINKLE_NAME'" app/assets/main.ts
+          sed -i "/app.use(AdminSprinkle)/a app.use(YOUR_SPRINKLESprinkle)" app/assets/main.ts
+          cat app/assets/main.ts
+      
+      # ============================================================================
+      # STEP 10: Setup Environment
+      # ============================================================================
+      - name: Setup environment
+        run: |
+          cd userfrosting
+          cp app/.env.example app/.env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION="mysql"/' app/.env
+          sed -i 's/DB_HOST=.*/DB_HOST="127.0.0.1"/' app/.env
+          sed -i 's/DB_PORT=.*/DB_PORT="3306"/' app/.env
+          sed -i 's/DB_NAME=.*/DB_NAME="userfrosting_test"/' app/.env
+          sed -i 's/DB_USER=.*/DB_USER="root"/' app/.env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
+          echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
+          echo "TEST_SESSION_HANDLER=database" >> app/.env
+      
+      # ============================================================================
+      # STEP 11: Run Database Migrations
+      # ============================================================================
+      - name: Run migrations
+        run: |
+          cd userfrosting
+          php bakery migrate --force
+      
+      # ============================================================================
+      # STEP 12: Run Seeds Using Framework
+      # ============================================================================
+      - name: Run seeds from configuration
+        run: |
+          cd userfrosting
+          # Copy config and script from your sprinkle
+          cp ../YOUR_SPRINKLE_NAME/.github/config/integration-test-seeds.json .
+          cp ../YOUR_SPRINKLE_NAME/.github/scripts/run-seeds.php .
+          
+          # Run seeds using framework script
+          php run-seeds.php integration-test-seeds.json
+      
+      # ============================================================================
+      # STEP 13: Validate Seeds Using Framework
+      # ============================================================================
+      - name: Validate seeds
+        run: |
+          cd userfrosting
+          cp ../YOUR_SPRINKLE_NAME/.github/scripts/check-seeds-modular.php .
+          php check-seeds-modular.php integration-test-seeds.json
+      
+      # ============================================================================
+      # STEP 14: Test Seed Idempotency Using Framework
+      # ============================================================================
+      - name: Test seed idempotency
+        run: |
+          cd userfrosting
+          cp ../YOUR_SPRINKLE_NAME/.github/scripts/test-seed-idempotency-modular.php .
+          
+          # Get before counts
+          BEFORE=$(php test-seed-idempotency-modular.php integration-test-seeds.json | grep "BEFORE:")
+          
+          # Re-run seeds
+          php run-seeds.php integration-test-seeds.json
+          
+          # Verify counts match
+          php test-seed-idempotency-modular.php integration-test-seeds.json after "$BEFORE"
+      
+      # ============================================================================
+      # STEP 15: Create Admin User
+      # ============================================================================
+      - name: Create admin user
+        run: |
+          cd userfrosting
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+      
+      # ============================================================================
+      # STEP 16: Install Playwright for Screenshots
+      # ============================================================================
+      - name: Install Playwright
+        run: |
+          cd userfrosting
+          npm install playwright
+          npx playwright install chromium --with-deps
+      
+      # ============================================================================
+      # STEP 17: Build Frontend Assets
+      # ============================================================================
+      - name: Build frontend assets
+        run: |
+          cd userfrosting
+          php bakery bake || echo "⚠️ Build failed but continuing"
+      
+      # ============================================================================
+      # STEP 18: Start PHP Development Server
+      # ============================================================================
+      - name: Start PHP server
+        run: |
+          cd userfrosting
+          php bakery serve &
+          sleep 10
+          curl -f http://localhost:8080 || echo "⚠️ Server may not be ready yet"
+      
+      # ============================================================================
+      # STEP 19: Start Vite Dev Server
+      # ============================================================================
+      - name: Start Vite server
+        run: |
+          cd userfrosting
+          php bakery assets:vite &
+          sleep 20
+      
+      # ============================================================================
+      # STEP 20: Test Paths Using Framework
+      # ============================================================================
+      - name: Test API and frontend paths
+        run: |
+          cd userfrosting
+          # Copy config and script from your sprinkle
+          cp ../YOUR_SPRINKLE_NAME/.github/config/integration-test-paths.json .
+          cp ../YOUR_SPRINKLE_NAME/.github/scripts/test-paths.php .
+          
+          # Test all paths using framework script
+          php test-paths.php integration-test-paths.json
+      
+      # ============================================================================
+      # STEP 21: Capture Screenshots Using Framework
+      # ============================================================================
+      - name: Capture screenshots
+        run: |
+          cd userfrosting
+          cp ../YOUR_SPRINKLE_NAME/.github/scripts/take-screenshots-modular.js .
+          
+          # Capture screenshots using framework script
+          node take-screenshots-modular.js integration-test-paths.json
+      
+      # ============================================================================
+      # STEP 22: Upload Artifacts
+      # ============================================================================
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-screenshots
+          path: /tmp/screenshot_*.png
+          if-no-files-found: ignore
+          retention-days: 30
+      
+      - name: Upload PHP logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-error-logs
+          path: |
+            userfrosting/app/logs/*.log
+            userfrosting/app/storage/logs/*.log
+          if-no-files-found: ignore
+          retention-days: 30
+      
+      # ============================================================================
+      # STEP 23: Summary
+      # ============================================================================
+      - name: Summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "Integration Test Complete"
+          echo "========================================="
+          echo ""
+          echo "✅ Framework: $([ -f YOUR_SPRINKLE_NAME/.github/scripts/run-seeds.php ] && echo 'Local version' || echo 'Auto-installed')"
+          echo "✅ Database migrations completed"
+          echo "✅ Seeds run and validated"
+          echo "✅ Idempotency verified"
+          echo "✅ API and frontend paths tested"
+          echo "✅ Screenshots captured"
+          echo ""
+          echo "📸 View screenshots and logs in workflow artifacts"

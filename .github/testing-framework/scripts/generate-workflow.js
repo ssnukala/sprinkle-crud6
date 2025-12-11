@@ -44,12 +44,31 @@ console.log(`   Sprinkle: ${config.sprinkle.name}`);
 console.log(`   Pattern: ${config.routes.pattern}`);
 console.log(`   Schema path: ${config.schemas.path || 'app/schema/crud6 (default)'}`);
 
+function generateCustomSteps(customSteps, stage) {
+  if (!customSteps?.enabled || !customSteps?.scripts) {
+    return '';
+  }
+  
+  const stageScripts = customSteps.scripts.filter(s => s.stage === stage);
+  if (stageScripts.length === 0) {
+    return '';
+  }
+  
+  return stageScripts.map(script => `
+      - name: ${script.name}
+        run: |
+          cd userfrosting
+          node ../\${{ env.SPRINKLE_DIR }}/${script.script}
+`).join('');
+}
+
 function generateWorkflow(config) {
   const s = config.sprinkle;
   const routes = config.routes;
   const schemas = config.schemas;
   const testing = config.testing;
   const vite = config.vite;
+  const customSteps = config.custom_steps;
   
   return `name: ${s.name} Integration Test
 
@@ -267,7 +286,7 @@ ${config.custom_test_data?.enabled ? `
           cd userfrosting
           php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-      
+${generateCustomSteps(customSteps, 'before_tests')}
       - name: Build frontend assets
         run: |
           cd userfrosting
@@ -278,19 +297,19 @@ ${config.custom_test_data?.enabled ? `
           cd userfrosting
           php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
-      
+${generateCustomSteps(customSteps, 'after_tests')}
       - name: Install Playwright
         run: |
           cd userfrosting
           npx playwright install chromium
-      
+${generateCustomSteps(customSteps, 'before_screenshots')}
       - name: Capture screenshots
         run: |
           cd userfrosting
           node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \\
             screenshots
-      
+${generateCustomSteps(customSteps, 'after_screenshots')}
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

@@ -29,5 +29,16 @@
   },
   "vite": {
     "optimize_deps": ["limax", "lodash.deburr"]
+  },
+  "custom_steps": {
+    "enabled": false,
+    "scripts": [
+      {
+        "name": "Example custom validation",
+        "script": ".github/workflow/scripts/custom-script.js",
+        "stage": "after_tests",
+        "description": "Demonstrates custom database queries and validation"
+      }
+    ]
   }
 }

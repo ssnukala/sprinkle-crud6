@@ -75,11 +75,13 @@ With JSON configuration, **everything** is automated:
 - ✅ Route configuration (from JSON!)
 - ✅ **Schema-driven SQL generation**
 - ✅ Database migrations and seeds
+- ✅ **Custom scripts for sprinkle-specific needs** (NEW!)
 - ✅ API and frontend testing
 - ✅ Screenshot capture
 
 **You configure**: One JSON file
 **Framework handles**: Everything else
+**Extend**: Optional custom scripts for special needs
 
 ## 📦 What's Included
 

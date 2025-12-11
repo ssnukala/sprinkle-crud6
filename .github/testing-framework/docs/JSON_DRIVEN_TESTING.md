@@ -185,6 +185,63 @@ This SQL file is loaded AFTER schema-driven SQL generation.
 }
 ```
 
+### Custom Steps (NEW!)
+
+Add custom testing logic at specific stages of the workflow:
+
+```json
+{
+  "custom_steps": {
+    "enabled": true,
+    "scripts": [
+      {
+        "name": "Custom database validation",
+        "script": ".github/workflow/scripts/custom-script.js",
+        "stage": "after_tests",
+        "description": "Validates custom business logic"
+      },
+      {
+        "name": "Prepare UI for screenshots",
+        "script": ".github/workflow/scripts/setup-ui.js",
+        "stage": "before_screenshots"
+      }
+    ]
+  }
+}
+```
+
+**Available Stages:**
+- `before_tests` - After seeds, before frontend build
+- `after_tests` - After API/frontend tests, before Playwright
+- `before_screenshots` - After Playwright install, before screenshots
+- `after_screenshots` - After screenshots, before artifact upload
+
+**Example Custom Script** (`.github/workflow/scripts/custom-script.js`):
+
+```javascript
+#!/usr/bin/env node
+
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+async function main() {
+  console.log('🔧 Running custom validation...');
+  
+  // Query database
+  const { stdout } = await execPromise(
+    `php bakery database:query "SELECT COUNT(*) FROM my_table"`
+  );
+  console.log('✅ Result:', stdout.trim());
+  
+  // Add your custom logic here
+  
+  process.exit(0);
+}
+
+main();
+```
+
 ## Complete Examples
 
 ### Example 1: CRUD6 Itself

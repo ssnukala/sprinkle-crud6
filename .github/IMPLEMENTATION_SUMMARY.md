@@ -197,7 +197,7 @@ The `integration-test.yml` workflow now:
 - name: Seed database (Modular)
   run: |
     cp ../sprinkle-crud6/.github/config/integration-test-seeds.json .
-    cp ../sprinkle-crud6/.github/scripts/run-seeds.php .
+    cp ../sprinkle-crud6/.github/testing-framework/scripts/run-seeds.php .
     php run-seeds.php integration-test-seeds.json
 ```
 

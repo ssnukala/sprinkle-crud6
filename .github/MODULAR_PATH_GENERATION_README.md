@@ -39,12 +39,12 @@ Define your models with their properties:
 }
 ```
 
-### 2. Generate Paths (`.github/scripts/generate-paths-from-models.js`)
+### 2. Generate Paths (`.github/testing-framework/scripts/generate-paths-from-models.js`)
 
 Run the generator script to create the paths configuration:
 
 ```bash
-node .github/scripts/generate-paths-from-models.js \
+node .github/testing-framework/scripts/generate-paths-from-models.js \
   .github/config/integration-test-models.json \
   .github/config/integration-test-paths.json
 ```
@@ -131,7 +131,7 @@ Edit `.github/config/integration-test-models.json`:
 ### Step 2: Regenerate Paths
 
 ```bash
-node .github/scripts/generate-paths-from-models.js \
+node .github/testing-framework/scripts/generate-paths-from-models.js \
   .github/config/integration-test-models.json \
   .github/config/integration-test-paths.json
 ```
@@ -174,7 +174,7 @@ Validation keys are defined per model, ensuring correct testing.
 
 ```bash
 # Generate paths from models
-node .github/scripts/generate-paths-from-models.js \
+node .github/testing-framework/scripts/generate-paths-from-models.js \
   .github/config/integration-test-models.json \
   .github/config/integration-test-paths.json
 
@@ -191,7 +191,7 @@ Add to `.github/workflows/integration-test.yml`:
   run: |
     cd userfrosting
     cp ../sprinkle-crud6/.github/config/integration-test-models.json .
-    cp ../sprinkle-crud6/.github/scripts/generate-paths-from-models.js .
+    cp ../sprinkle-crud6/.github/testing-framework/scripts/generate-paths-from-models.js .
     node generate-paths-from-models.js integration-test-models.json integration-test-paths.json
     
 - name: Test paths
@@ -282,7 +282,7 @@ The generator validates:
 | File | Purpose |
 |------|---------|
 | `.github/config/integration-test-models.json` | Model definitions and templates |
-| `.github/scripts/generate-paths-from-models.js` | Path generator script |
+| `.github/testing-framework/scripts/generate-paths-from-models.js` | Path generator script |
 | `.github/config/integration-test-paths.json` | Generated paths (can be committed) |
 
 ## Best Practices

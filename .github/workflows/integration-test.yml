@@ -401,100 +401,12 @@ jobs:
       - name: Login as admin user
         run: |
           cd userfrosting
-          echo "========================================="
-          echo "Authenticating as Admin User"
-          echo "========================================="
-          echo "Establishing authenticated session for subsequent tests"
-          echo ""
-          
-          # Create a simple login verification script
-          cat > /tmp/verify-login.php << 'EOPHP'
-          <?php
-          $baseUrl = 'http://localhost:8080';
-          $username = 'admin';
-          $password = 'admin123';
-          $cookieJar = '/tmp/admin-session-cookies.txt';
-          
-          echo "Attempting to login as: {$username}\n";
-          echo "Base URL: {$baseUrl}\n\n";
-          
-          // Get login page for CSRF token
-          $loginPageUrl = $baseUrl . '/account/sign-in';
-          $tmpFile = tempnam(sys_get_temp_dir(), 'login_page_');
-          $curlCmd = "curl -s -o {$tmpFile} -c {$cookieJar} -L " . escapeshellarg($loginPageUrl);
-          exec($curlCmd, $output, $returnCode);
-          
-          if ($returnCode !== 0) {
-              echo "❌ Failed to load login page\n";
-              exit(1);
-          }
-          
-          $loginPageContent = file_get_contents($tmpFile);
-          unlink($tmpFile);
-          
-          // Extract CSRF token
-          $csrfToken = null;
-          if (preg_match('/<input[^>]*name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']/', $loginPageContent, $matches)) {
-              $csrfToken = $matches[1];
-          } elseif (preg_match('/<input[^>]*value=["\']([^"\']+)["\'][^>]*name=["\']csrf_token["\']/', $loginPageContent, $matches)) {
-              $csrfToken = $matches[1];
-          }
-          
-          if (!$csrfToken) {
-              echo "⚠️  Warning: Could not extract CSRF token, attempting login anyway...\n";
-          } else {
-              echo "✅ CSRF token obtained\n";
-          }
-          
-          // Submit login
-          $loginUrl = $baseUrl . '/account/sign-in';
-          $tmpFile = tempnam(sys_get_temp_dir(), 'login_response_');
-          
-          $postData = [
-              'user_name' => $username,
-              'password' => $password,
-          ];
-          
-          if ($csrfToken) {
-              $postData['csrf_token'] = $csrfToken;
-          }
-          
-          $postDataString = http_build_query($postData);
-          $curlCmd = "curl -s -o {$tmpFile} -w '%{http_code}' -b {$cookieJar} -c {$cookieJar} -L " .
-                     "-X POST -H 'Content-Type: application/x-www-form-urlencoded' " .
-                     "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl);
-          
-          $httpCode = trim(shell_exec($curlCmd));
-          $loginResponse = file_get_contents($tmpFile);
-          unlink($tmpFile);
-          
-          // Verify login
-          $isStillOnLoginPage = (
-              strpos($loginResponse, 'sign-in') !== false ||
-              strpos($loginResponse, 'data-test="username"') !== false
-          );
-          
-          $hasLoggedInIndicators = (
-              strpos($loginResponse, 'dashboard') !== false ||
-              strpos($loginResponse, 'sign-out') !== false ||
-              strpos($loginResponse, 'Sign Out') !== false
-          );
-          
-          if ($hasLoggedInIndicators && !$isStillOnLoginPage) {
-              echo "✅ Login successful (HTTP {$httpCode})\n";
-              echo "✅ Session cookie saved to: {$cookieJar}\n";
-              echo "✅ Authenticated session established\n";
-              exit(0);
-          } else {
-              echo "❌ Login failed (HTTP {$httpCode})\n";
-              if ($isStillOnLoginPage) {
-                  echo "   Still on login page - credentials may be incorrect\n";
-              }
-              exit(1);
-          }
-          EOPHP
-          
-          php /tmp/verify-login.php
+          # Use the Playwright-based login script (same approach as take-authenticated-screenshots.js)
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/login-admin.js \
+            http://localhost:8080 \
+            admin \
+            admin123 \
+            /tmp/admin-auth-state.json
       
       - name: Test authenticated API paths
         run: |

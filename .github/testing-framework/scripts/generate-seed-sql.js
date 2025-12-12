@@ -192,9 +192,9 @@ function generateInsertSQL(schema, recordCount = 3) {
             values.push(value);
         }
         
-        sql.push(`INSERT INTO ${tableName} (${insertFields.join(', ')})`);
+        sql.push(`INSERT INTO \`${tableName}\` (${insertFields.map(f => `\`${f}\``).join(', ')})`);
         sql.push(`VALUES (${values.join(', ')})`);
-        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `${f} = VALUES(${f})`).join(', ')};`);
+        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `\`${f}\` = VALUES(\`${f}\`)`).join(', ')};`);
         sql.push('');
     }
     
@@ -225,9 +225,9 @@ function generateRelationshipSQL(schema) {
             ];
             
             for (const [fk, rk] of testRelationships) {
-                sql.push(`INSERT INTO ${rel.pivot_table} (${foreignKey}, ${relatedKey})`);
+                sql.push(`INSERT INTO \`${rel.pivot_table}\` (\`${foreignKey}\`, \`${relatedKey}\`)`);
                 sql.push(`VALUES (${fk}, ${rk})`);
-                sql.push(`ON DUPLICATE KEY UPDATE ${foreignKey} = VALUES(${foreignKey});`);
+                sql.push(`ON DUPLICATE KEY UPDATE \`${foreignKey}\` = VALUES(\`${foreignKey}\`);`);
                 sql.push('');
             }
         }

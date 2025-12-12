@@ -354,14 +354,14 @@ function generateRouteConfiguration(routes, sprinkle) {
   if (pattern === 'simple') {
     step += `          # Simple array spread pattern
           sed -i "/import AdminRoutes from '@userfrosting\\\\/sprinkle-admin\\\\/routes'/a import ${importName} from '${importModule}'" app/assets/router/index.ts
-          sed -i '/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${importName},' app/assets/router/index.ts
+          sed -i "/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${importName}," app/assets/router/index.ts
 `;
   } else if (pattern === 'factory') {
     const layoutComponent = routes.factory?.layout_component || 'Layout';
     step += `          # Factory function pattern
           sed -i "/import AdminRoutes from '@userfrosting\\\\/sprinkle-admin\\\\/routes'/a import { ${importName} } from '${importModule}'" app/assets/router/index.ts
           sed -i "/import Layout from '@userfrosting\\\\/theme-adminlte\\\\/layouts\\\\/Layout.vue'/a const ${sprinkle.name}Routes = ${importName}({ layoutComponent: ${layoutComponent} });" app/assets/router/index.ts
-          sed -i '/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${sprinkle.name}Routes,' app/assets/router/index.ts
+          sed -i "/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${sprinkle.name}Routes," app/assets/router/index.ts
 `;
   } else if (pattern === 'custom' && routes.custom_setup?.enabled) {
     step += `          # Custom route setup

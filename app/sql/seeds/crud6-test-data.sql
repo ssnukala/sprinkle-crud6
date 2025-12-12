@@ -16,7 +16,7 @@
 -- - DELETE/DISABLE tests MUST NOT use ID 1 (system account protection)
 -- - Uses INSERT...ON DUPLICATE KEY UPDATE for safe re-seeding
 --
--- Generated: 2025-12-10T22:46:10.970Z
+-- Generated: 2025-12-12T02:11:25.641Z
 -- Source: Schema files in examples/schema/
 -- ═══════════════════════════════════════════════════════════════
 
@@ -170,17 +170,17 @@ ON DUPLICATE KEY UPDATE order_number = VALUES(order_number), customer_name = VAL
 -- Seed data for permissions
 -- Generated from schema: permissions.json
 
-INSERT INTO permissions (slug, name, conditions, description, role_ids)
-VALUES ('test_slug_2', 'Test name 2', '', 'Test description for description - Record 2', NULL)
-ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description), role_ids = VALUES(role_ids);
+INSERT INTO permissions (slug, name, conditions, description)
+VALUES ('test_slug_2', 'Test name 2', '', 'Test description for description - Record 2')
+ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description);
 
-INSERT INTO permissions (slug, name, conditions, description, role_ids)
-VALUES ('test_slug_3', 'Test name 3', '', 'Test description for description - Record 3', NULL)
-ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description), role_ids = VALUES(role_ids);
+INSERT INTO permissions (slug, name, conditions, description)
+VALUES ('test_slug_3', 'Test name 3', '', 'Test description for description - Record 3')
+ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description);
 
-INSERT INTO permissions (slug, name, conditions, description, role_ids)
-VALUES ('test_slug_4', 'Test name 4', '', 'Test description for description - Record 4', NULL)
-ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description), role_ids = VALUES(role_ids);
+INSERT INTO permissions (slug, name, conditions, description)
+VALUES ('test_slug_4', 'Test name 4', '', 'Test description for description - Record 4')
+ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = VALUES(conditions), description = VALUES(description);
 
 
 -- Relationship: permissions -> roles
@@ -477,17 +477,17 @@ ON DUPLICATE KEY UPDATE customer_id = VALUES(customer_id), order_number = VALUES
 -- Seed data for users
 -- Generated from schema: users.json
 
-INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, role_ids, password)
-VALUES ('test_user_name_2', 'Test first_name 2', 'Test last_name 2', 'test_email', 'en_US', 1, true, true, NULL, NULL)
-ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), role_ids = VALUES(role_ids), password = VALUES(password);
+INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, password)
+VALUES ('test_user_name_2', 'Test first_name 2', 'Test last_name 2', 'test_email', 'en_US', 1, true, true, NULL)
+ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), password = VALUES(password);
 
-INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, role_ids, password)
-VALUES ('test_user_name_3', 'Test first_name 3', 'Test last_name 3', 'test_email', 'en_US', 1, true, true, NULL, NULL)
-ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), role_ids = VALUES(role_ids), password = VALUES(password);
+INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, password)
+VALUES ('test_user_name_3', 'Test first_name 3', 'Test last_name 3', 'test_email', 'en_US', 1, true, true, NULL)
+ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), password = VALUES(password);
 
-INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, role_ids, password)
-VALUES ('test_user_name_4', 'Test first_name 4', 'Test last_name 4', 'test_email', 'en_US', 1, true, true, NULL, NULL)
-ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), role_ids = VALUES(role_ids), password = VALUES(password);
+INSERT INTO users (user_name, first_name, last_name, email, locale, group_id, flag_verified, flag_enabled, password)
+VALUES ('test_user_name_4', 'Test first_name 4', 'Test last_name 4', 'test_email', 'en_US', 1, true, true, NULL)
+ON DUPLICATE KEY UPDATE user_name = VALUES(user_name), first_name = VALUES(first_name), last_name = VALUES(last_name), email = VALUES(email), locale = VALUES(locale), group_id = VALUES(group_id), flag_verified = VALUES(flag_verified), flag_enabled = VALUES(flag_enabled), password = VALUES(password);
 
 
 -- Relationship: users -> roles

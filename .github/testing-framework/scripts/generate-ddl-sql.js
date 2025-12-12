@@ -128,6 +128,13 @@ function generateCreateTableSQL(schema) {
     
     // Process each field
     for (const [fieldName, field] of Object.entries(fields)) {
+        // Skip computed/virtual fields (e.g., role_ids used for relationship sync)
+        // These are form-only fields that don't belong in the database
+        if (field.computed) {
+            console.log(`   ⏭️  Skipping computed field: ${fieldName} (not a database column)`);
+            continue;
+        }
+        
         const columnType = mapFieldTypeToSQL(fieldName, field);
         const parts = [`\`${fieldName}\``, columnType];
         

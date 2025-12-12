@@ -80,6 +80,11 @@ function executeQuery(string $query, string $dbHost, string $dbPort, string $dbN
     $returnCode = 0;
     exec($command, $output, $returnCode);
     
+    // Filter out MySQL password warning from output
+    $output = array_values(array_filter($output, function ($line) {
+        return strpos($line, 'Using a password') === false;
+    }));
+    
     if ($returnCode !== 0) {
         throw new RuntimeException("Query failed: " . implode("\n", $output));
     }

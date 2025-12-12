@@ -204,6 +204,32 @@ jobs:
             --lastName=User
           echo "✅ Admin user created (ID 1 reserved for admin)"
 
+      - name: Generate and load DDL (CREATE TABLE statements)
+        run: |
+          cd userfrosting
+          
+          SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
+          if [ -z "${{ env.SCHEMA_PATH }}" ]; then
+            SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
+          fi
+          
+          if [ ! -d "$SCHEMA_DIR" ]; then
+            echo "❌ ERROR: Schema directory not found: $SCHEMA_DIR"
+            exit 1
+          fi
+          
+          echo "✅ Using schemas from: $SCHEMA_DIR"
+          
+          # Generate DDL SQL
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-ddl-sql.js \
+            "$SCHEMA_DIR" ddl.sql
+          
+          # Load DDL SQL
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+            ddl.sql
+          
+          echo "✅ DDL loaded - tables created from schemas"
+
       - name: Generate and load SQL seed data (test data)
         run: |
           cd userfrosting

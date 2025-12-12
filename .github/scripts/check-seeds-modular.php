@@ -59,6 +59,58 @@ echo "Validating Seed Data (Modular)\n";
 echo "=========================================\n";
 echo "Config file: {$configFile}\n\n";
 
+// DIAGNOSTIC: Display all rows from roles and permissions tables BEFORE validation
+echo "=========================================\n";
+echo "DIAGNOSTIC: Database State Before Validation\n";
+echo "=========================================\n";
+
+try {
+    echo "📊 All Roles in Database:\n";
+    $allRoles = Role::all();
+    echo "   Total count: " . $allRoles->count() . "\n";
+    foreach ($allRoles as $role) {
+        echo "   - ID: {$role->id}, Slug: {$role->slug}, Name: {$role->name}\n";
+    }
+    echo "\n";
+    
+    echo "📊 All Permissions in Database:\n";
+    $allPermissions = Permission::all();
+    echo "   Total count: " . $allPermissions->count() . "\n";
+    foreach ($allPermissions as $perm) {
+        echo "   - ID: {$perm->id}, Slug: {$perm->slug}, Name: {$perm->name}\n";
+    }
+    echo "\n";
+    
+    // Specific check for crud6-admin role
+    echo "🔍 Specific Query for crud6-admin role:\n";
+    $crud6AdminRole = Role::where('slug', 'crud6-admin')->first();
+    if ($crud6AdminRole) {
+        echo "   ✅ Found: ID {$crud6AdminRole->id}, Name: {$crud6AdminRole->name}\n";
+        echo "   Description: {$crud6AdminRole->description}\n";
+        $permCount = $crud6AdminRole->permissions()->count();
+        echo "   Permissions count: {$permCount}\n";
+    } else {
+        echo "   ❌ NOT FOUND via Eloquent\n";
+    }
+    echo "\n";
+    
+    // Check database connection details
+    $db = $container->get(\Illuminate\Database\Capsule\Manager::class);
+    $connection = $db->getConnection();
+    echo "🔧 Database Connection Info:\n";
+    echo "   Driver: " . $connection->getDriverName() . "\n";
+    echo "   Database: " . $connection->getDatabaseName() . "\n";
+    echo "   Table Prefix: " . $connection->getTablePrefix() . "\n";
+    echo "\n";
+    
+} catch (\Exception $e) {
+    echo "⚠️  Error during diagnostic: " . $e->getMessage() . "\n\n";
+}
+
+echo "=========================================\n";
+echo "Starting Validation Checks\n";
+echo "=========================================\n\n";
+
 $totalValidations = 0;
 $passedValidations = 0;
 $failedValidations = 0;

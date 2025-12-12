@@ -69,53 +69,72 @@
     "description": {
       "type": "text",
       "label": "Description",
-      "show_in": ["form", "detail"],
-      "rows": 4
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": true,
+      "field_template": "<div class='uk-card uk-card-small uk-card-body uk-card-default'><div class='uk-grid-small' uk-grid><div class='uk-width-auto'><span class='uk-badge'>ID: {{id}}</span></div><div class='uk-width-auto'><span class='uk-badge'>SKU: {{sku}}</span></div><div class='uk-width-auto'><span class='uk-label uk-label-{{is_active}}'>Active: {{is_active}}</span></div></div><p class='uk-text-small uk-margin-small-top'>{{description}}</p></div>"
+    },
+    "category_id": {
+      "type": "integer",
+      "label": "Category",
+      "required": true,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "filter_type": "equals"
+    },
+    "tags": {
+      "type": "string",
+      "label": "Tags",
+      "required": false,
+      "sortable": false,
+      "filterable": true,
+      "listable": false,
+      "filter_type": "like"
     },
     "is_active": {
       "type": "boolean",
-      "ui": "toggle",
       "label": "Active",
       "default": true,
-      "show_in": ["list", "form", "detail"]
-    },
-    "is_featured": {
-      "type": "boolean",
-      "ui": "checkbox",
-      "label": "Featured Product",
-      "default": false,
-      "show_in": ["form", "detail"]
-    },
-    "stock_status": {
-      "type": "boolean",
-      "ui": "select",
-      "label": "In Stock",
-      "default": true,
-      "show_in": ["list", "detail"]
+      "sortable": true,
+      "filterable": true,
+      "listable": true
     },
     "launch_date": {
       "type": "date",
       "label": "Launch Date",
-      "show_in": ["form", "detail"],
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "filter_type": "greater_than",
       "date_format": "Y-m-d"
     },
     "metadata": {
       "type": "json",
       "label": "Metadata",
-      "show_in": ["detail"]
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false
     },
     "created_at": {
       "type": "datetime",
       "label": "Created At",
       "editable": false,
-      "show_in": ["detail"],
+      "sortable": true,
+      "filterable": false,
+      "listable": true,
       "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
       "type": "datetime",
       "label": "Updated At",
       "editable": false,
-      "show_in": ["detail"],
+      "sortable": true,
+      "filterable": false,
+      "listable": false,
       "date_format": "Y-m-d H:i:s"
     }
   }

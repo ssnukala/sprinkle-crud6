@@ -141,7 +141,12 @@ function generateCreateTableSQL(schema) {
         }
         
         // Handle DEFAULT values
-        if (field.default !== undefined) {
+        // NOTE: MySQL does not allow default values for TEXT, BLOB, JSON, or GEOMETRY columns
+        const typesWithoutDefaults = ['TEXT', 'JSON', 'BLOB', 'MEDIUMTEXT', 'LONGTEXT', 'TINYTEXT'];
+        const columnTypeUpper = columnType.toUpperCase();
+        const hasInvalidDefaultType = typesWithoutDefaults.some(type => columnTypeUpper.includes(type));
+        
+        if (field.default !== undefined && !hasInvalidDefaultType) {
             if (typeof field.default === 'string') {
                 parts.push(`DEFAULT '${field.default}'`);
             } else if (typeof field.default === 'boolean') {
@@ -149,6 +154,9 @@ function generateCreateTableSQL(schema) {
             } else {
                 parts.push(`DEFAULT ${field.default}`);
             }
+        } else if (field.default !== undefined && hasInvalidDefaultType) {
+            // Skip default value for TEXT/JSON/BLOB types and log a warning
+            console.warn(`   ⚠️  Skipping default value for ${fieldName} (${columnType}): MySQL does not support defaults for TEXT/JSON/BLOB columns`);
         }
         
         // Track primary key

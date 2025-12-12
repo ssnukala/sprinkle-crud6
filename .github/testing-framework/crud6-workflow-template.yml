@@ -1,18 +1,29 @@
 name: CRUD6 Integration Test
 
-# This workflow tests CRUD6 functionality in your sprinkle
-# It automatically installs the CRUD6 testing framework and runs CRUD6-specific tests
-# 
-# To use this workflow:
-# 1. Copy this file to your sprinkle's .github/workflows/crud6-integration-test.yml
-# 2. Replace YOUR_SPRINKLE_NAME with your sprinkle directory name
-# 3. Replace YOUR_COMPOSER_PACKAGE with your composer package name (e.g., yourvendor/your-sprinkle)
-# 4. Replace YOUR_NPM_PACKAGE with your npm package name (e.g., @yourvendor/your-sprinkle)
-# 5. If your schemas are NOT in app/schema/crud6/, set SCHEMA_PATH to the correct path
-# 6. The workflow will auto-install the framework and use CRUD6's test configuration
+# ============================================================================
+# CRUD6 WORKFLOW TEMPLATE - Two Options for Using This File
+# ============================================================================
+#
+# OPTION 1: Manual Copy (Quick Setup for CRUD6 Testing)
+#   1. Copy to .github/workflows/crud6-integration-test.yml
+#   2. Replace YOUR_SPRINKLE_NAME with your sprinkle directory name
+#   3. Replace YOUR_COMPOSER_PACKAGE with your composer package name
+#   4. Replace YOUR_NPM_PACKAGE with your npm package name
+#   5. If schemas are NOT in app/schema/crud6/, set SCHEMA_PATH to correct path
+#   6. The workflow will auto-install the framework and use CRUD6's test configuration
+#
+# OPTION 2: JSON-Driven Auto-Generation (RECOMMENDED)
+#   1. Create integration-test-config.json with your CRUD6 configuration
+#   2. Run: node .github/testing-framework/scripts/generate-workflow.js \
+#             integration-test-config.json \
+#             .github/workflows/crud6-integration-test.yml
+#   3. Your CRUD6 workflow is automatically generated!
 #
 # This workflow focuses ONLY on CRUD6 functionality testing
 # Create separate workflows for your sprinkle-specific features
+#
+# See: .github/testing-framework/docs/JSON_DRIVEN_TESTING.md
+# ============================================================================
 
 on:
   push:

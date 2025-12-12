@@ -372,11 +372,171 @@ jobs:
 
           echo "✅ Vite server started"
 
-      - name: Test API and frontend paths
+      - name: Test unauthenticated API paths
         run: |
           cd userfrosting
+          echo "========================================="
+          echo "Testing Unauthenticated API Paths"
+          echo "========================================="
+          echo "Testing that protected API resources return 401/403 for unauthenticated users"
+          echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth api > /tmp/test-results-unauth-api.txt 2>&1
+          cat /tmp/test-results-unauth-api.txt
+      
+      - name: Test unauthenticated frontend paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Unauthenticated Frontend Paths"
+          echo "========================================="
+          echo "Testing that protected frontend pages redirect to login for unauthenticated users"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth frontend > /tmp/test-results-unauth-frontend.txt 2>&1
+          cat /tmp/test-results-unauth-frontend.txt
+      
+      - name: Login as admin user
+        run: |
+          cd userfrosting
+          # Use the Playwright-based login script (same approach as take-authenticated-screenshots.js)
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/login-admin.js \
+            http://localhost:8080 \
+            admin \
+            admin123 \
+            /tmp/admin-auth-state.json
+      
+      - name: Test authenticated API paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Authenticated API Paths"
+          echo "========================================="
+          echo "Using authenticated session from previous login step"
+          echo "Testing API endpoints with admin credentials"
+          echo "Expected: All API endpoints return 200 with valid data"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            auth api > /tmp/test-results-auth-api.txt 2>&1
+          cat /tmp/test-results-auth-api.txt
+      
+      - name: Test authenticated frontend paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Authenticated Frontend Paths"
+          echo "========================================="
+          echo "Using authenticated session from previous login step"
+          echo "Testing frontend pages with admin credentials"
+          echo "Expected: All frontend pages load successfully (200)"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            auth frontend > /tmp/test-results-auth-frontend.txt 2>&1
+          cat /tmp/test-results-auth-frontend.txt
+      
+      - name: Generate test summary table
+        if: always()
+        run: |
+          cd userfrosting
+          echo ""
+          echo "========================================="
+          echo "INTEGRATION TEST RESULTS SUMMARY"
+          echo "========================================="
+          echo ""
+          
+          # Create summary table
+          cat << 'EOF' > /tmp/test-summary.txt
+          | Test Category | Auth Status | Type | Status | Details |
+          |---------------|-------------|------|--------|---------|
+          EOF
+          
+          # Function to extract summary from test results
+          extract_summary() {
+            local file=$1
+            local auth_status=$2
+            local type=$3
+            
+            if [ -f "$file" ]; then
+              # Extract test counts
+              local total=$(grep "Total tests:" "$file" | awk '{print $3}' || echo "0")
+              local passed=$(grep "Passed:" "$file" | awk '{print $2}' || echo "0")
+              local warnings=$(grep "Warnings:" "$file" | awk '{print $2}' || echo "0")
+              local failed=$(grep "Failed:" "$file" | awk '{print $2}' || echo "0")
+              
+              # Determine status
+              local status="✅ PASS"
+              if [ "$failed" -gt 0 ]; then
+                status="❌ FAIL"
+              elif [ "$warnings" -gt 0 ]; then
+                status="⚠️  WARN"
+              fi
+              
+              # Format details
+              local details="Total: $total, Passed: $passed, Warnings: $warnings, Failed: $failed"
+              
+              echo "| Step $step | $auth_status | $type | $status | $details |" >> /tmp/test-summary.txt
+              step=$((step + 1))
+            else
+              echo "| Step $step | $auth_status | $type | ❌ ERROR | Test file not found |" >> /tmp/test-summary.txt
+              step=$((step + 1))
+            fi
+          }
+          
+          # Initialize step counter
+          step=1
+          
+          # Extract summaries for all test runs
+          extract_summary "/tmp/test-results-unauth-api.txt" "Unauthenticated" "API"
+          extract_summary "/tmp/test-results-unauth-frontend.txt" "Unauthenticated" "Frontend"
+          extract_summary "/tmp/test-results-auth-api.txt" "Authenticated" "API"
+          extract_summary "/tmp/test-results-auth-frontend.txt" "Authenticated" "Frontend"
+          
+          # Display the summary table
+          cat /tmp/test-summary.txt
+          echo ""
+          
+          # Overall summary
+          echo "========================================="
+          echo "OVERALL TEST SUMMARY"
+          echo "========================================="
+          
+          total_tests=0
+          total_passed=0
+          total_warnings=0
+          total_failed=0
+          
+          for file in /tmp/test-results-*.txt; do
+            if [ -f "$file" ]; then
+              tests=$(grep "Total tests:" "$file" | awk '{print $3}' || echo "0")
+              passed=$(grep "Passed:" "$file" | awk '{print $2}' || echo "0")
+              warnings=$(grep "Warnings:" "$file" | awk '{print $2}' || echo "0")
+              failed=$(grep "Failed:" "$file" | awk '{print $2}' || echo "0")
+              
+              total_tests=$((total_tests + tests))
+              total_passed=$((total_passed + passed))
+              total_warnings=$((total_warnings + warnings))
+              total_failed=$((total_failed + failed))
+            fi
+          done
+          
+          echo "Total Tests Executed: $total_tests"
+          echo "✅ Passed: $total_passed"
+          echo "⚠️  Warnings: $total_warnings (expected for unauthenticated access control)"
+          echo "❌ Failed: $total_failed"
+          echo ""
+          
+          if [ "$total_failed" -gt 0 ]; then
+            echo "❌ RESULT: Some tests failed - review logs above"
+            exit 1
+          elif [ "$total_warnings" -gt 0 ]; then
+            echo "✅ RESULT: All tests passed (warnings are expected for access control)"
+          else
+            echo "✅ RESULT: All tests passed"
+          fi
 
       - name: Install Playwright
         run: |

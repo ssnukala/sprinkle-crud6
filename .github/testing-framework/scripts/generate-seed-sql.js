@@ -50,6 +50,9 @@ console.log('');
  * These are bcrypt hashes (cost factor 10) of "password{N}" where N is the record index
  * Generated using: bcrypt.hash("password2", 10), bcrypt.hash("password3", 10), etc.
  * 
+ * ⚠️ TEST DATA ONLY - These are well-known hashes for testing purposes.
+ * NEVER use these or similar patterns in production environments.
+ * 
  * For testing purposes, these provide realistic bcrypt hashes without requiring
  * a bcrypt library in the seed generation script.
  */

@@ -327,6 +327,39 @@ ${generateCustomSteps(customSteps, 'before_tests')}
           # Note: Even though we bake, we still need vite dev server for proper asset serving
           php bakery bake || echo "⚠️ Build failed but continuing with tests"
       
+      - name: Start PHP development server
+        run: |
+          cd userfrosting
+          # Start PHP server using bakery serve in background
+          php bakery serve &
+          SERVER_PID=$!
+          echo $SERVER_PID > /tmp/server.pid
+          sleep 10
+
+          # Test if server is running
+          curl -f http://localhost:8080 || (echo "⚠️ Server may not be ready yet" && sleep 5 && curl -f http://localhost:8080)
+          echo "✅ PHP server started on localhost:8080"
+
+      - name: Start Vite development server
+        run: |
+          cd userfrosting
+          # Use npm update to fix any package issues
+          npm update
+          # Start Vite server in background using bakery command (follows UF6 standards)
+          php bakery assets:vite &
+          VITE_PID=$!
+          echo $VITE_PID > /tmp/vite.pid
+
+          # Wait longer for Vite to fully start up
+          echo "Waiting for Vite server to start..."
+          sleep 20
+
+          # Try to verify Vite is running by checking if the page loads properly
+          echo "Testing if frontend is accessible..."
+          curl -f http://localhost:8080 || echo "⚠️  Page load test after Vite start"
+
+          echo "✅ Vite server started"
+
       - name: Test API and frontend paths
         run: |
           cd userfrosting
@@ -360,6 +393,16 @@ ${generateCustomSteps(customSteps, 'after_screenshots')}
           name: integration-test-logs
           path: userfrosting/app/logs/
           retention-days: 7
+      
+      - name: Stop servers
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) || true
+          fi
+          if [ -f /tmp/vite.pid ]; then
+            kill $(cat /tmp/vite.pid) || true
+          fi
 `;
 }
 

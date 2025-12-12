@@ -204,6 +204,14 @@ jobs:
             --lastName=User
           echo "✅ Admin user created (ID 1 reserved for admin)"
 
+      - name: Display roles and permissions BEFORE SQL seeding
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "DIAGNOSTIC: Checking database state BEFORE SQL generation"
+          echo "========================================="
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
+
       - name: Generate and load DDL (CREATE TABLE statements)
         run: |
           cd userfrosting
@@ -229,6 +237,11 @@ jobs:
             ddl.sql
           
           echo "✅ DDL loaded - tables created from schemas"
+          
+          echo "========================================="
+          echo "DIAGNOSTIC: Checking database state AFTER DDL loading"
+          echo "========================================="
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
 
       - name: Generate and load SQL seed data (test data)
         run: |
@@ -253,6 +266,11 @@ jobs:
             seed-data.sql
           
           echo "✅ Test data loaded via SQL (IDs start from 2)"
+          
+          echo "========================================="
+          echo "DIAGNOSTIC: Checking database state AFTER seed-data loading"
+          echo "========================================="
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
       
       - name: Validate seed data
         run: |

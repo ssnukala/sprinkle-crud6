@@ -97,9 +97,9 @@ echo "✅ SQL seed data loaded successfully!\n";
 echo "═══════════════════════════════════════════════════════════════\n";
 echo "\n";
 echo "IMPORTANT REMINDERS:\n";
-echo "  - User ID 1 is RESERVED for admin (do not delete/disable)\n";
-echo "  - Group ID 1 is RESERVED for admin group (do not delete)\n";
-echo "  - Test data uses ID >= 2 (safe for DELETE/DISABLE tests)\n";
+echo "  - IDs 1-99 are RESERVED for PHP seed data (roles, permissions, groups, etc.)\n";
+echo "  - Test data uses IDs >= 100 (safe for DELETE/DISABLE tests)\n";
+echo "  - User ID 1 is the admin user (created by bakery create:admin-user)\n";
 echo "\n";
 
 exit(0);

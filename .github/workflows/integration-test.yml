@@ -265,7 +265,7 @@ jobs:
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
             seed-data.sql
           
-          echo "✅ Test data loaded via SQL (IDs start from 2)"
+          echo "✅ Test data loaded via SQL (IDs start from 100)"
           
           echo "========================================="
           echo "DIAGNOSTIC: Checking database state AFTER seed-data loading"

@@ -78,7 +78,7 @@ Automatically attach related records when creating a new record.
 **What happens:**
 1. User record is created
 2. Entry is automatically inserted into `role_users` table
-3. User is assigned role ID 2 (the default "User" role)
+3. User is assigned role ID 100 (the default "User" role)
 
 ### 2. `on_update` - Triggered After Record Update
 
@@ -414,7 +414,7 @@ class UserCreateAction extends CreateAction {
 1. **Test on_create:**
    - Create a new user via API
    - Check `role_users` table for automatic entry
-   - Verify role ID 2 is assigned
+   - Verify role ID 100 is assigned
 
 2. **Test on_update:**
    - Update user with `role_ids: [1, 3, 5]`

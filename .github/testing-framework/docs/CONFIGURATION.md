@@ -473,7 +473,7 @@ For operations that modify data:
 2. **Add descriptions** - Help future maintainers understand what's being tested
 3. **Test unauthenticated access** - Always verify security with unauthenticated tests
 4. **Skip when appropriate** - Skip tests that need request bodies or are destructive
-5. **Use consistent IDs** - Use ID 2+ for tests (ID 1 is reserved for admin)
+5. **Use consistent IDs** - Use ID 100+ for tests (ID 1 is reserved for admin)
 6. **Validate thoroughly** - Use appropriate validation for each endpoint type
 7. **Document skips** - Always provide skip_reason when skipping tests
 8. **Order seeds properly** - Account seeds first (order: 1), your sprinkle seeds second (order: 2)

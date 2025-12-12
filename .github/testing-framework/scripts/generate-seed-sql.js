@@ -9,19 +9,20 @@
  * 
  * EXECUTION ORDER (Integration Tests):
  * 1. Run migrations (php bakery migrate)
- * 2. Create admin user (php bakery create:admin-user) - Creates user ID 1
- * 3. Run this generated SQL seed data - Creates test data starting from ID 2
- * 4. Run unauthenticated path testing
- * 5. Run authenticated path testing
+ * 2. Run PHP seeds (roles, permissions, groups) - Creates IDs 1-99
+ * 3. Create admin user (php bakery create:admin-user) - Creates user ID 1
+ * 4. Run this generated SQL seed data - Creates test data starting from ID 100
+ * 5. Run unauthenticated path testing
+ * 6. Run authenticated path testing
  * 
  * Features:
  * - Automatically generates test data based on field types
  * - Respects field validation rules (required, unique, length, etc.)
- * - EXCLUDES user ID 1 ONLY (reserved for admin user)
- * - Starts test data from ID 2 (safe for all tables including users, groups, roles, permissions)
- * - Generates relationship data for many-to-many tables
- * - Creates idempotent SQL with INSERT...ON DUPLICATE KEY UPDATE
- * - Safe for re-seeding (won't duplicate or conflict with existing data)
+ * - Explicitly sets IDs starting from 100 (IDs 1-99 reserved for PHP seed data)
+ * - Safe ID range for all tables (roles, permissions, groups, users, etc.)
+ * - Generates relationship data for many-to-many tables with correct ID references
+ * - Uses INSERT IGNORE to skip existing records (preserves PHP seed data)
+ * - Safe for re-seeding (won't overwrite or duplicate existing data)
  * 
  * Usage: node generate-seed-sql.js [schema_directory] [output_file]
  * Example: node generate-seed-sql.js examples/schema app/sql/seeds/crud6-test-data.sql
@@ -333,9 +334,9 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
  * Check if a field should be included in INSERT
  */
 function shouldIncludeField(fieldName, field) {
-    // Skip auto-increment fields
-    if (field.auto_increment) {
-        return false;
+    // ALWAYS include ID field (we'll set it explicitly starting from 10)
+    if (fieldName === 'id' || field.auto_increment) {
+        return true;
     }
     
     // Skip computed/virtual fields (e.g., role_ids used for relationship sync)
@@ -391,20 +392,26 @@ function generateInsertSQL(schema, recordCount = 3) {
     }
     
     // Generate INSERT statements
-    // Start from ID 2 - only user ID 1 is reserved for admin
+    // Start from ID 100 - IDs 1-99 are reserved for system data created by PHP seeds
+    // (roles, permissions, groups, etc.)
     for (let i = 0; i < recordCount; i++) {
-        const recordIndex = i + 2; // Start from 2 (only user ID 1 is reserved)
+        const recordId = i + 100; // Start from 100 (IDs 1-99 reserved for PHP seed data)
         const values = [];
         
         for (const fieldName of insertFields) {
             const field = fields[fieldName];
-            const value = generateTestValue(fieldName, field, recordIndex);
-            values.push(value);
+            
+            // Explicitly set ID value
+            if (fieldName === 'id' || field.auto_increment) {
+                values.push(recordId);
+            } else {
+                const value = generateTestValue(fieldName, field, recordId);
+                values.push(value);
+            }
         }
         
-        sql.push(`INSERT INTO \`${tableName}\` (${insertFields.map(f => `\`${f}\``).join(', ')})`);
-        sql.push(`VALUES (${values.join(', ')}) AS new_values`);
-        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `\`${f}\` = new_values.\`${f}\``).join(', ')};`);
+        sql.push(`INSERT IGNORE INTO \`${tableName}\` (${insertFields.map(f => `\`${f}\``).join(', ')})`);
+        sql.push(`VALUES (${values.join(', ')});`);
         sql.push('');
     }
     
@@ -427,17 +434,17 @@ function generateRelationshipSQL(schema) {
             const foreignKey = rel.foreign_key || `${schema.model.slice(0, -1)}_id`;
             const relatedKey = rel.related_key || `${rel.name.slice(0, -1)}_id`;
             
-            // Generate a few test relationships (2->2, 3->2, 3->3)
+            // Generate a few test relationships using IDs from 100+ range
+            // (matching the ID range used for test data)
             const testRelationships = [
-                [2, 2],
-                [3, 2],
-                [3, 3],
+                [100, 100],
+                [101, 100],
+                [101, 101],
             ];
             
             for (const [fk, rk] of testRelationships) {
-                sql.push(`INSERT INTO \`${rel.pivot_table}\` (\`${foreignKey}\`, \`${relatedKey}\`)`);
-                sql.push(`VALUES (${fk}, ${rk}) AS new_rel`);
-                sql.push(`ON DUPLICATE KEY UPDATE \`${foreignKey}\` = new_rel.\`${foreignKey}\`;`);
+                sql.push(`INSERT IGNORE INTO \`${rel.pivot_table}\` (\`${foreignKey}\`, \`${relatedKey}\`)`);
+                sql.push(`VALUES (${fk}, ${rk});`);
                 sql.push('');
             }
         }
@@ -468,16 +475,17 @@ function processSchemas() {
     allSQL.push('--');
     allSQL.push('-- EXECUTION ORDER IN INTEGRATION TESTS:');
     allSQL.push('-- 1. Migrations run (php bakery migrate)');
-    allSQL.push('-- 2. Admin user created (php bakery create:admin-user) → user_id = 1, group_id = 1');
-    allSQL.push('-- 3. THIS SQL RUNS → Creates test data starting from ID 2');
-    allSQL.push('-- 4. Unauthenticated path testing begins');
-    allSQL.push('-- 5. Authenticated path testing begins');
+    allSQL.push('-- 2. PHP seeds run (roles, permissions, groups) → IDs 1-99');
+    allSQL.push('-- 3. Admin user created (php bakery create:admin-user) → user_id = 1');
+    allSQL.push('-- 4. THIS SQL RUNS → Creates test data starting from ID 100');
+    allSQL.push('-- 5. Unauthenticated path testing begins');
+    allSQL.push('-- 6. Authenticated path testing begins');
     allSQL.push('--');
     allSQL.push('-- CRITICAL CONSTRAINTS:');
-    allSQL.push('-- - User ID 1 and Group ID 1 are RESERVED for system/admin');
-    allSQL.push('-- - Test data ALWAYS starts from ID 2 or higher');
-    allSQL.push('-- - DELETE/DISABLE tests MUST NOT use ID 1 (system account protection)');
-    allSQL.push('-- - Uses INSERT...ON DUPLICATE KEY UPDATE for safe re-seeding');
+    allSQL.push('-- - IDs 1-99 are RESERVED for PHP seed data (roles, permissions, groups, etc.)');
+    allSQL.push('-- - Test data ALWAYS starts from ID 100 or higher');
+    allSQL.push('-- - DELETE/DISABLE tests MUST use IDs >= 100 (protects system data)');
+    allSQL.push('-- - Uses INSERT IGNORE to preserve existing PHP seed data');
     allSQL.push('--');
     allSQL.push(`-- Generated: ${new Date().toISOString()}`);
     allSQL.push(`-- Source: Schema files in ${schemaDir}/`);
@@ -526,14 +534,13 @@ function processSchemas() {
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
     allSQL.push(`-- Successfully generated ${processedCount} model seed data sets`);
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
-    allSQL.push('-- REMINDER: This seed data is designed to run AFTER admin user creation');
-    allSQL.push('--           and BEFORE unauthenticated path testing.');
+    allSQL.push('-- REMINDER: This seed data is designed to run AFTER PHP seeds and admin user');
+    allSQL.push('--           creation and BEFORE path testing.');
     allSQL.push('--');
-    allSQL.push('-- Protected Records:');
-    allSQL.push('--   - User ID 1 (admin user)');
-    allSQL.push('--   - Group ID 1 (admin group)');
+    allSQL.push('-- Protected ID Range:');
+    allSQL.push('--   - IDs 1-99 (reserved for PHP seed data: roles, permissions, groups, admin user)');
     allSQL.push('--');
-    allSQL.push('-- Test Data Range: ID >= 2 (safe for DELETE/DISABLE operations)');
+    allSQL.push('-- Test Data Range: IDs >= 100 (safe for DELETE/DISABLE operations)');
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
     
     console.log('');
@@ -571,8 +578,9 @@ try {
     console.log(`  mysql -u user -p database < ${outputFile}`);
     console.log('  or use in integration tests via PDO/Eloquent');
     console.log('');
-    console.log('⚠️  REMEMBER: User ID 1 and Group ID 1 are reserved!');
-    console.log('   DELETE/DISABLE tests must use IDs >= 2');
+    console.log('⚠️  REMEMBER: IDs 1-99 are reserved for PHP seed data!');
+    console.log('   Test data uses IDs >= 100');
+    console.log('   DELETE/DISABLE tests must use IDs >= 100');
     console.log('');
     
     process.exit(0);

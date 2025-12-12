@@ -186,7 +186,7 @@ Open browser to `http://localhost:8080` and:
 - **IDs 2+**: Available for test data (all tables)
 
 ### Test Data Structure
-The generated SQL creates test records starting from ID 2:
+The generated SQL creates test records starting from ID 100:
 - Users: IDs 2, 3, 4, ... (test users)
 - Groups: IDs 2, 3, 4, ... (can be used freely)
 - Roles: IDs 2, 3, 4, ... (can be used freely)
@@ -196,9 +196,9 @@ The generated SQL creates test records starting from ID 2:
 
 ### Safe for DELETE/DISABLE Tests
 Since only user ID 1 is reserved, you can safely:
-- Delete users with ID >= 2
-- Delete groups with ID >= 2
-- Delete roles with ID >= 2
+- Delete users with ID >= 100
+- Delete groups with ID >= 100
+- Delete roles with ID >= 100
 - Modify or remove any test data
 
 ## Running Unit Tests

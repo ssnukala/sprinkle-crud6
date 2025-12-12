@@ -21,7 +21,7 @@ The CRUD6 sprinkle uses a **schema-driven approach** for integration testing and
    → Creates user_id = 1, group_id = 1
    ↓
 3. Load SQL seed data (php load-seed-sql.php)
-   → Creates test data starting from ID 2
+   → Creates test data starting from ID 100
    ↓
 4. Run unauthenticated path tests
    → Tests API/frontend access without authentication
@@ -67,7 +67,7 @@ node generate-seed-sql.js examples/schema app/sql/seeds/crud6-test-data.sql
 **Features**:
 - Automatically generates test data based on field types
 - Respects field validation rules (required, unique, length, etc.)
-- **Starts all test data from ID 2** (avoids ID 1 conflicts)
+- **Starts all test data from ID 100** (avoids ID 1 conflicts)
 - Generates relationship data for many-to-many tables
 - Creates idempotent SQL with INSERT...ON DUPLICATE KEY UPDATE
 - Safe for re-seeding without duplicates
@@ -175,7 +175,7 @@ These IDs are **RESERVED** for system administration and MUST NOT be used in des
 
 ### Test Data Range
 
-- All test data starts from **ID 2 or higher**
+- All test data starts from **ID 100 or higher**
 - DELETE operations MUST only target IDs >= 2
 - DISABLE operations MUST only target IDs >= 2
 - UPDATE operations on ID 1 should be avoided in tests

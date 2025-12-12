@@ -302,6 +302,11 @@ function shouldIncludeField(fieldName, field) {
         return false;
     }
     
+    // Skip computed/virtual fields (e.g., role_ids used for relationship sync)
+    if (field.computed) {
+        return false;
+    }
+    
     // Skip readonly fields that aren't required
     if (field.readonly && !field.required) {
         return false;

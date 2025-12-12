@@ -107,6 +107,13 @@ function mapFieldTypeToSQL(fieldName, field) {
         case 'textarea-r5':
             return 'TEXT';
             
+        // Lookup/foreign key fields
+        case 'smartlookup':
+        case 'lookup':
+        case 'foreign_key':
+            // Foreign key field - integer reference to another table
+            return 'INT';
+            
         default:
             console.warn(`   ⚠️  Unknown field type: ${type} for field ${fieldName}, defaulting to VARCHAR(255)`);
             return 'VARCHAR(255)';

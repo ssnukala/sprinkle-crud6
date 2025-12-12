@@ -12,7 +12,7 @@
 -- 3. Create admin user (php bakery create:admin-user)
 -- 4. Run seed data (INSERT statements)
 --
--- Generated: 2025-12-12T00:22:48.521Z
+-- Generated: 2025-12-12T00:24:27.928Z
 -- Source: Schema files in examples/schema/
 -- ═══════════════════════════════════════════════════════════════
 
@@ -25,7 +25,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS activities (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   ip_address VARCHAR(45) NULL,
   user_id INT NOT NULL,
   type VARCHAR(255) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS activities (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS categories (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   name VARCHAR(100) NOT NULL,
   slug VARCHAR(255) NOT NULL,
   description TEXT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS categories (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS contacts (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   first_name VARCHAR(50) NOT NULL,
   last_name VARCHAR(50) NOT NULL,
   email VARCHAR(255) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS contacts (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS tasks (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT NULL,
   status VARCHAR(255) NULL DEFAULT 'pending',
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS groups (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   slug VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS groups (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS order_details (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   order_id INT NOT NULL,
   line_number INT NOT NULL,
   sku VARCHAR(255) NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS order_details (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS orders (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   order_number VARCHAR(255) NOT NULL,
   customer_name VARCHAR(255) NOT NULL,
   customer_email VARCHAR(255) NULL,
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS orders (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS permissions (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   slug VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL,
   conditions TEXT NULL DEFAULT '',
@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS permission_roles (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS product_categories (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   product_id INT NOT NULL,
   category_id INT NOT NULL,
   created_at TIMESTAMP NULL,
@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS product_categories (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS products (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   name VARCHAR(255) NOT NULL,
   sku VARCHAR(255) NOT NULL,
   price DECIMAL(10,2) NOT NULL,
@@ -245,7 +245,7 @@ CREATE TABLE IF NOT EXISTS products (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS roles (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   slug VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT NULL,
@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS role_users (
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT NULL,
+  id INT AUTO_INCREMENT NOT NULL,
   user_name VARCHAR(50) NOT NULL,
   first_name VARCHAR(20) NOT NULL,
   last_name VARCHAR(30) NOT NULL,

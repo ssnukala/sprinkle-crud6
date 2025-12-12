@@ -131,8 +131,10 @@ function generateCreateTableSQL(schema) {
         const columnType = mapFieldTypeToSQL(fieldName, field);
         const parts = [fieldName, columnType];
         
-        // Handle NOT NULL
-        if (field.required || field.validation?.required) {
+        // Handle NOT NULL - AUTO_INCREMENT fields are always NOT NULL
+        if (field.auto_increment) {
+            parts.push('NOT NULL');
+        } else if (field.required || field.validation?.required) {
             parts.push('NOT NULL');
         } else {
             parts.push('NULL');

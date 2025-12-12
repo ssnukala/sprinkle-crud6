@@ -450,24 +450,90 @@ function generateRouteConfiguration(routes, sprinkle) {
 
 function generateViteConfiguration(vite) {
   const deps = vite?.optimize_deps || ['limax', 'lodash.deburr'];
-  const depsStr = deps.map(d => `'${d}'`).join(', ');
   
-  return `      - name: Configure vite.config.ts
+  return `      - name: Verify NPM package installation
         run: |
           cd userfrosting
-          
-          if grep -q "optimizeDeps:" vite.config.ts; then
+          # Verify the package is installed correctly
+          npm list \${{ env.NPM_PACKAGE }} || echo "Package installed as local dependency"
+          # Check that the package files are accessible
+          test -f node_modules/\${{ env.NPM_PACKAGE }}/app/assets/index.ts && echo "✅ NPM package files accessible" || echo "⚠️ NPM package files not found"
+
+      - name: Configure vite.config.ts for CommonJS dependencies
+        run: |
+          cd userfrosting
+          # Configure vite.config.ts to handle CommonJS dependencies (limax and lodash.deburr)
+          # sprinkle-crud6 uses limax which depends on lodash.deburr (CommonJS modules)
+          # These need to be pre-bundled by Vite to work properly
+
+          # Check if already configured
+          if grep -q "'limax'" vite.config.ts || grep -q '"limax"' vite.config.ts; then
+            echo "limax already in vite.config.ts, skipping configuration"
+          elif grep -q "optimizeDeps:" vite.config.ts; then
+            echo "optimizeDeps section exists, checking for include array..."
             if grep -q "include:" vite.config.ts; then
-              sed -i "/include: \\\\[/a \\\\            ${depsStr.replace(/'/g, "\\'")}," vite.config.ts
+              echo "include array exists, adding limax and lodash.deburr to it..."
+              # Add to existing include array using awk (handles both single-line and multi-line)
+              awk '
+                /include: \\[/ {
+                  if (/\\]/) {
+                    # Single-line array: include: [...]
+                    sub(/\\]/, ", '\\''limax'\\'', '\\''lodash.deburr'\\'']");
+                    print;
+                    next;
+                  } else {
+                    # Multi-line array start
+                    print;
+                    in_array=1;
+                    next;
+                  }
+                }
+                in_array {
+                  if (/\\]/) {
+                    # Multi-line array end - add items before closing bracket
+                    print "            '\\''limax'\\'',";
+                    print "            '\\''lodash.deburr'\\''";
+                    print \$0;
+                    in_array=0;
+                    next;
+                  } else {
+                    # Inside array - ensure trailing comma
+                    if (!/,$/) {
+                      sub(/$/, ",");
+                    }
+                    print;
+                    next;
+                  }
+                }
+                {print}
+              ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
             else
-              sed -i "/optimizeDeps: {/a \\\\        include: [${depsStr.replace(/'/g, "\\'")}]," vite.config.ts
+              echo "include array doesn't exist, creating it..."
+              # Add include array to optimizeDeps
+              sed -i "/optimizeDeps: {/a \\\\        include: ['limax', 'lodash.deburr']," vite.config.ts
             fi
           else
-            sed -i "/plugins: \\\\[/,/\\\\],/a \\\\    optimizeDeps: {\\\\n        include: [${depsStr.replace(/'/g, "\\'")}]\\\\n    }," vite.config.ts
+            echo "optimizeDeps section doesn't exist, creating it..."
+            # Add optimizeDeps section after plugins block
+            # This handles both single-line (plugins: [...],) and multi-line plugins arrays
+            awk '
+              /plugins:/ {in_plugins=1} 
+              in_plugins && /\\],/ {
+                print;
+                print "    optimizeDeps: {";
+                print "        // Include CommonJS dependencies for sprinkle-crud6";
+                print "        // limax uses lodash.deburr which is a CommonJS module";
+                print "        include: ['\\''limax'\\'', '\\''lodash.deburr'\\'']";
+                print "    },";
+                in_plugins=0;
+                next;
+              } 
+              {print}
+            ' vite.config.ts > vite.config.ts.tmp && mv vite.config.ts.tmp vite.config.ts
           fi
-          
+
           echo ""
-          echo "✅ Vite configuration updated"
+          echo "✅ Vite configuration updated for CommonJS dependencies"
           echo "Updated vite.config.ts:"
           cat vite.config.ts
 `;

@@ -3,6 +3,17 @@
   "generated_from": "integration-test-models.json",
   "generated_at": "2025-12-12T04:00:00.000Z",
   "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
+  "config": {
+    "base_url": "http://localhost:8080",
+    "auth": {
+      "username": "admin",
+      "password": "admin123"
+    },
+    "api_patterns": {
+      "main_api": "/api/crud6/",
+      "schema_api": "/api/crud6/{model}/schema"
+    }
+  },
   "paths": {
     "authenticated": {
       "api": {

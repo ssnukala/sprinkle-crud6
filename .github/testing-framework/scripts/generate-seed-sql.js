@@ -94,7 +94,8 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             
         case 'phone':
             // Phone number field - format XXX-XXX-XXXX
-            const phoneValue = `'555-000-${String(1000 + recordIndex).substring(1)}'`;
+            const phoneNum = String(recordIndex).padStart(3, '0').substring(0, 3);
+            const phoneValue = `'555-000-${phoneNum}'`;
             return maxLength ? truncateToMaxLength(phoneValue, maxLength) : phoneValue;
             
         case 'url':
@@ -103,8 +104,9 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             return maxLength ? truncateToMaxLength(urlValue, maxLength) : urlValue;
             
         case 'zip':
-            // ZIP code - 5 digits
-            const zipValue = `'${String(10000 + recordIndex).substring(0, 5)}'`;
+            // ZIP code - 5 digits (valid range: 10000-99999)
+            const zipNum = 10000 + (recordIndex % 90000);
+            const zipValue = `'${String(zipNum).padStart(5, '0')}'`;
             return zipValue;
             
         case 'string':
@@ -236,12 +238,16 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             // Default string generation - respect max length
             let defaultVal = `'Value${recordIndex}'`;
             if (maxLength) {
-                // If even the shortest value is too long, truncate aggressively
-                if (defaultVal.length - 2 > maxLength) { // -2 for quotes
+                // Calculate the actual content length (excluding quotes)
+                const content = defaultVal.slice(1, -1); // Remove quotes
+                if (content.length > maxLength) {
+                    // Try shorter pattern
                     defaultVal = `'V${recordIndex}'`;
-                    if (defaultVal.length - 2 > maxLength) {
-                        // For very small fields, just use the record index
-                        defaultVal = `'${String(recordIndex).substring(0, maxLength)}'`;
+                    const shortContent = defaultVal.slice(1, -1);
+                    if (shortContent.length > maxLength) {
+                        // For very small fields, use minimal content
+                        const minContent = String(recordIndex).substring(0, maxLength);
+                        defaultVal = `'${minContent}'`;
                     }
                 }
                 return truncateToMaxLength(defaultVal, maxLength);

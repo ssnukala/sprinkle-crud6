@@ -12,7 +12,7 @@
 -- 3. Create admin user (php bakery create:admin-user)
 -- 4. Run seed data (INSERT statements)
 --
--- Generated: 2025-12-12T00:16:13.444Z
+-- Generated: 2025-12-12T00:22:48.521Z
 -- Source: Schema files in examples/schema/
 -- ═══════════════════════════════════════════════════════════════
 
@@ -257,15 +257,6 @@ CREATE TABLE IF NOT EXISTS roles (
   KEY name_idx (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Pivot table for roles <-> permissions relationship
-CREATE TABLE IF NOT EXISTS permission_roles (
-  role_id INT NOT NULL,
-  permission_id INT NOT NULL,
-  PRIMARY KEY (role_id, permission_id),
-  KEY role_id_idx (role_id),
-  KEY permission_id_idx (permission_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Pivot table for roles <-> users relationship
 CREATE TABLE IF NOT EXISTS role_users (
   role_id INT NOT NULL,
@@ -303,19 +294,11 @@ CREATE TABLE IF NOT EXISTS users (
   KEY flag_verified_idx (flag_verified)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Pivot table for users <-> roles relationship
-CREATE TABLE IF NOT EXISTS role_users (
-  user_id INT NOT NULL,
-  role_id INT NOT NULL,
-  PRIMARY KEY (user_id, role_id),
-  KEY user_id_idx (user_id),
-  KEY role_id_idx (role_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS=1;
 
 -- ═══════════════════════════════════════════════════════════════
 -- Successfully generated 12 table definitions
+-- and 2 pivot tables
 -- from 12 schema files
 -- ═══════════════════════════════════════════════════════════════

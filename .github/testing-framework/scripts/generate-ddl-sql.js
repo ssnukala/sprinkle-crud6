@@ -196,13 +196,19 @@ function generateCreateTableSQL(schema) {
 /**
  * Generate CREATE TABLE statements for relationship pivot tables
  */
-function generatePivotTableSQL(schema) {
+function generatePivotTableSQL(schema, processedPivotTables) {
     const relationships = schema.relationships || [];
     const sql = [];
     
     for (const rel of relationships) {
         if (rel.type === 'many_to_many' && rel.pivot_table) {
             const pivotTable = rel.pivot_table;
+            
+            // Skip if we've already processed this pivot table
+            if (processedPivotTables.has(pivotTable)) {
+                continue;
+            }
+            
             const foreignKey = rel.foreign_key || `${schema.model.slice(0, -1)}_id`;
             const relatedKey = rel.related_key || `${rel.name.slice(0, -1)}_id`;
             
@@ -215,6 +221,9 @@ function generatePivotTableSQL(schema) {
             sql.push(`  KEY ${relatedKey}_idx (${relatedKey})`);
             sql.push(') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;');
             sql.push('');
+            
+            // Mark this pivot table as processed
+            processedPivotTables.add(pivotTable);
         }
     }
     
@@ -265,6 +274,7 @@ function processSchemas() {
     
     let processedCount = 0;
     const processedTables = new Set();
+    const processedPivotTables = new Set();
     
     // Process each schema
     for (const file of jsonFiles) {
@@ -294,7 +304,7 @@ function processSchemas() {
             allSQL.push('');
             
             // Generate pivot table SQL if any
-            const pivotSQL = generatePivotTableSQL(schema);
+            const pivotSQL = generatePivotTableSQL(schema, processedPivotTables);
             if (pivotSQL) {
                 allSQL.push(pivotSQL);
             }
@@ -311,11 +321,12 @@ function processSchemas() {
     allSQL.push('');
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
     allSQL.push(`-- Successfully generated ${processedTables.size} table definitions`);
+    allSQL.push(`-- and ${processedPivotTables.size} pivot tables`);
     allSQL.push(`-- from ${processedCount} schema files`);
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
     
     console.log('');
-    console.log(`✅ Processed ${processedCount} schemas, generated ${processedTables.size} unique tables`);
+    console.log(`✅ Processed ${processedCount} schemas, generated ${processedTables.size} unique tables and ${processedPivotTables.size} pivot tables`);
     console.log('');
     
     return allSQL.join('\n');

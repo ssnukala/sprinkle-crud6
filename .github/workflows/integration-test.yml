@@ -372,29 +372,57 @@ jobs:
 
           echo "✅ Vite server started"
 
-      - name: Test unauthenticated API and frontend paths
+      - name: Test unauthenticated API paths
         run: |
           cd userfrosting
           echo "========================================="
-          echo "Testing Unauthenticated Paths"
+          echo "Testing Unauthenticated API Paths"
           echo "========================================="
-          echo "Testing that protected resources return 401/403 for unauthenticated users"
+          echo "Testing that protected API resources return 401/403 for unauthenticated users"
           echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            unauth
+            unauth api
       
-      - name: Test authenticated API and frontend paths
+      - name: Test unauthenticated frontend paths
         run: |
           cd userfrosting
           echo "========================================="
-          echo "Testing Authenticated Paths"
+          echo "Testing Unauthenticated Frontend Paths"
           echo "========================================="
-          echo "Logging in as admin user and testing that resources return 200"
+          echo "Testing that protected frontend pages redirect to login for unauthenticated users"
           echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            auth
+            unauth frontend
+      
+      - name: Test authenticated API paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Authenticated API Paths"
+          echo "========================================="
+          echo "Step 1: Login as admin user"
+          echo "Step 2: Test API endpoints with authenticated session"
+          echo "Expected: All API endpoints return 200 with valid data"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            auth api
+      
+      - name: Test authenticated frontend paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Authenticated Frontend Paths"
+          echo "========================================="
+          echo "Step 1: Login as admin user"
+          echo "Step 2: Test frontend pages with authenticated session"
+          echo "Expected: All frontend pages load successfully (200)"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            auth frontend
 
       - name: Install Playwright
         run: |

@@ -188,16 +188,33 @@ Testing: users_schema
 
 ## Integration with Workflow
 
-The workflow now properly tests both scenarios:
+The workflow now properly tests both scenarios in 4 separate steps:
 
-1. **Step: Test API and frontend paths (unauthenticated)**
+### Unauthenticated Tests (Steps 1-2)
+1. **Step: Test unauthenticated API paths**
+   - Tests API endpoints without authentication
    - Validates access control is working
-   - Expects 401/403 for protected resources
+   - Expects 401/403 for protected API resources
 
-2. **Step: Test API and frontend paths (authenticated)**
-   - Logs in as admin user
-   - Validates full functionality
-   - Expects 200 for all tests
+2. **Step: Test unauthenticated frontend paths**
+   - Tests frontend pages without authentication
+   - Validates protected pages redirect to login
+   - Expects 401/403 or redirect responses
+
+### Authenticated Tests (Steps 3-4)
+3. **Step: Test authenticated API paths**
+   - Logs in as admin user (calls performLogin internally)
+   - Tests all API endpoints with authenticated session
+   - Validates full API functionality
+   - Expects 200 for all API tests
+
+4. **Step: Test authenticated frontend paths**
+   - Logs in as admin user (calls performLogin internally)
+   - Tests all frontend pages with authenticated session
+   - Validates full frontend functionality
+   - Expects 200 for all frontend tests
+
+Each authenticated step includes an implicit login phase before testing.
 
 ## Files Modified
 

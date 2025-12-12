@@ -80,6 +80,13 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             }
             return recordIndex; // Use recordIndex directly (starts from 2)
             
+        case 'smartlookup':
+        case 'lookup':
+        case 'foreign_key':
+            // Foreign key fields - generate valid integer ID
+            // Use recordIndex to ensure valid references (assumes referenced records exist)
+            return recordIndex;
+            
         case 'email':
             // Email field type
             const emailValue = `'test${recordIndex}@example.com'`;

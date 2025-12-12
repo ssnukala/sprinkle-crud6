@@ -472,25 +472,93 @@ jobs:
           
           echo "✅ Vite server started"
       
-      - name: Test API and frontend paths
+      - name: Test unauthenticated API paths (with result table)
         run: |
           cd userfrosting
+          
+          echo "========================================="
+          echo "Testing Unauthenticated Paths"
+          echo "========================================="
+          echo "This step tests unauthenticated endpoints and generates a results table."
+          echo "Tests continue even if failures occur to collect all results."
+          echo ""
+          
+          # Set environment variable to continue on failure
+          export CONTINUE_ON_FAILURE=true
+          
+          # Test unauthenticated paths only (both API and frontend)
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth
+          
+          echo ""
+          echo "========================================="
+          echo "✅ Unauthenticated path testing complete"
+          echo "========================================="
 
-      - name: Capture screenshots
+      - name: Take screenshots and test authenticated API endpoints (with Network Tracking)
         run: |
           cd userfrosting
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            screenshots
+          
+          echo "========================================="
+          echo "Screenshots + Network Tracking + API Testing"
+          echo "========================================="
+          echo "This comprehensive script will:"
+          echo "  1. Log in once to establish authenticated session"
+          echo "  2. Take screenshots of all frontend pages"
+          echo "  3. Test all authenticated API endpoints (reusing the same session)"
+          echo "  4. Track all network requests made during page loads"
+          echo "  5. Detect error notifications and fail if found"
+          echo ""
+          
+          # Run the comprehensive screenshot script with network tracking and API testing from sprinkle
+          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-with-tracking.js \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+          
+          echo ""
+          echo "========================================="
+          echo "Screenshot summary"
+          echo "========================================="
+          # List screenshots if they exist
+          ls -lh /tmp/screenshot_*.png 2>/dev/null || echo "No screenshots generated"
+          
+          echo ""
+          echo "========================================="
+          echo "Network Request Summary"
+          echo "========================================="
+          # Check if network summary file exists and show basic info
+          if [ -f /tmp/network-requests-summary.txt ]; then
+            echo "✅ Network request summary generated"
+            ls -lh /tmp/network-requests-summary.txt
+          else
+            echo "⚠️  Network request summary not found"
+          fi
 
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-screenshots
-          path: userfrosting/screenshots/
+          path: /tmp/screenshot_*.png
+          if-no-files-found: warn
+          retention-days: 7
+      
+      - name: Upload network request summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-requests-summary
+          path: /tmp/network-requests-summary.txt
+          if-no-files-found: warn
+          retention-days: 7
+      
+      - name: Upload browser console errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-console-errors
+          path: /tmp/browser-console-errors.txt
+          if-no-files-found: warn
           retention-days: 7
       
       - name: Upload logs

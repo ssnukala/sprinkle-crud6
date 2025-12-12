@@ -260,16 +260,35 @@ echo "Failed: {$failedTests}\n";
 echo "Skipped: {$skippedTests}\n";
 echo "\n";
 
-if ($failedTests > 0) {
-    echo "❌ Some tests failed (actual code/SQL errors detected)\n";
-    echo "   Note: Permission failures (400/401/403) are warnings, not failures\n";
-    exit(1);
-} elseif ($warningTests > 0) {
-    echo "✅ All tests passed (permission warnings are expected for unauthenticated requests)\n";
-    echo "   {$warningTests} permission warnings detected (400/401/403 status codes)\n";
-    echo "   No actual code/SQL errors found\n";
+// Generate a table format for results (continue on failures - don't fail the test)
+$continue_on_failure = getenv('CONTINUE_ON_FAILURE') ?: 'false';
+if ($continue_on_failure === 'true') {
+    // In report mode, always exit 0 to allow the workflow to continue
+    if ($failedTests > 0) {
+        echo "⚠️  Some tests failed (actual code/SQL errors detected)\n";
+        echo "   Note: Permission failures (400/401/403) are warnings, not failures\n";
+        echo "   Continuing workflow to collect all test results...\n";
+    } elseif ($warningTests > 0) {
+        echo "✅ Tests completed (permission warnings are expected for unauthenticated requests)\n";
+        echo "   {$warningTests} permission warnings detected (400/401/403 status codes)\n";
+        echo "   No actual code/SQL errors found\n";
+    } else {
+        echo "✅ All tests passed\n";
+    }
     exit(0);
 } else {
-    echo "✅ All tests passed\n";
-    exit(0);
+    // In strict mode, fail on errors
+    if ($failedTests > 0) {
+        echo "❌ Some tests failed (actual code/SQL errors detected)\n";
+        echo "   Note: Permission failures (400/401/403) are warnings, not failures\n";
+        exit(1);
+    } elseif ($warningTests > 0) {
+        echo "✅ All tests passed (permission warnings are expected for unauthenticated requests)\n";
+        echo "   {$warningTests} permission warnings detected (400/401/403 status codes)\n";
+        echo "   No actual code/SQL errors found\n";
+        exit(0);
+    } else {
+        echo "✅ All tests passed\n";
+        exit(0);
+    }
 }

@@ -50,21 +50,21 @@ function executeQuery(string $query, string $dbHost, string $dbPort, string $dbN
         escapeshellarg($dbName),
         escapeshellarg($query)
     );
-    
+
     $output = [];
     $returnCode = 0;
     exec($command, $output, $returnCode);
-    
+
     if ($returnCode !== 0) {
         // Filter out password warning
-        $filteredOutput = array_filter($output, function($line) {
+        $filteredOutput = array_filter($output, function ($line) {
             return strpos($line, 'Using a password') === false;
         });
         if (!empty($filteredOutput)) {
             throw new RuntimeException("Query failed: " . implode("\n", $filteredOutput));
         }
     }
-    
+
     return $output;
 }
 
@@ -73,10 +73,10 @@ try {
     echo "=========================================\n";
     echo "ROLES TABLE\n";
     echo "=========================================\n";
-    
+
     $query = "SELECT id, slug, name, description FROM roles ORDER BY id";
     $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-    
+
     if (count($output) <= 1) {
         echo "❌ No roles found in database\n";
     } else {
@@ -86,15 +86,15 @@ try {
         }
     }
     echo "\n";
-    
+
     // Check specifically for crud6-admin role
     echo "=========================================\n";
     echo "CRUD6-ADMIN ROLE CHECK\n";
     echo "=========================================\n";
-    
+
     $query = "SELECT * FROM roles WHERE slug = 'crud6-admin'";
     $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-    
+
     if (count($output) <= 1) {
         echo "❌ crud6-admin role NOT FOUND\n";
     } else {
@@ -104,15 +104,15 @@ try {
         }
     }
     echo "\n";
-    
+
     // Display Permissions
     echo "=========================================\n";
     echo "PERMISSIONS TABLE\n";
     echo "=========================================\n";
-    
+
     $query = "SELECT id, slug, name, conditions FROM permissions ORDER BY id";
     $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-    
+
     if (count($output) <= 1) {
         echo "❌ No permissions found in database\n";
     } else {
@@ -122,12 +122,12 @@ try {
         }
     }
     echo "\n";
-    
+
     // Check specifically for CRUD6 permissions
     echo "=========================================\n";
     echo "CRUD6 PERMISSIONS CHECK\n";
     echo "=========================================\n";
-    
+
     $crud6Permissions = [
         'create_crud6',
         'delete_crud6',
@@ -136,12 +136,12 @@ try {
         'uri_crud6_list',
         'view_crud6_field'
     ];
-    
+
     $foundCount = 0;
     foreach ($crud6Permissions as $permSlug) {
         $query = "SELECT slug, name FROM permissions WHERE slug = '{$permSlug}'";
         $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-        
+
         if (count($output) > 1) {
             echo "✅ {$permSlug}: " . ($output[1] ?? '') . "\n";
             $foundCount++;
@@ -149,22 +149,22 @@ try {
             echo "❌ {$permSlug}: NOT FOUND\n";
         }
     }
-    
+
     echo "\nSummary: {$foundCount}/" . count($crud6Permissions) . " CRUD6 permissions found\n";
     echo "\n";
-    
+
     // Display Role-Permission assignments
     echo "=========================================\n";
     echo "ROLE-PERMISSION ASSIGNMENTS\n";
     echo "=========================================\n";
-    
+
     $query = "SELECT r.slug as role_slug, COUNT(pr.permission_id) as permission_count 
               FROM roles r 
-              LEFT JOIN permission_role pr ON r.id = pr.role_id 
+              LEFT JOIN permission_roles pr ON r.id = pr.role_id 
               GROUP BY r.id, r.slug 
               ORDER BY r.slug";
     $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-    
+
     if (count($output) <= 1) {
         echo "❌ No role-permission assignments found\n";
     } else {
@@ -174,11 +174,10 @@ try {
         }
     }
     echo "\n";
-    
+
     echo "=========================================\n";
     echo "✅ Database display complete\n";
     echo "=========================================\n";
-    
 } catch (Exception $e) {
     echo "❌ ERROR: " . $e->getMessage() . "\n";
     exit(1);

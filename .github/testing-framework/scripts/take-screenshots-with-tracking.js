@@ -171,14 +171,6 @@ class NetworkRequestTracker {
     }
 
     /**
-     * Legacy method for backward compatibility
-     * @deprecated Use isMainApiCall instead
-     */
-    isMainApiCall(url) {
-        return this.isMainApiCall(url);
-    }
-
-    /**
      * Get all main API calls
      * @returns {Array} Array of main API requests
      */

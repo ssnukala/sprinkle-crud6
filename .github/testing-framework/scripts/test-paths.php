@@ -79,7 +79,7 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     $loginPageUrl = $baseUrl . '/account/sign-in';
     $tmpFile = tempnam(sys_get_temp_dir(), 'login_page_');
     
-    $curlCmd = "curl -s -o {$tmpFile} -c {$cookieJar} -L '{$loginPageUrl}' 2>&1";
+    $curlCmd = "curl -s -o {$tmpFile} -c {$cookieJar} -L " . escapeshellarg($loginPageUrl) . " 2>&1";
     exec($curlCmd, $output, $returnCode);
     
     if ($returnCode !== 0) {
@@ -129,7 +129,7 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     // Perform login POST request
     $curlCmd = "curl -s -o {$tmpFile} -w '%{http_code}' -b {$cookieJar} -c {$cookieJar} -L " .
                "-X POST -H 'Content-Type: application/x-www-form-urlencoded' " .
-               "--data '{$postDataString}' '{$loginUrl}' 2>&1";
+               "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl) . " 2>&1";
     
     $httpCode = trim(shell_exec($curlCmd));
     $loginResponse = file_get_contents($tmpFile);
@@ -208,10 +208,10 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     // Add payload for POST/PUT/PATCH requests
     if (isset($pathConfig['payload']) && in_array($method, ['POST', 'PUT', 'PATCH'])) {
         $payload = json_encode($pathConfig['payload']);
-        $curlCmd .= "-H 'Content-Type: application/json' --data '{$payload}' ";
+        $curlCmd .= "-H 'Content-Type: application/json' --data " . escapeshellarg($payload) . " ";
     }
     
-    $curlCmd .= "-X {$method} '{$url}'";
+    $curlCmd .= "-X " . escapeshellarg($method) . " " . escapeshellarg($url);
     
     // Execute curl command
     $httpCode = trim(shell_exec($curlCmd));

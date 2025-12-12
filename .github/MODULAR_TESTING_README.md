@@ -88,7 +88,7 @@ Instead of manually defining 40+ paths, define models once and generate all path
 ```bash
 # 1. Define models in integration-test-models.json (5 model definitions)
 # 2. Generate paths from models
-node .github/scripts/generate-paths-from-models.js \
+node .github/testing-framework/scripts/generate-paths-from-models.js \
   .github/config/integration-test-models.json \
   .github/config/integration-test-paths.json
 # 3. Result: 40 paths generated automatically!

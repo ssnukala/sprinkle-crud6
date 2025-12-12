@@ -6,8 +6,7 @@ declare(strict_types=1);
 /*
  * UserFrosting CRUD6 Sprinkle Integration Test - Display Roles and Permissions
  *
- * This script displays all roles and permissions from the database.
- * It uses MySQL CLI directly to avoid UserFrosting bootstrap issues.
+ * This script displays all roles and permissions from the database using Eloquent.
  * It's designed to be run from the UserFrosting 6 project root directory.
  *
  * Usage: php display-roles-permissions.php
@@ -19,70 +18,54 @@ if (!file_exists('vendor/autoload.php')) {
     exit(1);
 }
 
+// Bootstrap UserFrosting 6 application
+require 'vendor/autoload.php';
+
+use UserFrosting\App\MyApp;
+use UserFrosting\Bakery\Bakery;
+use UserFrosting\Sprinkle\Account\Database\Models\Role;
+use UserFrosting\Sprinkle\Account\Database\Models\Permission;
+
+$bakery = new Bakery(MyApp::class);
+$container = $bakery->getContainer();
+
 echo "=========================================\n";
 echo "Database Roles and Permissions Display\n";
 echo "=========================================\n";
 echo "Timestamp: " . date('Y-m-d H:i:s') . "\n\n";
 
-// Get database credentials from environment
-$dbHost = getenv('DB_HOST') ?: '127.0.0.1';
-$dbPort = getenv('DB_PORT') ?: '3306';
-$dbName = getenv('DB_NAME') ?: 'userfrosting_test';
-$dbUser = getenv('DB_USER') ?: 'root';
-$dbPassword = getenv('DB_PASSWORD') ?: 'root';
-
-echo "📊 Database connection:\n";
-echo "   Host: {$dbHost}:{$dbPort}\n";
-echo "   Database: {$dbName}\n";
-echo "   User: {$dbUser}\n\n";
-
-/**
- * Execute a MySQL query and return results
- */
-function executeQuery(string $query, string $dbHost, string $dbPort, string $dbName, string $dbUser, string $dbPassword): array
-{
-    $command = sprintf(
-        'mysql -h %s -P %s -u %s %s %s -e %s 2>&1',
-        escapeshellarg($dbHost),
-        escapeshellarg($dbPort),
-        escapeshellarg($dbUser),
-        !empty($dbPassword) ? '-p' . escapeshellarg($dbPassword) : '',
-        escapeshellarg($dbName),
-        escapeshellarg($query)
-    );
-
-    $output = [];
-    $returnCode = 0;
-    exec($command, $output, $returnCode);
-
-    if ($returnCode !== 0) {
-        // Filter out password warning
-        $filteredOutput = array_filter($output, function ($line) {
-            return strpos($line, 'Using a password') === false;
-        });
-        if (!empty($filteredOutput)) {
-            throw new RuntimeException("Query failed: " . implode("\n", $filteredOutput));
-        }
-    }
-
-    return $output;
-}
-
 try {
+    // Get database connection info
+    $db = $container->get(\Illuminate\Database\Capsule\Manager::class);
+    $connection = $db->getConnection();
+    
+    echo "📊 Database connection:\n";
+    echo "   Driver: " . $connection->getDriverName() . "\n";
+    echo "   Database: " . $connection->getDatabaseName() . "\n";
+    echo "   Host: " . $connection->getConfig('host') . "\n";
+    echo "   Table Prefix: " . $connection->getTablePrefix() . "\n\n";
+
     // Display Roles
     echo "=========================================\n";
     echo "ROLES TABLE\n";
     echo "=========================================\n";
 
-    $query = "SELECT id, slug, name, description FROM roles ORDER BY id";
-    $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-
-    if (count($output) <= 1) {
+    $roles = Role::orderBy('id')->get();
+    
+    if ($roles->isEmpty()) {
         echo "❌ No roles found in database\n";
     } else {
-        echo "Found " . (count($output) - 1) . " role(s):\n\n";
-        foreach ($output as $line) {
-            echo $line . "\n";
+        echo "Found " . $roles->count() . " role(s):\n\n";
+        echo sprintf("%-5s %-20s %-30s %s\n", "ID", "Slug", "Name", "Description");
+        echo str_repeat("-", 100) . "\n";
+        foreach ($roles as $role) {
+            echo sprintf(
+                "%-5s %-20s %-30s %s\n",
+                $role->id,
+                $role->slug,
+                substr($role->name, 0, 30),
+                substr($role->description ?? '', 0, 40)
+            );
         }
     }
     echo "\n";
@@ -92,16 +75,18 @@ try {
     echo "CRUD6-ADMIN ROLE CHECK\n";
     echo "=========================================\n";
 
-    $query = "SELECT * FROM roles WHERE slug = 'crud6-admin'";
-    $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-
-    if (count($output) <= 1) {
+    $crud6AdminRole = Role::where('slug', 'crud6-admin')->first();
+    
+    if ($crud6AdminRole === null) {
         echo "❌ crud6-admin role NOT FOUND\n";
     } else {
         echo "✅ crud6-admin role EXISTS:\n";
-        foreach ($output as $line) {
-            echo $line . "\n";
-        }
+        echo "   ID: {$crud6AdminRole->id}\n";
+        echo "   Slug: {$crud6AdminRole->slug}\n";
+        echo "   Name: {$crud6AdminRole->name}\n";
+        echo "   Description: {$crud6AdminRole->description}\n";
+        $permCount = $crud6AdminRole->permissions()->count();
+        echo "   Permissions: {$permCount}\n";
     }
     echo "\n";
 
@@ -110,15 +95,22 @@ try {
     echo "PERMISSIONS TABLE\n";
     echo "=========================================\n";
 
-    $query = "SELECT id, slug, name, conditions FROM permissions ORDER BY id";
-    $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-
-    if (count($output) <= 1) {
+    $permissions = Permission::orderBy('id')->get();
+    
+    if ($permissions->isEmpty()) {
         echo "❌ No permissions found in database\n";
     } else {
-        echo "Found " . (count($output) - 1) . " permission(s):\n\n";
-        foreach ($output as $line) {
-            echo $line . "\n";
+        echo "Found " . $permissions->count() . " permission(s):\n\n";
+        echo sprintf("%-5s %-30s %-40s %s\n", "ID", "Slug", "Name", "Conditions");
+        echo str_repeat("-", 120) . "\n";
+        foreach ($permissions as $perm) {
+            echo sprintf(
+                "%-5s %-30s %-40s %s\n",
+                $perm->id,
+                substr($perm->slug, 0, 30),
+                substr($perm->name, 0, 40),
+                substr($perm->conditions ?? '', 0, 20)
+            );
         }
     }
     echo "\n";
@@ -139,11 +131,10 @@ try {
 
     $foundCount = 0;
     foreach ($crud6Permissions as $permSlug) {
-        $query = "SELECT slug, name FROM permissions WHERE slug = '{$permSlug}'";
-        $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-
-        if (count($output) > 1) {
-            echo "✅ {$permSlug}: " . ($output[1] ?? '') . "\n";
+        $perm = Permission::where('slug', $permSlug)->first();
+        
+        if ($perm !== null) {
+            echo "✅ {$permSlug}: {$perm->name}\n";
             $foundCount++;
         } else {
             echo "❌ {$permSlug}: NOT FOUND\n";
@@ -158,19 +149,17 @@ try {
     echo "ROLE-PERMISSION ASSIGNMENTS\n";
     echo "=========================================\n";
 
-    $query = "SELECT r.slug as role_slug, COUNT(pr.permission_id) as permission_count 
-              FROM roles r 
-              LEFT JOIN permission_roles pr ON r.id = pr.role_id 
-              GROUP BY r.id, r.slug 
-              ORDER BY r.slug";
-    $output = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
-
-    if (count($output) <= 1) {
+    $allRoles = Role::orderBy('slug')->get();
+    
+    if ($allRoles->isEmpty()) {
         echo "❌ No role-permission assignments found\n";
     } else {
         echo "Permission counts by role:\n\n";
-        foreach ($output as $line) {
-            echo $line . "\n";
+        echo sprintf("%-20s %s\n", "Role Slug", "Permission Count");
+        echo str_repeat("-", 50) . "\n";
+        foreach ($allRoles as $role) {
+            $permCount = $role->permissions()->count();
+            echo sprintf("%-20s %d\n", $role->slug, $permCount);
         }
     }
     echo "\n";
@@ -178,8 +167,9 @@ try {
     echo "=========================================\n";
     echo "✅ Database display complete\n";
     echo "=========================================\n";
-} catch (Exception $e) {
+} catch (\Exception $e) {
     echo "❌ ERROR: " . $e->getMessage() . "\n";
+    echo "Stack trace:\n" . $e->getTraceAsString() . "\n";
     exit(1);
 }
 

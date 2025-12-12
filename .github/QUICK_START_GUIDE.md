@@ -20,21 +20,21 @@ cp path/to/crud6/.github/config/template-integration-test-seeds.json \
 
 ## Step 2: Copy Testing Scripts
 
-Copy the reusable testing scripts to your sprinkle's `.github/scripts/` directory:
+Copy the reusable testing scripts to your sprinkle's `.github/testing-framework/scripts/` directory:
 
 ```bash
 # Create scripts directory
 mkdir -p .github/scripts
 
 # Copy all modular testing scripts from CRUD6 sprinkle
-cp path/to/crud6/.github/scripts/run-seeds.php .github/scripts/
-cp path/to/crud6/.github/scripts/check-seeds-modular.php .github/scripts/
-cp path/to/crud6/.github/scripts/test-seed-idempotency-modular.php .github/scripts/
-cp path/to/crud6/.github/scripts/test-paths.php .github/scripts/
-cp path/to/crud6/.github/scripts/take-screenshots-modular.js .github/scripts/
+cp path/to/crud6/.github/testing-framework/scripts/run-seeds.php .github/testing-framework/scripts/
+cp path/to/crud6/.github/testing-framework/scripts/check-seeds-modular.php .github/testing-framework/scripts/
+cp path/to/crud6/.github/testing-framework/scripts/test-seed-idempotency-modular.php .github/testing-framework/scripts/
+cp path/to/crud6/.github/testing-framework/scripts/test-paths.php .github/testing-framework/scripts/
+cp path/to/crud6/.github/testing-framework/scripts/take-screenshots-modular.js .github/testing-framework/scripts/
 
 # Make scripts executable
-chmod +x .github/scripts/*.php
+chmod +x .github/testing-framework/scripts/*.php
 ```
 
 ## Step 3: Customize Path Configuration
@@ -187,26 +187,26 @@ jobs:
       run: |
         cd userfrosting
         cp ../my-sprinkle/.github/config/integration-test-seeds.json .
-        cp ../my-sprinkle/.github/scripts/run-seeds.php .
+        cp ../my-sprinkle/.github/testing-framework/scripts/run-seeds.php .
         php run-seeds.php integration-test-seeds.json
 
     - name: Validate seed data (Modular)
       run: |
         cd userfrosting
-        cp ../my-sprinkle/.github/scripts/check-seeds-modular.php .
+        cp ../my-sprinkle/.github/testing-framework/scripts/check-seeds-modular.php .
         php check-seeds-modular.php integration-test-seeds.json
 
     - name: Test paths (Modular)
       run: |
         cd userfrosting
         cp ../my-sprinkle/.github/config/integration-test-paths.json .
-        cp ../my-sprinkle/.github/scripts/test-paths.php .
+        cp ../my-sprinkle/.github/testing-framework/scripts/test-paths.php .
         php test-paths.php integration-test-paths.json unauth
 
     - name: Take screenshots (Modular)
       run: |
         cd userfrosting
-        cp ../my-sprinkle/.github/scripts/take-screenshots-modular.js .
+        cp ../my-sprinkle/.github/testing-framework/scripts/take-screenshots-modular.js .
         # Screenshots read from integration-test-paths.json (already copied)
         node take-screenshots-modular.js integration-test-paths.json
 ```

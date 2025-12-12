@@ -75,6 +75,11 @@ $output = [];
 $returnCode = 0;
 exec($command, $output, $returnCode);
 
+// Filter out MySQL password warning from output
+$output = array_filter($output, function ($line) {
+    return strpos($line, 'Using a password') === false;
+});
+
 // Display output
 if (!empty($output)) {
     foreach ($output as $line) {

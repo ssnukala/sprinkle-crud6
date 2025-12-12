@@ -419,6 +419,16 @@ jobs:
           path: userfrosting/app/logs/
           retention-days: 7
       
+      - name: Upload SQL files for debugging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-sql-files
+          path: |
+            userfrosting/ddl.sql
+            userfrosting/seed-data.sql
+          retention-days: 7
+      
       - name: Stop servers
         if: always()
         run: |

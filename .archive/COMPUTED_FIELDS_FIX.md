@@ -61,10 +61,29 @@ ON DUPLICATE KEY UPDATE slug = VALUES(slug), name = VALUES(name), conditions = V
 - **SQL statements affected**: 6 INSERT statements (3 for permissions, 3 for users)
 
 ## Testing
-- ✅ JavaScript syntax validation passed for all 3 scripts
-- ✅ SQL regeneration successful
-- ✅ No `role_ids` references in generated SQL
-- ⏳ Integration test validation pending
+- ✅ JavaScript syntax validation passed for all 4 scripts
+- ✅ DDL regeneration successful with computed field skipping
+- ✅ Seed SQL regeneration successful
+- ✅ No `role_ids` references in generated DDL or seed files
+- ✅ DDL file: 301 lines (reduced from ~315 lines)
+- ✅ Seed file: 522 lines (reduced from ~540 lines)
+
+## Verification Commands
+```bash
+# Verify no role_ids in DDL
+grep "role_ids" app/sql/migrations/crud6-tables.sql
+# Should return: (no output / exit code 1)
+
+# Verify no role_ids in seed data
+grep "role_ids" app/sql/seeds/crud6-test-data.sql
+# Should return: (no output / exit code 1)
+
+# Check computed fields in schemas
+grep -r "\"computed\":" examples/schema/*.json
+# Should return:
+# examples/schema/permissions.json:            "computed": true,
+# examples/schema/users.json:            "computed": true,
+```
 
 ## Related Schema Fields
 Currently only two fields are marked as `computed: true`:

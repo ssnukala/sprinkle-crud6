@@ -55,8 +55,117 @@ $failedTests = 0;
 $skippedTests = 0;
 $warningTests = 0;
 
+// Global cookie jar for session management
+$cookieJar = tempnam(sys_get_temp_dir(), 'cookies_');
+
+/**
+ * Perform login to get authenticated session
+ * 
+ * @param string $baseUrl Base URL of the application
+ * @param string $username Username to login with
+ * @param string $password Password to login with
+ * @param string $cookieJar Path to cookie jar file
+ * @return bool True if login successful, false otherwise
+ */
+function performLogin($baseUrl, $username, $password, $cookieJar) {
+    echo "=========================================\n";
+    echo "Authenticating User\n";
+    echo "=========================================\n";
+    echo "Username: {$username}\n";
+    echo "Login URL: {$baseUrl}/account/sign-in\n\n";
+    
+    // Step 1: Get the login page to obtain CSRF token and initial session
+    $loginPageUrl = $baseUrl . '/account/sign-in';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'login_page_');
+    
+    $curlCmd = "curl -s -o {$tmpFile} -c {$cookieJar} -L '{$loginPageUrl}' 2>&1";
+    exec($curlCmd, $output, $returnCode);
+    
+    if ($returnCode !== 0) {
+        echo "❌ Failed to load login page\n";
+        echo "   Error: " . implode("\n   ", $output) . "\n\n";
+        unlink($tmpFile);
+        return false;
+    }
+    
+    $loginPageContent = file_get_contents($tmpFile);
+    unlink($tmpFile);
+    
+    // Extract CSRF token from the login page
+    $csrfToken = null;
+    if (preg_match('/<input[^>]*name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']/', $loginPageContent, $matches)) {
+        $csrfToken = $matches[1];
+    } elseif (preg_match('/<input[^>]*value=["\']([^"\']+)["\'][^>]*name=["\']csrf_token["\']/', $loginPageContent, $matches)) {
+        $csrfToken = $matches[1];
+    } elseif (preg_match('/name="csrf_token"\s+value="([^"]+)"/', $loginPageContent, $matches)) {
+        $csrfToken = $matches[1];
+    }
+    
+    if (!$csrfToken) {
+        echo "⚠️  Warning: Could not extract CSRF token from login page\n";
+        echo "   Attempting login without CSRF token...\n";
+    } else {
+        echo "✅ CSRF token obtained\n";
+    }
+    
+    // Step 2: Submit login form
+    $loginUrl = $baseUrl . '/account/sign-in';
+    $tmpFile = tempnam(sys_get_temp_dir(), 'login_response_');
+    
+    // Build form data
+    $postData = [
+        'user_name' => $username,
+        'password' => $password,
+    ];
+    
+    if ($csrfToken) {
+        $postData['csrf_token'] = $csrfToken;
+    }
+    
+    // Convert to URL-encoded string
+    $postDataString = http_build_query($postData);
+    
+    // Perform login POST request
+    $curlCmd = "curl -s -o {$tmpFile} -w '%{http_code}' -b {$cookieJar} -c {$cookieJar} -L " .
+               "-X POST -H 'Content-Type: application/x-www-form-urlencoded' " .
+               "--data '{$postDataString}' '{$loginUrl}' 2>&1";
+    
+    $httpCode = trim(shell_exec($curlCmd));
+    $loginResponse = file_get_contents($tmpFile);
+    unlink($tmpFile);
+    
+    // Check if login was successful
+    // Successful login typically results in redirect (302/303) or 200
+    // We check for absence of login form and presence of dashboard/logged-in indicators
+    $isStillOnLoginPage = (
+        strpos($loginResponse, 'sign-in') !== false ||
+        strpos($loginResponse, 'data-test="username"') !== false ||
+        strpos($loginResponse, 'Please sign in') !== false
+    );
+    
+    $hasLoggedInIndicators = (
+        strpos($loginResponse, 'dashboard') !== false ||
+        strpos($loginResponse, 'sign-out') !== false ||
+        strpos($loginResponse, 'Sign Out') !== false ||
+        strpos($loginResponse, 'logout') !== false
+    );
+    
+    if ($hasLoggedInIndicators && !$isStillOnLoginPage) {
+        echo "✅ Login successful (HTTP {$httpCode})\n";
+        echo "   Session established\n\n";
+        return true;
+    } else {
+        echo "❌ Login failed (HTTP {$httpCode})\n";
+        if ($isStillOnLoginPage) {
+            echo "   Still on login page - credentials may be incorrect\n";
+        }
+        echo "   Response length: " . strlen($loginResponse) . " bytes\n\n";
+        return false;
+    }
+}
+
 // Function to test a path
-function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = null, $password = null) {
+function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = null, $password = null, $cookieJar = null) {
     global $totalTests, $passedTests, $failedTests, $skippedTests, $warningTests;
     
     $totalTests++;
@@ -86,13 +195,19 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     // Basic curl options
     $curlCmd = "curl -s -o {$tmpFile} -w '%{http_code}' ";
     
-    // Add authentication if needed
-    if ($isAuth && $username && $password) {
-        // For authenticated requests, we need to first get a session cookie
-        // This is simplified - in a real scenario, you'd need to login first
-        $curlCmd .= "-L "; // Follow redirects
-    } else {
-        $curlCmd .= "-L "; // Follow redirects for unauthenticated
+    // Add authentication cookie jar if needed
+    if ($isAuth && $cookieJar && file_exists($cookieJar)) {
+        // Use cookie jar for authenticated requests
+        $curlCmd .= "-b {$cookieJar} -c {$cookieJar} ";
+    }
+    
+    // Follow redirects
+    $curlCmd .= "-L ";
+    
+    // Add payload for POST/PUT/PATCH requests
+    if (isset($pathConfig['payload']) && in_array($method, ['POST', 'PUT', 'PATCH'])) {
+        $payload = json_encode($pathConfig['payload']);
+        $curlCmd .= "-H 'Content-Type: application/json' --data '{$payload}' ";
     }
     
     $curlCmd .= "-X {$method} '{$url}'";
@@ -203,23 +318,44 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
 if ($authType === 'auth' || $authType === 'both') {
     $authPaths = $config['paths']['authenticated'] ?? [];
     
-    if (($pathType === 'api' || $pathType === 'both') && isset($authPaths['api'])) {
-        echo "=========================================\n";
-        echo "Testing Authenticated API Paths\n";
-        echo "=========================================\n\n";
-        
-        foreach ($authPaths['api'] as $name => $pathConfig) {
-            testPath($name, $pathConfig, $baseUrl, true, $username, $password);
-        }
-    }
+    // Check if there are any authenticated tests to run
+    $hasAuthTests = (
+        (($pathType === 'api' || $pathType === 'both') && isset($authPaths['api']) && count($authPaths['api']) > 0) ||
+        (($pathType === 'frontend' || $pathType === 'both') && isset($authPaths['frontend']) && count($authPaths['frontend']) > 0)
+    );
     
-    if (($pathType === 'frontend' || $pathType === 'both') && isset($authPaths['frontend'])) {
-        echo "=========================================\n";
-        echo "Testing Authenticated Frontend Paths\n";
-        echo "=========================================\n\n";
-        
-        foreach ($authPaths['frontend'] as $name => $pathConfig) {
-            testPath($name, $pathConfig, $baseUrl, true, $username, $password);
+    if ($hasAuthTests) {
+        // Perform login before testing authenticated paths
+        if (!performLogin($baseUrl, $username, $password, $cookieJar)) {
+            echo "❌ Authentication failed - skipping authenticated tests\n\n";
+            // Count skipped tests
+            if (($pathType === 'api' || $pathType === 'both') && isset($authPaths['api'])) {
+                $skippedTests += count($authPaths['api']);
+            }
+            if (($pathType === 'frontend' || $pathType === 'both') && isset($authPaths['frontend'])) {
+                $skippedTests += count($authPaths['frontend']);
+            }
+        } else {
+            // Login successful, proceed with authenticated tests
+            if (($pathType === 'api' || $pathType === 'both') && isset($authPaths['api'])) {
+                echo "=========================================\n";
+                echo "Testing Authenticated API Paths\n";
+                echo "=========================================\n\n";
+                
+                foreach ($authPaths['api'] as $name => $pathConfig) {
+                    testPath($name, $pathConfig, $baseUrl, true, $username, $password, $cookieJar);
+                }
+            }
+            
+            if (($pathType === 'frontend' || $pathType === 'both') && isset($authPaths['frontend'])) {
+                echo "=========================================\n";
+                echo "Testing Authenticated Frontend Paths\n";
+                echo "=========================================\n\n";
+                
+                foreach ($authPaths['frontend'] as $name => $pathConfig) {
+                    testPath($name, $pathConfig, $baseUrl, true, $username, $password, $cookieJar);
+                }
+            }
         }
     }
 }
@@ -247,6 +383,11 @@ if ($authType === 'unauth' || $authType === 'both') {
             testPath($name, $pathConfig, $baseUrl, false);
         }
     }
+}
+
+// Cleanup
+if (file_exists($cookieJar)) {
+    unlink($cookieJar);
 }
 
 // Print summary

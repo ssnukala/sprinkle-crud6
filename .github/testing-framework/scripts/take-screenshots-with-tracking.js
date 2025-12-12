@@ -1,7 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * UserFrosting CRUD6 Sprinkle Integration Test - Screenshots with Network Tracking and API Testing
+ * UserFrosting 6 Integration Testing Framework - Screenshots with Network Tracking and API Testing
+ * 
+ * This modular script can be used by any UserFrosting 6 sprinkle to perform comprehensive integration testing.
+ * It reads API patterns from configuration files to work with different sprinkle API structures.
+ *
+ * Features:
+ * - Configurable API patterns (works with any sprinkle's API structure)
+ * - Network request tracking
+ * - CSRF token handling
+ * - Authenticated API endpoint testing
+ * - Frontend screenshot capture
+ * - Console error detection
+ * - Comprehensive error reporting
  *
  * This script uses Playwright to take screenshots, track network requests, and test authenticated API endpoints.
  * It reads the paths configuration and:
@@ -28,11 +40,17 @@ const SECTION_SEPARATOR = "─────────────────�
 
 /**
  * Network Request Tracker (integrated from NetworkRequestTracker.js)
+ * Tracks network requests with configurable API patterns for modularity
  */
 class NetworkRequestTracker {
-    constructor() {
+    constructor(apiPatterns = {}) {
         this.requests = [];
         this.tracking = false;
+        // Store API patterns for this tracker instance
+        this.apiPatterns = {
+            main_api: apiPatterns.main_api || "/api/crud6/",
+            schema_api: apiPatterns.schema_api || "/api/crud6/{model}/schema"
+        };
     }
 
     startTracking() {
@@ -89,7 +107,7 @@ class NetworkRequestTracker {
     }
 
     getCRUD6Calls() {
-        return this.requests.filter((req) => this.isCRUD6Call(req.url));
+        return this.requests.filter((req) => this.isMainApiCall(req.url));
     }
 
     hasRedundantCalls() {
@@ -133,23 +151,93 @@ class NetworkRequestTracker {
         return `${method.toUpperCase()}:${normalizedUrl}`;
     }
 
+    /**
+     * Check if URL matches schema API pattern
+     * Uses instance pattern if available, otherwise uses provided pattern or default
+     */
     isSchemaCall(url) {
-        return /\/api\/crud6\/[^\/]+\/schema/.test(url);
+        const schemaPattern = this.apiPatterns.schema_api;
+        // Convert pattern to regex: /api/crud6/{model}/schema -> /api/crud6/[^/]+/schema
+        const regexPattern = schemaPattern.replace(/\{[^}]+\}/g, "[^/]+");
+        return new RegExp(regexPattern).test(url);
     }
 
-    isCRUD6Call(url) {
-        return url.includes("/api/crud6/");
+    /**
+     * Check if URL matches main API pattern  
+     * Uses instance pattern if available, otherwise uses default
+     */
+    isMainApiCall(url) {
+        return url.includes(this.apiPatterns.main_api);
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use isMainApiCall instead
+     */
+    isMainApiCall(url) {
+        return this.isMainApiCall(url);
+    }
+
+    /**
+     * Get all main API calls
+     * @returns {Array} Array of main API requests
+     */
+    getMainApiCalls() {
+        return this.requests.filter((req) => this.isMainApiCall(req.url));
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use getMainApiCalls instead
+     */
+    getCRUD6Calls() {
+        return this.getMainApiCalls();
+    }
+
+    /**
+     * Get all schema API calls
+     * @returns {Array} Array of schema requests
+     */
+    getSchemaCalls() {
+        return this.requests.filter((req) => this.isSchemaCall(req.url));
+    }
+
+    /**
+     * Filter requests to only main API-related calls
+     * @param {boolean} includeSchema - Whether to include schema API calls
+     * @returns {Array} Filtered array of API requests
+     */
+    getFilteredMainApiRequests(includeSchema = true) {
+        return this.requests.filter((req) => {
+            // Only include main API calls
+            if (!this.isMainApiCall(req.url)) {
+                return false;
+            }
+            // If includeSchema is false, exclude schema calls
+            if (!includeSchema && this.isSchemaCall(req.url)) {
+                return false;
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     * @deprecated Use getFilteredMainApiRequests instead
+     */
+    getFilteredMainApiRequests(includeSchema = true) {
+        return this.getFilteredMainApiRequests(includeSchema);
     }
 
     /**
      * Filter requests to only CRUD6-related API calls
      * @param {boolean} includeSchema - Whether to include schema API calls
-     * @returns {Array} Filtered array of CRUD6 requests
+     * @returns {Array} Filtered array of API requests
      */
-    getFilteredCRUD6Requests(includeSchema = true) {
+    getFilteredMainApiRequests(includeSchema = true) {
         return this.requests.filter((req) => {
-            // Only include CRUD6 API calls
-            if (!this.isCRUD6Call(req.url)) {
+            // Only include Main API calls
+            if (!this.isMainApiCall(req.url)) {
                 return false;
             }
             // If includeSchema is false, exclude schema calls
@@ -210,7 +298,7 @@ class NetworkRequestTracker {
         report += "───────────────────────────────────────────────────────────────────────────────\n";
         report += `Total Requests:        ${this.requests.length}\n`;
         report += `API Requests:          ${apiRequests.length}\n`;
-        report += `  - CRUD6 API:         ${crud6Requests.length}\n`;
+        report += `  - Main API:         ${crud6Requests.length}\n`;
         report += `  - Schema API:        ${schemaRequests.length}\n`;
         report += `Other Requests:        ${otherRequests.length}\n`;
         report += "\n";
@@ -236,8 +324,8 @@ class NetworkRequestTracker {
             const time = new Date(req.timestamp).toISOString();
             report += `${idx + 1}. [${time}] ${req.method} ${req.url}\n`;
             report += `   Resource Type: ${req.resourceType}\n`;
-            if (this.isCRUD6Call(req.url)) {
-                report += `   📌 CRUD6 API Call\n`;
+            if (this.isMainApiCall(req.url)) {
+                report += `   📌 Main API Call\n`;
             }
             if (this.isSchemaCall(req.url)) {
                 report += `   📌 Schema API Call\n`;
@@ -638,9 +726,16 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     const baseUrl = baseUrlOverride || config.config?.base_url || "http://localhost:8080";
     const username = usernameOverride || config.config?.auth?.username || "admin";
     const password = passwordOverride || config.config?.auth?.password || "admin123";
+    
+    // Get API patterns from config (for modularity across different sprinkles)
+    const apiPatterns = config.config?.api_patterns || {
+        main_api: "/api/crud6/",  // Default for backward compatibility
+        schema_api: "/api/crud6/{model}/schema"
+    };
 
     console.log(`Base URL: ${baseUrl}`);
     console.log(`Username: ${username}`);
+    console.log(`API Pattern: ${apiPatterns.main_api}`);
     console.log("");
 
     // Collect screenshots to take
@@ -666,8 +761,8 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
     console.log(`Found ${screenshots.length} screenshots to capture\n`);
 
-    // Create network tracker
-    const networkTracker = new NetworkRequestTracker();
+    // Create network tracker with API patterns from config
+    const networkTracker = new NetworkRequestTracker(apiPatterns);
 
     // Initialize counters and error tracking at function scope so they're accessible at return and in error handler
     let successCount = 0;
@@ -1065,14 +1160,14 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                         const pageRequests = allRequests.slice(requestsBeforePage);
 
                         // Calculate stats for this page
-                        const pageCRUD6 = pageRequests.filter((r) => networkTracker.isCRUD6Call(r.url)).length;
+                        const pageApi = pageRequests.filter((r) => networkTracker.isMainApiCall(r.url)).length;
                         const pageSchema = pageRequests.filter((r) => networkTracker.isSchemaCall(r.url)).length;
 
                         pageNetworkStats.push({
                             name: screenshot.name,
                             path: screenshot.path,
                             total: pageRequests.length,
-                            crud6Calls: pageCRUD6,
+                            crud6Calls: pageApi,
                             schemaCalls: pageSchema,
                             hasError: false,
                         });
@@ -1083,7 +1178,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                             requests: pageRequests,
                         });
 
-                        console.log(`   📡 Network: ${pageRequests.length} requests (${pageCRUD6} CRUD6, ${pageSchema} Schema)`);
+                        console.log(`   📡 Network: ${pageRequests.length} requests (${pageApi} CRUD6, ${pageSchema} Schema)`);
                         console.log(`   ✅ No error notifications detected`);
 
                         successCount++;
@@ -1118,17 +1213,17 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log("═══════════════════════════════════════════════════════════════");
 
         let totalRequests = 0;
-        let totalCRUD6 = 0;
+        let totalApi = 0;
         let totalSchema = 0;
 
         pageNetworkStats.forEach((stats) => {
             console.log(`\n📄 ${stats.name} (${stats.path})`);
             console.log(`   Total Requests:       ${stats.total}`);
-            console.log(`   CRUD6 API Calls:      ${stats.crud6Calls}`);
+            console.log(`   Main API Calls:      ${stats.crud6Calls}`);
             console.log(`   Schema API Calls:     ${stats.schemaCalls}`);
 
             totalRequests += stats.total;
-            totalCRUD6 += stats.crud6Calls;
+            totalApi += stats.crud6Calls;
             totalSchema += stats.schemaCalls;
         });
 
@@ -1140,7 +1235,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log("Overall Totals:");
         console.log(`   Pages Tested:         ${pageNetworkStats.length}`);
         console.log(`   Total Requests:       ${allRequests.length}`);
-        console.log(`   Total CRUD6 Calls:    ${totalCRUD6}`);
+        console.log(`   Total CRUD6 Calls:    ${totalApi}`);
         console.log(`   Total Schema Calls:   ${totalSchema}`);
         console.log(`   Total Redundant Groups: ${totalRedundant}`);
 
@@ -1338,22 +1433,22 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log("📝 Generating detailed network request report (CRUD6 filtered)...");
 
         // Get only CRUD6-related requests for the detailed report
-        const crud6FilteredRequests = networkTracker.getFilteredCRUD6Requests(true);
-        const nonCRUD6Count = allRequests.length - crud6FilteredRequests.length;
+        const apiFilteredRequests = networkTracker.getFilteredMainApiRequests(true);
+        const nonApiCount = allRequests.length - apiFilteredRequests.length;
 
         let detailedReport = "";
         detailedReport += "═══════════════════════════════════════════════════════════════════════════════\n";
-        detailedReport += "NETWORK REQUEST TRACKING DETAILED REPORT (CRUD6 FILTERED)\n";
-        detailedReport += "UserFrosting CRUD6 Sprinkle Integration Test\n";
+        detailedReport += "NETWORK REQUEST TRACKING DETAILED REPORT (API FILTERED)\n";
+        detailedReport += "UserFrosting 6 Integration Test\n";
         detailedReport += "═══════════════════════════════════════════════════════════════════════════════\n";
         detailedReport += `Generated: ${new Date().toISOString()}\n`;
         detailedReport += `Base URL: ${baseUrl}\n`;
         detailedReport += `Total Pages Tested: ${pageNetworkStats.length}\n`;
         detailedReport += "\n";
-        detailedReport += "ℹ️  This report focuses on CRUD6 API calls only.\n";
+        detailedReport += "ℹ️  This report focuses on Main API calls only.\n";
         detailedReport += `   Total requests captured: ${allRequests.length}\n`;
-        detailedReport += `   CRUD6 requests (shown below): ${crud6FilteredRequests.length}\n`;
-        detailedReport += `   Non-CRUD6 requests (filtered out): ${nonCRUD6Count}\n`;
+        detailedReport += `   API requests (shown below): ${apiFilteredRequests.length}\n`;
+        detailedReport += `   Non-API requests (filtered out): ${nonApiCount}\n`;
         detailedReport += "\n";
 
         // Summary section
@@ -1361,10 +1456,10 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         detailedReport += "SUMMARY BY TYPE\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         detailedReport += `Total Requests Captured:     ${allRequests.length}\n`;
-        detailedReport += `CRUD6 API Calls (filtered):  ${totalCRUD6}\n`;
+        detailedReport += `Main API Calls (filtered):  ${totalApi}\n`;
         detailedReport += `  - Schema API Calls:        ${totalSchema}\n`;
-        detailedReport += `  - Other CRUD6 Calls:       ${totalCRUD6 - totalSchema}\n`;
-        detailedReport += `Non-CRUD6 Calls (excluded):  ${nonCRUD6Count}\n`;
+        detailedReport += `  - Other CRUD6 Calls:       ${totalApi - totalSchema}\n`;
+        detailedReport += `Non-CRUD6 Calls (excluded):  ${nonApiCount}\n`;
         detailedReport += `Redundant Call Groups:       ${totalRedundant}\n`;
         detailedReport += "\n";
 
@@ -1373,17 +1468,17 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         detailedReport += "PER-PAGE BREAKDOWN (CRUD6 REQUESTS ONLY)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         pageNetworkDetails.forEach((pageDetail, idx) => {
-            // Filter to only CRUD6 requests for this page
-            const pageCRUD6Requests = pageDetail.requests.filter((r) => networkTracker.isCRUD6Call(r.url));
-            const pageNonCRUD6Count = pageDetail.requests.length - pageCRUD6Requests.length;
+            // Filter to only API requests for this page
+            const pageApiRequests = pageDetail.requests.filter((r) => networkTracker.isMainApiCall(r.url));
+            const pageNonApiCount = pageDetail.requests.length - pageApiRequests.length;
 
             detailedReport += `\n${idx + 1}. ${pageDetail.name}\n`;
             detailedReport += `   Path: ${pageDetail.path}\n`;
-            detailedReport += `   Total Requests: ${pageDetail.requests.length} (${pageCRUD6Requests.length} CRUD6, ${pageNonCRUD6Count} other)\n`;
+            detailedReport += `   Total Requests: ${pageDetail.requests.length} (${pageApiRequests.length} CRUD6, ${pageNonApiCount} other)\n`;
 
-            if (pageCRUD6Requests.length > 0) {
-                detailedReport += "\n   CRUD6 Request Details:\n";
-                pageCRUD6Requests.forEach((req, reqIdx) => {
+            if (pageApiRequests.length > 0) {
+                detailedReport += "\n   API Request Details:\n";
+                pageApiRequests.forEach((req, reqIdx) => {
                     const time = new Date(req.timestamp).toISOString();
                     detailedReport += `   ${reqIdx + 1}. [${time}] ${req.method} ${req.url}\n`;
                     detailedReport += `      Resource Type: ${req.resourceType}\n`;
@@ -1392,41 +1487,41 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                     }
                 });
             } else {
-                detailedReport += "\n   ℹ️  No CRUD6 requests on this page\n";
+                detailedReport += "\n   ℹ️  No API requests on this page\n";
             }
             detailedReport += "\n";
         });
 
-        // Redundant calls section (for CRUD6 requests only)
+        // Redundant calls section (for API requests only)
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         detailedReport += "REDUNDANT CALLS DETECTION (CRUD6 ONLY)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
 
-        // Calculate redundant calls for CRUD6 requests only
-        const crud6RedundantCalls = {};
-        const crud6Frequency = {};
+        // Calculate redundant calls for API requests only
+        const apiRedundantCalls = {};
+        const apiFrequency = {};
 
-        crud6FilteredRequests.forEach((req) => {
-            if (!crud6Frequency[req.key]) crud6Frequency[req.key] = [];
-            crud6Frequency[req.key].push(req);
+        apiFilteredRequests.forEach((req) => {
+            if (!apiFrequency[req.key]) apiFrequency[req.key] = [];
+            apiFrequency[req.key].push(req);
         });
 
-        Object.keys(crud6Frequency).forEach((key) => {
-            if (crud6Frequency[key].length > 1) {
-                crud6RedundantCalls[key] = {
-                    count: crud6Frequency[key].length,
-                    calls: crud6Frequency[key],
+        Object.keys(apiFrequency).forEach((key) => {
+            if (apiFrequency[key].length > 1) {
+                apiRedundantCalls[key] = {
+                    count: apiFrequency[key].length,
+                    calls: apiFrequency[key],
                 };
             }
         });
 
-        const crud6RedundantCount = Object.keys(crud6RedundantCalls).length;
+        const apiRedundantCount = Object.keys(apiRedundantCalls).length;
 
-        if (crud6RedundantCount > 0) {
-            detailedReport += `⚠️  WARNING: ${crud6RedundantCount} redundant CRUD6 call group(s) detected!\n\n`;
+        if (apiRedundantCount > 0) {
+            detailedReport += `⚠️  WARNING: ${apiRedundantCount} redundant API call group(s) detected!\n\n`;
 
-            Object.keys(crud6RedundantCalls).forEach((key) => {
-                const data = crud6RedundantCalls[key];
+            Object.keys(apiRedundantCalls).forEach((key) => {
+                const data = apiRedundantCalls[key];
                 const firstCall = data.calls[0];
 
                 detailedReport += `Endpoint: ${firstCall.method} ${firstCall.url}\n`;
@@ -1439,15 +1534,15 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                 detailedReport += "\n";
             });
         } else {
-            detailedReport += "✅ No redundant CRUD6 calls detected.\n";
+            detailedReport += "✅ No redundant API calls detected.\n";
         }
         detailedReport += "\n";
 
-        // All CRUD6 requests chronologically
+        // All API requests chronologically
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         detailedReport += "ALL CRUD6 REQUESTS (CHRONOLOGICAL ORDER)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
-        crud6FilteredRequests.forEach((req, idx) => {
+        apiFilteredRequests.forEach((req, idx) => {
             const time = new Date(req.timestamp).toISOString();
             detailedReport += `${idx + 1}. [${time}] ${req.method} ${req.url}\n`;
             detailedReport += `   Resource Type: ${req.resourceType}\n`;
@@ -1468,8 +1563,8 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
             console.log(`✅ Network request report saved to: ${reportPath}`);
             console.log(`   File size: ${(detailedReport.length / 1024).toFixed(2)} KB`);
             console.log(`   Total requests captured: ${allRequests.length}`);
-            console.log(`   CRUD6 requests documented: ${crud6FilteredRequests.length}`);
-            console.log(`   Non-CRUD6 requests filtered: ${nonCRUD6Count}`);
+            console.log(`   API requests documented: ${apiFilteredRequests.length}`);
+            console.log(`   Non-API requests filtered: ${nonApiCount}`);
         } catch (writeError) {
             console.error(`❌ Failed to save network report: ${writeError.message}`);
         }
@@ -1482,7 +1577,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         const consoleLogLines = [];
         consoleLogLines.push(REPORT_SEPARATOR);
         consoleLogLines.push("BROWSER CONSOLE ERRORS AND WARNINGS");
-        consoleLogLines.push("UserFrosting CRUD6 Sprinkle Integration Test");
+        consoleLogLines.push("UserFrosting 6 Integration Test");
         consoleLogLines.push(REPORT_SEPARATOR);
         consoleLogLines.push(`Generated: ${new Date().toISOString()}`);
         consoleLogLines.push(`Base URL: ${baseUrl}`);

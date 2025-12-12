@@ -1,5 +1,16 @@
 {
   "description": "TEMPLATE: Integration test paths configuration - Copy and modify for your sprinkle",
+  "config": {
+    "base_url": "http://localhost:8080",
+    "auth": {
+      "username": "admin",
+      "password": "admin123"
+    },
+    "api_patterns": {
+      "main_api": "/api/yoursprinkle/",
+      "schema_api": "/api/yoursprinkle/{model}/schema"
+    }
+  },
   "paths": {
     "authenticated": {
       "api": {

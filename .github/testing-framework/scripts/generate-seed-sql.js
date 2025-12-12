@@ -46,11 +46,23 @@ console.log(`Output file: ${outputFile}`);
 console.log('');
 
 /**
+ * Truncate a string value to fit within max length constraint
+ */
+function truncateToMaxLength(value, maxLength) {
+    // Remove quotes, truncate, then re-add quotes
+    const cleanValue = value.replace(/^'|'$/g, '');
+    const truncated = cleanValue.substring(0, maxLength);
+    return `'${truncated}'`;
+}
+
+/**
  * Generate a test value for a field based on its type and validation
  */
 function generateTestValue(fieldName, field, recordIndex = 1) {
     const type = field.type;
     const validation = field.validation || {};
+    const maxLength = validation.length?.max;
+    const minLength = validation.length?.min || 1;
     
     // Check for default value
     if (field.default !== undefined) {
@@ -68,41 +80,175 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             }
             return recordIndex; // Use recordIndex directly (starts from 2)
             
-        case 'string':
-            const maxLength = validation.length?.max || 255;
-            const minLength = validation.length?.min || 1;
+        case 'email':
+            // Email field type
+            const emailValue = `'test${recordIndex}@example.com'`;
+            return maxLength ? truncateToMaxLength(emailValue, maxLength) : emailValue;
             
+        case 'phone':
+            // Phone number field - format XXX-XXX-XXXX
+            const phoneValue = `'555-000-${String(1000 + recordIndex).substring(1)}'`;
+            return maxLength ? truncateToMaxLength(phoneValue, maxLength) : phoneValue;
+            
+        case 'url':
+            // URL field
+            const urlValue = `'https://example${recordIndex}.com'`;
+            return maxLength ? truncateToMaxLength(urlValue, maxLength) : urlValue;
+            
+        case 'zip':
+            // ZIP code - 5 digits
+            const zipValue = `'${String(10000 + recordIndex).substring(0, 5)}'`;
+            return zipValue;
+            
+        case 'string':
             if (validation.email) {
-                return `'test${recordIndex}@example.com'`;
+                const emailVal = `'test${recordIndex}@example.com'`;
+                return maxLength ? truncateToMaxLength(emailVal, maxLength) : emailVal;
             }
             
             if (validation.unique) {
-                return `'test_${fieldName}_${recordIndex}'`;
+                const uniqueVal = `'test_${fieldName}_${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(uniqueVal, maxLength) : uniqueVal;
             }
             
-            // Generate based on field name patterns
+            // Special handling for specific field name patterns
+            
+            // IP address field
+            if (fieldName.includes('ip_address') || fieldName.includes('ip')) {
+                const ipVal = `'192.168.${recordIndex}.${100 + recordIndex}'`;
+                return maxLength ? truncateToMaxLength(ipVal, maxLength) : ipVal;
+            }
+            
+            // Icon field (FontAwesome classes)
+            if (fieldName.includes('icon')) {
+                const icons = ['fas fa-home', 'fas fa-user', 'fas fa-cog', 'fas fa-star', 'fas fa-heart'];
+                const iconVal = `'${icons[recordIndex % icons.length]}'`;
+                return maxLength ? truncateToMaxLength(iconVal, maxLength) : iconVal;
+            }
+            
+            // Status field
+            if (fieldName.includes('status')) {
+                const statuses = ['active', 'pending', 'completed', 'cancelled', 'draft'];
+                const statusVal = `'${statuses[recordIndex % statuses.length]}'`;
+                return maxLength ? truncateToMaxLength(statusVal, maxLength) : statusVal;
+            }
+            
+            // Priority field
+            if (fieldName.includes('priority')) {
+                const priorities = ['low', 'medium', 'high', 'urgent'];
+                const priorityVal = `'${priorities[recordIndex % priorities.length]}'`;
+                return maxLength ? truncateToMaxLength(priorityVal, maxLength) : priorityVal;
+            }
+            
+            // Type field
+            if (fieldName === 'type' || fieldName.endsWith('_type')) {
+                const types = ['type_a', 'type_b', 'type_c'];
+                const typeVal = `'${types[recordIndex % types.length]}'`;
+                return maxLength ? truncateToMaxLength(typeVal, maxLength) : typeVal;
+            }
+            
+            // Email pattern in field name
             if (fieldName.includes('email')) {
-                return `'test${recordIndex}@example.com'`;
+                const emailVal = `'test${recordIndex}@example.com'`;
+                return maxLength ? truncateToMaxLength(emailVal, maxLength) : emailVal;
             }
-            if (fieldName.includes('name') && !fieldName.includes('user_name')) {
-                return `'Test ${fieldName} ${recordIndex}'`;
-            }
-            if (fieldName.includes('slug')) {
-                return `'test-${fieldName.replace('_', '-')}-${recordIndex}'`;
-            }
-            if (fieldName.includes('email')) {
-                return `'test${recordIndex}@example.com'`;
-            }
+            
+            // Password field
             if (fieldName.includes('password')) {
-                return `'$2y$10$test.password.hash.${recordIndex}'`; // bcrypt hash placeholder
+                // bcrypt hash placeholder - always 60 chars
+                return `'$2y$10$test.password.hash.${recordIndex}'`;
             }
             
-            return `'Test ${fieldName}'`;
+            // Slug field
+            if (fieldName.includes('slug')) {
+                const slugVal = `'test-slug-${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(slugVal, maxLength) : slugVal;
+            }
+            
+            // State/Province codes
+            if (fieldName === 'state' || fieldName === 'state_code' || fieldName === 'province') {
+                // US state codes - 2 characters
+                const states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'];
+                return `'${states[recordIndex % states.length]}'`;
+            }
+            
+            // Country codes
+            if (fieldName === 'country' || fieldName === 'country_code') {
+                if (maxLength && maxLength <= 3) {
+                    const codes = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'IT', 'ES', 'JP', 'CN'];
+                    return `'${codes[recordIndex % codes.length]}'`;
+                }
+                const countries = ['United States', 'Canada', 'United Kingdom'];
+                const countryVal = `'${countries[recordIndex % countries.length]}'`;
+                return maxLength ? truncateToMaxLength(countryVal, maxLength) : countryVal;
+            }
+            
+            // Generic code fields with length constraints
+            if (fieldName.includes('code') && maxLength && maxLength <= 10) {
+                const codeVal = `'C${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(codeVal, maxLength) : codeVal;
+            }
+            
+            // Name fields (first_name, last_name, etc.)
+            if (fieldName.includes('name') && !fieldName.includes('user_name') && !fieldName.includes('file_name')) {
+                const nameVal = `'Name${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(nameVal, maxLength) : nameVal;
+            }
+            
+            // Title fields
+            if (fieldName.includes('title')) {
+                const titleVal = `'Title ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(titleVal, maxLength) : titleVal;
+            }
+            
+            // Address fields
+            if (fieldName.includes('address') && !fieldName.includes('ip')) {
+                const addrVal = `'${100 + recordIndex} Main St'`;
+                return maxLength ? truncateToMaxLength(addrVal, maxLength) : addrVal;
+            }
+            
+            // City fields
+            if (fieldName.includes('city')) {
+                const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'];
+                const cityVal = `'${cities[recordIndex % cities.length]}'`;
+                return maxLength ? truncateToMaxLength(cityVal, maxLength) : cityVal;
+            }
+            
+            // Company fields
+            if (fieldName.includes('company')) {
+                const companyVal = `'Company ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(companyVal, maxLength) : companyVal;
+            }
+            
+            // Position/role fields
+            if (fieldName.includes('position') || fieldName.includes('job_title')) {
+                const positionVal = `'Position ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(positionVal, maxLength) : positionVal;
+            }
+            
+            // Default string generation - respect max length
+            let defaultVal = `'Value${recordIndex}'`;
+            if (maxLength) {
+                // If even the shortest value is too long, truncate aggressively
+                if (defaultVal.length - 2 > maxLength) { // -2 for quotes
+                    defaultVal = `'V${recordIndex}'`;
+                    if (defaultVal.length - 2 > maxLength) {
+                        // For very small fields, just use the record index
+                        defaultVal = `'${String(recordIndex).substring(0, maxLength)}'`;
+                    }
+                }
+                return truncateToMaxLength(defaultVal, maxLength);
+            }
+            return defaultVal;
             
         case 'text':
+        case 'textarea':
+        case 'textarea-r3c60':
+        case 'textarea-r5':
             return `'Test description for ${fieldName} - Record ${recordIndex}'`;
             
         case 'boolean':
+        case 'boolean-yn':
             return field.default !== undefined ? field.default : 1;
             
         case 'date':
@@ -122,9 +268,13 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
         case 'json':
             return `'{}'`;
             
+        case 'multiselect':
+            return `'option1,option2'`;
+            
         default:
             if (field.required) {
-                return `'test_${fieldName}'`;
+                const reqVal = `'val${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(reqVal, maxLength) : reqVal;
             }
             return 'NULL';
     }

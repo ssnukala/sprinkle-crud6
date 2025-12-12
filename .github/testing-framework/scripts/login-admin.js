@@ -135,8 +135,9 @@ const username = process.argv[3] || 'admin';
 const password = process.argv[4] || 'admin123';
 const stateFile = process.argv[5] || '/tmp/admin-auth-state.json';
 
-// Validate arguments
-if (process.argv.length < 4) {
+// Validate arguments (need at least baseUrl, username, password)
+// process.argv[0] = node, process.argv[1] = script, process.argv[2] = baseUrl, process.argv[3] = username, process.argv[4] = password
+if (process.argv.length < 5) {
     console.log('Usage: node login-admin.js <base_url> <username> <password> [state_file]');
     console.log('Example: node login-admin.js http://localhost:8080 admin admin123');
     process.exit(1);

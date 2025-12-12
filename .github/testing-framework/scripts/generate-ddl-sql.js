@@ -129,7 +129,7 @@ function generateCreateTableSQL(schema) {
     // Process each field
     for (const [fieldName, field] of Object.entries(fields)) {
         const columnType = mapFieldTypeToSQL(fieldName, field);
-        const parts = [fieldName, columnType];
+        const parts = [`\`${fieldName}\``, columnType];
         
         // Handle NOT NULL - AUTO_INCREMENT fields are always NOT NULL
         if (field.auto_increment) {
@@ -171,24 +171,24 @@ function generateCreateTableSQL(schema) {
     
     // Add primary key
     if (primaryKey) {
-        columns.push(`  PRIMARY KEY (${primaryKey})`);
+        columns.push(`  PRIMARY KEY (\`${primaryKey}\`)`);
     }
     
     // Add unique constraints
     for (const uniqueField of uniqueConstraints) {
-        columns.push(`  UNIQUE KEY ${uniqueField}_unique (${uniqueField})`);
+        columns.push(`  UNIQUE KEY \`${uniqueField}_unique\` (\`${uniqueField}\`)`);
     }
     
     // Add indexes (limit to most important ones to avoid too many indexes)
     const maxIndexes = 5;
     for (const indexField of indexes.slice(0, maxIndexes)) {
         if (!uniqueConstraints.includes(indexField)) {
-            columns.push(`  KEY ${indexField}_idx (${indexField})`);
+            columns.push(`  KEY \`${indexField}_idx\` (\`${indexField}\`)`);
         }
     }
     
     // Build CREATE TABLE statement
-    sql.push(`CREATE TABLE IF NOT EXISTS ${tableName} (`);
+    sql.push(`CREATE TABLE IF NOT EXISTS \`${tableName}\` (`);
     sql.push(columns.join(',\n'));
     sql.push(') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;');
     
@@ -215,12 +215,12 @@ function generatePivotTableSQL(schema, processedPivotTables) {
             const relatedKey = rel.related_key || `${rel.name.slice(0, -1)}_id`;
             
             sql.push(`-- Pivot table for ${schema.model} <-> ${rel.name} relationship`);
-            sql.push(`CREATE TABLE IF NOT EXISTS ${pivotTable} (`);
-            sql.push(`  ${foreignKey} INT NOT NULL,`);
-            sql.push(`  ${relatedKey} INT NOT NULL,`);
-            sql.push(`  PRIMARY KEY (${foreignKey}, ${relatedKey}),`);
-            sql.push(`  KEY ${foreignKey}_idx (${foreignKey}),`);
-            sql.push(`  KEY ${relatedKey}_idx (${relatedKey})`);
+            sql.push(`CREATE TABLE IF NOT EXISTS \`${pivotTable}\` (`);
+            sql.push(`  \`${foreignKey}\` INT NOT NULL,`);
+            sql.push(`  \`${relatedKey}\` INT NOT NULL,`);
+            sql.push(`  PRIMARY KEY (\`${foreignKey}\`, \`${relatedKey}\`),`);
+            sql.push(`  KEY \`${foreignKey}_idx\` (\`${foreignKey}\`),`);
+            sql.push(`  KEY \`${relatedKey}_idx\` (\`${relatedKey}\`)`);
             sql.push(') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;');
             sql.push('');
             

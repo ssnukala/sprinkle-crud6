@@ -197,33 +197,6 @@ class NetworkRequestTracker {
         });
     }
 
-    /**
-     * Legacy method for backward compatibility
-     * @deprecated Use getFilteredMainApiRequests instead
-     */
-    getFilteredMainApiRequests(includeSchema = true) {
-        return this.getFilteredMainApiRequests(includeSchema);
-    }
-
-    /**
-     * Filter requests to only CRUD6-related API calls
-     * @param {boolean} includeSchema - Whether to include schema API calls
-     * @returns {Array} Filtered array of API requests
-     */
-    getFilteredMainApiRequests(includeSchema = true) {
-        return this.requests.filter((req) => {
-            // Only include Main API calls
-            if (!this.isMainApiCall(req.url)) {
-                return false;
-            }
-            // If includeSchema is false, exclude schema calls
-            if (!includeSchema && this.isSchemaCall(req.url)) {
-                return false;
-            }
-            return true;
-        });
-    }
-
     getRedundantCallsReport() {
         const redundant = this.getRedundantCalls();
 
@@ -705,7 +678,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     
     // Get API patterns from config (for modularity across different sprinkles)
     const apiPatterns = config.config?.api_patterns || {
-        main_api: "/api/crud6/",  // Default for backward compatibility
+        main_api: "/api/crud6/",  // Default pattern for this sprinkle
         schema_api: "/api/crud6/{model}/schema"
     };
 
@@ -1406,9 +1379,9 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         // Generate and save detailed network report to file
         console.log("");
-        console.log("📝 Generating detailed network request report (CRUD6 filtered)...");
+        console.log("📝 Generating detailed network request report (Main API filtered)...");
 
-        // Get only CRUD6-related requests for the detailed report
+        // Get only main API-related requests for the detailed report
         const apiFilteredRequests = networkTracker.getFilteredMainApiRequests(true);
         const nonApiCount = allRequests.length - apiFilteredRequests.length;
 
@@ -1450,7 +1423,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
             detailedReport += `\n${idx + 1}. ${pageDetail.name}\n`;
             detailedReport += `   Path: ${pageDetail.path}\n`;
-            detailedReport += `   Total Requests: ${pageDetail.requests.length} (${pageApiRequests.length} CRUD6, ${pageNonApiCount} other)\n`;
+            detailedReport += `   Total Requests: ${pageDetail.requests.length} (${pageApiRequests.length} Main API, ${pageNonApiCount} other)\n`;
 
             if (pageApiRequests.length > 0) {
                 detailedReport += "\n   API Request Details:\n";
@@ -1470,7 +1443,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         // Redundant calls section (for API requests only)
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
-        detailedReport += "REDUNDANT CALLS DETECTION (CRUD6 ONLY)\n";
+        detailedReport += "REDUNDANT CALLS DETECTION (MAIN API ONLY)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
 
         // Calculate redundant calls for API requests only
@@ -1516,7 +1489,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
         // All API requests chronologically
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
-        detailedReport += "ALL CRUD6 REQUESTS (CHRONOLOGICAL ORDER)\n";
+        detailedReport += "ALL MAIN API REQUESTS (CHRONOLOGICAL ORDER)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         apiFilteredRequests.forEach((req, idx) => {
             const time = new Date(req.timestamp).toISOString();

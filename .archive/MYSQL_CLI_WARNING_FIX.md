@@ -4,6 +4,7 @@
 - GitHub Actions Run: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20156975347/job/57861472547
 - Steps: 21:33 and 21:85
 - Problem: "crud6-admin exists but the verification script still shows that data is not"
+- Symptom: SQL query shows role exists, but validation script reports "NOT FOUND"
 
 ## Root Cause
 
@@ -80,7 +81,30 @@ function executeQuery(...): array
 
 ## Impact
 
+### Diagnostic Output Analysis
+
+The workflow includes diagnostic steps that display roles BEFORE and AFTER various operations:
+
+**Line 207-213: Display roles and permissions BEFORE SQL seeding**
+```bash
+php display-roles-permissions.php
+```
+This would show output like:
+```
+CRUD6-ADMIN ROLE CHECK
+=========================================
+✅ crud6-admin role EXISTS:
+id	slug	name	description
+3	crud6-admin	CRUD6 Administrator	This role is meant for...
+```
+
+**Line 275-279: Validate seed data**
+```bash
+php check-seeds-modular.php integration-test-seeds.json
+```
+
 ### Before Fix
+In the validation step, even though the display showed the role exists, validation would fail:
 ```
 🔍 Specific Query for crud6-admin role:
    Count: 0
@@ -90,6 +114,12 @@ function executeQuery(...): array
 ```
 
 The count was 0 because `$result[0]` contained the warning message, which when cast to int became 0.
+
+This creates the confusing situation where:
+- The diagnostic display shows: "✅ crud6-admin role EXISTS"  
+- The validation check shows: "❌ NOT FOUND"
+- Both use the same MySQL CLI approach
+- The difference is in how they parse the output
 
 ### After Fix
 ```

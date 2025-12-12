@@ -114,7 +114,7 @@ class NetworkRequestTracker {
             unique: this.requests.length - Object.values(redundantCalls).reduce((sum, r) => sum + r.count - 1, 0),
             redundant: Object.keys(redundantCalls).length,
             schemaCalls: this.getSchemaCalls().length,
-            crud6Calls: this.getCRUD6Calls().length,
+            mainApiCalls: this.getMainApiCalls().length,
         };
     }
 
@@ -168,14 +168,6 @@ class NetworkRequestTracker {
      */
     getMainApiCalls() {
         return this.requests.filter((req) => this.isMainApiCall(req.url));
-    }
-
-    /**
-     * Legacy method for backward compatibility
-     * @deprecated Use getMainApiCalls instead
-     */
-    getCRUD6Calls() {
-        return this.getMainApiCalls();
     }
 
     /**
@@ -273,7 +265,7 @@ class NetworkRequestTracker {
 
         // Group requests by type
         const apiRequests = this.requests.filter((r) => r.url.includes("/api/"));
-        const crud6Requests = this.getCRUD6Calls();
+        const mainApiRequests = this.getMainApiCalls();
         const schemaRequests = this.getSchemaCalls();
         const otherRequests = this.requests.filter((r) => !r.url.includes("/api/"));
 
@@ -282,7 +274,7 @@ class NetworkRequestTracker {
         report += "───────────────────────────────────────────────────────────────────────────────\n";
         report += `Total Requests:        ${this.requests.length}\n`;
         report += `API Requests:          ${apiRequests.length}\n`;
-        report += `  - Main API:         ${crud6Requests.length}\n`;
+        report += `  - Main API:         ${mainApiRequests.length}\n`;
         report += `  - Schema API:        ${schemaRequests.length}\n`;
         report += `Other Requests:        ${otherRequests.length}\n`;
         report += "\n";
@@ -1151,7 +1143,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                             name: screenshot.name,
                             path: screenshot.path,
                             total: pageRequests.length,
-                            crud6Calls: pageApi,
+                            mainApiCalls: pageApi,
                             schemaCalls: pageSchema,
                             hasError: false,
                         });
@@ -1162,7 +1154,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
                             requests: pageRequests,
                         });
 
-                        console.log(`   📡 Network: ${pageRequests.length} requests (${pageApi} CRUD6, ${pageSchema} Schema)`);
+                        console.log(`   📡 Network: ${pageRequests.length} requests (${pageApi} Main API, ${pageSchema} Schema)`);
                         console.log(`   ✅ No error notifications detected`);
 
                         successCount++;
@@ -1203,11 +1195,11 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         pageNetworkStats.forEach((stats) => {
             console.log(`\n📄 ${stats.name} (${stats.path})`);
             console.log(`   Total Requests:       ${stats.total}`);
-            console.log(`   Main API Calls:      ${stats.crud6Calls}`);
+            console.log(`   Main API Calls:      ${stats.mainApiCalls}`);
             console.log(`   Schema API Calls:     ${stats.schemaCalls}`);
 
             totalRequests += stats.total;
-            totalApi += stats.crud6Calls;
+            totalApi += stats.mainApiCalls;
             totalSchema += stats.schemaCalls;
         });
 
@@ -1219,7 +1211,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         console.log("Overall Totals:");
         console.log(`   Pages Tested:         ${pageNetworkStats.length}`);
         console.log(`   Total Requests:       ${allRequests.length}`);
-        console.log(`   Total CRUD6 Calls:    ${totalApi}`);
+        console.log(`   Total Main API Calls: ${totalApi}`);
         console.log(`   Total Schema Calls:   ${totalSchema}`);
         console.log(`   Total Redundant Groups: ${totalRedundant}`);
 
@@ -1442,14 +1434,14 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         detailedReport += `Total Requests Captured:     ${allRequests.length}\n`;
         detailedReport += `Main API Calls (filtered):  ${totalApi}\n`;
         detailedReport += `  - Schema API Calls:        ${totalSchema}\n`;
-        detailedReport += `  - Other CRUD6 Calls:       ${totalApi - totalSchema}\n`;
-        detailedReport += `Non-CRUD6 Calls (excluded):  ${nonApiCount}\n`;
+        detailedReport += `  - Other Main API Calls:    ${totalApi - totalSchema}\n`;
+        detailedReport += `Non-API Calls (excluded):    ${nonApiCount}\n`;
         detailedReport += `Redundant Call Groups:       ${totalRedundant}\n`;
         detailedReport += "\n";
 
         // Per-page breakdown
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
-        detailedReport += "PER-PAGE BREAKDOWN (CRUD6 REQUESTS ONLY)\n";
+        detailedReport += "PER-PAGE BREAKDOWN (MAIN API REQUESTS ONLY)\n";
         detailedReport += "───────────────────────────────────────────────────────────────────────────────\n";
         pageNetworkDetails.forEach((pageDetail, idx) => {
             // Filter to only API requests for this page

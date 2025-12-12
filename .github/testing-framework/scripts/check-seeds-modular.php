@@ -79,6 +79,66 @@ function executeQuery(string $query, string $dbHost, string $dbPort, string $dbN
     return $output;
 }
 
+// DIAGNOSTIC: Display all rows from roles and permissions tables BEFORE validation
+echo "=========================================\n";
+echo "DIAGNOSTIC: Database State Before Validation\n";
+echo "=========================================\n\n";
+
+try {
+    echo "📊 All Roles in Database:\n";
+    $query = "SELECT id, slug, name FROM roles ORDER BY id";
+    $roles = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+    echo "   Total count: " . count($roles) . "\n";
+    foreach ($roles as $role) {
+        echo "   {$role}\n";
+    }
+    echo "\n";
+    
+    echo "📊 All Permissions in Database:\n";
+    $query = "SELECT id, slug, name FROM permissions ORDER BY id";
+    $permissions = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+    echo "   Total count: " . count($permissions) . "\n";
+    foreach ($permissions as $perm) {
+        echo "   {$perm}\n";
+    }
+    echo "\n";
+    
+    // Specific check for crud6-admin role
+    echo "🔍 Specific Query for crud6-admin role:\n";
+    $query = "SELECT COUNT(*) FROM roles WHERE slug = 'crud6-admin'";
+    $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+    $count = (int)($result[0] ?? 0);
+    echo "   Count: {$count}\n";
+    
+    if ($count > 0) {
+        $query = "SELECT id, slug, name, description FROM roles WHERE slug = 'crud6-admin' LIMIT 1";
+        $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+        if (!empty($result)) {
+            echo "   ✅ Found: {$result[0]}\n";
+        }
+    } else {
+        echo "   ❌ NOT FOUND\n";
+    }
+    echo "\n";
+    
+    // Check CRUD6 permissions
+    echo "🔍 CRUD6 Permissions Count:\n";
+    $crud6Permissions = ['create_crud6', 'delete_crud6', 'update_crud6_field', 'uri_crud6', 'uri_crud6_list', 'view_crud6_field'];
+    $slugList = "'" . implode("','", $crud6Permissions) . "'";
+    $query = "SELECT COUNT(*) FROM permissions WHERE slug IN ({$slugList})";
+    $result = executeQuery($query, $dbHost, $dbPort, $dbName, $dbUser, $dbPassword);
+    $count = (int)($result[0] ?? 0);
+    echo "   Count: {$count}/6\n";
+    echo "\n";
+    
+} catch (Exception $e) {
+    echo "⚠️  Error during diagnostic: " . $e->getMessage() . "\n\n";
+}
+
+echo "=========================================\n";
+echo "Starting Validation Checks\n";
+echo "=========================================\n\n";
+
 $totalValidations = 0;
 $passedValidations = 0;
 $failedValidations = 0;

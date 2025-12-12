@@ -20,7 +20,7 @@
  *     "scripts": [
  *       {
  *         "name": "Custom validation",
- *         "script": ".github/workflow/scripts/custom-script.js",
+ *         "script": ".github/custom-scripts/scripts/custom-script.js",
  *         "stage": "after_tests"
  *       }
  *     ]

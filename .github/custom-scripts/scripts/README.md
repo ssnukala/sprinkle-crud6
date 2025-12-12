@@ -59,7 +59,7 @@ Add your script to the configuration:
     "scripts": [
       {
         "name": "My custom validation",
-        "script": ".github/workflow/scripts/my-validation.js",
+        "script": ".github/custom-scripts/scripts/my-validation.js",
         "stage": "after_tests",
         "description": "Validates sprinkle-specific business logic"
       }

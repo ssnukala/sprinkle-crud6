@@ -207,6 +207,11 @@ jobs:
           
           sed -i '/use UserFrosting\\\\Sprinkle\\\\Core\\\\Core;/a use UserFrosting\\\\Sprinkle\\\\CRUD6\\\\CRUD6;' app/src/MyApp.php
           sed -i '/Admin::class,/a \\            CRUD6::class,' app/src/MyApp.php
+          
+          echo ""
+          echo "✅ MyApp.php configured"
+          echo "Updated app/src/MyApp.php:"
+          cat app/src/MyApp.php
       
       - name: Configure main.ts
         run: |
@@ -214,6 +219,11 @@ jobs:
           
           sed -i "/import AdminSprinkle from '@userfrosting\\\\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\\\\/sprinkle-crud6'" app/assets/main.ts
           sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
+          
+          echo ""
+          echo "✅ main.ts configured"
+          echo "Updated app/assets/main.ts:"
+          cat app/assets/main.ts
       
 ${generateRouteConfiguration(routes, s)}
       
@@ -361,6 +371,14 @@ function generateRouteConfiguration(routes, sprinkle) {
     });
   }
   
+  // Add cat command to display the configured router file
+  step += `
+          echo ""
+          echo "✅ Routes configured (${pattern} pattern)"
+          echo "Updated app/assets/router/index.ts:"
+          cat app/assets/router/index.ts
+`;
+  
   return step;
 }
 
@@ -381,6 +399,11 @@ function generateViteConfiguration(vite) {
           else
             sed -i "/plugins: \\\\[/,/\\\\],/a \\\\    optimizeDeps: {\\\\n        include: [${depsStr.replace(/'/g, "\\'")}]\\\\n    }," vite.config.ts
           fi
+          
+          echo ""
+          echo "✅ Vite configuration updated"
+          echo "Updated vite.config.ts:"
+          cat vite.config.ts
 `;
 }
 

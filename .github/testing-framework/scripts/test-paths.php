@@ -9,8 +9,9 @@ declare(strict_types=1);
  * This script tests API and frontend paths from a JSON configuration file.
  * It's designed to be modular and reusable across different sprinkles.
  *
- * Usage: php test-paths.php <config_file> [auth|unauth] [api|frontend]
+ * Usage: php test-paths.php <config_file> [auth|unauth|both] [api|frontend|both]
  * Example: php test-paths.php integration-test-paths.json auth api
+ * Example: php test-paths.php integration-test-paths.json both both  # Tests both authenticated and unauthenticated
  */
 
 // Parse command line arguments

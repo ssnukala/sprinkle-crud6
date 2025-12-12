@@ -372,11 +372,29 @@ jobs:
 
           echo "✅ Vite server started"
 
-      - name: Test API and frontend paths
+      - name: Test unauthenticated API and frontend paths
         run: |
           cd userfrosting
+          echo "========================================="
+          echo "Testing Unauthenticated Paths"
+          echo "========================================="
+          echo "Testing that protected resources return 401/403 for unauthenticated users"
+          echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth
+      
+      - name: Test authenticated API and frontend paths
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Authenticated Paths"
+          echo "========================================="
+          echo "Logging in as admin user and testing that resources return 200"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            auth
 
       - name: Install Playwright
         run: |

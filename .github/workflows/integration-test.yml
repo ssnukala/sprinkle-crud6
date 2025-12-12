@@ -182,7 +182,29 @@ jobs:
           cd userfrosting
           php bakery migrate --force
       
-      - name: Generate and load SQL seed data
+      - name: Run PHP seeds (UserFrosting default seeds)
+        run: |
+          cd userfrosting
+          # Run UserFrosting default seeds (roles, groups, permissions, etc.)
+          # These create the infrastructure but DO NOT create users
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+          echo "✅ UserFrosting default seeds loaded (roles, groups, permissions)"
+
+      - name: Create admin user (AFTER infrastructure, BEFORE test data)
+        run: |
+          cd userfrosting
+          # Create admin user AFTER default seeds (needs roles/groups/permissions)
+          # but BEFORE SQL test data (which expects user ID 1 to exist)
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+          echo "✅ Admin user created (ID 1 reserved for admin)"
+
+      - name: Generate and load SQL seed data (test data)
         run: |
           cd userfrosting
           
@@ -204,13 +226,7 @@ jobs:
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
             seed-data.sql
           
-          echo "✅ Schema-driven SQL loaded"
-
-      - name: Run PHP seeds
-        run: |
-          cd userfrosting
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+          echo "✅ Test data loaded via SQL (IDs start from 2)"
       
       - name: Validate seed data
         run: |
@@ -223,18 +239,6 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-
-      - name: Create admin user (from configuration)
-        run: |
-          cd userfrosting
-          # Admin user details from integration-test-seeds.json config
-          php bakery create:admin-user \
-            --username=admin \
-            --password=admin123 \
-            --email=admin@example.com \
-            --firstName=Admin \
-            --lastName=User
-          echo "✅ Admin user created successfully (credentials from integration-test-seeds.json)"
 
       - name: Create test user for modification tests
         run: |

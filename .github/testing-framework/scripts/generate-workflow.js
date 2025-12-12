@@ -247,7 +247,7 @@ ${generateViteConfiguration(vite)}
           cd userfrosting
           php bakery migrate --force
       
-      - name: Generate and load SQL seed data
+      - name: Generate and create tables from schemas
         run: |
           cd userfrosting
           
@@ -263,9 +263,30 @@ ${generateViteConfiguration(vite)}
           
           echo "✅ Using schemas from: \$SCHEMA_DIR"
           
+          # Generate DDL (CREATE TABLE statements) from schemas
+          node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-ddl-sql.js \\
+            "\$SCHEMA_DIR" tables.sql
+          
+          # Create tables from DDL
+          php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \\
+            tables.sql
+          
+          echo "✅ Tables created from schemas"
+      
+      - name: Generate and load SQL seed data
+        run: |
+          cd userfrosting
+          
+          SCHEMA_DIR="../\${{ env.SPRINKLE_DIR }}/\${{ env.SCHEMA_PATH }}"
+          if [ -z "\${{ env.SCHEMA_PATH }}" ]; then
+            SCHEMA_DIR="../\${{ env.SPRINKLE_DIR }}/app/schema/crud6"
+          fi
+          
+          # Generate seed data
           node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-seed-sql.js \\
             "\$SCHEMA_DIR" seed-data.sql
           
+          # Load seed data
           php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \\
             seed-data.sql
           
@@ -354,14 +375,14 @@ function generateRouteConfiguration(routes, sprinkle) {
   if (pattern === 'simple') {
     step += `          # Simple array spread pattern
           sed -i "/import AdminRoutes from '@userfrosting\\\\/sprinkle-admin\\\\/routes'/a import ${importName} from '${importModule}'" app/assets/router/index.ts
-          sed -i '/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${importName},' app/assets/router/index.ts
+          sed -i "/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${importName}," app/assets/router/index.ts
 `;
   } else if (pattern === 'factory') {
     const layoutComponent = routes.factory?.layout_component || 'Layout';
     step += `          # Factory function pattern
           sed -i "/import AdminRoutes from '@userfrosting\\\\/sprinkle-admin\\\\/routes'/a import { ${importName} } from '${importModule}'" app/assets/router/index.ts
           sed -i "/import Layout from '@userfrosting\\\\/theme-adminlte\\\\/layouts\\\\/Layout.vue'/a const ${sprinkle.name}Routes = ${importName}({ layoutComponent: ${layoutComponent} });" app/assets/router/index.ts
-          sed -i '/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${sprinkle.name}Routes,' app/assets/router/index.ts
+          sed -i "/\\\\.\\\\.\\\\.AccountRoutes,/a \\\\            ...${sprinkle.name}Routes," app/assets/router/index.ts
 `;
   } else if (pattern === 'custom' && routes.custom_setup?.enabled) {
     step += `          # Custom route setup

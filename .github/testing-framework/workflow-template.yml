@@ -1,14 +1,28 @@
 name: Integration Test with UserFrosting 6 (Auto-Install Framework)
 
+# ============================================================================
+# WORKFLOW TEMPLATE - Two Options for Using This File
+# ============================================================================
+#
+# OPTION 1: Manual Copy (Legacy Approach)
+#   1. Copy this file to your sprinkle's .github/workflows/ directory
+#   2. Rename YOUR_SPRINKLE_NAME to your actual sprinkle name (e.g., c6admin, myapp)
+#   3. Update composer package name if different from YOUR_VENDOR/YOUR_SPRINKLE_NAME
+#   4. Customize the configuration files in .github/config/ for your sprinkle
+#
+# OPTION 2: JSON-Driven Auto-Generation (RECOMMENDED)
+#   1. Create integration-test-config.json with your sprinkle configuration
+#   2. Run: node .github/testing-framework/scripts/generate-workflow.js \
+#             integration-test-config.json \
+#             .github/workflows/integration-test.yml
+#   3. Your workflow is automatically generated from JSON configuration!
+#
+# See: .github/testing-framework/docs/JSON_DRIVEN_TESTING.md
+#
 # This workflow automatically installs and uses the UF6 Integration Testing Framework
 # On first run: Downloads and installs the framework from sprinkle-crud6
 # On subsequent runs: Uses the locally installed framework
-#
-# To use this workflow:
-# 1. Copy this file to your sprinkle's .github/workflows/ directory
-# 2. Rename YOUR_SPRINKLE_NAME to your actual sprinkle name (e.g., c6admin, myapp)
-# 3. Update composer package name if different from YOUR_VENDOR/YOUR_SPRINKLE_NAME
-# 4. Customize the configuration files in .github/config/ for your sprinkle
+# ============================================================================
 
 on:
   push:

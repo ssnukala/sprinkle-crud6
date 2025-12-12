@@ -102,14 +102,6 @@ class NetworkRequestTracker {
         return redundant;
     }
 
-    getSchemaCalls() {
-        return this.requests.filter((req) => this.isSchemaCall(req.url));
-    }
-
-    getCRUD6Calls() {
-        return this.requests.filter((req) => this.isMainApiCall(req.url));
-    }
-
     hasRedundantCalls() {
         return Object.keys(this.getRedundantCalls()).length > 0;
     }

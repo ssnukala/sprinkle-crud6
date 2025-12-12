@@ -39,3 +39,6 @@ yarn-error.log*
 # Temporary files
 tmp/
 temp/*.backup
+
+# Testing framework runtime copies (never commit these)
+.github/crud6-framework/

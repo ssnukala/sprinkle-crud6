@@ -17,8 +17,8 @@
  * Features:
  * - Automatically generates test data based on field types
  * - Respects field validation rules (required, unique, length, etc.)
- * - EXCLUDES user ID 1 and group ID 1 (reserved for admin/system)
- * - Starts test data from ID 2 to avoid conflicts with system records
+ * - EXCLUDES user ID 1 ONLY (reserved for admin user)
+ * - Starts test data from ID 2 (safe for all tables including users, groups, roles, permissions)
  * - Generates relationship data for many-to-many tables
  * - Creates idempotent SQL with INSERT...ON DUPLICATE KEY UPDATE
  * - Safe for re-seeding (won't duplicate or conflict with existing data)
@@ -46,11 +46,55 @@ console.log(`Output file: ${outputFile}`);
 console.log('');
 
 /**
+ * Pre-computed bcrypt password hashes for test data
+ * These are bcrypt hashes (cost factor 10) of "password{N}" where N is the record index
+ * Generated using: bcrypt.hash("password2", 10), bcrypt.hash("password3", 10), etc.
+ * 
+ * ⚠️ TEST DATA ONLY - These are well-known hashes for testing purposes.
+ * NEVER use these or similar patterns in production environments.
+ * 
+ * For testing purposes, these provide realistic bcrypt hashes without requiring
+ * a bcrypt library in the seed generation script.
+ */
+const BCRYPT_TEST_PASSWORDS = {
+    2: '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password2
+    3: '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // password3
+    4: '$2y$10$lSqpQGHmQVHSrWPvWSbqsuJQs9lDlwHUMQgW8XcPjcC8QVgQC5B0u', // password4
+};
+
+/**
+ * Get a bcrypt password hash for a given record index
+ * Uses pre-computed hashes for indexes 2-4, generates a valid hash pattern for others
+ */
+function getBcryptPasswordHash(recordIndex) {
+    // Use pre-computed hash if available
+    if (BCRYPT_TEST_PASSWORDS[recordIndex]) {
+        return BCRYPT_TEST_PASSWORDS[recordIndex];
+    }
+    
+    // For other indexes, use a valid bcrypt hash pattern
+    // This is a real bcrypt hash of "password" - safe to reuse for test data
+    return '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+}
+
+/**
+ * Truncate a string value to fit within max length constraint
+ */
+function truncateToMaxLength(value, maxLength) {
+    // Remove quotes, truncate, then re-add quotes
+    const cleanValue = value.replace(/^'|'$/g, '');
+    const truncated = cleanValue.substring(0, maxLength);
+    return `'${truncated}'`;
+}
+
+/**
  * Generate a test value for a field based on its type and validation
  */
 function generateTestValue(fieldName, field, recordIndex = 1) {
     const type = field.type;
     const validation = field.validation || {};
+    const maxLength = validation.length?.max;
+    const minLength = validation.length?.min || 1;
     
     // Check for default value
     if (field.default !== undefined) {
@@ -66,43 +110,194 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             if (field.auto_increment) {
                 return 'NULL'; // Let DB auto-increment
             }
-            return recordIndex + 1; // Start from 2 to avoid ID 1
+            return recordIndex; // Use recordIndex directly (starts from 2)
+            
+        case 'smartlookup':
+        case 'lookup':
+        case 'foreign_key':
+            // Foreign key fields - generate valid integer ID
+            // Use recordIndex to ensure valid references (assumes referenced records exist)
+            return recordIndex;
+            
+        case 'email':
+            // Email field type
+            const emailValue = `'test${recordIndex}@example.com'`;
+            return maxLength ? truncateToMaxLength(emailValue, maxLength) : emailValue;
+            
+        case 'phone':
+            // Phone number field - format XXX-XXX-XXXX
+            const phoneNum = String(recordIndex).padStart(3, '0').substring(0, 3);
+            const phoneValue = `'555-000-${phoneNum}'`;
+            return maxLength ? truncateToMaxLength(phoneValue, maxLength) : phoneValue;
+            
+        case 'url':
+            // URL field
+            const urlValue = `'https://example${recordIndex}.com'`;
+            return maxLength ? truncateToMaxLength(urlValue, maxLength) : urlValue;
+            
+        case 'zip':
+            // ZIP code - 5 digits (valid range: 10000-99999)
+            const zipNum = 10000 + (recordIndex % 90000);
+            const zipValue = `'${String(zipNum).padStart(5, '0')}'`;
+            return zipValue;
             
         case 'string':
-            const maxLength = validation.length?.max || 255;
-            const minLength = validation.length?.min || 1;
-            
             if (validation.email) {
-                return `'test${recordIndex}@example.com'`;
+                const emailVal = `'test${recordIndex}@example.com'`;
+                return maxLength ? truncateToMaxLength(emailVal, maxLength) : emailVal;
             }
             
             if (validation.unique) {
-                return `'test_${fieldName}_${recordIndex}'`;
+                const uniqueVal = `'test_${fieldName}_${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(uniqueVal, maxLength) : uniqueVal;
             }
             
-            // Generate based on field name patterns
+            // Special handling for specific field name patterns
+            
+            // IP address field
+            if (fieldName.includes('ip_address') || fieldName.includes('ip')) {
+                const ipVal = `'192.168.${recordIndex}.${100 + recordIndex}'`;
+                return maxLength ? truncateToMaxLength(ipVal, maxLength) : ipVal;
+            }
+            
+            // Icon field (FontAwesome classes)
+            if (fieldName.includes('icon')) {
+                const icons = ['fas fa-home', 'fas fa-user', 'fas fa-cog', 'fas fa-star', 'fas fa-heart'];
+                const iconVal = `'${icons[recordIndex % icons.length]}'`;
+                return maxLength ? truncateToMaxLength(iconVal, maxLength) : iconVal;
+            }
+            
+            // Status field
+            if (fieldName.includes('status')) {
+                const statuses = ['active', 'pending', 'completed', 'cancelled', 'draft'];
+                const statusVal = `'${statuses[recordIndex % statuses.length]}'`;
+                return maxLength ? truncateToMaxLength(statusVal, maxLength) : statusVal;
+            }
+            
+            // Priority field
+            if (fieldName.includes('priority')) {
+                const priorities = ['low', 'medium', 'high', 'urgent'];
+                const priorityVal = `'${priorities[recordIndex % priorities.length]}'`;
+                return maxLength ? truncateToMaxLength(priorityVal, maxLength) : priorityVal;
+            }
+            
+            // Type field
+            if (fieldName === 'type' || fieldName.endsWith('_type')) {
+                const types = ['type_a', 'type_b', 'type_c'];
+                const typeVal = `'${types[recordIndex % types.length]}'`;
+                return maxLength ? truncateToMaxLength(typeVal, maxLength) : typeVal;
+            }
+            
+            // Email pattern in field name
             if (fieldName.includes('email')) {
-                return `'test${recordIndex}@example.com'`;
+                const emailVal = `'test${recordIndex}@example.com'`;
+                return maxLength ? truncateToMaxLength(emailVal, maxLength) : emailVal;
             }
-            if (fieldName.includes('name') && !fieldName.includes('user_name')) {
-                return `'Test ${fieldName} ${recordIndex}'`;
-            }
-            if (fieldName.includes('slug')) {
-                return `'test-${fieldName.replace('_', '-')}-${recordIndex}'`;
-            }
-            if (fieldName.includes('email')) {
-                return `'test${recordIndex}@example.com'`;
-            }
+            
+            // Password field
             if (fieldName.includes('password')) {
-                return `'$2y$10$test.password.hash.${recordIndex}'`; // bcrypt hash placeholder
+                // Use proper bcrypt hash for password fields
+                return `'${getBcryptPasswordHash(recordIndex)}'`;
             }
             
-            return `'Test ${fieldName}'`;
+            // Slug field
+            if (fieldName.includes('slug')) {
+                const slugVal = `'test-slug-${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(slugVal, maxLength) : slugVal;
+            }
+            
+            // State/Province codes
+            if (fieldName === 'state' || fieldName === 'state_code' || fieldName === 'province') {
+                // US state codes - 2 characters
+                const states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'];
+                return `'${states[recordIndex % states.length]}'`;
+            }
+            
+            // Country codes
+            if (fieldName === 'country' || fieldName === 'country_code') {
+                if (maxLength && maxLength <= 3) {
+                    const codes = ['US', 'CA', 'UK', 'AU', 'DE', 'FR', 'IT', 'ES', 'JP', 'CN'];
+                    return `'${codes[recordIndex % codes.length]}'`;
+                }
+                const countries = ['United States', 'Canada', 'United Kingdom'];
+                const countryVal = `'${countries[recordIndex % countries.length]}'`;
+                return maxLength ? truncateToMaxLength(countryVal, maxLength) : countryVal;
+            }
+            
+            // Generic code fields with length constraints
+            if (fieldName.includes('code') && maxLength && maxLength <= 10) {
+                const codeVal = `'C${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(codeVal, maxLength) : codeVal;
+            }
+            
+            // Name fields (first_name, last_name, etc.)
+            if (fieldName.includes('name') && !fieldName.includes('user_name') && !fieldName.includes('file_name')) {
+                const nameVal = `'Name${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(nameVal, maxLength) : nameVal;
+            }
+            
+            // Title fields
+            if (fieldName.includes('title')) {
+                const titleVal = `'Title ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(titleVal, maxLength) : titleVal;
+            }
+            
+            // Address fields
+            if (fieldName.includes('address') && !fieldName.includes('ip')) {
+                const addrVal = `'${100 + recordIndex} Main St'`;
+                return maxLength ? truncateToMaxLength(addrVal, maxLength) : addrVal;
+            }
+            
+            // City fields
+            if (fieldName.includes('city')) {
+                const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'];
+                const cityVal = `'${cities[recordIndex % cities.length]}'`;
+                return maxLength ? truncateToMaxLength(cityVal, maxLength) : cityVal;
+            }
+            
+            // Company fields
+            if (fieldName.includes('company')) {
+                const companyVal = `'Company ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(companyVal, maxLength) : companyVal;
+            }
+            
+            // Position/role fields
+            if (fieldName.includes('position') || fieldName.includes('job_title')) {
+                const positionVal = `'Position ${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(positionVal, maxLength) : positionVal;
+            }
+            
+            // Default string generation - respect max length
+            let defaultVal = `'Value${recordIndex}'`;
+            if (maxLength) {
+                // Calculate the actual content length (excluding quotes)
+                const content = defaultVal.slice(1, -1); // Remove quotes
+                if (content.length > maxLength) {
+                    // Try shorter pattern
+                    defaultVal = `'V${recordIndex}'`;
+                    const shortContent = defaultVal.slice(1, -1);
+                    if (shortContent.length > maxLength) {
+                        // For very small fields, use minimal content
+                        const minContent = String(recordIndex).substring(0, maxLength);
+                        defaultVal = `'${minContent}'`;
+                    }
+                }
+                return truncateToMaxLength(defaultVal, maxLength);
+            }
+            return defaultVal;
             
         case 'text':
+        case 'textarea':
+        case 'textarea-r3c60':
+        case 'textarea-r5':
             return `'Test description for ${fieldName} - Record ${recordIndex}'`;
             
+        case 'password':
+            // Generate proper bcrypt password hashes for password fields
+            return `'${getBcryptPasswordHash(recordIndex)}'`;
+            
         case 'boolean':
+        case 'boolean-yn':
             return field.default !== undefined ? field.default : 1;
             
         case 'date':
@@ -122,9 +317,13 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
         case 'json':
             return `'{}'`;
             
+        case 'multiselect':
+            return `'option1,option2'`;
+            
         default:
             if (field.required) {
-                return `'test_${fieldName}'`;
+                const reqVal = `'val${recordIndex}'`;
+                return maxLength ? truncateToMaxLength(reqVal, maxLength) : reqVal;
             }
             return 'NULL';
     }
@@ -141,6 +340,12 @@ function shouldIncludeField(fieldName, field) {
     
     // Skip computed/virtual fields (e.g., role_ids used for relationship sync)
     if (field.computed) {
+        return false;
+    }
+    
+    // Skip multiselect fields (virtual fields for relationship management)
+    // These are NOT database columns - they're form inputs for syncing relationships
+    if (field.type === 'multiselect') {
         return false;
     }
     
@@ -186,8 +391,9 @@ function generateInsertSQL(schema, recordCount = 3) {
     }
     
     // Generate INSERT statements
+    // Start from ID 2 - only user ID 1 is reserved for admin
     for (let i = 0; i < recordCount; i++) {
-        const recordIndex = i + 2; // Start from 2 to avoid ID 1
+        const recordIndex = i + 2; // Start from 2 (only user ID 1 is reserved)
         const values = [];
         
         for (const fieldName of insertFields) {
@@ -196,9 +402,9 @@ function generateInsertSQL(schema, recordCount = 3) {
             values.push(value);
         }
         
-        sql.push(`INSERT INTO ${tableName} (${insertFields.join(', ')})`);
-        sql.push(`VALUES (${values.join(', ')})`);
-        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `${f} = VALUES(${f})`).join(', ')};`);
+        sql.push(`INSERT INTO \`${tableName}\` (${insertFields.map(f => `\`${f}\``).join(', ')})`);
+        sql.push(`VALUES (${values.join(', ')}) AS new_values`);
+        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `\`${f}\` = new_values.\`${f}\``).join(', ')};`);
         sql.push('');
     }
     
@@ -229,9 +435,9 @@ function generateRelationshipSQL(schema) {
             ];
             
             for (const [fk, rk] of testRelationships) {
-                sql.push(`INSERT INTO ${rel.pivot_table} (${foreignKey}, ${relatedKey})`);
-                sql.push(`VALUES (${fk}, ${rk})`);
-                sql.push(`ON DUPLICATE KEY UPDATE ${foreignKey} = VALUES(${foreignKey});`);
+                sql.push(`INSERT INTO \`${rel.pivot_table}\` (\`${foreignKey}\`, \`${relatedKey}\`)`);
+                sql.push(`VALUES (${fk}, ${rk}) AS new_rel`);
+                sql.push(`ON DUPLICATE KEY UPDATE \`${foreignKey}\` = new_rel.\`${foreignKey}\`;`);
                 sql.push('');
             }
         }

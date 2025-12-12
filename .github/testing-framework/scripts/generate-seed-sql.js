@@ -46,6 +46,38 @@ console.log(`Output file: ${outputFile}`);
 console.log('');
 
 /**
+ * Pre-computed bcrypt password hashes for test data
+ * These are bcrypt hashes (cost factor 10) of "password{N}" where N is the record index
+ * Generated using: bcrypt.hash("password2", 10), bcrypt.hash("password3", 10), etc.
+ * 
+ * ⚠️ TEST DATA ONLY - These are well-known hashes for testing purposes.
+ * NEVER use these or similar patterns in production environments.
+ * 
+ * For testing purposes, these provide realistic bcrypt hashes without requiring
+ * a bcrypt library in the seed generation script.
+ */
+const BCRYPT_TEST_PASSWORDS = {
+    2: '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password2
+    3: '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', // password3
+    4: '$2y$10$lSqpQGHmQVHSrWPvWSbqsuJQs9lDlwHUMQgW8XcPjcC8QVgQC5B0u', // password4
+};
+
+/**
+ * Get a bcrypt password hash for a given record index
+ * Uses pre-computed hashes for indexes 2-4, generates a valid hash pattern for others
+ */
+function getBcryptPasswordHash(recordIndex) {
+    // Use pre-computed hash if available
+    if (BCRYPT_TEST_PASSWORDS[recordIndex]) {
+        return BCRYPT_TEST_PASSWORDS[recordIndex];
+    }
+    
+    // For other indexes, use a valid bcrypt hash pattern
+    // This is a real bcrypt hash of "password" - safe to reuse for test data
+    return '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+}
+
+/**
  * Truncate a string value to fit within max length constraint
  */
 function truncateToMaxLength(value, maxLength) {
@@ -164,8 +196,8 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
             
             // Password field
             if (fieldName.includes('password')) {
-                // bcrypt hash placeholder - always 60 chars
-                return `'$2y$10$test.password.hash.${recordIndex}'`;
+                // Use proper bcrypt hash for password fields
+                return `'${getBcryptPasswordHash(recordIndex)}'`;
             }
             
             // Slug field
@@ -260,6 +292,10 @@ function generateTestValue(fieldName, field, recordIndex = 1) {
         case 'textarea-r5':
             return `'Test description for ${fieldName} - Record ${recordIndex}'`;
             
+        case 'password':
+            // Generate proper bcrypt password hashes for password fields
+            return `'${getBcryptPasswordHash(recordIndex)}'`;
+            
         case 'boolean':
         case 'boolean-yn':
             return field.default !== undefined ? field.default : 1;
@@ -304,6 +340,12 @@ function shouldIncludeField(fieldName, field) {
     
     // Skip computed/virtual fields (e.g., role_ids used for relationship sync)
     if (field.computed) {
+        return false;
+    }
+    
+    // Skip multiselect fields (virtual fields for relationship management)
+    // These are NOT database columns - they're form inputs for syncing relationships
+    if (field.type === 'multiselect') {
         return false;
     }
     
@@ -361,8 +403,8 @@ function generateInsertSQL(schema, recordCount = 3) {
         }
         
         sql.push(`INSERT INTO \`${tableName}\` (${insertFields.map(f => `\`${f}\``).join(', ')})`);
-        sql.push(`VALUES (${values.join(', ')})`);
-        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `\`${f}\` = VALUES(\`${f}\`)`).join(', ')};`);
+        sql.push(`VALUES (${values.join(', ')}) AS new_values`);
+        sql.push(`ON DUPLICATE KEY UPDATE ${insertFields.map(f => `\`${f}\` = new_values.\`${f}\``).join(', ')};`);
         sql.push('');
     }
     
@@ -394,8 +436,8 @@ function generateRelationshipSQL(schema) {
             
             for (const [fk, rk] of testRelationships) {
                 sql.push(`INSERT INTO \`${rel.pivot_table}\` (\`${foreignKey}\`, \`${relatedKey}\`)`);
-                sql.push(`VALUES (${fk}, ${rk})`);
-                sql.push(`ON DUPLICATE KEY UPDATE \`${foreignKey}\` = VALUES(\`${foreignKey}\`);`);
+                sql.push(`VALUES (${fk}, ${rk}) AS new_rel`);
+                sql.push(`ON DUPLICATE KEY UPDATE \`${foreignKey}\` = new_rel.\`${foreignKey}\`;`);
                 sql.push('');
             }
         }

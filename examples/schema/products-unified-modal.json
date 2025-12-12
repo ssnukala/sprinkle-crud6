@@ -127,87 +127,72 @@
         }
       }
     },
-    "description": {
-      "type": "text",
-      "label": "Description",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "show_in": ["create", "edit", "detail"],
-      "rows": 5
-    },
     "price": {
       "type": "decimal",
       "label": "Price",
       "required": true,
       "sortable": true,
       "filterable": true,
-      "show_in": ["list", "create", "edit", "detail"],
+      "listable": true,
+      "filter_type": "between",
       "validation": {
         "required": true,
-        "min": 0,
-        "max": 999999.99
-      }
-    },
-    "cost": {
-      "type": "decimal",
-      "label": "Cost",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "show_in": ["create", "edit", "detail"],
-      "validation": {
-        "min": 0,
-        "max": 999999.99
-      }
-    },
-    "stock_quantity": {
-      "type": "integer",
-      "label": "Stock",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "show_in": ["list", "create", "edit", "detail"],
-      "validation": {
-        "required": true,
+        "numeric": true,
         "min": 0
       }
     },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": true,
+      "field_template": "<div class='uk-card uk-card-small uk-card-body uk-card-default'><div class='uk-grid-small' uk-grid><div class='uk-width-auto'><span class='uk-badge'>ID: {{id}}</span></div><div class='uk-width-auto'><span class='uk-badge'>SKU: {{sku}}</span></div><div class='uk-width-auto'><span class='uk-label uk-label-{{is_active}}'>Active: {{is_active}}</span></div></div><p class='uk-text-small uk-margin-small-top'>{{description}}</p></div>"
+    },
     "category_id": {
-      "type": "smartlookup",
+      "type": "integer",
       "label": "Category",
       "required": true,
       "sortable": true,
       "filterable": true,
-      "show_in": ["list", "create", "edit", "detail"],
-      "lookup": {
-        "model": "categories",
-        "id": "id",
-        "desc": "name"
-      },
-      "validation": {
-        "required": true
-      }
+      "listable": true,
+      "filter_type": "equals"
     },
-    "status": {
+    "tags": {
       "type": "string",
-      "label": "Status",
-      "default": "draft",
-      "sortable": true,
+      "label": "Tags",
+      "required": false,
+      "sortable": false,
       "filterable": true,
-      "show_in": ["list", "create", "edit", "detail"],
-      "validation": {
-        "in": ["draft", "published", "archived"]
-      }
+      "listable": false,
+      "filter_type": "like"
     },
-    "featured": {
+    "is_active": {
       "type": "boolean",
-      "label": "Featured",
-      "ui": "toggle",
-      "default": false,
+      "label": "Active",
+      "default": true,
       "sortable": true,
       "filterable": true,
-      "show_in": ["list", "create", "edit", "detail"]
+      "listable": true
+    },
+    "launch_date": {
+      "type": "date",
+      "label": "Launch Date",
+      "required": false,
+      "sortable": true,
+      "filterable": true,
+      "listable": true,
+      "filter_type": "greater_than",
+      "date_format": "Y-m-d"
+    },
+    "metadata": {
+      "type": "json",
+      "label": "Metadata",
+      "required": false,
+      "sortable": false,
+      "filterable": false,
+      "listable": false
     },
     "created_at": {
       "type": "datetime",
@@ -215,7 +200,17 @@
       "editable": false,
       "sortable": true,
       "filterable": false,
-      "show_in": ["detail"]
+      "listable": true,
+      "date_format": "Y-m-d H:i:s"
+    },
+    "updated_at": {
+      "type": "datetime",
+      "label": "Updated At",
+      "editable": false,
+      "sortable": true,
+      "filterable": false,
+      "listable": false,
+      "date_format": "Y-m-d H:i:s"
     },
     "updated_at": {
       "type": "datetime",

@@ -107,6 +107,13 @@ function mapFieldTypeToSQL(fieldName, field) {
         case 'textarea-r5':
             return 'TEXT';
             
+        // Lookup/foreign key fields
+        case 'smartlookup':
+        case 'lookup':
+        case 'foreign_key':
+            // Foreign key field - integer reference to another table
+            return 'INT';
+            
         default:
             console.warn(`   ⚠️  Unknown field type: ${type} for field ${fieldName}, defaulting to VARCHAR(255)`);
             return 'VARCHAR(255)';
@@ -291,10 +298,11 @@ function processSchemas() {
     allSQL.push('');
     
     let processedCount = 0;
-    const processedTables = new Set();
     const processedPivotTables = new Set();
     
-    // Process each schema
+    // FIRST PASS: Group all schemas by table name to merge fields
+    const schemasByTable = new Map();
+    
     for (const file of jsonFiles) {
         try {
             const filePath = path.join(schemaDir, file);
@@ -303,48 +311,95 @@ function processSchemas() {
             
             const tableName = schema.table;
             
-            // Skip if we've already processed this table (multiple schemas may use same table)
-            if (processedTables.has(tableName)) {
-                console.log(`   ⏭️  Skipping duplicate table: ${tableName} (from ${file})`);
-                continue;
+            if (!schemasByTable.has(tableName)) {
+                schemasByTable.set(tableName, []);
+            }
+            schemasByTable.get(tableName).push({ file, schema });
+        } catch (error) {
+            console.error(`   ❌ Failed to load ${file}: ${error.message}`);
+        }
+    }
+    
+    // SECOND PASS: Process each unique table, merging fields from all schemas
+    for (const [tableName, tableSchemas] of schemasByTable) {
+        try {
+            // Merge all fields from all schemas for this table
+            const mergedFields = {};
+            const sourceFiles = [];
+            
+            for (const { file, schema } of tableSchemas) {
+                sourceFiles.push(file);
+                const fields = schema.fields || {};
+                
+                for (const [fieldName, fieldDef] of Object.entries(fields)) {
+                    // If field already exists, prefer the most detailed definition
+                    if (!mergedFields[fieldName]) {
+                        mergedFields[fieldName] = fieldDef;
+                    } else {
+                        // Merge field definitions - prefer non-null/non-undefined values
+                        const existing = mergedFields[fieldName];
+                        const merged = { ...existing };
+                        
+                        // Merge validation rules
+                        if (fieldDef.validation) {
+                            merged.validation = { ...existing.validation, ...fieldDef.validation };
+                        }
+                        
+                        // Prefer explicit required/editable/sortable values
+                        if (fieldDef.required !== undefined) merged.required = fieldDef.required;
+                        if (fieldDef.editable !== undefined) merged.editable = fieldDef.editable;
+                        if (fieldDef.sortable !== undefined) merged.sortable = fieldDef.sortable;
+                        if (fieldDef.filterable !== undefined) merged.filterable = fieldDef.filterable;
+                        if (fieldDef.listable !== undefined) merged.listable = fieldDef.listable;
+                        if (fieldDef.default !== undefined) merged.default = fieldDef.default;
+                        
+                        mergedFields[fieldName] = merged;
+                    }
+                }
             }
             
-            console.log(`   ✅ Processing: ${file} (table: ${tableName})`);
-            processedTables.add(tableName);
+            // Create merged schema for CREATE TABLE
+            const mergedSchema = {
+                ...tableSchemas[0].schema,
+                fields: mergedFields
+            };
+            
+            console.log(`   ✅ Processing: ${tableName} (merged from ${sourceFiles.length} schemas: ${sourceFiles.join(', ')})`);
             
             // Generate CREATE TABLE SQL
             allSQL.push(`-- ${'-'.repeat(60)}`);
             allSQL.push(`-- Table: ${tableName}`);
-            allSQL.push(`-- Schema: ${file}`);
+            allSQL.push(`-- Merged from schemas: ${sourceFiles.join(', ')}`);
             allSQL.push(`-- ${'-'.repeat(60)}`);
             allSQL.push('');
-            allSQL.push(generateCreateTableSQL(schema));
+            allSQL.push(generateCreateTableSQL(mergedSchema));
             allSQL.push('');
             
-            // Generate pivot table SQL if any
-            const pivotSQL = generatePivotTableSQL(schema, processedPivotTables);
+            // Generate pivot table SQL if any (check first schema for relationships)
+            const pivotSQL = generatePivotTableSQL(tableSchemas[0].schema, processedPivotTables);
             if (pivotSQL) {
                 allSQL.push(pivotSQL);
             }
             
             processedCount++;
         } catch (error) {
-            console.error(`   ❌ Failed to process ${file}: ${error.message}`);
+            console.error(`   ❌ Failed to process table ${tableName}: ${error.message}`);
         }
     }
+    
     
     // SQL file footer
     allSQL.push('-- Re-enable foreign key checks');
     allSQL.push('SET FOREIGN_KEY_CHECKS=1;');
     allSQL.push('');
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
-    allSQL.push(`-- Successfully generated ${processedTables.size} table definitions`);
+    allSQL.push(`-- Successfully generated ${schemasByTable.size} table definitions`);
     allSQL.push(`-- and ${processedPivotTables.size} pivot tables`);
-    allSQL.push(`-- from ${processedCount} schema files`);
+    allSQL.push(`-- from ${processedCount} unique tables`);
     allSQL.push('-- ═══════════════════════════════════════════════════════════════');
     
     console.log('');
-    console.log(`✅ Processed ${processedCount} schemas, generated ${processedTables.size} unique tables and ${processedPivotTables.size} pivot tables`);
+    console.log(`✅ Processed ${processedCount} unique tables (merged from ${jsonFiles.length} schemas), generated ${schemasByTable.size} tables and ${processedPivotTables.size} pivot tables`);
     console.log('');
     
     return allSQL.join('\n');

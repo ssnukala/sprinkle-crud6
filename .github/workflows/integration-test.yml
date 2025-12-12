@@ -57,25 +57,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       
-      - name: Install testing framework
+      - name: Verify testing framework
         run: |
           cd ${{ env.SPRINKLE_DIR }}
           
-          if [ -d ".github/crud6-framework" ]; then
-            echo "✅ Using local framework"
+          # For sprinkle-crud6, the framework is already present at .github/testing-framework
+          # Other sprinkles would install it, but we use it directly
+          if [ -d ".github/testing-framework" ]; then
+            echo "✅ Testing framework found at .github/testing-framework"
+            chmod +x .github/testing-framework/scripts/*.php 2>/dev/null || true
           else
-            echo "📦 Installing framework..."
-            git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
-              https://github.com/${{ env.FRAMEWORK_REPO }}.git /tmp/crud6-repo
-            mkdir -p .github/crud6-framework
-            cp -r /tmp/crud6-repo/.github/testing-framework/* .github/crud6-framework/
-            chmod +x .github/crud6-framework/scripts/*.php
-            echo "✅ Framework installed"
-          fi
-          
-          mkdir -p .github/config
-          if [ -d "/tmp/crud6-repo/.github/config" ]; then
-            cp /tmp/crud6-repo/.github/config/integration-test-*.json .github/config/ 2>/dev/null || true
+            echo "❌ ERROR: Testing framework not found!"
+            exit 1
           fi
       
       - name: Create UserFrosting project
@@ -251,7 +244,7 @@ jobs:
           cd userfrosting
           # Run UserFrosting default seeds (roles, groups, permissions, etc.)
           # These create the infrastructure but DO NOT create users
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/run-seeds.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
           echo "✅ UserFrosting default seeds loaded (roles, groups, permissions)"
 
@@ -274,7 +267,7 @@ jobs:
           echo "========================================="
           echo "DIAGNOSTIC: Checking database state BEFORE SQL generation"
           echo "========================================="
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/display-roles-permissions.php
 
       - name: Generate and load DDL (CREATE TABLE statements)
         run: |
@@ -293,11 +286,11 @@ jobs:
           echo "✅ Using schemas from: $SCHEMA_DIR"
           
           # Generate DDL SQL
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-ddl-sql.js \
+          node ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/generate-ddl-sql.js \
             "$SCHEMA_DIR" ddl.sql
           
           # Load DDL SQL
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/load-seed-sql.php \
             ddl.sql
           
           echo "✅ DDL loaded - tables created from schemas"
@@ -305,7 +298,7 @@ jobs:
           echo "========================================="
           echo "DIAGNOSTIC: Checking database state AFTER DDL loading"
           echo "========================================="
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/display-roles-permissions.php
 
       - name: Generate and load SQL seed data (test data)
         run: |
@@ -323,10 +316,10 @@ jobs:
           
           echo "✅ Using schemas from: $SCHEMA_DIR"
           
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-seed-sql.js \
+          node ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/generate-seed-sql.js \
             "$SCHEMA_DIR" seed-data.sql
           
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/load-seed-sql.php \
             seed-data.sql
           
           echo "✅ Test data loaded via SQL (IDs start from 100)"
@@ -334,18 +327,18 @@ jobs:
           echo "========================================="
           echo "DIAGNOSTIC: Checking database state AFTER seed-data loading"
           echo "========================================="
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/display-roles-permissions.php
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/display-roles-permissions.php
       
       - name: Validate seed data
         run: |
           cd userfrosting
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/check-seeds-modular.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/check-seeds-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
       
       - name: Test seed idempotency
         run: |
           cd userfrosting
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
 
       - name: Create test user for modification tests
@@ -487,7 +480,7 @@ jobs:
           export CONTINUE_ON_FAILURE=true
           
           # Test unauthenticated paths only (both API and frontend)
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+          php ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             unauth
           
@@ -513,7 +506,7 @@ jobs:
           
           # Copy the screenshot script to the userfrosting directory where playwright is installed
           # This allows Node.js to resolve the playwright module from local node_modules
-          cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-with-tracking.js .
+          cp ../${{ env.SPRINKLE_DIR }}/.github/testing-framework/scripts/take-screenshots-with-tracking.js .
           
           # Run the script from the local directory (where playwright is installed)
           node take-screenshots-with-tracking.js \

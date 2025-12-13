@@ -131,7 +131,12 @@ function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
         $cookieJarContent .= "{$domain}\t{$flag}\t{$path}\t{$secure}\t{$expires}\t{$name}\t{$value}\n";
     }
     
-    file_put_contents($cookieJar, $cookieJarContent);
+    $result = file_put_contents($cookieJar, $cookieJarContent);
+    if ($result === false) {
+        echo "⚠️  Failed to write cookie jar file: {$cookieJar}\n";
+        return false;
+    }
+    
     return true;
 }
 

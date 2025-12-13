@@ -349,6 +349,11 @@ jobs:
             --firstName=Admin \
             --lastName=User
 
+      - name: Verify admin user exists in database
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/verify-admin-user.php admin
+
       - name: Build frontend assets
         run: |
           cd userfrosting

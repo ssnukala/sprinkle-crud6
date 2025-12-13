@@ -61,8 +61,15 @@ jobs:
         run: |
           cd ${{ env.SPRINKLE_DIR }}
           
+          # Check if framework already exists (either as crud6-framework or testing-framework)
           if [ -d ".github/crud6-framework" ]; then
-            echo "✅ Using local framework"
+            echo "✅ Using local framework (crud6-framework)"
+          elif [ -d ".github/testing-framework" ]; then
+            echo "✅ Using local framework (testing-framework)"
+            # Copy to crud6-framework for consistency (copy vs symlink to allow independent modifications)
+            cp -r .github/testing-framework .github/crud6-framework
+            chmod +x .github/crud6-framework/scripts/*.php
+            echo "✅ Framework copied to crud6-framework"
           else
             echo "📦 Installing framework..."
             git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
@@ -401,13 +408,22 @@ jobs:
       - name: Install Playwright
         run: |
           cd userfrosting
+          npm install playwright
           npx playwright install chromium
+      
+      - name: Copy testing scripts to userfrosting
+        run: |
+          cd userfrosting
+          # Copy scripts to userfrosting so they can access node_modules
+          cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/login-admin.js .
+          cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js .
+          echo "✅ Testing scripts copied to userfrosting directory"
       
       - name: Login as admin user
         run: |
           cd userfrosting
-          # Use the Playwright-based login script (same approach as take-authenticated-screenshots.js)
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/login-admin.js \
+          # Run from userfrosting directory where node_modules/playwright is installed
+          node login-admin.js \
             http://localhost:8080 \
             admin \
             admin123 \
@@ -546,7 +562,8 @@ jobs:
       - name: Capture screenshots
         run: |
           cd userfrosting
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
+          # Run from userfrosting directory where node_modules/playwright is installed
+          node take-screenshots-modular.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             screenshots
 

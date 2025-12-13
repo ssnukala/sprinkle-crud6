@@ -1,6 +1,22 @@
 # Playwright Module Fix - Integration Testing
 
-## Issue
+## Latest Issue (December 2024) - CORRECTED SOLUTION
+
+The integration test workflow was failing with the error:
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from 
+/home/runner/work/sprinkle-crud6/sprinkle-crud6/sprinkle-crud6/.github/crud6-framework/scripts/login-admin.js
+```
+
+This occurred when scripts in the testing framework tried to use ES module imports: `import { chromium } from 'playwright';`
+
+### Critical Architecture Understanding
+**sprinkle-crud6 is a COMPONENT of UserFrosting 6, not a standalone application.**
+- All npm dependencies must be in `userfrosting/package.json`
+- Sprinkle cannot operate independently
+- Testing scripts must run from userfrosting directory to access its node_modules
+
+## Previous Issue (October 2024)
 
 The integration test workflow was failing with the error:
 ```
@@ -10,7 +26,24 @@ Require stack:
 
 This occurred when the screenshot capture script tried to execute `const { chromium } = require('playwright');` in the GitHub Actions workflow.
 
-## Root Cause
+## Root Cause (Latest Fix - CORRECTED)
+
+The testing framework scripts use ES module imports:
+```javascript
+import { chromium } from 'playwright';
+```
+
+Node.js resolves ES module imports relative to the **script's location**, not the current working directory.
+
+**Initial misunderstanding:** Tried to install playwright in `.github/testing-framework/` directory.
+
+**Actual problem:** sprinkle-crud6 is a UserFrosting 6 component, not standalone. The workflow was:
+1. Running scripts from: `.github/crud6-framework/scripts/login-admin.js`
+2. Executing from: `cd userfrosting && node ../sprinkle-crud6/.github/crud6-framework/scripts/login-admin.js`
+3. Node.js looked for playwright relative to script location: `.github/crud6-framework/node_modules/` (didn't exist)
+4. Should have installed playwright in `userfrosting/node_modules/` and run scripts from there
+
+## Root Cause (Previous Fix)
 
 The workflow was attempting to use Playwright in two ways:
 1. `npx playwright install chromium --with-deps` - Installs browser binaries (in "Install Playwright browsers" step)
@@ -18,7 +51,29 @@ The workflow was attempting to use Playwright in two ways:
 
 The problem was that `npx playwright install` only installs the browser binaries, not the playwright npm package itself. The `require('playwright')` statement needs the playwright package to be installed in `node_modules`.
 
-## Solution
+## Solution (Latest Fix - December 2024) - CORRECTED
+
+**Follow the pattern from pre-framework-migration that worked:**
+1. Install Playwright in userfrosting directory (where UserFrosting's node_modules is)
+2. Copy scripts TO userfrosting directory
+3. Run scripts FROM userfrosting directory
+
+### Changes Made
+
+1. **`.github/testing-framework/package.json`**
+   - NO CHANGE - kept as `peerDependencies` (correct for component architecture)
+
+2. **`.github/workflows/integration-test.yml`**
+   - **Install Playwright**: `cd userfrosting && npm install playwright && npx playwright install chromium`
+   - **Copy scripts**: Copy `login-admin.js` and `take-screenshots-modular.js` to userfrosting directory
+   - **Run scripts**: Execute from userfrosting: `node login-admin.js` and `node take-screenshots-modular.js`
+
+### Why This Works
+- Scripts are in userfrosting directory where node_modules/playwright exists
+- Node.js module resolution finds playwright in userfrosting/node_modules
+- Follows UserFrosting 6 component architecture correctly
+
+## Solution (Previous Fix - October 2024)
 
 ### Changes Made
 
@@ -51,32 +106,50 @@ Playwright is added as a **devDependency** rather than a regular dependency beca
 - Production code doesn't need it
 - The CI workflow explicitly installs it when needed
 
-## Testing
+## Testing (Corrected Approach)
 
 The fix was validated by:
-1. ✅ JSON syntax validation of package.json
-2. ✅ YAML syntax validation of workflow file
-3. ✅ Simulating the require() statement to confirm it would fail without the package
-4. ✅ Reviewing the workflow steps to ensure proper installation order
+1. ✅ YAML syntax validation of workflow file
+2. ✅ Comparing with pre-framework-migration backup that worked
+3. ✅ Verifying Node.js ES module resolution behavior
+4. ✅ Understanding UserFrosting 6 component architecture
+5. ✅ Confirming scripts are copied and run from userfrosting directory
 
-## Files Modified
+## Files Modified (Final Corrected Version)
 
-1. `.github/workflows/integration-test.yml` - Added npm install playwright
-2. `package.json` - Added playwright devDependency
-3. `INTEGRATION_TESTING.md` - Added installation instructions
+1. `.github/workflows/integration-test.yml`:
+   - Install playwright in userfrosting directory
+   - Copy scripts to userfrosting directory
+   - Run scripts from userfrosting directory
+2. `.github/testing-framework/package.json` - NO CHANGE (remains peerDependencies)
 
 ## Expected Behavior After Fix
 
 When the integration test workflow runs:
-1. ✅ Playwright npm package is installed
+1. ✅ Playwright npm package is installed in userfrosting/node_modules
 2. ✅ Chromium browser binaries are installed
-3. ✅ Screenshot script can require('playwright') successfully
-4. ✅ Screenshots are captured and uploaded as artifacts
+3. ✅ Scripts are copied to userfrosting directory
+4. ✅ Scripts run from userfrosting and can import playwright successfully
+5. ✅ Screenshots are captured and uploaded as artifacts
 
-## Related Issues
+## Reference to Working Implementation
 
-This fix was inspired by a similar solution in the `ssnukala/sprinkle-learntegrate` repository, where the same Playwright installation approach was used successfully.
+This fix follows the exact pattern from `.archive/pre-framework-migration/integration-test.yml.backup` (lines 526-530, 880, 889):
+```yaml
+- name: Install Playwright browsers for screenshots
+  run: |
+    cd userfrosting
+    npm install playwright
+    npx playwright install chromium --with-deps
+
+- name: Take screenshots
+  run: |
+    cd userfrosting
+    cp ../sprinkle-crud6/.github/scripts/take-screenshots-with-tracking.js .
+    node take-screenshots-with-tracking.js integration-test-paths.json
+```
 
 ---
 
 *Documentation created: October 2024*
+*Updated with corrected solution: December 2024*

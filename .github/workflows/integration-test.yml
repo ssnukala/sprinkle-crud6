@@ -66,7 +66,7 @@ jobs:
             echo "✅ Using local framework (crud6-framework)"
           elif [ -d ".github/testing-framework" ]; then
             echo "✅ Using local framework (testing-framework)"
-            # Create symlink or copy to crud6-framework for consistency
+            # Copy to crud6-framework for consistency (copy vs symlink to allow independent modifications)
             cp -r .github/testing-framework .github/crud6-framework
             chmod +x .github/crud6-framework/scripts/*.php
             echo "✅ Framework copied to crud6-framework"

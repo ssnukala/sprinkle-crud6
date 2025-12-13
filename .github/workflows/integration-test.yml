@@ -474,7 +474,7 @@ jobs:
           echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            auth api > /tmp/test-results-auth-api.txt 2>&1
+            auth api /tmp/admin-auth-state.json > /tmp/test-results-auth-api.txt 2>&1
           cat /tmp/test-results-auth-api.txt
       
       - name: Test authenticated frontend paths
@@ -489,7 +489,7 @@ jobs:
           echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            auth frontend > /tmp/test-results-auth-frontend.txt 2>&1
+            auth frontend /tmp/admin-auth-state.json > /tmp/test-results-auth-frontend.txt 2>&1
           cat /tmp/test-results-auth-frontend.txt
       
       - name: Generate test summary table

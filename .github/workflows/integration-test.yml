@@ -524,6 +524,7 @@ jobs:
           echo ""
           
           # Run unified test that does login + API tests + frontend tests in one go
+          # Note: Script exits with code 1 on failure, which will fail this workflow step
           node test-authenticated-unified.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             http://localhost:8080 \

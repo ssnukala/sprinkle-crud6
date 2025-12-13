@@ -292,7 +292,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         console.error(error.message);
         console.error('========================================');
         
-        // Take a screenshot of the current page for debugging (if page exists)
+        // Take a screenshot for debugging if page was successfully created
         if (page) {
             try {
                 await page.screenshot({ path: '/tmp/test-error.png', fullPage: true });

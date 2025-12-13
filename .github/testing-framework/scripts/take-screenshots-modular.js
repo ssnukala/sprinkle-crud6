@@ -42,7 +42,7 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     console.log(`Username: ${username}`);
     
     // Check if we should reuse existing session
-    const reuseSession = stateFile && existsSync(stateFile);
+    let reuseSession = stateFile && existsSync(stateFile);
     if (reuseSession) {
         console.log(`🔄 Reusing authenticated session from: ${stateFile}`);
     } else {
@@ -84,13 +84,32 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
         let context;
         if (reuseSession) {
             console.log('📂 Loading saved session state...');
-            const storageState = JSON.parse(readFileSync(stateFile, 'utf8'));
-            context = await browser.newContext({
-                viewport: { width: 1280, height: 720 },
-                ignoreHTTPSErrors: true,
-                storageState: storageState
-            });
-            console.log('✅ Session state loaded');
+            try {
+                const stateContent = readFileSync(stateFile, 'utf8');
+                const storageState = JSON.parse(stateContent);
+                
+                // Validate that storageState has required structure
+                if (!storageState || typeof storageState !== 'object' || !storageState.cookies) {
+                    throw new Error('Invalid state file structure: missing required properties');
+                }
+                
+                context = await browser.newContext({
+                    viewport: { width: 1280, height: 720 },
+                    ignoreHTTPSErrors: true,
+                    storageState: storageState
+                });
+                console.log('✅ Session state loaded successfully');
+            } catch (stateError) {
+                console.error(`⚠️  Failed to load session state: ${stateError.message}`);
+                console.log('🔄 Falling back to fresh login');
+                // Fall back to creating context without state
+                context = await browser.newContext({
+                    viewport: { width: 1280, height: 720 },
+                    ignoreHTTPSErrors: true
+                });
+                // Clear reuseSession flag so we perform login
+                reuseSession = false;
+            }
         } else {
             context = await browser.newContext({
                 viewport: { width: 1280, height: 720 },

@@ -85,13 +85,15 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
+    let page; // Declare page outside try block for error handling
+
     try {
         const context = await browser.newContext({
             viewport: { width: 1280, height: 720 },
             ignoreHTTPSErrors: true
         });
 
-        const page = await context.newPage();
+        page = await context.newPage();
 
         // ========================================
         // STEP 1: Login
@@ -290,13 +292,14 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         console.error(error.message);
         console.error('========================================');
         
-        // Take a screenshot of the current page for debugging
-        try {
-            const page = await browser.newPage();
-            await page.screenshot({ path: '/tmp/test-error.png', fullPage: true });
-            console.log('📸 Error screenshot saved to /tmp/test-error.png');
-        } catch (e) {
-            // Ignore errors when taking error screenshot
+        // Take a screenshot of the current page for debugging (if page exists)
+        if (page) {
+            try {
+                await page.screenshot({ path: '/tmp/test-error.png', fullPage: true });
+                console.log('📸 Error screenshot saved to /tmp/test-error.png');
+            } catch (e) {
+                console.log('⚠️  Could not capture error screenshot');
+            }
         }
         
         process.exit(1);

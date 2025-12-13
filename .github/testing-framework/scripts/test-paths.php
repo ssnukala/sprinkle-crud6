@@ -363,15 +363,18 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     }
     
     // Determine if the status code is acceptable
-    $statusIsAcceptable = ($httpCode == $expectedStatus);
+    // Note: $httpCode is a string from curl, $expectedStatus is typically an int
+    $httpCodeInt = (int)$httpCode;
+    $expectedStatusInt = (int)$expectedStatus;
+    $statusIsAcceptable = ($httpCodeInt === $expectedStatusInt);
     if (!$statusIsAcceptable && $acceptableStatuses !== null) {
         // Check if status code is in the list of acceptable statuses
-        $statusIsAcceptable = in_array((int)$httpCode, $acceptableStatuses);
+        $statusIsAcceptable = in_array($httpCodeInt, $acceptableStatuses);
     }
     
     // Validate status code
     if ($statusIsAcceptable) {
-        if ($httpCode == $expectedStatus) {
+        if ($httpCodeInt === $expectedStatusInt) {
             echo "   ✅ Status: {$httpCode} (expected {$expectedStatus})\n";
         } else {
             echo "   ✅ Status: {$httpCode} (acceptable, expected {$expectedStatus})\n";

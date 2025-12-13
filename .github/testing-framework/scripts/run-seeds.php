@@ -141,7 +141,61 @@ echo "\n";
 if ($failedSeeds > 0) {
     echo "⚠️  Some seeds failed\n";
     exit(1);
-} else {
-    echo "✅ All seeds completed successfully\n";
-    exit(0);
 }
+
+echo "✅ All seeds completed successfully\n";
+echo "\n";
+
+// Create admin user if configured
+if (isset($config['admin_user']) && ($config['admin_user']['enabled'] ?? false)) {
+    echo "=========================================\n";
+    echo "Creating Admin User\n";
+    echo "=========================================\n";
+    
+    $adminConfig = $config['admin_user'];
+    $username = $adminConfig['username'] ?? 'admin';
+    $password = $adminConfig['password'] ?? 'admin123';
+    $email = $adminConfig['email'] ?? 'admin@example.com';
+    $firstName = $adminConfig['firstName'] ?? 'Admin';
+    $lastName = $adminConfig['lastName'] ?? 'User';
+    
+    echo "Username: {$username}\n";
+    echo "Email: {$email}\n";
+    echo "First Name: {$firstName}\n";
+    echo "Last Name: {$lastName}\n";
+    echo "\n";
+    
+    // Build create:admin-user command
+    $command = sprintf(
+        "php bakery create:admin-user --username=%s --password=%s --email=%s --firstName=%s --lastName=%s 2>&1",
+        escapeshellarg($username),
+        escapeshellarg($password),
+        escapeshellarg($email),
+        escapeshellarg($firstName),
+        escapeshellarg($lastName)
+    );
+    
+    // Execute command
+    $output = [];
+    $returnCode = 0;
+    exec($command, $output, $returnCode);
+    
+    // Display output
+    echo implode("\n", $output) . "\n";
+    
+    if ($returnCode === 0) {
+        echo "✅ Admin user created successfully\n\n";
+    } else {
+        // Check if user already exists
+        $outputText = implode("\n", $output);
+        if (strpos($outputText, 'already exists') !== false || strpos($outputText, 'User with username') !== false) {
+            echo "⚠️  Admin user already exists (this is OK)\n\n";
+        } else {
+            echo "❌ Admin user creation failed with return code: {$returnCode}\n";
+            echo "ERROR: Failed to create admin user. Exiting.\n";
+            exit(1);
+        }
+    }
+}
+
+exit(0);

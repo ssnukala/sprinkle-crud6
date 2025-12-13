@@ -18,7 +18,8 @@ declare(strict_types=1);
 $configFile = $argv[1] ?? null;
 $authType = $argv[2] ?? 'both';  // auth, unauth, or both
 $pathType = $argv[3] ?? 'both';  // api, frontend, or both
-$playwrightStateFile = $argv[4] ?? '/tmp/admin-auth-state.json';  // Optional: Playwright storageState file
+// Optional: Playwright storageState file (check env var first, then arg, then default)
+$playwrightStateFile = $argv[4] ?? getenv('PLAYWRIGHT_STATE_FILE') ?: '/tmp/admin-auth-state.json';
 
 if (!$configFile) {
     echo "Usage: php test-paths.php <config_file> [auth|unauth|both] [api|frontend|both] [playwright_state_file]\n";
@@ -75,13 +76,24 @@ $cookieJar = tempnam(sys_get_temp_dir(), 'cookies_');
  */
 function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
     if (!file_exists($playwrightStateFile)) {
+        echo "⚠️  Playwright state file not found: {$playwrightStateFile}\n";
         return false;
     }
     
     $stateContent = file_get_contents($playwrightStateFile);
+    if ($stateContent === false) {
+        echo "⚠️  Failed to read Playwright state file\n";
+        return false;
+    }
+    
     $state = json_decode($stateContent, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo "⚠️  Invalid JSON in Playwright state file: " . json_last_error_msg() . "\n";
+        return false;
+    }
     
     if (!$state || !isset($state['cookies'])) {
+        echo "⚠️  Playwright state file missing 'cookies' key\n";
         return false;
     }
     
@@ -101,7 +113,9 @@ function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
         // Convert expires: -1 means session cookie, use far future date
         $expires = $cookie['expires'] ?? -1;
         if ($expires === -1) {
-            $expires = 2147483647;  // Max 32-bit timestamp (year 2038)
+            // Use PHP_INT_MAX for better compatibility (works on both 32-bit and 64-bit systems)
+            // Falls back to year 2038 max on 32-bit systems, much further on 64-bit
+            $expires = min(PHP_INT_MAX, 253402300799);  // Cap at year 9999-12-31
         } else {
             $expires = (int) $expires;
         }

@@ -14,12 +14,16 @@ declare(strict_types=1);
  * Example: php test-paths.php integration-test-paths.json both both  # Tests both authenticated and unauthenticated
  */
 
+// Configuration constants
+const DEFAULT_PLAYWRIGHT_STATE_FILE = '/tmp/admin-auth-state.json';
+const MAX_COOKIE_EXPIRE_TIMESTAMP = 253402300799;  // Year 9999-12-31 23:59:59 UTC
+
 // Parse command line arguments
 $configFile = $argv[1] ?? null;
 $authType = $argv[2] ?? 'both';  // auth, unauth, or both
 $pathType = $argv[3] ?? 'both';  // api, frontend, or both
 // Optional: Playwright storageState file (check env var first, then arg, then default)
-$playwrightStateFile = $argv[4] ?? getenv('PLAYWRIGHT_STATE_FILE') ?: '/tmp/admin-auth-state.json';
+$playwrightStateFile = $argv[4] ?? getenv('PLAYWRIGHT_STATE_FILE') ?: DEFAULT_PLAYWRIGHT_STATE_FILE;
 
 if (!$configFile) {
     echo "Usage: php test-paths.php <config_file> [auth|unauth|both] [api|frontend|both] [playwright_state_file]\n";
@@ -106,7 +110,12 @@ function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
         // Netscape cookie jar format:
         // domain flag path secure expiration name value
         $domain = $cookie['domain'] ?? 'localhost';
-        $flag = (strpos($domain, '.') === 0) ? 'TRUE' : 'FALSE';  // Domain flag
+        
+        // Domain flag: TRUE if domain starts with '.' (applies to all subdomains), FALSE otherwise
+        // Example: '.example.com' matches example.com and www.example.com (flag=TRUE)
+        //          'localhost' matches only localhost (flag=FALSE)
+        $flag = (strpos($domain, '.') === 0) ? 'TRUE' : 'FALSE';
+        
         $path = $cookie['path'] ?? '/';
         $secure = ($cookie['secure'] ?? false) ? 'TRUE' : 'FALSE';
         
@@ -115,7 +124,7 @@ function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
         if ($expires === -1) {
             // Use PHP_INT_MAX for better compatibility (works on both 32-bit and 64-bit systems)
             // Falls back to year 2038 max on 32-bit systems, much further on 64-bit
-            $expires = min(PHP_INT_MAX, 253402300799);  // Cap at year 9999-12-31
+            $expires = min(PHP_INT_MAX, MAX_COOKIE_EXPIRE_TIMESTAMP);
         } else {
             $expires = (int) $expires;
         }

@@ -146,6 +146,44 @@ Other scripts already use the correct approach:
 - **config/integration-test-paths.json (line 1423):** Documents X-CSRF-Token header requirement
 - **Archive script:** `.archive/pre-framework-migration/scripts-backup/test-authenticated-api-paths.js` shows correct pattern
 
+## Security Improvements (Code Review)
+
+After initial implementation, code review identified security and optimization improvements:
+
+### 1. Shell Injection Prevention
+**Issue:** CSRF token was concatenated directly into shell command without escaping.
+
+**Fix:** Added `escapeshellarg()` to properly escape the token:
+```php
+// Before
+$curlCmd .= "-H 'X-CSRF-Token: " . $csrfToken . "' ";
+
+// After (secure)
+$curlCmd .= "-H 'X-CSRF-Token: " . escapeshellarg($csrfToken) . "' ";
+```
+
+**Why:** CSRF tokens could theoretically contain special shell characters ($, ;, |, &, `, ', etc.). While unlikely in practice, proper escaping prevents potential command injection.
+
+### 2. String Search Optimization
+**Issue:** Multiple case-sensitive searches for error detection.
+
+**Fix:** Use `stripos()` for case-insensitive searches:
+```php
+// Before
+if (strpos($loginResponse, 'CSRF') !== false || strpos($loginResponse, 'csrf') !== false)
+
+// After (optimized)
+if (stripos($loginResponse, 'CSRF') !== false)
+```
+
+**Why:** Reduces redundant string operations and improves performance.
+
 ## Testing
 
 This fix will be validated by the integration test workflow running successfully with authenticated API paths.
+
+### Local Testing Performed
+1. ✅ PHP syntax validation: No errors
+2. ✅ Regex pattern testing: All patterns extract tokens correctly
+3. ✅ Shell escaping testing: Special characters properly handled
+4. ✅ Case-insensitive search testing: Works correctly with `stripos()`

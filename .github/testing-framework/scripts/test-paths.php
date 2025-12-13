@@ -147,8 +147,9 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
                "-X POST -H 'Content-Type: application/x-www-form-urlencoded' ";
     
     // Add X-CSRF-Token header if available (UserFrosting 6 standard)
+    // Note: escapeshellarg() adds its own quotes, so we use -H format without wrapping quotes
     if ($csrfToken) {
-        $curlCmd .= "-H 'X-CSRF-Token: " . escapeshellarg($csrfToken) . "' ";
+        $curlCmd .= "-H " . escapeshellarg("X-CSRF-Token: " . $csrfToken) . " ";
     }
     
     $curlCmd .= "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl) . " 2>&1";

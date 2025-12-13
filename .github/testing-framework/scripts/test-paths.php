@@ -29,6 +29,11 @@ if (!$configFile) {
     echo "Usage: php test-paths.php <config_file> [auth|unauth|both] [api|frontend|both] [playwright_state_file]\n";
     echo "Example: php test-paths.php integration-test-paths.json auth api\n";
     echo "Example: php test-paths.php integration-test-paths.json auth api /tmp/admin-auth-state.json\n";
+    echo "\n";
+    echo "Note: playwright_state_file is optional. Defaults to:\n";
+    echo "  1. Command-line argument (if provided)\n";
+    echo "  2. Environment variable PLAYWRIGHT_STATE_FILE (if set)\n";
+    echo "  3. " . DEFAULT_PLAYWRIGHT_STATE_FILE . " (default)\n";
     exit(1);
 }
 
@@ -119,11 +124,14 @@ function convertPlaywrightToCurlCookies($playwrightStateFile, $cookieJar) {
         $path = $cookie['path'] ?? '/';
         $secure = ($cookie['secure'] ?? false) ? 'TRUE' : 'FALSE';
         
-        // Convert expires: -1 means session cookie, use far future date
+        // Convert expires: -1 (or negative) means session cookie
+        // Session cookies should persist for the entire test session, so use a far future date
         $expires = $cookie['expires'] ?? -1;
-        if ($expires === -1) {
-            // Use PHP_INT_MAX for better compatibility (works on both 32-bit and 64-bit systems)
-            // Falls back to year 2038 max on 32-bit systems, much further on 64-bit
+        if ($expires < 0) {
+            // For session cookies, use the maximum safe timestamp
+            // On 64-bit systems: year 9999 (MAX_COOKIE_EXPIRE_TIMESTAMP = 253402300799)
+            // On 32-bit systems: year 2038 (PHP_INT_MAX = 2147483647)
+            // The min() ensures we don't exceed the system's maximum integer value
             $expires = min(PHP_INT_MAX, MAX_COOKIE_EXPIRE_TIMESTAMP);
         } else {
             $expires = (int) $expires;

@@ -106,9 +106,14 @@ Validated cookie conversion with test Playwright state file:
 Converted successfully to Netscape format:
 ```
 # Netscape HTTP Cookie File
+# (Different expiration timestamps explained below)
 localhost	FALSE	/	FALSE	2147483647	PHPSESSID	test_session_123
 localhost	FALSE	/	FALSE	1735200000	uf_csrf_token	test_csrf_456
 ```
+
+**Note on expiration timestamps:**
+- `PHPSESSID`: 2147483647 - Session cookie (expires=-1 in Playwright) converted to far future date
+- `uf_csrf_token`: 1735200000 - Has explicit expiration date (December 26, 2024) preserved as-is
 
 ## Files Changed
 

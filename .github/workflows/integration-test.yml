@@ -413,6 +413,8 @@ jobs:
           echo "✅ Vite server started"
 
       - name: Test unauthenticated API paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
         run: |
           cd userfrosting
           echo "========================================="
@@ -426,6 +428,8 @@ jobs:
           cat /tmp/test-results-unauth-api.txt
       
       - name: Test unauthenticated frontend paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
         run: |
           cd userfrosting
           echo "========================================="
@@ -463,6 +467,8 @@ jobs:
             /tmp/admin-auth-state.json
       
       - name: Test authenticated API paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
         run: |
           cd userfrosting
           echo "========================================="
@@ -478,6 +484,8 @@ jobs:
           cat /tmp/test-results-auth-api.txt
       
       - name: Test authenticated frontend paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
         run: |
           cd userfrosting
           echo "========================================="

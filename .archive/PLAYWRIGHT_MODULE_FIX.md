@@ -1,6 +1,16 @@
 # Playwright Module Fix - Integration Testing
 
-## Issue
+## Latest Issue (December 2024)
+
+The integration test workflow was failing with the error:
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from 
+/home/runner/work/sprinkle-crud6/sprinkle-crud6/sprinkle-crud6/.github/crud6-framework/scripts/login-admin.js
+```
+
+This occurred when scripts in the testing framework tried to use ES module imports: `import { chromium } from 'playwright';`
+
+## Previous Issue (October 2024)
 
 The integration test workflow was failing with the error:
 ```
@@ -10,7 +20,20 @@ Require stack:
 
 This occurred when the screenshot capture script tried to execute `const { chromium } = require('playwright');` in the GitHub Actions workflow.
 
-## Root Cause
+## Root Cause (Latest Fix)
+
+The testing framework scripts use ES module imports:
+```javascript
+import { chromium } from 'playwright';
+```
+
+Node.js resolves ES module imports relative to the **script's location**, not the current working directory. The workflow was:
+1. Installing Playwright in the `userfrosting` directory
+2. Running scripts located in `.github/crud6-framework/scripts/`
+3. Node.js looked for playwright in `.github/crud6-framework/node_modules/` (didn't exist)
+4. Module not found error
+
+## Root Cause (Previous Fix)
 
 The workflow was attempting to use Playwright in two ways:
 1. `npx playwright install chromium --with-deps` - Installs browser binaries (in "Install Playwright browsers" step)
@@ -18,7 +41,22 @@ The workflow was attempting to use Playwright in two ways:
 
 The problem was that `npx playwright install` only installs the browser binaries, not the playwright npm package itself. The `require('playwright')` statement needs the playwright package to be installed in `node_modules`.
 
-## Solution
+## Solution (Latest Fix - December 2024)
+
+Install Playwright in the testing framework directory where the scripts are located.
+
+### Changes Made
+
+1. **`.github/testing-framework/package.json`**
+   - Changed `playwright` from `peerDependencies` to `dependencies`
+   - Ensures `npm install` installs playwright locally in the testing framework
+
+2. **`.github/workflows/integration-test.yml`**
+   - Added step "Install testing framework dependencies" that runs `npm install` in `.github/crud6-framework`
+   - Updated "Install Playwright browsers" to run from `.github/crud6-framework` directory
+   - Improved framework installation to handle both `.github/testing-framework` and `.github/crud6-framework` directory names
+
+## Solution (Previous Fix - October 2024)
 
 ### Changes Made
 

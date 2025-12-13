@@ -106,9 +106,11 @@ Line 549: ✅ take-screenshots-modular.js (uses Playwright)
 ## Related Files
 
 - `.github/workflows/integration-test.yml` - Fixed workflow
-- `.github/testing-framework/scripts/login-admin.js` - Script that imports Playwright
-- `.github/testing-framework/scripts/take-screenshots-modular.js` - Script that uses Playwright
+- `.github/testing-framework/scripts/login-admin.js` - Script that imports Playwright (source location)
+- `.github/testing-framework/scripts/take-screenshots-modular.js` - Script that uses Playwright (source location)
 - `.github/testing-framework/package.json` - Declares Playwright as peer dependency
+
+**Note**: The workflow copies `.github/testing-framework/` to `.github/crud6-framework/` during execution (see line 60-74 of workflow). The error message references `.github/crud6-framework/scripts/login-admin.js` because that's the runtime location, but the source files are in `.github/testing-framework/`.
 
 ## References
 

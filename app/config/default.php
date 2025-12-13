@@ -25,7 +25,7 @@ return [
          * 
          * @var bool
          */
-        'debug_mode' => false,
+        'debug_mode' => true,
 
         /**
          * Schema cache Time-To-Live (TTL) in seconds.

@@ -276,6 +276,21 @@ jobs:
           cd userfrosting
           php bakery migrate --force
       
+      - name: Create admin user
+        run: |
+          cd userfrosting
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+
+      - name: Verify admin user exists in database
+        run: |
+          cd userfrosting
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/verify-admin-user.php admin
+      
       - name: Generate and create tables from schemas
         run: |
           cd userfrosting
@@ -338,21 +353,6 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-
-      - name: Create admin user
-        run: |
-          cd userfrosting
-          php bakery create:admin-user \
-            --username=admin \
-            --password=admin123 \
-            --email=admin@example.com \
-            --firstName=Admin \
-            --lastName=User
-
-      - name: Verify admin user exists in database
-        run: |
-          cd userfrosting
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/verify-admin-user.php admin
 
       - name: Build frontend assets
         run: |

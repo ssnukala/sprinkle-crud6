@@ -148,7 +148,7 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     
     // Add X-CSRF-Token header if available (UserFrosting 6 standard)
     if ($csrfToken) {
-        $curlCmd .= "-H 'X-CSRF-Token: " . $csrfToken . "' ";
+        $curlCmd .= "-H 'X-CSRF-Token: " . escapeshellarg($csrfToken) . "' ";
     }
     
     $curlCmd .= "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl) . " 2>&1";
@@ -184,14 +184,14 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
         }
         echo "   Response length: " . strlen($loginResponse) . " bytes\n";
         
-        // Check for specific error messages in the response
-        if (strpos($loginResponse, 'CSRF') !== false || strpos($loginResponse, 'csrf') !== false) {
+        // Check for specific error messages in the response (case-insensitive)
+        if (stripos($loginResponse, 'CSRF') !== false) {
             echo "   ⚠️  Response contains CSRF-related content\n";
         }
-        if (strpos($loginResponse, 'Invalid') !== false || strpos($loginResponse, 'invalid') !== false) {
+        if (stripos($loginResponse, 'Invalid') !== false) {
             echo "   ⚠️  Response contains 'Invalid' message\n";
         }
-        if (strpos($loginResponse, 'error') !== false || strpos($loginResponse, 'Error') !== false) {
+        if (stripos($loginResponse, 'error') !== false) {
             echo "   ⚠️  Response contains error message\n";
         }
         

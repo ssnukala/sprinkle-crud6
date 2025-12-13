@@ -16,62 +16,31 @@ Error: Process completed with exit code 1.
 
 ## Root Cause
 
-The `run-seeds.php` script was not creating the admin user, even though the configuration file `integration-test-seeds.json` had an `admin_user` section defined:
-
-```json
-"admin_user": {
-    "enabled": true,
-    "username": "admin",
-    "password": "admin123",
-    "email": "admin@example.com",
-    "firstName": "Admin",
-    "lastName": "User",
-    "description": "Create admin user for testing authenticated routes"
-}
-```
-
-The script was only running the seed classes but ignoring this configuration section entirely.
+The workflow was missing a dedicated "Create admin user" step. According to the workflow template pattern, admin user creation should be a separate workflow step, NOT part of the seeds script.
 
 ## Solution
 
-### 1. Updated `run-seeds.php` Script
+### 1. Added "Create admin user" Step to Workflow
 
-Added logic to handle the `admin_user` section after all seeds complete successfully:
+Added a dedicated workflow step (following the workflow-template.yml pattern) that runs after seed validation:
 
-```php
-// Create admin user if configured
-if (isset($config['admin_user']) && ($config['admin_user']['enabled'] ?? false)) {
-    echo "=========================================\n";
-    echo "Creating Admin User\n";
-    echo "=========================================\n";
-    
-    $adminConfig = $config['admin_user'];
-    $username = $adminConfig['username'] ?? 'admin';
-    $password = $adminConfig['password'] ?? 'admin123';
-    $email = $adminConfig['email'] ?? 'admin@example.com';
-    $firstName = $adminConfig['firstName'] ?? 'Admin';
-    $lastName = $adminConfig['lastName'] ?? 'User';
-    
-    // Build create:admin-user command
-    $command = sprintf(
-        "php bakery create:admin-user --username=%s --password=%s --email=%s --firstName=%s --lastName=%s 2>&1",
-        escapeshellarg($username),
-        escapeshellarg($password),
-        escapeshellarg($email),
-        escapeshellarg($firstName),
-        escapeshellarg($lastName)
-    );
-    
-    // Execute and handle errors appropriately
-    // ...
-}
+```yaml
+- name: Create admin user
+  run: |
+    cd userfrosting
+    php bakery create:admin-user \
+      --username=admin \
+      --password=admin123 \
+      --email=admin@example.com \
+      --firstName=Admin \
+      --lastName=User
 ```
 
 **Key Features**:
-- Reads credentials from config with sensible defaults
-- Uses UserFrosting's `bakery create:admin-user` command
-- Handles "already exists" errors gracefully (non-fatal)
-- Fails with clear error if user creation fails for other reasons
+- Follows the workflow-template.yml pattern
+- Dedicated workflow step (not part of seeds)
+- Uses UserFrosting's `bakery create:admin-user` command directly
+- Simple, explicit, and matches the standard UF6 workflow pattern
 
 ### 2. Enhanced `login-admin.js` Script
 

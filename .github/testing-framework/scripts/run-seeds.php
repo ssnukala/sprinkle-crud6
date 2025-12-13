@@ -166,6 +166,9 @@ if (isset($config['admin_user']) && ($config['admin_user']['enabled'] ?? false))
     echo "\n";
     
     // Build create:admin-user command
+    // Note: Password is passed via command line for simplicity in CI testing
+    // This is acceptable since the password is already in the config file and CI logs
+    // For production use, consider using environment variables or interactive input
     $command = sprintf(
         "php bakery create:admin-user --username=%s --password=%s --email=%s --firstName=%s --lastName=%s 2>&1",
         escapeshellarg($username),

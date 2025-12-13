@@ -84,12 +84,15 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
                 console.error('⚠️  Could not save error screenshot');
             }
             
-            // Check for error messages on the page
+            // Check for error messages on the page (case-insensitive)
             const pageContent = await page.content();
-            if (pageContent.includes('Invalid username or password') || 
-                pageContent.includes('error') || 
-                pageContent.includes('Error')) {
+            const pageContentLower = pageContent.toLowerCase();
+            if (pageContentLower.includes('invalid username or password') || 
+                pageContentLower.includes('error') || 
+                pageContentLower.includes('failed') ||
+                pageContentLower.includes('incorrect')) {
                 console.error('⚠️  Login form may contain error messages');
+                console.error('   Check the error screenshot for details');
             }
             
             await browser.close();

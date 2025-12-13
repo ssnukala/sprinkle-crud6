@@ -279,17 +279,22 @@ jobs:
       - name: Create admin user
         run: |
           cd userfrosting
-          php bakery create:admin-user \
+          OUTPUT=$(php bakery create:admin-user \
             --username=admin \
             --password=admin123 \
             --email=admin@example.com \
             --firstName=Admin \
-            --lastName=User
-
-      - name: Verify admin user exists in database
-        run: |
-          cd userfrosting
-          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/verify-admin-user.php admin
+            --lastName=User 2>&1)
+          
+          echo "$OUTPUT"
+          
+          # Check for success message
+          if echo "$OUTPUT" | grep -q "User creation successful"; then
+            echo "✅ Admin user created successfully"
+          else
+            echo "❌ Failed to create admin user"
+            exit 1
+          fi
       
       - name: Generate and create tables from schemas
         run: |

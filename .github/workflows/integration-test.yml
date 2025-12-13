@@ -596,16 +596,20 @@ jobs:
         run: |
           cd userfrosting
           # Run from userfrosting directory where node_modules/playwright is installed
+          # Reuse authenticated session from previous login step (no need to login again)
           node take-screenshots-modular.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            screenshots
+            http://localhost:8080 \
+            admin \
+            admin123 \
+            /tmp/admin-auth-state.json
 
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-screenshots
-          path: userfrosting/screenshots/
+          path: /tmp/screenshot_*.png
           retention-days: 7
       
       - name: Upload login diagnostics

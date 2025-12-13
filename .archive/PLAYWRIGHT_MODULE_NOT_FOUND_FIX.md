@@ -115,7 +115,9 @@ Line 549: ✅ take-screenshots-modular.js (uses Playwright)
 ## References
 
 - **Error Log**: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20179207196/job/57935094759
-- **Commit**: c2d873d - "Fix: Move Playwright installation before login step to prevent module not found error"
+- **Fix Commit**: c2d873d89275da4e904f53b4cca535b75eacc572
+  - Title: "Fix: Move Playwright installation before login step to prevent module not found error"
+  - Short hash: c2d873d
 - **Branch**: copilot/fix-playwright-module-error
 
 ## Lessons Learned

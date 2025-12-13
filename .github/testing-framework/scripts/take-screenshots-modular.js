@@ -7,15 +7,16 @@
  * It reads the paths configuration and takes screenshots for all frontend paths
  * that have the "screenshot" flag set to true.
  * 
- * Usage: node take-screenshots-modular.js <config_file> [base_url] [username] [password]
+ * Usage: node take-screenshots-modular.js <config_file> [base_url] [username] [password] [state_file]
  * Example: node take-screenshots-modular.js integration-test-paths.json
  * Example: node take-screenshots-modular.js integration-test-paths.json http://localhost:8080 admin admin123
+ * Example: node take-screenshots-modular.js integration-test-paths.json http://localhost:8080 admin admin123 /tmp/admin-auth-state.json
  */
 
 import { chromium } from 'playwright';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
-async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOverride, passwordOverride) {
+async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOverride, passwordOverride, stateFile) {
     console.log('========================================');
     console.log('Taking Screenshots from Configuration');
     console.log('========================================');
@@ -39,6 +40,14 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 
     console.log(`Base URL: ${baseUrl}`);
     console.log(`Username: ${username}`);
+    
+    // Check if we should reuse existing session
+    const reuseSession = stateFile && existsSync(stateFile);
+    if (reuseSession) {
+        console.log(`🔄 Reusing authenticated session from: ${stateFile}`);
+    } else {
+        console.log('🆕 Will perform fresh login');
+    }
     console.log('');
 
     // Collect screenshots to take
@@ -71,39 +80,56 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
     });
 
     try {
-        const context = await browser.newContext({
-            viewport: { width: 1280, height: 720 },
-            ignoreHTTPSErrors: true
-        });
+        // Create browser context with or without saved state
+        let context;
+        if (reuseSession) {
+            console.log('📂 Loading saved session state...');
+            const storageState = JSON.parse(readFileSync(stateFile, 'utf8'));
+            context = await browser.newContext({
+                viewport: { width: 1280, height: 720 },
+                ignoreHTTPSErrors: true,
+                storageState: storageState
+            });
+            console.log('✅ Session state loaded');
+        } else {
+            context = await browser.newContext({
+                viewport: { width: 1280, height: 720 },
+                ignoreHTTPSErrors: true
+            });
+        }
 
         const page = await context.newPage();
 
-        // Step 1: Navigate to login page and authenticate
-        console.log('📍 Navigating to login page...');
-        await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
-        console.log('✅ Login page loaded');
+        // Step 1: Authenticate if not reusing session
+        if (!reuseSession) {
+            console.log('📍 Navigating to login page...');
+            await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
+            console.log('✅ Login page loaded');
 
-        console.log('🔐 Logging in...');
-        
-        // Wait for the login form to be visible
-        await page.waitForSelector('.uk-card input[data-test="username"]', { timeout: 10000 });
-        
-        // Fill in credentials
-        await page.fill('.uk-card input[data-test="username"]', username);
-        await page.fill('.uk-card input[data-test="password"]', password);
-        
-        // Click the login button and wait for navigation
-        await Promise.all([
-            page.waitForNavigation({ timeout: 15000 }).catch(() => {
-                console.log('⚠️  No navigation detected after login, but continuing...');
-            }),
-            page.click('.uk-card button[data-test="submit"]')
-        ]);
-        
-        console.log('✅ Logged in successfully');
-        
-        // Give session a moment to stabilize
-        await page.waitForTimeout(2000);
+            console.log('🔐 Logging in...');
+            
+            // Wait for the login form to be visible
+            await page.waitForSelector('.uk-card input[data-test="username"]', { timeout: 10000 });
+            
+            // Fill in credentials
+            await page.fill('.uk-card input[data-test="username"]', username);
+            await page.fill('.uk-card input[data-test="password"]', password);
+            
+            // Click the login button and wait for navigation
+            await Promise.all([
+                page.waitForNavigation({ timeout: 15000 }).catch(() => {
+                    console.log('⚠️  No navigation detected after login, but continuing...');
+                }),
+                page.click('.uk-card button[data-test="submit"]')
+            ]);
+            
+            console.log('✅ Logged in successfully');
+            
+            // Give session a moment to stabilize
+            await page.waitForTimeout(2000);
+        } else {
+            console.log('✅ Using existing authenticated session (no login required)');
+        }
 
         // Step 2: Take screenshots from configuration
         let successCount = 0;
@@ -184,16 +210,17 @@ async function takeScreenshotsFromConfig(configFile, baseUrlOverride, usernameOv
 const args = process.argv.slice(2);
 
 if (args.length < 1) {
-    console.error('Usage: node take-screenshots-modular.js <config_file> [base_url] [username] [password]');
+    console.error('Usage: node take-screenshots-modular.js <config_file> [base_url] [username] [password] [state_file]');
     console.error('Example: node take-screenshots-modular.js integration-test-paths.json');
     console.error('Example: node take-screenshots-modular.js integration-test-paths.json http://localhost:8080 admin admin123');
+    console.error('Example: node take-screenshots-modular.js integration-test-paths.json http://localhost:8080 admin admin123 /tmp/admin-auth-state.json');
     process.exit(1);
 }
 
-const [configFile, baseUrl, username, password] = args;
+const [configFile, baseUrl, username, password, stateFile] = args;
 
 // Run the script
-takeScreenshotsFromConfig(configFile, baseUrl, username, password)
+takeScreenshotsFromConfig(configFile, baseUrl, username, password, stateFile)
     .then(() => {
         process.exit(0);
     })

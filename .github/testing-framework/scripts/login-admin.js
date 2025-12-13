@@ -74,6 +74,24 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
         if (currentUrl.includes('/account/sign-in')) {
             console.error('❌ Authentication failed: Still on login page');
             console.error('   Current URL:', currentUrl);
+            
+            // Take screenshot for debugging
+            try {
+                const errorScreenshotPath = '/tmp/login-error-screenshot.png';
+                await page.screenshot({ path: errorScreenshotPath, fullPage: true });
+                console.error(`📸 Error screenshot saved: ${errorScreenshotPath}`);
+            } catch (screenshotError) {
+                console.error('⚠️  Could not save error screenshot');
+            }
+            
+            // Check for error messages on the page
+            const pageContent = await page.content();
+            if (pageContent.includes('Invalid username or password') || 
+                pageContent.includes('error') || 
+                pageContent.includes('Error')) {
+                console.error('⚠️  Login form may contain error messages');
+            }
+            
             await browser.close();
             process.exit(1);
         }

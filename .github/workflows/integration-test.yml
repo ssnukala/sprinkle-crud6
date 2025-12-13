@@ -339,6 +339,16 @@ jobs:
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
 
+      - name: Create admin user
+        run: |
+          cd userfrosting
+          php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User
+
       - name: Build frontend assets
         run: |
           cd userfrosting

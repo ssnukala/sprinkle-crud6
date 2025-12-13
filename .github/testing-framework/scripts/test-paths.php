@@ -356,9 +356,34 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     // Excludes custom actions (/a/{action}) which use POST but aren't create operations
     $isCreateEndpoint = $method === 'POST' && strpos($path, '/api/crud6/') !== false && !strpos($path, '/a/');
     
+    // Check if status_any validation allows multiple acceptable status codes
+    $acceptableStatuses = null;
+    if (isset($pathConfig['validation']) && $pathConfig['validation']['type'] === 'status_any') {
+        $acceptableStatuses = $pathConfig['validation']['acceptable_statuses'] ?? [];
+        // Ensure acceptable_statuses is an array
+        if (!is_array($acceptableStatuses)) {
+            $acceptableStatuses = null;
+        }
+    }
+    
+    // Determine if the status code is acceptable
+    // Note: $httpCode is a string from curl, $expectedStatus is typically an int
+    $httpCodeInt = (int)$httpCode;
+    $expectedStatusInt = (int)$expectedStatus;
+    $statusIsAcceptable = ($httpCodeInt === $expectedStatusInt);
+    if (!$statusIsAcceptable && $acceptableStatuses !== null) {
+        // Check if status code is in the list of acceptable statuses
+        // Use strict comparison for better type safety
+        $statusIsAcceptable = in_array($httpCodeInt, $acceptableStatuses, true);
+    }
+    
     // Validate status code
-    if ($httpCode == $expectedStatus) {
-        echo "   ✅ Status: {$httpCode} (expected {$expectedStatus})\n";
+    if ($statusIsAcceptable) {
+        if ($httpCodeInt === $expectedStatusInt) {
+            echo "   ✅ Status: {$httpCode} (expected {$expectedStatus})\n";
+        } else {
+            echo "   ✅ Status: {$httpCode} (acceptable, expected {$expectedStatus})\n";
+        }
         
         // Additional validation if specified
         if (isset($pathConfig['validation'])) {
@@ -397,6 +422,11 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
                     } else {
                         echo "   ⚠️  Warning: No login indicators found in response\n";
                     }
+                    break;
+                    
+                case 'status_any':
+                    // Status code already validated above
+                    echo "   ✅ Validation: Status code is acceptable\n";
                     break;
                     
                 case 'status_only':

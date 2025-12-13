@@ -43,6 +43,15 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
         console.log('✅ Login page loaded');
 
+        // Take a screenshot of the login page for diagnostics
+        try {
+            const loginPageScreenshotPath = '/tmp/login-page-before-attempt.png';
+            await page.screenshot({ path: loginPageScreenshotPath, fullPage: true });
+            console.log(`📸 Login page screenshot saved: ${loginPageScreenshotPath}`);
+        } catch (screenshotError) {
+            console.log('⚠️  Could not save login page screenshot');
+        }
+
         // Step 2: Fill in login form
         console.log('🔐 Logging in...');
         
@@ -64,15 +73,28 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
         
         console.log('✅ Logged in successfully');
         
-        // Give session a moment to stabilize
+        // Give it a moment for the session to stabilize
         await page.waitForTimeout(2000);
 
-        // Step 3: Verify we're logged in
+        // Step 3: Verify authentication by navigating to a protected page
         console.log('🔍 Verifying authentication...');
-        const currentUrl = page.url();
+        console.log('📍 Navigating to protected page to verify login...');
         
+        // Try to access a protected page (dashboard or admin page)
+        await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle', timeout: 30000 }).catch(async () => {
+            // If dashboard doesn't exist, try admin page
+            await page.goto(`${baseUrl}/admin`, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {
+                console.log('⚠️  Protected pages not accessible, will check current URL');
+            });
+        });
+        
+        // Wait for page content to load
+        await page.waitForTimeout(2000);
+        
+        // Check if we're still on login page (would indicate auth failure)
+        const currentUrl = page.url();
         if (currentUrl.includes('/account/sign-in')) {
-            console.error('❌ Authentication failed: Still on login page');
+            console.error('❌ Authentication failed: Still on login page after protected page access attempt');
             console.error('   Current URL:', currentUrl);
             
             // Take screenshot for debugging
@@ -97,20 +119,6 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
             
             await browser.close();
             process.exit(1);
-        }
-        
-        // Check for logged-in indicators
-        const pageContent = await page.content();
-        const hasLoggedInIndicators = (
-            pageContent.includes('dashboard') ||
-            pageContent.includes('sign-out') ||
-            pageContent.includes('Sign Out') ||
-            pageContent.includes('logout')
-        );
-        
-        if (!hasLoggedInIndicators) {
-            console.warn('⚠️  Warning: No obvious logged-in indicators found');
-            console.warn('   This might be expected depending on the landing page');
         }
         
         console.log('✅ Authentication verified');

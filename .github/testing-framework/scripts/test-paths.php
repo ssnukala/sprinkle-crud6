@@ -93,8 +93,17 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     unlink($tmpFile);
     
     // Extract CSRF token from the login page
+    // UserFrosting 6 uses meta tags for CSRF tokens: <meta name="csrf-token" content="...">
     $csrfToken = null;
-    if (preg_match('/<input[^>]*name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']/', $loginPageContent, $matches)) {
+    
+    // Try meta tag first (UserFrosting 6 standard)
+    if (preg_match('/<meta[^>]*name=["\']csrf-token["\'][^>]*content=["\']([^"\']+)["\']/', $loginPageContent, $matches)) {
+        $csrfToken = $matches[1];
+    } elseif (preg_match('/<meta[^>]*content=["\']([^"\']+)["\'][^>]*name=["\']csrf-token["\']/', $loginPageContent, $matches)) {
+        $csrfToken = $matches[1];
+    }
+    // Fallback to input field (older UserFrosting versions)
+    elseif (preg_match('/<input[^>]*name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']/', $loginPageContent, $matches)) {
         $csrfToken = $matches[1];
     } elseif (preg_match('/<input[^>]*value=["\']([^"\']+)["\'][^>]*name=["\']csrf_token["\']/', $loginPageContent, $matches)) {
         $csrfToken = $matches[1];
@@ -104,9 +113,15 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     
     if (!$csrfToken) {
         echo "⚠️  Warning: Could not extract CSRF token from login page\n";
+        echo "   Checked for both meta tag (<meta name=\"csrf-token\">) and input field patterns\n";
         echo "   Attempting login without CSRF token...\n";
+        
+        // Debug: Save login page content for inspection
+        $debugFile = tempnam(sys_get_temp_dir(), 'login_page_debug_');
+        file_put_contents($debugFile, $loginPageContent);
+        echo "   Debug: Login page content saved to {$debugFile}\n";
     } else {
-        echo "✅ CSRF token obtained\n";
+        echo "✅ CSRF token obtained: " . substr($csrfToken, 0, 20) . "...\n";
     }
     
     // Step 2: Submit login form
@@ -119,6 +134,7 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
         'password' => $password,
     ];
     
+    // UserFrosting 6 expects CSRF token in both X-CSRF-Token header and form data
     if ($csrfToken) {
         $postData['csrf_token'] = $csrfToken;
     }
@@ -126,10 +142,17 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
     // Convert to URL-encoded string
     $postDataString = http_build_query($postData);
     
-    // Perform login POST request
+    // Perform login POST request with CSRF token in header
     $curlCmd = "curl -s -o {$tmpFile} -w '%{http_code}' -b {$cookieJar} -c {$cookieJar} -L " .
-               "-X POST -H 'Content-Type: application/x-www-form-urlencoded' " .
-               "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl) . " 2>&1";
+               "-X POST -H 'Content-Type: application/x-www-form-urlencoded' ";
+    
+    // Add X-CSRF-Token header if available (UserFrosting 6 standard)
+    // Note: escapeshellarg() adds its own quotes, so we use -H format without wrapping quotes
+    if ($csrfToken) {
+        $curlCmd .= "-H " . escapeshellarg("X-CSRF-Token: " . $csrfToken) . " ";
+    }
+    
+    $curlCmd .= "--data " . escapeshellarg($postDataString) . " " . escapeshellarg($loginUrl) . " 2>&1";
     
     $httpCode = trim(shell_exec($curlCmd));
     $loginResponse = file_get_contents($tmpFile);
@@ -160,7 +183,23 @@ function performLogin($baseUrl, $username, $password, $cookieJar) {
         if ($isStillOnLoginPage) {
             echo "   Still on login page - credentials may be incorrect\n";
         }
-        echo "   Response length: " . strlen($loginResponse) . " bytes\n\n";
+        echo "   Response length: " . strlen($loginResponse) . " bytes\n";
+        
+        // Check for specific error messages in the response (case-insensitive)
+        if (stripos($loginResponse, 'CSRF') !== false) {
+            echo "   ⚠️  Response contains CSRF-related content\n";
+        }
+        if (stripos($loginResponse, 'Invalid') !== false) {
+            echo "   ⚠️  Response contains 'Invalid' message\n";
+        }
+        if (stripos($loginResponse, 'error') !== false) {
+            echo "   ⚠️  Response contains error message\n";
+        }
+        
+        // Debug: Save login response for inspection
+        $debugFile = tempnam(sys_get_temp_dir(), 'login_response_debug_');
+        file_put_contents($debugFile, $loginResponse);
+        echo "   Debug: Login response saved to {$debugFile}\n\n";
         return false;
     }
 }

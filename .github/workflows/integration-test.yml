@@ -293,11 +293,16 @@ jobs:
           
           # Check both exit code and success message
           if [ $EXIT_CODE -eq 0 ]; then
-            if echo "$OUTPUT" | grep -qi "success"; then
+            if echo "$OUTPUT" | grep -Eqi "(user creation successful|created successfully|successfully created)"; then
               echo "✅ Admin user created successfully"
             else
-              echo "⚠️  Command succeeded but success message not found in output"
-              echo "✅ Proceeding based on exit code 0"
+              echo "⚠️  Command succeeded (exit code 0) but expected success message not found"
+              echo "    Checking if user creation output is present..."
+              if echo "$OUTPUT" | grep -qi "admin"; then
+                echo "✅ User 'admin' found in output - proceeding"
+              else
+                echo "✅ Proceeding based on exit code 0"
+              fi
             fi
           else
             echo "❌ Failed to create admin user (exit code: $EXIT_CODE)"

@@ -398,6 +398,11 @@ jobs:
             unauth frontend > /tmp/test-results-unauth-frontend.txt 2>&1
           cat /tmp/test-results-unauth-frontend.txt
       
+      - name: Install Playwright
+        run: |
+          cd userfrosting
+          npx playwright install chromium
+      
       - name: Login as admin user
         run: |
           cd userfrosting
@@ -537,11 +542,6 @@ jobs:
           else
             echo "✅ RESULT: All tests passed"
           fi
-
-      - name: Install Playwright
-        run: |
-          cd userfrosting
-          npx playwright install chromium
 
       - name: Capture screenshots
         run: |

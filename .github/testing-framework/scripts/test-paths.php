@@ -360,6 +360,10 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     $acceptableStatuses = null;
     if (isset($pathConfig['validation']) && $pathConfig['validation']['type'] === 'status_any') {
         $acceptableStatuses = $pathConfig['validation']['acceptable_statuses'] ?? [];
+        // Ensure acceptable_statuses is an array
+        if (!is_array($acceptableStatuses)) {
+            $acceptableStatuses = null;
+        }
     }
     
     // Determine if the status code is acceptable
@@ -369,7 +373,8 @@ function testPath($name, $pathConfig, $baseUrl, $isAuth = false, $username = nul
     $statusIsAcceptable = ($httpCodeInt === $expectedStatusInt);
     if (!$statusIsAcceptable && $acceptableStatuses !== null) {
         // Check if status code is in the list of acceptable statuses
-        $statusIsAcceptable = in_array($httpCodeInt, $acceptableStatuses);
+        // Use strict comparison for better type safety
+        $statusIsAcceptable = in_array($httpCodeInt, $acceptableStatuses, true);
     }
     
     // Validate status code

@@ -61,8 +61,15 @@ jobs:
         run: |
           cd ${{ env.SPRINKLE_DIR }}
           
+          # Check if framework already exists (either as crud6-framework or testing-framework)
           if [ -d ".github/crud6-framework" ]; then
-            echo "✅ Using local framework"
+            echo "✅ Using local framework (crud6-framework)"
+          elif [ -d ".github/testing-framework" ]; then
+            echo "✅ Using local framework (testing-framework)"
+            # Create symlink or copy to crud6-framework for consistency
+            cp -r .github/testing-framework .github/crud6-framework
+            chmod +x .github/crud6-framework/scripts/*.php
+            echo "✅ Framework copied to crud6-framework"
           else
             echo "📦 Installing framework..."
             git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
@@ -76,6 +83,18 @@ jobs:
           mkdir -p .github/config
           if [ -d "/tmp/crud6-repo/.github/config" ]; then
             cp /tmp/crud6-repo/.github/config/integration-test-*.json .github/config/ 2>/dev/null || true
+          fi
+      
+      - name: Install testing framework dependencies
+        run: |
+          cd ${{ env.SPRINKLE_DIR }}/.github/crud6-framework
+          
+          if [ -f "package.json" ]; then
+            echo "📦 Installing testing framework npm dependencies..."
+            npm install
+            echo "✅ Testing framework dependencies installed"
+          else
+            echo "⚠️ No package.json found in testing framework"
           fi
       
       - name: Create UserFrosting project
@@ -398,9 +417,9 @@ jobs:
             unauth frontend > /tmp/test-results-unauth-frontend.txt 2>&1
           cat /tmp/test-results-unauth-frontend.txt
       
-      - name: Install Playwright
+      - name: Install Playwright browsers
         run: |
-          cd userfrosting
+          cd ${{ env.SPRINKLE_DIR }}/.github/crud6-framework
           npx playwright install chromium
       
       - name: Login as admin user

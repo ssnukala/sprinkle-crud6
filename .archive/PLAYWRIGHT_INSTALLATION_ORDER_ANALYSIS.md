@@ -1,7 +1,7 @@
 # Playwright Installation Order Analysis
 
 ## Question
-Should the "Install Playwright browsers" step be moved earlier in the workflow, specifically before the "Test unauthenticated frontend paths" step?
+Should the "Install Playwright" step be moved earlier in the workflow, specifically before the "Test unauthenticated frontend paths" step?
 
 Reference:
 - Current position: [generate-workflow.js#L368-L372](https://github.com/ssnukala/sprinkle-crud6/blob/main/.github/testing-framework/scripts/generate-workflow.js#L368-L372)
@@ -11,16 +11,17 @@ Reference:
 
 The Playwright installation step is already in the optimal position and does NOT need to be moved earlier.
 
-## Current Workflow Order
+## Current Workflow Order (CORRECTED)
 
 ```yaml
 1. Test unauthenticated API paths          # Uses test-paths.php (cURL)
 2. Test unauthenticated frontend paths     # Uses test-paths.php (cURL)
-3. Install Playwright browsers              # ← Current position
-4. Login as admin user                      # Uses login-admin.js (Playwright) ✓
-5. Test authenticated API paths             # Uses test-paths.php (cURL)
-6. Test authenticated frontend paths        # Uses test-paths.php (cURL)
-7. Capture screenshots                      # Uses take-screenshots-modular.js (Playwright) ✓
+3. Install Playwright                       # ← Current position (in userfrosting)
+4. Copy testing scripts to userfrosting     # Copy js scripts to userfrosting directory
+5. Login as admin user                      # Uses login-admin.js (Playwright) ✓
+6. Test authenticated API paths             # Uses test-paths.php (cURL)
+7. Test authenticated frontend paths        # Uses test-paths.php (cURL)
+8. Capture screenshots                      # Uses take-screenshots-modular.js (Playwright) ✓
 ```
 
 ## Key Finding: test-paths.php Does NOT Use Playwright
@@ -75,13 +76,15 @@ If we moved Playwright installation before step 1:
 - Playwright is installed just before the login script (first actual usage)
 - All subsequent Playwright-dependent scripts work correctly
 
-## Implementation Details
+## Implementation Details (CORRECTED)
 
 After our fix, the workflow now:
-1. Installs testing framework dependencies (includes playwright npm package)
-2. Later, installs Playwright browsers (just before login script)
-3. Both steps run in `.github/crud6-framework` directory
+1. Installs Playwright in `userfrosting` directory: `cd userfrosting && npm install playwright && npx playwright install chromium`
+2. Copies testing scripts TO `userfrosting` directory
+3. Runs scripts FROM `userfrosting` directory where node_modules/playwright exists
 4. All Playwright scripts can import and use playwright successfully
+
+This follows UserFrosting 6 component architecture where sprinkles are components, not standalone packages.
 
 ---
 

@@ -43,6 +43,15 @@ async function loginAdmin(baseUrl, username, password, stateFile = '/tmp/admin-a
         await page.goto(`${baseUrl}/account/sign-in`, { waitUntil: 'networkidle', timeout: 30000 });
         console.log('✅ Login page loaded');
 
+        // Take a screenshot of the login page for diagnostics
+        try {
+            const loginPageScreenshotPath = '/tmp/login-page-before-attempt.png';
+            await page.screenshot({ path: loginPageScreenshotPath, fullPage: true });
+            console.log(`📸 Login page screenshot saved: ${loginPageScreenshotPath}`);
+        } catch (screenshotError) {
+            console.log('⚠️  Could not save login page screenshot');
+        }
+
         // Step 2: Fill in login form
         console.log('🔐 Logging in...');
         

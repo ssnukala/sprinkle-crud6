@@ -40,7 +40,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {
+  "peerDependencies": {
     "playwright": "^1.40.0"
   },
   "publishConfig": {

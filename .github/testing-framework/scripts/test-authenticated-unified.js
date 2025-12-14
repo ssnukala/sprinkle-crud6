@@ -13,7 +13,7 @@
  */
 
 import { chromium } from 'playwright';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOverride, passwordOverride) {
     console.log('========================================');
@@ -147,6 +147,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         
         let apiPassedTests = 0;
         let apiFailedTests = 0;
+        const apiLogEntries = []; // Collect API call logs for artifact
 
         /**
          * Get CSRF token from the page
@@ -207,8 +208,9 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 };
                 
                 // Get CSRF token for state-changing operations
+                let csrfToken = null;
                 if (['POST', 'PUT', 'DELETE'].includes(method)) {
-                    const csrfToken = await getCsrfToken();
+                    csrfToken = await getCsrfToken();
                     if (csrfToken) {
                         headers['X-CSRF-Token'] = csrfToken;
                     }
@@ -218,6 +220,9 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 if (Object.keys(payload).length > 0) {
                     console.log(`   Payload: ${JSON.stringify(payload)}`);
                 }
+                
+                // Record request timestamp
+                const requestTime = new Date().toISOString();
                 
                 // Make the API request with appropriate method and payload
                 let response;
@@ -248,7 +253,51 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 }
                 
                 const status = response.status();
+                const responseTime = new Date().toISOString();
                 console.log(`   Response status: ${status}`);
+
+                // Get response body for logging
+                let responseBody = null;
+                let responseBodyText = '';
+                try {
+                    responseBodyText = await response.text();
+                    // Try to parse as JSON
+                    try {
+                        responseBody = JSON.parse(responseBodyText);
+                    } catch (e) {
+                        // Not JSON, keep as text
+                        responseBody = responseBodyText;
+                    }
+                } catch (e) {
+                    responseBody = `[Could not read response body: ${e.message}]`;
+                }
+
+                // Create log entry for this API call
+                const logEntry = {
+                    test_name: apiPath.name,
+                    timestamp: requestTime,
+                    request: {
+                        method: method,
+                        url: url,
+                        path: apiPath.path,
+                        headers: {
+                            ...headers,
+                            'X-CSRF-Token': csrfToken ? '[REDACTED]' : undefined
+                        },
+                        payload: payload
+                    },
+                    response: {
+                        status: status,
+                        timestamp: responseTime,
+                        headers: Object.fromEntries(response.headers().entries()),
+                        body: responseBody
+                    },
+                    expected_status: apiPath.expected_status,
+                    result: status === apiPath.expected_status ? 'PASSED' : 'FAILED',
+                    description: apiPath.description
+                };
+                
+                apiLogEntries.push(logEntry);
 
                 if (status === apiPath.expected_status) {
                     console.log(`   ✅ PASSED`);
@@ -256,18 +305,34 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 } else {
                     console.log(`   ❌ FAILED: Expected ${apiPath.expected_status}, got ${status}`);
                     
-                    // Try to get response body for debugging
-                    try {
-                        const body = await response.text();
-                        console.log(`   Response body (first 500 chars): ${body.substring(0, 500)}`);
-                    } catch (e) {
-                        console.log(`   Could not read response body`);
+                    // Display response body for debugging (truncated)
+                    if (typeof responseBody === 'string') {
+                        console.log(`   Response body (first 500 chars): ${responseBody.substring(0, 500)}`);
+                    } else {
+                        console.log(`   Response body (first 500 chars): ${JSON.stringify(responseBody).substring(0, 500)}`);
                     }
                     
                     apiFailedTests++;
                 }
             } catch (error) {
                 console.error(`   ❌ FAILED: ${error.message}`);
+                
+                // Log error as well
+                const errorLogEntry = {
+                    test_name: apiPath.name,
+                    timestamp: new Date().toISOString(),
+                    request: {
+                        method: apiPath.method,
+                        url: `${baseUrl}${apiPath.path}`,
+                        path: apiPath.path,
+                        payload: apiPath.payload || {}
+                    },
+                    error: error.message,
+                    result: 'ERROR',
+                    description: apiPath.description
+                };
+                apiLogEntries.push(errorLogEntry);
+                
                 apiFailedTests++;
             }
         }
@@ -278,6 +343,30 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         console.log(`  ✅ Passed: ${apiPassedTests}`);
         console.log(`  ❌ Failed: ${apiFailedTests}`);
         console.log('');
+        
+        // Write API log to file for artifact upload
+        if (apiLogEntries.length > 0) {
+            try {
+                const apiLogFile = '/tmp/api-test-log.json';
+                const apiLogData = {
+                    test_run: {
+                        timestamp: new Date().toISOString(),
+                        base_url: baseUrl,
+                        username: username,
+                        total_tests: apiPaths.length,
+                        passed: apiPassedTests,
+                        failed: apiFailedTests
+                    },
+                    api_calls: apiLogEntries
+                };
+                writeFileSync(apiLogFile, JSON.stringify(apiLogData, null, 2), 'utf8');
+                console.log(`📝 API test log written to: ${apiLogFile}`);
+                console.log(`   Log contains ${apiLogEntries.length} API call(s)`);
+                console.log('');
+            } catch (error) {
+                console.error(`⚠️  Failed to write API log file: ${error.message}`);
+            }
+        }
 
         // ========================================
         // STEP 3: Test Authenticated Frontend Pages

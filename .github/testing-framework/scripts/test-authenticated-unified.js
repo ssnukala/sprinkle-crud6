@@ -48,27 +48,26 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         for (const [name, pathConfig] of Object.entries(config.paths.authenticated.api)) {
             if (!pathConfig.skip) {
                 // Determine acceptable status codes
-                let acceptableStatuses = Array.isArray(pathConfig.acceptable_statuses) ? pathConfig.acceptable_statuses : [];
+                let acceptableStatuses;
                 
-                // If acceptable_statuses is not provided, use validation type or default
-                if (acceptableStatuses.length === 0) {
-                    if (pathConfig.validation?.acceptable_statuses && Array.isArray(pathConfig.validation.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
-                        // Use acceptable_statuses from validation object
-                        acceptableStatuses = pathConfig.validation.acceptable_statuses;
-                    } else {
-                        // Default: POST/PUT operations accept both 200 and 201, others accept expected_status
-                        const method = pathConfig.method || 'GET';
-                        if (method === 'POST' || method === 'PUT') {
-                            acceptableStatuses = [200, 201];
-                        } else {
-                            acceptableStatuses = [pathConfig.expected_status || 200];
-                        }
-                    }
+                // Priority 1: Use explicit acceptable_statuses from path config
+                if (Array.isArray(pathConfig.acceptable_statuses) && pathConfig.acceptable_statuses.length > 0) {
+                    acceptableStatuses = pathConfig.acceptable_statuses;
                 }
-                
-                // Final safety check: ensure acceptableStatuses is always a non-empty array
-                if (!Array.isArray(acceptableStatuses) || acceptableStatuses.length === 0) {
-                    acceptableStatuses = [pathConfig.expected_status || 200];
+                // Priority 2: Use acceptable_statuses from validation object
+                else if (Array.isArray(pathConfig.validation?.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
+                    acceptableStatuses = pathConfig.validation.acceptable_statuses;
+                }
+                // Priority 3: Apply defaults based on HTTP method
+                else {
+                    const method = pathConfig.method || 'GET';
+                    if (method === 'POST' || method === 'PUT') {
+                        // POST/PUT operations accept both 200 (OK) and 201 (Created)
+                        acceptableStatuses = [200, 201];
+                    } else {
+                        // GET/DELETE/other operations accept the expected status
+                        acceptableStatuses = [pathConfig.expected_status || 200];
+                    }
                 }
                 
                 apiPaths.push({
@@ -297,7 +296,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             console.log(`   Method: ${apiPath.method}`);
             console.log(`   Path: ${apiPath.path}`);
             console.log(`   Description: ${apiPath.description}`);
-            console.log(`   Acceptable status codes: [${Array.isArray(apiPath.acceptable_statuses) ? apiPath.acceptable_statuses.join(', ') : (apiPath.expected_status || 200)}]`);
+            console.log(`   Acceptable status codes: [${apiPath.acceptable_statuses.join(', ')}]`);
 
             try {
                 const url = `${baseUrl}${apiPath.path}`;
@@ -447,7 +446,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     
                     apiWarnings++;
                 } else {
-                    console.log(`   ${resultIcon} FAILED: Expected one of [${Array.isArray(apiPath.acceptable_statuses) ? apiPath.acceptable_statuses.join(', ') : (apiPath.expected_status || 200)}], got ${status}`);
+                    console.log(`   ${resultIcon} FAILED: Expected one of [${apiPath.acceptable_statuses.join(', ')}], got ${status}`);
                     
                     // Display response body for debugging (truncated)
                     if (typeof responseBody === 'string') {

@@ -196,7 +196,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 if (tokens && tokens.name && tokens.value) {
                     console.log('   ✅ CSRF tokens retrieved from dashboard page');
                     console.log(`      Token name: ${tokens.name}`);
-                    console.log(`      Token value preview: ${tokens.value.substring(0, 20)}...`);
+                    console.log(`      Token value length: ${tokens.value.length} chars`);
                     return tokens;
                 }
                 
@@ -236,6 +236,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                         headers['csrf_name'] = csrfTokens.name;
                         headers['csrf_value'] = csrfTokens.value;
                         console.log(`   🔐 CSRF tokens included in request headers`);
+                        console.log(`      Token name: ${csrfTokens.name}, Value length: ${csrfTokens.value.length} chars`);
                     } else {
                         console.log(`   ⚠️  WARNING: No CSRF tokens available for ${method} request!`);
                         console.log(`   ⚠️  This request will likely fail with "Missing CSRF token" error`);

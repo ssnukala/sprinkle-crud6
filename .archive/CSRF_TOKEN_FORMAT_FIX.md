@@ -165,9 +165,8 @@ When creating new test scripts that interact with UserFrosting 6 APIs:
 ## Related Issues
 - Original issue: All authenticated API tests failing with CSRF errors
 - CI failure reference: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20198668250/job/57986368501#step:32:61
-- Fix PR: [This PR]
 
 ## References
-- UserFrosting 6 CSRF documentation: [To be added]
 - Working implementation (archived): `.archive/pre-framework-migration/scripts-backup/take-screenshots-with-tracking.js`
 - Current implementation: `.github/testing-framework/scripts/take-screenshots-with-tracking.js`
+- UserFrosting 6 framework: https://github.com/userfrosting/UserFrosting

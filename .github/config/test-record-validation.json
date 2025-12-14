@@ -1,0 +1,41 @@
+{
+  "description": "Test record validation configuration - defines which record IDs should exist for integration tests",
+  "note": "IDs are dynamically determined from API list responses to ensure they exist",
+  "models": [
+    {
+      "model": "users",
+      "table": "users",
+      "primary_key": "id",
+      "must_use_id_1": true,
+      "description": "User records - ID 1 is admin user (created by bakery)"
+    },
+    {
+      "model": "groups",
+      "table": "groups",
+      "primary_key": "id",
+      "must_use_id_1": true,
+      "description": "Group records - ID 1 is default group"
+    },
+    {
+      "model": "roles",
+      "table": "roles",
+      "primary_key": "id",
+      "must_use_id_1": false,
+      "description": "Role records - prefer non-1 ID when multiple exist"
+    },
+    {
+      "model": "permissions",
+      "table": "permissions",
+      "primary_key": "id",
+      "must_use_id_1": false,
+      "description": "Permission records - prefer non-1 ID when multiple exist"
+    },
+    {
+      "model": "activities",
+      "table": "activities",
+      "primary_key": "id",
+      "must_use_id_1": false,
+      "description": "Activity records - prefer non-1 ID when multiple exist"
+    }
+  ]
+}

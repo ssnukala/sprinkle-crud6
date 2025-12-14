@@ -508,6 +508,19 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     description: apiPath.description
                 };
                 
+                // Add detailed context for missing data (404) scenarios for debugging
+                if (isMissingData) {
+                    logEntry.missing_data_context = {
+                        reason: 'Record not found (HTTP 404)',
+                        explanation: 'This likely indicates missing test data, not an API error',
+                        model: modelName || 'unknown',
+                        requested_path: finalPath,
+                        original_path: apiPath.path,
+                        suggested_action: modelName ? `Ensure test data exists for model '${modelName}'` : 'Verify test data exists in database',
+                        security_note: 'Generic 404 response maintained for security - details only in logs'
+                    };
+                }
+                
                 apiLogEntries.push(logEntry);
 
                 if (isSuccess) {

@@ -151,40 +151,59 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         const apiLogEntries = []; // Collect API call logs for artifact
 
         /**
-         * Get CSRF token from the page
-         * UserFrosting 6 provides CSRF tokens via meta tags in HTML pages
+         * Get CSRF tokens from the page
+         * UserFrosting 6 uses a dual-token CSRF protection with csrf_name and csrf_value
+         * Returns an object with {name: string, value: string} or null if not found
          */
-        async function getCsrfToken() {
+        async function getCsrfTokens() {
             try {
-                // Try to get CSRF token from meta tag on current page
-                let csrfToken = await page.evaluate(() => {
-                    const metaTag = document.querySelector('meta[name="csrf-token"]');
-                    return metaTag ? metaTag.getAttribute('content') : null;
+                // Try to get CSRF tokens from meta tags on current page
+                let tokens = await page.evaluate(() => {
+                    const nameTag = document.querySelector('meta[name="csrf_name"]');
+                    const valueTag = document.querySelector('meta[name="csrf_value"]');
+                    
+                    if (nameTag && valueTag) {
+                        return {
+                            name: nameTag.getAttribute('content'),
+                            value: valueTag.getAttribute('content')
+                        };
+                    }
+                    return null;
                 });
                 
-                if (csrfToken) {
-                    return csrfToken;
+                if (tokens && tokens.name && tokens.value) {
+                    return tokens;
                 }
                 
-                // If no token on current page, navigate to dashboard to get one
-                console.log('   ⚠️  No CSRF token on current page, navigating to dashboard...');
+                // If no tokens on current page, navigate to dashboard to get them
+                console.log('   ⚠️  No CSRF tokens on current page, navigating to dashboard...');
                 await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
                 
-                // Try again to get token from dashboard page
-                csrfToken = await page.evaluate(() => {
-                    const metaTag = document.querySelector('meta[name="csrf-token"]');
-                    return metaTag ? metaTag.getAttribute('content') : null;
+                // Try again to get tokens from dashboard page
+                tokens = await page.evaluate(() => {
+                    const nameTag = document.querySelector('meta[name="csrf_name"]');
+                    const valueTag = document.querySelector('meta[name="csrf_value"]');
+                    
+                    if (nameTag && valueTag) {
+                        return {
+                            name: nameTag.getAttribute('content'),
+                            value: valueTag.getAttribute('content')
+                        };
+                    }
+                    return null;
                 });
                 
-                if (csrfToken) {
-                    console.log('   ✅ CSRF token retrieved from dashboard page');
-                    return csrfToken;
+                if (tokens && tokens.name && tokens.value) {
+                    console.log('   ✅ CSRF tokens retrieved from dashboard page');
+                    console.log(`      Token name: ${tokens.name}`);
+                    console.log(`      Token value preview: ${tokens.value.substring(0, 20)}...`);
+                    return tokens;
                 }
                 
-                console.log('   ⚠️  Could not find CSRF token meta tag');
+                console.log('   ⚠️  Could not find CSRF token meta tags (csrf_name and csrf_value)');
                 return null;
             } catch (error) {
-                console.log('   ⚠️  Could not retrieve CSRF token:', error.message);
+                console.log('   ⚠️  Could not retrieve CSRF tokens:', error.message);
                 return null;
             }
         }
@@ -208,12 +227,18 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     'Content-Type': 'application/json'
                 };
                 
-                // Get CSRF token for state-changing operations
-                let csrfToken = null;
+                // Get CSRF tokens for state-changing operations
+                // UserFrosting 6 requires BOTH csrf_name and csrf_value headers
+                let csrfTokens = null;
                 if (['POST', 'PUT', 'DELETE'].includes(method)) {
-                    csrfToken = await getCsrfToken();
-                    if (csrfToken) {
-                        headers['X-CSRF-Token'] = csrfToken;
+                    csrfTokens = await getCsrfTokens();
+                    if (csrfTokens && csrfTokens.name && csrfTokens.value) {
+                        headers['csrf_name'] = csrfTokens.name;
+                        headers['csrf_value'] = csrfTokens.value;
+                        console.log(`   🔐 CSRF tokens included in request headers`);
+                    } else {
+                        console.log(`   ⚠️  WARNING: No CSRF tokens available for ${method} request!`);
+                        console.log(`   ⚠️  This request will likely fail with "Missing CSRF token" error`);
                     }
                 }
                 
@@ -281,9 +306,10 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                         method: method,
                         url: url,
                         path: apiPath.path,
-                        headers: csrfToken ? {
+                        headers: csrfTokens ? {
                             ...headers,
-                            'X-CSRF-Token': '[REDACTED]'
+                            'csrf_name': '[REDACTED]',
+                            'csrf_value': '[REDACTED]'
                         } : headers,
                         payload: payload
                     },

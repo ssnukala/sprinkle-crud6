@@ -51,10 +51,12 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 let acceptableStatuses;
                 
                 // Priority 1: Use explicit acceptable_statuses from path config
+                // Note: Empty arrays are treated as "not provided" and will fall through to defaults
                 if (Array.isArray(pathConfig.acceptable_statuses) && pathConfig.acceptable_statuses.length > 0) {
                     acceptableStatuses = pathConfig.acceptable_statuses;
                 }
                 // Priority 2: Use acceptable_statuses from validation object
+                // Note: Empty arrays are treated as "not provided" and will fall through to defaults
                 else if (Array.isArray(pathConfig.validation?.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
                     acceptableStatuses = pathConfig.validation.acceptable_statuses;
                 }
@@ -381,7 +383,9 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     responseBody = `[Could not read response body: ${e.message}]`;
                 }
 
-                // Determine if status is acceptable (with safety check)
+                // Determine if status is acceptable
+                // Safety fallback: if acceptable_statuses is undefined (shouldn't happen due to logic above),
+                // fall back to expected_status (same default logic as Priority 3)
                 const acceptableStatuses = apiPath.acceptable_statuses || [apiPath.expected_status || 200];
                 const isSuccess = acceptableStatuses.includes(status);
                 

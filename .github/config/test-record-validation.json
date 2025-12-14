@@ -1,41 +1,41 @@
 {
   "description": "Test record validation configuration - defines which record IDs should exist for integration tests",
-  "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
+  "note": "IDs are dynamically determined from API list responses to ensure they exist",
   "models": [
     {
       "model": "users",
       "table": "users",
       "primary_key": "id",
-      "test_ids": [100],
-      "description": "User records for integration testing"
+      "must_use_id_1": true,
+      "description": "User records - ID 1 is admin user (created by bakery)"
     },
     {
       "model": "groups",
       "table": "groups",
       "primary_key": "id",
-      "test_ids": [100],
-      "description": "Group records for integration testing"
+      "must_use_id_1": true,
+      "description": "Group records - ID 1 is default group"
     },
     {
       "model": "roles",
       "table": "roles",
       "primary_key": "id",
-      "test_ids": [100],
-      "description": "Role records for integration testing"
+      "must_use_id_1": false,
+      "description": "Role records - prefer non-1 ID when multiple exist"
     },
     {
       "model": "permissions",
       "table": "permissions",
       "primary_key": "id",
-      "test_ids": [100],
-      "description": "Permission records for integration testing"
+      "must_use_id_1": false,
+      "description": "Permission records - prefer non-1 ID when multiple exist"
     },
     {
       "model": "activities",
       "table": "activities",
       "primary_key": "id",
-      "test_ids": [100],
-      "description": "Activity records for integration testing"
+      "must_use_id_1": false,
+      "description": "Activity records - prefer non-1 ID when multiple exist"
     }
   ]
 }

@@ -188,6 +188,35 @@ Tests verify:
 4. Database migrations run successfully
 5. Schema files load correctly
 6. Basic PHP functionality works
+7. **PHPUnit tests execute successfully** (added in integration workflow)
+
+### PHPUnit Testing in CI
+
+The integration workflow now includes a PHPUnit test step that runs alongside other UserFrosting framework operations:
+
+**UserFrosting Framework Usage in Integration Testing:**
+- `php bakery migrate` - Database migrations
+- `php bakery create:admin-user` - User creation
+- `php bakery bake` - Asset building
+- `php bakery serve` - PHP development server
+- `php bakery assets:vite` - Vite dev server
+- **PHPUnit tests** - Sprinkle functionality validation (NEW)
+
+The PHPUnit step:
+- Runs after the UserFrosting 6 application is fully set up
+- Executes all tests in `app/tests/` directory
+- Uses the sprinkle's `phpunit.xml` configuration
+- Tests controllers, models, services, and integration scenarios
+- Verifies functionality in a real UserFrosting environment
+- Has full access to UserFrosting framework classes and services
+
+The tests run within the context of a complete UserFrosting 6 installation with:
+- Configured database (MySQL)
+- Completed migrations (via `php bakery migrate`)
+- Test data loaded
+- Admin user created (via `php bakery create:admin-user`)
+- Application running (via `php bakery serve`)
+- All UserFrosting framework dependencies available
 
 ## References
 

@@ -28,6 +28,7 @@ The workflow automatically:
 - Generates and loads test data via SQL
 - Runs API tests
 - Takes screenshots
+- **Runs PHPUnit tests** (NEW: validates all sprinkle functionality)
 - Validates everything works
 
 ## Manual Local Testing

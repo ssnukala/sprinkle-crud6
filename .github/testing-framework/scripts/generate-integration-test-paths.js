@@ -189,7 +189,8 @@ function replacePlaceholders(template, replacements) {
  * Generate paths for a single model
  */
 function generateModelPaths(modelInfo, templates, testPayloads) {
-    const paths = {};
+    const apiPaths = {};
+    const frontendPaths = {};
     const modelName = modelInfo.name;
     const singular = modelInfo.singular;
     
@@ -200,6 +201,10 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
         singular: singular,
         test_id: TEST_ID
     };
+    
+    // ========================================
+    // Generate API paths
+    // ========================================
     
     // Generate basic CRUD paths
     for (const [templateKey, template] of Object.entries(templates.authenticated.api)) {
@@ -237,7 +242,7 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
             pathConfig.payload = testPayloads.update_payloads[0].payload;
         }
         
-        paths[pathKey] = pathConfig;
+        apiPaths[pathKey] = pathConfig;
     }
     
     // Generate update_field paths for unique fields
@@ -263,7 +268,7 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
                     };
                 }
                 
-                paths[pathKey] = pathConfig;
+                apiPaths[pathKey] = pathConfig;
             }
         }
     }
@@ -280,7 +285,7 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
             pathConfig.note = replacePlaceholders(pathConfig.note, actionReplacements);
             
             pathConfig.payload = {};
-            paths[pathKey] = pathConfig;
+            apiPaths[pathKey] = pathConfig;
         }
     }
     
@@ -306,7 +311,7 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
                     pathConfig.payload = testPayloads.relationship_payloads[relationName].attach;
                 }
                 
-                paths[pathKey] = pathConfig;
+                apiPaths[pathKey] = pathConfig;
             }
             
             // Detach
@@ -320,7 +325,7 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
                 pathConfig.note = replacePlaceholders(pathConfig.note, relReplacements);
                 
                 // Detach usually has no payload or empty ids array
-                paths[pathKey] = pathConfig;
+                apiPaths[pathKey] = pathConfig;
             }
         }
         
@@ -334,11 +339,37 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
             pathConfig.description = replacePlaceholders(pathConfig.description, relReplacements);
             pathConfig.note = replacePlaceholders(pathConfig.note, relReplacements);
             
-            paths[pathKey] = pathConfig;
+            apiPaths[pathKey] = pathConfig;
         }
     }
     
-    return paths;
+    // ========================================
+    // Generate frontend paths
+    // ========================================
+    
+    if (templates.authenticated.frontend) {
+        for (const [templateKey, template] of Object.entries(templates.authenticated.frontend)) {
+            const pathKey = `${modelName}_${templateKey}`;
+            const pathConfig = JSON.parse(JSON.stringify(template)); // Deep clone
+            
+            // Replace placeholders in path
+            pathConfig.path = replacePlaceholders(pathConfig.path, replacements);
+            
+            // Replace placeholders in description
+            if (pathConfig.description) {
+                pathConfig.description = replacePlaceholders(pathConfig.description, replacements);
+            }
+            
+            // Replace placeholders in screenshot_name
+            if (pathConfig.screenshot_name) {
+                pathConfig.screenshot_name = replacePlaceholders(pathConfig.screenshot_name, replacements);
+            }
+            
+            frontendPaths[pathKey] = pathConfig;
+        }
+    }
+    
+    return { api: apiPaths, frontend: frontendPaths };
 }
 
 /**
@@ -513,7 +544,8 @@ function generateIntegrationTestPaths() {
             
             // Generate authenticated paths
             const modelPaths = generateModelPaths(modelInfo, templates, testPayloads);
-            Object.assign(allPaths.paths.authenticated.api, modelPaths);
+            Object.assign(allPaths.paths.authenticated.api, modelPaths.api);
+            Object.assign(allPaths.paths.authenticated.frontend, modelPaths.frontend);
             
         } catch (error) {
             console.error(`   ❌ Failed to process ${file}: ${error.message}`);
@@ -522,6 +554,7 @@ function generateIntegrationTestPaths() {
     
     console.log('');
     console.log(`✅ Generated ${Object.keys(allPaths.paths.authenticated.api).length} authenticated API paths`);
+    console.log(`✅ Generated ${Object.keys(allPaths.paths.authenticated.frontend).length} authenticated frontend paths`);
     console.log('');
     
     return allPaths;
@@ -551,7 +584,9 @@ try {
     console.log('');
     console.log('Summary:');
     console.log(`  - Models processed: ${Object.keys(paths.paths.authenticated.api).filter(k => k.endsWith('_schema')).length}`);
-    console.log(`  - Total paths: ${Object.keys(paths.paths.authenticated.api).length}`);
+    console.log(`  - Total API paths: ${Object.keys(paths.paths.authenticated.api).length}`);
+    console.log(`  - Total frontend paths: ${Object.keys(paths.paths.authenticated.frontend).length}`);
+    console.log(`  - Frontend paths with screenshots: ${Object.values(paths.paths.authenticated.frontend).filter(p => p.screenshot).length}`);
     console.log('');
     
     process.exit(0);

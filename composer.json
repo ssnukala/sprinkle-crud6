@@ -36,13 +36,12 @@
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "UserFrosting\\Sprinkle\\CRUD6\\": "app/src/"
+            "UserFrosting\\Sprinkle\\CRUD6\\": "app/src/",
+            "UserFrosting\\Sprinkle\\CRUD6\\Tests\\": "app/tests/"
         }
     },
     "autoload-dev": {
-        "psr-4": {
-            "UserFrosting\\Sprinkle\\CRUD6\\Tests\\": "app/tests/"
-        }
+        "psr-4": {}
     },
     "archive": {
         "exclude": [

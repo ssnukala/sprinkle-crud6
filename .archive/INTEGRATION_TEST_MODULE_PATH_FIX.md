@@ -47,41 +47,47 @@ node .github/testing-framework/scripts/generate-workflow.js \
 
 This ensures the workflow follows the latest patterns and best practices from the framework.
 
-### 2. Fixed Playwright Installation for ES6 Imports
-Modified the workflow generator to install playwright in two locations:
+**Updated approach**: Following feedback, all installations and script execution now happen within the userfrosting directory, keeping the sprinkle properly contained within UserFrosting's structure.
+
+### 2. Fixed Playwright Installation and Script Execution (Updated)
+Modified the workflow generator to install playwright in userfrosting and copy scripts as `.mjs`:
 
 ```yaml
-- name: Install Playwright
+- name: Install Playwright and prepare test scripts
   run: |
-    # Install playwright package in sprinkle directory (for script imports)
-    cd ${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts
-    npm install playwright
+    cd userfrosting
     
-    # Install chromium browser in userfrosting (for execution)
-    cd $GITHUB_WORKSPACE/userfrosting
+    # Install playwright in userfrosting
+    npm install playwright
     npx playwright install chromium
+    
+    # Copy testing scripts to userfrosting as .mjs for ES6 module support
+    cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js take-screenshots-modular.mjs
+    echo "✅ Playwright installed and test scripts prepared"
 ```
 
 This ensures:
-- Playwright npm package is in the script's directory for ES6 imports
-- Chromium browser binaries are installed for actual test execution
+- All installations happen in userfrosting directory
+- Scripts are copied to userfrosting as `.mjs` for automatic ES6 module support
+- No external dependencies or installations outside userfrosting
 
-### 3. Run Scripts from Original Location
-Instead of copying scripts, the workflow now runs them directly from the sprinkle directory:
+### 3. Run Scripts from Userfrosting Directory
+Scripts are copied to userfrosting and executed from there:
 
 ```yaml
 - name: Capture screenshots
   run: |
     cd userfrosting
-    node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
+    node take-screenshots-modular.mjs \
       ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
       screenshots
 ```
 
 This approach:
-- Keeps scripts in their original location with proper directory structure
-- Allows Node.js to resolve ES6 imports correctly
-- Maintains consistency across all framework scripts
+- Keeps all script execution within userfrosting
+- Uses `.mjs` extension for ES6 module support without modifying package.json
+- Allows Node.js to resolve ES6 imports correctly from userfrosting's node_modules
+- Maintains simplicity and follows UserFrosting integration patterns
 
 ### 4. Added Local Framework Detection
 Modified the generator to check for `.github/testing-framework` before cloning from remote:
@@ -114,22 +120,24 @@ Benefits:
 
 ### Before
 - **Workflow length**: 839 lines (manually maintained)
-- **Script execution**: Copy to userfrosting directory
-- **Module resolution**: Failed (script not found)
+- **Script execution**: Copy to userfrosting directory (but failed)
+- **Module resolution**: Failed (script not found or ES6 imports failed)
 - **Framework setup**: Redundant clone even for framework repo
 
 ### After
 - **Workflow length**: 425 lines (auto-generated)
-- **Script execution**: Run from sprinkle directory via relative path
-- **Module resolution**: Works correctly with proper playwright installation
+- **Script execution**: Copy to userfrosting as `.mjs` and run from there
+- **Module resolution**: Works correctly with `.mjs` extension for ES6 support
 - **Framework setup**: Efficient detection of local framework
+- **Installation location**: All installations in userfrosting directory
 
 ### Key Improvements
-1. ✅ Scripts run from their original location
-2. ✅ Playwright properly installed for ES6 imports
-3. ✅ Local testing-framework detected and used
-4. ✅ Workflow simplified and auto-generated
-5. ✅ Consistent pattern for all framework scripts
+1. ✅ All installations in userfrosting directory (no external dependencies)
+2. ✅ Scripts copied to userfrosting as `.mjs` for ES6 module support
+3. ✅ Playwright properly installed for ES6 imports
+4. ✅ Local testing-framework detected and used
+5. ✅ Workflow simplified and auto-generated
+6. ✅ Follows UserFrosting integration patterns
 
 ## Testing
 
@@ -149,16 +157,18 @@ The fix can be validated by:
 
 ## Lessons Learned
 
-1. **ES6 Module Resolution**: When using ES6 modules with imports, dependencies must be installed relative to the script's location, not the execution directory.
+1. **ES6 Module Resolution**: When using ES6 modules with imports, use `.mjs` extension for automatic ES6 module support, or ensure package.json has `"type": "module"`. The `.mjs` approach is cleaner when you don't control the package.json.
 
-2. **Framework Repository Testing**: When the repository IS the framework, the workflow should detect and use the local framework rather than cloning from remote.
+2. **Integration Patterns**: Sprinkles should keep all their dependencies and execution within the UserFrosting directory structure, not create external installations.
 
-3. **Configuration-Driven Workflows**: Auto-generating workflows from configuration files reduces maintenance burden and ensures consistency.
+3. **Framework Repository Testing**: When the repository IS the framework, the workflow should detect and use the local framework rather than cloning from remote.
 
-4. **Playwright Installation**: Playwright has two parts:
+4. **Configuration-Driven Workflows**: Auto-generating workflows from configuration files reduces maintenance burden and ensures consistency.
+
+5. **Playwright Installation**: Playwright has two parts:
    - NPM package (for importing in scripts)
    - Browser binaries (for test execution)
-   Both must be installed but can be in different locations.
+   Both should be installed in the same location (userfrosting) for simplicity.
 
 ## Related Documentation
 

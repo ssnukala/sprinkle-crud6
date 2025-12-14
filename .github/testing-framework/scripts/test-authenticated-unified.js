@@ -374,7 +374,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     response: {
                         status: status,
                         timestamp: responseTime,
-                        headers: Object.fromEntries(response.headers().entries()),
+                        headers: response.headers(),
                         body: responseBody
                     },
                     expected_status: apiPath.expected_status,

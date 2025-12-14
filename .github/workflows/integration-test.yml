@@ -825,6 +825,13 @@ jobs:
           echo "  - Schema services"
           echo "  - Integration tests"
           echo ""
+          echo "Test Environment:"
+          echo "  - UserFrosting 6 framework: AVAILABLE (installed in userfrosting/)"
+          echo "  - CRUD6 sprinkle: INSTALLED (vendor/ssnukala/sprinkle-crud6/)"
+          echo "  - Database: MySQL with migrations and test data"
+          echo "  - Admin user: Created (ID 1)"
+          echo "  - Application: Running on localhost:8080"
+          echo ""
           
           # Check if sprinkle is installed
           if [ ! -d "vendor/ssnukala/sprinkle-crud6" ]; then
@@ -834,22 +841,37 @@ jobs:
           
           # Change to the sprinkle directory to run tests
           # This ensures the bootstrap path in phpunit.xml is correct
+          # Tests will use UserFrosting's autoloader which includes all framework dependencies
           cd vendor/ssnukala/sprinkle-crud6
           
           # Run PHPUnit using the sprinkle's phpunit.xml configuration
-          # The tests will use the UserFrosting autoloader from the parent project
+          # The phpunit.xml points to app/tests/ and bootstraps vendor/autoload.php
+          # All UserFrosting framework classes are available to the tests
           if [ -f "phpunit.xml" ]; then
             echo "Running PHPUnit tests with sprinkle configuration..."
+            echo "PHPUnit location: ../../../vendor/bin/phpunit"
+            echo "Config: phpunit.xml (in sprinkle directory)"
+            echo "Tests directory: app/tests/"
+            echo ""
             ../../../vendor/bin/phpunit --testdox --colors=always
+            TEST_EXIT_CODE=$?
+            
+            if [ $TEST_EXIT_CODE -eq 0 ]; then
+              echo ""
+              echo "========================================="
+              echo "✅ All PHPUnit Tests Passed"
+              echo "========================================="
+            else
+              echo ""
+              echo "========================================="
+              echo "❌ Some PHPUnit Tests Failed (exit code: $TEST_EXIT_CODE)"
+              echo "========================================="
+              exit $TEST_EXIT_CODE
+            fi
           else
             echo "❌ PHPUnit configuration not found in sprinkle"
             exit 1
           fi
-          
-          echo ""
-          echo "========================================="
-          echo "✅ PHPUnit Tests Completed"
-          echo "========================================="
       
       - name: Stop servers
         if: always()

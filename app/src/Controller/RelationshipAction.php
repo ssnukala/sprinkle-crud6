@@ -87,15 +87,26 @@ class RelationshipAction extends Base
         $relationships = $crudSchema['relationships'] ?? [];
         $relationshipConfig = null;
         
+        // First, find any relationship with the given name
         foreach ($relationships as $config) {
-            if ($config['name'] === $relationName && $config['type'] === 'many_to_many') {
+            if ($config['name'] === $relationName) {
                 $relationshipConfig = $config;
                 break;
             }
         }
 
         if ($relationshipConfig === null) {
-            throw new \RuntimeException("Many-to-many relationship '{$relationName}' not found in schema for model '{$crudSchema['model']}'");
+            throw new \RuntimeException("Relationship '{$relationName}' not found in schema for model '{$crudSchema['model']}'");
+        }
+
+        // Check if the relationship type supports attach/detach operations
+        $relationshipType = $relationshipConfig['type'] ?? 'unknown';
+        if ($relationshipType !== 'many_to_many') {
+            throw new \RuntimeException(
+                "Relationship '{$relationName}' is type '{$relationshipType}' which does not support attach/detach operations. " .
+                "Only 'many_to_many' relationships can be modified via POST/DELETE. " .
+                "Use GET to retrieve data for other relationship types."
+            );
         }
 
         // Get POST/DELETE parameters - should contain array of IDs to attach/detach
@@ -103,7 +114,7 @@ class RelationshipAction extends Base
         $relatedIds = $params['ids'] ?? [];
 
         if (!is_array($relatedIds) || empty($relatedIds)) {
-            throw new \InvalidArgumentException('No IDs provided for relationship operation');
+            throw new \InvalidArgumentException('No IDs provided for relationship operation. Expected payload format: {"ids": [1, 2, 3]}');
         }
 
         // Begin transaction

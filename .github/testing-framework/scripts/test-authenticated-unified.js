@@ -300,6 +300,26 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         
         // Models that MUST use ID 1 (users and groups only)
         const mustUseIdOne = ['users', 'groups'];
+        
+        /**
+         * Replace ID in path with extracted ID if available.
+         * Matches any numeric ID at the end of the path (e.g., /100, /123, /1)
+         * 
+         * @param {string} path - The original path
+         * @param {string} modelName - The model name
+         * @returns {object} - {path: processed path, replaced: boolean}
+         */
+        function replaceIdInPath(path, modelName) {
+            // Match pattern: /api/crud6/{model}/{numeric_id} or /crud6/{model}/{numeric_id}
+            const idMatch = path.match(/^(\/(?:api\/)?crud6\/[^\/]+)\/(\d+)(.*)$/);
+            if (idMatch && extractedModelIds[modelName]) {
+                const [, prefix, oldId, suffix] = idMatch;
+                const selectedId = extractedModelIds[modelName];
+                const newPath = `${prefix}/${selectedId}${suffix}`;
+                return { path: newPath, replaced: true, oldId, newId: selectedId };
+            }
+            return { path, replaced: false };
+        }
 
         for (const apiPath of apiPaths) {
             console.log('');
@@ -315,12 +335,12 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             if (pathMatch) {
                 const modelName = pathMatch[1];
                 
-                // Check if we have an extracted ID for this model
-                if (extractedModelIds[modelName] && apiPath.path.includes('/100')) {
-                    const selectedId = extractedModelIds[modelName];
-                    processedPath = apiPath.path.replace('/100', `/${selectedId}`);
+                // Try to replace ID in path
+                const replacement = replaceIdInPath(apiPath.path, modelName);
+                if (replacement.replaced) {
+                    processedPath = replacement.path;
                     processedUrl = `${baseUrl}${processedPath}`;
-                    console.log(`   🔄 Using extracted ID ${selectedId} for ${modelName} (was 100)`);
+                    console.log(`   🔄 Using extracted ID ${replacement.newId} for ${modelName} (was ${replacement.oldId})`);
                 }
             }
             
@@ -599,11 +619,11 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             if (pathMatch) {
                 const modelName = pathMatch[1];
                 
-                // Check if we have an extracted ID for this model
-                if (extractedModelIds[modelName] && frontendPath.path.includes('/100')) {
-                    const selectedId = extractedModelIds[modelName];
-                    processedPath = frontendPath.path.replace('/100', `/${selectedId}`);
-                    console.log(`   🔄 Using extracted ID ${selectedId} for ${modelName} (was 100)`);
+                // Try to replace ID in path using the same function as API paths
+                const replacement = replaceIdInPath(frontendPath.path, modelName);
+                if (replacement.replaced) {
+                    processedPath = replacement.path;
+                    console.log(`   🔄 Using extracted ID ${replacement.newId} for ${modelName} (was ${replacement.oldId})`);
                 }
             }
             

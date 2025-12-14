@@ -178,8 +178,12 @@ class CRUD6Injector extends AbstractInjector
 
         // Find the specific record
         $primaryKey = $schema['primary_key'] ?? 'id';
+        
+        // Cache these values to avoid repeated method calls
         $table = $modelInstance->getTable();
         $connection = $modelInstance->getConnectionName();
+        $queryRepresentation = "SELECT * FROM {$table} WHERE {$primaryKey} = ?";
+        $queryParams = [$id];
         
         $this->debugLog("CRUD6 [CRUD6Injector] Looking up record by ID", [
             'model' => $modelName,
@@ -187,8 +191,8 @@ class CRUD6Injector extends AbstractInjector
             'primary_key' => $primaryKey,
             'table' => $table,
             'connection' => $connection,
-            'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
-            'query_params' => [$id],
+            'query_representation' => $queryRepresentation,
+            'query_params' => $queryParams,
         ]);
 
         $record = $modelInstance->where($primaryKey, $id)->first();
@@ -201,8 +205,8 @@ class CRUD6Injector extends AbstractInjector
                 'table' => $table,
                 'primary_key' => $primaryKey,
                 'connection' => $connection,
-                'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
-                'query_params' => [$id],
+                'query_representation' => $queryRepresentation,
+                'query_params' => $queryParams,
             ]);
             
             // Also log as error for visibility in production logs
@@ -212,8 +216,8 @@ class CRUD6Injector extends AbstractInjector
                 'primary_key' => $primaryKey,
                 'table' => $table,
                 'connection' => $connection,
-                'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
-                'query_params' => [$id],
+                'query_representation' => $queryRepresentation,
+                'query_params' => $queryParams,
                 'error_message' => "No record found with ID '{$id}' in table '{$table}'",
             ]);
             

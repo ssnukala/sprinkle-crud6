@@ -187,6 +187,11 @@ function replacePlaceholders(template, replacements) {
 
 /**
  * Generate paths for a single model
+ * 
+ * @param {object} modelInfo - Model information extracted from schema
+ * @param {object} templates - Path templates from integration-test-models.json
+ * @param {object} testPayloads - Generated test payloads for create/update operations
+ * @returns {{api: object, frontend: object}} Object containing both API and frontend paths
  */
 function generateModelPaths(modelInfo, templates, testPayloads) {
     const apiPaths = {};
@@ -347,10 +352,14 @@ function generateModelPaths(modelInfo, templates, testPayloads) {
     // Generate frontend paths
     // ========================================
     
+    // If frontend templates are not defined or empty, frontendPaths will remain empty
+    // This is normal for API-only models or when templates are not configured
     if (templates.authenticated.frontend) {
         for (const [templateKey, template] of Object.entries(templates.authenticated.frontend)) {
             const pathKey = `${modelName}_${templateKey}`;
-            const pathConfig = JSON.parse(JSON.stringify(template)); // Deep clone
+            // Deep clone template to avoid mutation
+            // Note: Using JSON.parse(JSON.stringify()) is simple and sufficient for JSON-serializable data
+            const pathConfig = JSON.parse(JSON.stringify(template));
             
             // Replace placeholders in path
             pathConfig.path = replacePlaceholders(pathConfig.path, replacements);

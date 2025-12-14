@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 
-use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
 
 /**
  * Test ConfigAction controller.
@@ -12,7 +12,7 @@ use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
  * Verifies that the /api/crud6/config endpoint returns the correct
  * debug_mode configuration from the backend.
  */
-class ConfigActionTest extends CRUD6TestCase
+class ConfigActionTest extends AdminTestCase
 {
     /**
      * Test that config endpoint returns debug_mode from configuration.

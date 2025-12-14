@@ -28,7 +28,15 @@
 declare(strict_types=1);
 
 // Bootstrap UserFrosting
-require_once 'app/bootstrap.php';
+// This script assumes it's run from the userfrosting directory (where app/bootstrap.php exists)
+$bootstrapPath = 'app/bootstrap.php';
+if (!file_exists($bootstrapPath)) {
+    echo "❌ ERROR: Cannot find UserFrosting bootstrap file at {$bootstrapPath}\n";
+    echo "Please run this script from the userfrosting project root directory.\n";
+    exit(1);
+}
+
+require_once $bootstrapPath;
 
 use UserFrosting\Sprinkle\Core\Core;
 

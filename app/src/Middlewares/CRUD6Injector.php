@@ -187,7 +187,8 @@ class CRUD6Injector extends AbstractInjector
             'primary_key' => $primaryKey,
             'table' => $table,
             'connection' => $connection,
-            'sql_query' => "SELECT * FROM {$table} WHERE {$primaryKey} = {$id}",
+            'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
+            'query_params' => [$id],
         ]);
 
         $record = $modelInstance->where($primaryKey, $id)->first();
@@ -200,7 +201,8 @@ class CRUD6Injector extends AbstractInjector
                 'table' => $table,
                 'primary_key' => $primaryKey,
                 'connection' => $connection,
-                'sql_query' => "SELECT * FROM {$table} WHERE {$primaryKey} = {$id}",
+                'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
+                'query_params' => [$id],
             ]);
             
             // Also log as error for visibility in production logs
@@ -210,6 +212,8 @@ class CRUD6Injector extends AbstractInjector
                 'primary_key' => $primaryKey,
                 'table' => $table,
                 'connection' => $connection,
+                'query_representation' => "SELECT * FROM {$table} WHERE {$primaryKey} = ?",
+                'query_params' => [$id],
                 'error_message' => "No record found with ID '{$id}' in table '{$table}'",
             ]);
             

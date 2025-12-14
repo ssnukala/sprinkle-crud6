@@ -16,7 +16,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
@@ -33,7 +33,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * - Detailed reporting of when and where redundant calls occur
  * - Call stack traces for debugging
  */
-class RedundantApiCallsTest extends AdminTestCase
+class RedundantApiCallsTest extends CRUD6TestCase
 {
     use RefreshDatabase;
     use WithTestUser;

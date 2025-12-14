@@ -15,7 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
@@ -34,7 +34,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * 
  * Includes API call tracking to detect redundant calls.
  */
-class CRUD6UsersIntegrationTest extends AdminTestCase
+class CRUD6UsersIntegrationTest extends CRUD6TestCase
 {
     use RefreshDatabase;
     use WithTestUser;

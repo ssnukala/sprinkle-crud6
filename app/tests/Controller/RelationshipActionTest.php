@@ -16,7 +16,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
@@ -37,7 +37,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * - Invalid relation handling
  * - Non-existent IDs handling
  */
-class RelationshipActionTest extends AdminTestCase
+class RelationshipActionTest extends CRUD6TestCase
 {
     use RefreshDatabase;
     use WithTestUser;

@@ -15,7 +15,7 @@ Following UserFrosting 6 best practices:
 
 ```
 app/tests/
-├── AdminTestCase.php           # Base test case for CRUD6 tests
+├── CRUD6TestCase.php           # Base test case for CRUD6 tests
 ├── Controller/                 # Controller action tests
 │   ├── Group/                  # Group-related controller tests
 │   ├── Role/                   # Role-related controller tests
@@ -55,7 +55,7 @@ npm run test:watch
 
 ### PHP Test Example
 
-All PHP tests should extend `AdminTestCase` which provides the CRUD6 sprinkle context:
+All PHP tests should extend `CRUD6TestCase` which provides the CRUD6 sprinkle context:
 
 ```php
 <?php
@@ -64,10 +64,10 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
-class MyTest extends AdminTestCase
+class MyTest extends CRUD6TestCase
 {
     use RefreshDatabase;
 
@@ -119,7 +119,7 @@ Use for tests that need database access:
 ```php
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
-class MyTest extends AdminTestCase
+class MyTest extends CRUD6TestCase
 {
     use RefreshDatabase;
 
@@ -137,7 +137,7 @@ Use for tests that need authenticated users:
 ```php
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
 
-class MyTest extends AdminTestCase
+class MyTest extends CRUD6TestCase
 {
     use WithTestUser;
 

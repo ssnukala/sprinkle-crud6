@@ -46,7 +46,7 @@ A PHPUnit trait that integrates API call tracking into integration tests. Provid
 ```php
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 
-class MyIntegrationTest extends AdminTestCase
+class MyIntegrationTest extends CRUD6TestCase
 {
     use TracksApiCalls;
     

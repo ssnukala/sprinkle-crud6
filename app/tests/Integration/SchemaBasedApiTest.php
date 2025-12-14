@@ -17,7 +17,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
@@ -82,7 +82,7 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * @see \UserFrosting\Sprinkle\Account\Testing\WithTestUser For authentication
  * @see \UserFrosting\Sprinkle\Core\Csrf\CsrfGuardMiddleware For CSRF in production
  */
-class SchemaBasedApiTest extends AdminTestCase
+class SchemaBasedApiTest extends CRUD6TestCase
 {
     use RefreshDatabase;
     use WithTestUser;

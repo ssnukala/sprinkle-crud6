@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Testing;
+namespace UserFrosting\Sprinkle\CRUD6\Tests;
 
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
 use UserFrosting\Testing\TestCase;
@@ -21,11 +21,12 @@ use UserFrosting\Testing\TestCase;
  * Base test case with CRUD6 as main sprinkle.
  * All CRUD6 tests should extend this class to ensure proper sprinkle loading.
  * 
- * Follows UserFrosting 6 testing patterns from sprinkle-admin.
+ * Follows UserFrosting 6 testing patterns from sprinkle-admin and sprinkle-account.
  * 
  * @see \UserFrosting\Sprinkle\Admin\Tests\AdminTestCase
+ * @see \UserFrosting\Sprinkle\Account\Tests\AccountTestCase
  */
-class AdminTestCase extends TestCase
+class CRUD6TestCase extends TestCase
 {
     /**
      * @var string Main sprinkle class for CRUD6 tests

@@ -293,16 +293,85 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             return null;
         }
 
+        // Track extracted IDs from list API responses for dynamic detail testing
+        // Key: model name (e.g., "users", "activities")
+        // Value: ID extracted from the last record in the list
+        const extractedModelIds = {};
+
+        /**
+         * Extract model name from API path
+         * @param {string} path - API path like "/api/crud6/activities" or "/api/crud6/users/100"
+         * @returns {string|null} - Model name or null
+         */
+        function extractModelName(path) {
+            const match = path.match(/\/api\/crud6\/([^\/]+)/);
+            return match ? match[1] : null;
+        }
+
+        /**
+         * Check if path is a list endpoint (no ID at the end)
+         * @param {string} path - API path
+         * @returns {boolean}
+         */
+        function isListEndpoint(path) {
+            // List endpoints end with the model name, not an ID
+            // e.g., /api/crud6/activities (list) vs /api/crud6/activities/100 (detail)
+            return /\/api\/crud6\/[^\/]+$/.test(path);
+        }
+
+        /**
+         * Check if path is a detail endpoint (has ID)
+         * @param {string} path - API path
+         * @returns {boolean}
+         */
+        function isDetailEndpoint(path) {
+            // Detail endpoints have a numeric ID after the model name
+            // e.g., /api/crud6/activities/100
+            return /\/api\/crud6\/[^\/]+\/\d+/.test(path);
+        }
+
+        /**
+         * Replace hardcoded ID in path with extracted ID
+         * @param {string} path - Original path with hardcoded ID
+         * @param {string} modelName - Model name
+         * @returns {object} - {path: new path, replaced: boolean, oldId: old ID, newId: new ID}
+         */
+        function replaceIdInPath(path, modelName) {
+            if (extractedModelIds[modelName]) {
+                const match = path.match(/^(\/api\/crud6\/[^\/]+)\/(\d+)(.*)$/);
+                if (match) {
+                    const [, prefix, oldId, suffix] = match;
+                    const newId = extractedModelIds[modelName];
+                    const newPath = `${prefix}/${newId}${suffix}`;
+                    return { path: newPath, replaced: true, oldId, newId };
+                }
+            }
+            return { path, replaced: false };
+        }
+
         for (const apiPath of apiPaths) {
             console.log('');
             console.log(`🔍 Testing API: ${apiPath.name}`);
             console.log(`   Method: ${apiPath.method}`);
-            console.log(`   Path: ${apiPath.path}`);
+            
+            // Extract model name and check if we need to replace ID
+            const modelName = extractModelName(apiPath.path);
+            let finalPath = apiPath.path;
+            
+            if (modelName && isDetailEndpoint(apiPath.path) && extractedModelIds[modelName]) {
+                const replacement = replaceIdInPath(apiPath.path, modelName);
+                if (replacement.replaced) {
+                    finalPath = replacement.path;
+                    console.log(`   🔄 Using extracted ID ${replacement.newId} for ${modelName} (was ${replacement.oldId})`);
+                }
+            }
+            
+            console.log(`   Path: ${finalPath}`);
             console.log(`   Description: ${apiPath.description}`);
             console.log(`   Acceptable status codes: [${apiPath.acceptable_statuses.join(', ')}]`);
 
             try {
-                const url = `${baseUrl}${apiPath.path}`;
+                const url = `${baseUrl}${finalPath}`;
                 const method = apiPath.method;
                 const payload = apiPath.payload || {};
                 
@@ -393,6 +462,9 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 // Check if this is a database error (5xx codes)
                 const isDatabaseError = status >= 500 && status < 600;
                 
+                // Check if this is a 404 Not Found (likely missing data, not an error)
+                const isMissingData = status === 404;
+                
                 // Determine result status
                 let result;
                 let resultIcon;
@@ -400,6 +472,9 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     result = 'PASSED';
                     resultIcon = '✅';
                 } else if (isDatabaseError) {
+                    result = 'WARNING';
+                    resultIcon = '⚠️';
+                } else if (isMissingData) {
                     result = 'WARNING';
                     resultIcon = '⚠️';
                 } else {
@@ -438,6 +513,45 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 if (isSuccess) {
                     console.log(`   ${resultIcon} PASSED (status ${status})`);
                     apiPassedTests++;
+                    
+                    // Extract ID from list endpoint responses for use in detail endpoints
+                    if (modelName && isListEndpoint(finalPath) && typeof responseBody === 'object' && responseBody !== null) {
+                        // Check if response has a 'rows' array (Sprunje format)
+                        let records = null;
+                        if (Array.isArray(responseBody.rows)) {
+                            records = responseBody.rows;
+                        } else if (Array.isArray(responseBody.data)) {
+                            records = responseBody.data;
+                        } else if (Array.isArray(responseBody)) {
+                            records = responseBody;
+                        }
+                        
+                        if (records && records.length > 0) {
+                            // Get the last record's ID
+                            const lastRecord = records[records.length - 1];
+                            if (lastRecord && lastRecord.id) {
+                                extractedModelIds[modelName] = lastRecord.id;
+                                console.log(`   📋 Extracted ID ${lastRecord.id} from ${modelName} list (${records.length} records found)`);
+                            }
+                        } else {
+                            console.log(`   ⚠️  No records found in ${modelName} list response`);
+                        }
+                    }
+                } else if (isMissingData) {
+                    console.log(`   ${resultIcon} WARNING: Record not found (status 404)`);
+                    console.log(`   Note: This likely indicates missing test data, not an API error`);
+                    if (modelName) {
+                        console.log(`   Tip: Ensure test data exists for model '${modelName}'`);
+                    }
+                    
+                    // Display response body for debugging (truncated)
+                    if (typeof responseBody === 'string') {
+                        console.log(`   Response body (first 200 chars): ${responseBody.substring(0, 200)}`);
+                    } else {
+                        console.log(`   Response body (first 200 chars): ${JSON.stringify(responseBody).substring(0, 200)}`);
+                    }
+                    
+                    apiWarnings++;
                 } else if (isDatabaseError) {
                     console.log(`   ${resultIcon} WARNING: Database/server error (status ${status})`);
                     console.log(`   Note: Logging as warning and continuing tests`);

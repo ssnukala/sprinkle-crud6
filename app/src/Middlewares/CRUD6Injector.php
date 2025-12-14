@@ -178,28 +178,42 @@ class CRUD6Injector extends AbstractInjector
 
         // Find the specific record
         $primaryKey = $schema['primary_key'] ?? 'id';
+        $table = $modelInstance->getTable();
+        $connection = $modelInstance->getConnectionName();
+        
         $this->debugLog("CRUD6 [CRUD6Injector] Looking up record by ID", [
             'model' => $modelName,
             'id' => $id,
             'primary_key' => $primaryKey,
-            'table' => $modelInstance->getTable(),
+            'table' => $table,
+            'connection' => $connection,
+            'sql_query' => "SELECT * FROM {$table} WHERE {$primaryKey} = {$id}",
         ]);
 
         $record = $modelInstance->where($primaryKey, $id)->first();
 
         if (!$record) {
-            $this->debugLog("[CRUD6 CRUD6Injector] Record not found", [
+            // Log detailed information about why record was not found
+            $this->debugLog("[CRUD6 CRUD6Injector] ===== RECORD NOT FOUND =====", [
                 'model' => $modelName,
                 'id' => $id,
-                'table' => $modelInstance->getTable(),
+                'table' => $table,
+                'primary_key' => $primaryKey,
+                'connection' => $connection,
+                'sql_query' => "SELECT * FROM {$table} WHERE {$primaryKey} = {$id}",
             ]);
-            $this->debugLogger->error("CRUD6 [CRUD6Injector] Record not found", [
+            
+            // Also log as error for visibility in production logs
+            $this->debugLogger->error("CRUD6 [CRUD6Injector] Record not found - returning 404", [
                 'model' => $modelName,
                 'id' => $id,
                 'primary_key' => $primaryKey,
-                'table' => $modelInstance->getTable(),
+                'table' => $table,
+                'connection' => $connection,
+                'error_message' => "No record found with ID '{$id}' in table '{$table}'",
             ]);
-            throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$modelInstance->getTable()}'.");
+            
+            throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$table}'.");
         }
 
         $this->debugLog("[CRUD6 CRUD6Injector] Record loaded successfully - model: %s, id: %s", ['model' => $modelName, 'id' => $id]);

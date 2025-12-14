@@ -1,0 +1,41 @@
+{
+  "description": "Test record validation configuration - defines which record IDs should exist for integration tests",
+  "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
+  "models": [
+    {
+      "model": "users",
+      "table": "users",
+      "primary_key": "id",
+      "test_ids": [100],
+      "description": "User records for integration testing"
+    },
+    {
+      "model": "groups",
+      "table": "groups",
+      "primary_key": "id",
+      "test_ids": [100],
+      "description": "Group records for integration testing"
+    },
+    {
+      "model": "roles",
+      "table": "roles",
+      "primary_key": "id",
+      "test_ids": [100],
+      "description": "Role records for integration testing"
+    },
+    {
+      "model": "permissions",
+      "table": "permissions",
+      "primary_key": "id",
+      "test_ids": [100],
+      "description": "Permission records for integration testing"
+    },
+    {
+      "model": "activities",
+      "table": "activities",
+      "primary_key": "id",
+      "test_ids": [100],
+      "description": "Activity records for integration testing"
+    }
+  ]
+}

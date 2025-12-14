@@ -270,6 +270,9 @@ jobs:
           sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
           echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
           echo "TEST_SESSION_HANDLER=database" >> app/.env
+          echo "CRUD6_DEBUG_MODE=true" >> app/.env
+          echo ""
+          echo "✅ Environment configured with CRUD6 debug mode enabled"
       
       - name: Run migrations
         run: |
@@ -545,6 +548,18 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-seed-idempotency-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
+
+      - name: Validate test records exist in database
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Validating Test Records"
+          echo "========================================="
+          echo "Checking that required test records (ID 100+) exist in database"
+          echo "before running API and frontend tests."
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/validate-test-records.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/test-record-validation.json
 
       - name: Build frontend assets
         run: |

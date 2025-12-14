@@ -454,6 +454,142 @@ function generateRelationshipSQL(schema) {
 }
 
 /**
+ * Generate test data payloads for API/frontend tests
+ * Returns an object with test data for each model
+ */
+function generateTestDataPayloads(jsonFiles) {
+    const testData = {
+        _metadata: {
+            generated_at: new Date().toISOString(),
+            description: 'Test data payloads generated from CRUD6 schemas with proper field validation',
+            usage: 'Use these payloads in integration tests instead of hardcoded values',
+            id_range: 'IDs 100-199 are used for test data (1-99 reserved for PHP seeds)',
+        },
+        models: {}
+    };
+    
+    for (const file of jsonFiles) {
+        try {
+            const filePath = path.join(schemaDir, file);
+            const content = fs.readFileSync(filePath, 'utf8');
+            const schema = JSON.parse(content);
+            const modelName = schema.model;
+            const fields = schema.fields || {};
+            
+            // Generate payloads for create, update, and relationship operations
+            testData.models[modelName] = {
+                model: modelName,
+                table: schema.table,
+                create_payloads: [],
+                update_payloads: [],
+                relationship_payloads: {}
+            };
+            
+            // Generate 3 create payloads (for IDs 100, 101, 102)
+            for (let i = 0; i < 3; i++) {
+                const recordId = 100 + i;
+                const payload = {};
+                
+                for (const [fieldName, field] of Object.entries(fields)) {
+                    // Skip auto-increment, readonly, and computed fields
+                    if (field.auto_increment || field.readonly || field.computed) {
+                        continue;
+                    }
+                    
+                    // Skip fields that are only shown in detail view
+                    const showIn = field.show_in || [];
+                    if (showIn.length > 0 && !showIn.includes('form') && !showIn.includes('create')) {
+                        continue;
+                    }
+                    
+                    // Generate value without SQL quoting
+                    let value = generateTestValue(fieldName, field, recordId);
+                    
+                    // Remove SQL quotes and convert to proper JSON type
+                    if (typeof value === 'string' && value.startsWith("'") && value.endsWith("'")) {
+                        value = value.slice(1, -1);
+                    }
+                    
+                    // Convert to proper type
+                    const fieldType = field.type;
+                    if (fieldType === 'integer' || fieldType === 'foreign_key' || fieldType === 'lookup') {
+                        payload[fieldName] = parseInt(value) || value;
+                    } else if (fieldType === 'boolean') {
+                        payload[fieldName] = value === 1 || value === '1' || value === true;
+                    } else if (value === 'NULL') {
+                        payload[fieldName] = null;
+                    } else {
+                        payload[fieldName] = value;
+                    }
+                }
+                
+                testData.models[modelName].create_payloads.push({
+                    id: recordId,
+                    payload: payload
+                });
+            }
+            
+            // Generate update payloads (subset of fields for updating)
+            const updateableFields = Object.entries(fields).filter(([fieldName, field]) => 
+                !field.auto_increment && !field.readonly && !field.computed &&
+                fieldName !== 'id' && fieldName !== 'created_at' && fieldName !== 'updated_at'
+            );
+            
+            if (updateableFields.length > 0) {
+                // Pick 1-2 fields for update payload
+                const fieldsToUpdate = updateableFields.slice(0, Math.min(2, updateableFields.length));
+                const updatePayload = {};
+                
+                for (const [fieldName, field] of fieldsToUpdate) {
+                    let value = generateTestValue(fieldName, field, 100); // Use ID 100 for updates
+                    
+                    // Remove SQL quotes and convert to proper type
+                    if (typeof value === 'string' && value.startsWith("'") && value.endsWith("'")) {
+                        value = value.slice(1, -1);
+                    }
+                    
+                    const fieldType = field.type;
+                    if (fieldType === 'integer' || fieldType === 'foreign_key' || fieldType === 'lookup') {
+                        updatePayload[fieldName] = parseInt(value) || value;
+                    } else if (fieldType === 'boolean') {
+                        updatePayload[fieldName] = value === 1 || value === '1' || value === true;
+                    } else if (value === 'NULL') {
+                        updatePayload[fieldName] = null;
+                    } else {
+                        updatePayload[fieldName] = value;
+                    }
+                }
+                
+                testData.models[modelName].update_payloads.push({
+                    id: 100,
+                    payload: updatePayload
+                });
+            }
+            
+            // Generate relationship payloads for many-to-many relationships
+            const relationships = schema.relationships || [];
+            for (const rel of relationships) {
+                if (rel.type === 'many_to_many') {
+                    testData.models[modelName].relationship_payloads[rel.name] = {
+                        attach: {
+                            ids: [100, 101]
+                        },
+                        detach: {
+                            ids: [101]
+                        }
+                    };
+                }
+            }
+            
+        } catch (error) {
+            console.error(`   ⚠️  Failed to generate test data for ${file}: ${error.message}`);
+        }
+    }
+    
+    return testData;
+}
+
+/**
  * Load and process all schemas
  */
 function processSchemas() {
@@ -565,18 +701,107 @@ try {
     // Generate SQL
     const sql = processSchemas();
     
-    // Write to file
+    // Write SQL to file
     fs.writeFileSync(outputFile, sql, 'utf8');
     
+    // Generate test data JSON
+    console.log('');
+    console.log('📋 Generating test data payloads JSON...');
+    const files = fs.readdirSync(schemaDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const testData = generateTestDataPayloads(jsonFiles);
+    
+    // Write test data JSON to file (same directory as SQL)
+    const testDataFile = outputFile.replace('.sql', '-payloads.json');
+    fs.writeFileSync(testDataFile, JSON.stringify(testData, null, 2), 'utf8');
+    console.log(`   ✅ Test data payloads: ${testDataFile}`);
+    
+    // Update integration-test-paths.json with generated payloads
+    console.log('');
+    console.log('📝 Updating integration-test-paths.json with generated payloads...');
+    try {
+        const pathsFile = '.github/config/integration-test-paths.json';
+        if (fs.existsSync(pathsFile)) {
+            const pathsContent = fs.readFileSync(pathsFile, 'utf8');
+            const paths = JSON.parse(pathsContent);
+            
+            // Update payloads in authenticated API paths
+            if (paths.paths?.authenticated?.api) {
+                for (const [pathName, pathConfig] of Object.entries(paths.paths.authenticated.api)) {
+                    // Extract model name from path
+                    const pathMatch = pathConfig.path.match(/\/api\/crud6\/([^\/]+)/);
+                    if (!pathMatch) continue;
+                    
+                    const modelName = pathMatch[1];
+                    const modelData = testData.models[modelName];
+                    if (!modelData) continue;
+                    
+                    // Update create payload
+                    if (pathName.includes('_create') && modelData.create_payloads[0]) {
+                        pathConfig.payload = modelData.create_payloads[0].payload;
+                        console.log(`   ✅ Updated ${pathName} payload from generated data`);
+                    }
+                    
+                    // Update update payload
+                    if (pathName.includes('_update') && !pathName.includes('_field') && modelData.update_payloads[0]) {
+                        pathConfig.payload = modelData.update_payloads[0].payload;
+                        console.log(`   ✅ Updated ${pathName} payload from generated data`);
+                    }
+                    
+                    // Update relationship payloads
+                    if (pathName.includes('_relationship_attach')) {
+                        const relationMatch = pathConfig.path.match(/\/(\w+)$/);
+                        if (relationMatch) {
+                            const relationName = relationMatch[1];
+                            if (modelData.relationship_payloads[relationName]) {
+                                pathConfig.payload = modelData.relationship_payloads[relationName].attach;
+                                console.log(`   ✅ Updated ${pathName} payload with relationship data`);
+                            }
+                        }
+                    }
+                    
+                    if (pathName.includes('_relationship_detach')) {
+                        const relationMatch = pathConfig.path.match(/\/(\w+)$/);
+                        if (relationMatch) {
+                            const relationName = relationMatch[1];
+                            if (modelData.relationship_payloads[relationName]) {
+                                pathConfig.payload = modelData.relationship_payloads[relationName].detach;
+                                console.log(`   ✅ Updated ${pathName} payload with relationship data`);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Add metadata about generation
+            paths._metadata = {
+                ...paths._metadata,
+                payloads_generated_at: new Date().toISOString(),
+                payloads_source: 'Generated from schemas by generate-seed-sql.js'
+            };
+            
+            // Write updated paths file
+            fs.writeFileSync(pathsFile, JSON.stringify(paths, null, 2), 'utf8');
+            console.log(`   ✅ Updated ${pathsFile} with generated payloads`);
+        } else {
+            console.log(`   ⚠️  ${pathsFile} not found, skipping path update`);
+        }
+    } catch (error) {
+        console.log(`   ⚠️  Could not update paths file: ${error.message}`);
+    }
+    
+    console.log('');
     console.log('═══════════════════════════════════════════════════════════════');
-    console.log('✅ SQL seed data generated successfully!');
+    console.log('✅ SQL seed data and test payloads generated successfully!');
     console.log('═══════════════════════════════════════════════════════════════');
-    console.log(`Output file: ${outputFile}`);
-    console.log(`File size: ${(sql.length / 1024).toFixed(2)} KB`);
+    console.log(`SQL file: ${outputFile}`);
+    console.log(`   Size: ${(sql.length / 1024).toFixed(2)} KB`);
+    console.log(`JSON payloads: ${testDataFile}`);
+    console.log(`   Size: ${(JSON.stringify(testData).length / 1024).toFixed(2)} KB`);
     console.log('');
     console.log('Usage:');
-    console.log(`  mysql -u user -p database < ${outputFile}`);
-    console.log('  or use in integration tests via PDO/Eloquent');
+    console.log(`  SQL: mysql -u user -p database < ${outputFile}`);
+    console.log(`  JSON: Load in test scripts for API/frontend testing`);
     console.log('');
     console.log('⚠️  REMEMBER: IDs 1-99 are reserved for PHP seed data!');
     console.log('   Test data uses IDs >= 100');

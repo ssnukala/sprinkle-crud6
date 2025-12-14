@@ -9,9 +9,33 @@
       "username": "admin",
       "password": "admin123"
     },
-    "api_patterns": {
-      "main_api": "/api/crud6/",
-      "schema_api": "/api/crud6/{model}/schema"
+    "timeout": {
+      "api": 10,
+      "frontend": 30
+    },
+    "security": {
+      "csrf": {
+        "enabled": true,
+        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware. For PHPUnit tests, CSRF is automatically handled by the testing framework. For manual testing, include X-CSRF-Token header.",
+        "testing": {
+          "phpunit": "Automatically handled by createJsonRequest() method",
+          "manual": "Include X-CSRF-Token header with valid token"
+        },
+        "applies_to": [
+          "POST",
+          "PUT",
+          "DELETE"
+        ]
+      },
+      "authentication": {
+        "enabled": true,
+        "note": "All endpoints require authentication via AuthGuard middleware",
+        "applies_to": "all_endpoints"
+      },
+      "permissions": {
+        "enabled": true,
+        "note": "Operations require specific permissions as documented in model definitions"
+      }
     }
   },
   "paths": {
@@ -47,7 +71,10 @@
           "path": "/api/crud6/users",
           "description": "Create new user via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [
+            200,
+            201
+          ],
           "validation": {
             "type": "json",
             "contains": [
@@ -58,11 +85,15 @@
           "requires_permission": "create_user",
           "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
-            "user_name": "apitest",
-            "first_name": "API",
-            "last_name": "Test",
-            "email": "apitest@example.com",
-            "password": "TestPassword123"
+            "user_name": "test_user_name_100",
+            "first_name": "Name100",
+            "last_name": "Name100",
+            "email": "test100@example.com",
+            "locale": "en_US",
+            "group_id": 1,
+            "flag_verified": true,
+            "flag_enabled": true,
+            "password": "$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"
           }
         },
         "users_single": {
@@ -90,7 +121,8 @@
           "requires_permission": "update_user_field",
           "note": "Requires payload with fields to update",
           "payload": {
-            "user_name": "apitest"
+            "user_name": "test_user_name_100",
+            "first_name": "Name100"
           }
         },
         "users_update_field_user_name": {
@@ -217,8 +249,9 @@
           },
           "note": "Relation names defined in model schema (relation='roles')",
           "payload": {
-            "roles_ids": [
-              1
+            "ids": [
+              100,
+              101
             ]
           }
         },
@@ -253,7 +286,12 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='roles')"
+          "note": "Relation names defined in model schema (relation='roles')",
+          "payload": {
+            "ids": [
+              101
+            ]
+          }
         },
         "users_relationship_detach_permissions": {
           "method": "DELETE",
@@ -329,7 +367,10 @@
           "path": "/api/crud6/groups",
           "description": "Create new group via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [
+            200,
+            201
+          ],
           "validation": {
             "type": "json",
             "contains": [
@@ -340,10 +381,10 @@
           "requires_permission": "create_group",
           "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
-            "slug": "api_test_group",
-            "name": "API Test Group",
-            "description": "Group created via API test",
-            "icon": "fa-users"
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "description": "Test description for description - Record 100",
+            "icon": "fas fa-user"
           }
         },
         "groups_single": {
@@ -371,7 +412,8 @@
           "requires_permission": "update_group_field",
           "note": "Requires payload with fields to update",
           "payload": {
-            "slug": "api_test_group"
+            "slug": "test_slug_100",
+            "name": "Name100"
           }
         },
         "groups_update_field_slug": {
@@ -471,7 +513,10 @@
           "path": "/api/crud6/roles",
           "description": "Create new role via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [
+            200,
+            201
+          ],
           "validation": {
             "type": "json",
             "contains": [
@@ -482,9 +527,10 @@
           "requires_permission": "create_role",
           "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
-            "slug": "api_test_role",
-            "name": "API Test Role",
-            "description": "Role created via API test"
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "description": "Test description for description - Record 100",
+            "permission_ids": "option1,option2"
           }
         },
         "roles_single": {
@@ -512,7 +558,8 @@
           "requires_permission": "update_role_field",
           "note": "Requires payload with fields to update",
           "payload": {
-            "slug": "api_test_role"
+            "slug": "test_slug_100",
+            "name": "Name100"
           }
         },
         "roles_update_field_slug": {
@@ -543,8 +590,9 @@
           },
           "note": "Relation names defined in model schema (relation='permissions')",
           "payload": {
-            "permissions_ids": [
-              1
+            "ids": [
+              100,
+              101
             ]
           }
         },
@@ -562,8 +610,9 @@
           },
           "note": "Relation names defined in model schema (relation='users')",
           "payload": {
-            "users_ids": [
-              1
+            "ids": [
+              100,
+              101
             ]
           }
         },
@@ -579,7 +628,12 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='permissions')"
+          "note": "Relation names defined in model schema (relation='permissions')",
+          "payload": {
+            "ids": [
+              101
+            ]
+          }
         },
         "roles_relationship_detach_users": {
           "method": "DELETE",
@@ -593,7 +647,12 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='users')"
+          "note": "Relation names defined in model schema (relation='users')",
+          "payload": {
+            "ids": [
+              101
+            ]
+          }
         },
         "roles_nested_relationship_permissions": {
           "method": "GET",
@@ -655,7 +714,10 @@
           "path": "/api/crud6/permissions",
           "description": "Create new permission via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [
+            200,
+            201
+          ],
           "validation": {
             "type": "json",
             "contains": [
@@ -666,9 +728,10 @@
           "requires_permission": "create_permission",
           "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
-            "slug": "api_test_permission",
-            "name": "API Test Permission",
-            "description": "Permission created via API test"
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "conditions": "",
+            "description": "Test description for description - Record 100"
           }
         },
         "permissions_single": {
@@ -696,7 +759,8 @@
           "requires_permission": "update_permission_field",
           "note": "Requires payload with fields to update",
           "payload": {
-            "slug": "api_test_permission"
+            "slug": "test_slug_100",
+            "name": "Name100"
           }
         },
         "permissions_update_field_slug": {
@@ -727,8 +791,9 @@
           },
           "note": "Relation names defined in model schema (relation='roles')",
           "payload": {
-            "roles_ids": [
-              1
+            "ids": [
+              100,
+              101
             ]
           }
         },
@@ -763,7 +828,12 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='roles')"
+          "note": "Relation names defined in model schema (relation='roles')",
+          "payload": {
+            "ids": [
+              101
+            ]
+          }
         },
         "permissions_relationship_detach_users": {
           "method": "DELETE",
@@ -839,7 +909,10 @@
           "path": "/api/crud6/activities",
           "description": "Create new activity via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [
+            200,
+            201
+          ],
           "validation": {
             "type": "json",
             "contains": [
@@ -850,10 +923,11 @@
           "requires_permission": "create_activity",
           "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
-            "user_id": 2,
-            "type": "test_activity",
-            "occurred_at": "2024-01-01 12:00:00",
-            "description": "Activity created via API test"
+            "ip_address": "192.168.100.200",
+            "user_id": 100,
+            "type": "type_b",
+            "occurred_at": "2024-01-100 12:00:00",
+            "description": "Test description for description - Record 100"
           }
         },
         "activities_single": {
@@ -880,7 +954,8 @@
           "requires_permission": "update_activity_field",
           "note": "Requires payload with fields to update",
           "payload": {
-            "type": "test_activity"
+            "ip_address": "192.168.100.200",
+            "user_id": 100
           }
         },
         "activities_update_field_ip_address": {
@@ -1412,39 +1487,8 @@
       }
     }
   },
-  "config": {
-    "base_url": "http://localhost:8080",
-    "auth": {
-      "username": "admin",
-      "password": "admin123"
-    },
-    "timeout": {
-      "api": 10,
-      "frontend": 30
-    },
-    "security": {
-      "csrf": {
-        "enabled": true,
-        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware. For PHPUnit tests, CSRF is automatically handled by the testing framework. For manual testing, include X-CSRF-Token header.",
-        "testing": {
-          "phpunit": "Automatically handled by createJsonRequest() method",
-          "manual": "Include X-CSRF-Token header with valid token"
-        },
-        "applies_to": [
-          "POST",
-          "PUT",
-          "DELETE"
-        ]
-      },
-      "authentication": {
-        "enabled": true,
-        "note": "All endpoints require authentication via AuthGuard middleware",
-        "applies_to": "all_endpoints"
-      },
-      "permissions": {
-        "enabled": true,
-        "note": "Operations require specific permissions as documented in model definitions"
-      }
-    }
+  "_metadata": {
+    "payloads_generated_at": "2025-12-14T18:54:11.366Z",
+    "payloads_source": "Generated from schemas by generate-seed-sql.js"
   }
 }

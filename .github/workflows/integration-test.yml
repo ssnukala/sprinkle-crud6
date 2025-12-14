@@ -380,7 +380,12 @@ jobs:
 
       - name: Install Playwright
         run: |
-          cd userfrosting
+          # Install playwright package in sprinkle directory (for script imports)
+          cd ${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts
+          npm install playwright
+          
+          # Install chromium browser in userfrosting (for execution)
+          cd $GITHUB_WORKSPACE/userfrosting
           npx playwright install chromium
 
       - name: Capture screenshots

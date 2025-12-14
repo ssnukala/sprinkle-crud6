@@ -368,7 +368,12 @@ ${generateCustomSteps(customSteps, 'before_tests')}
 ${generateCustomSteps(customSteps, 'after_tests')}
       - name: Install Playwright
         run: |
-          cd userfrosting
+          # Install playwright package in sprinkle directory (for script imports)
+          cd \${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts
+          npm install playwright
+          
+          # Install chromium browser in userfrosting (for execution)
+          cd \$GITHUB_WORKSPACE/userfrosting
           npx playwright install chromium
 ${generateCustomSteps(customSteps, 'before_screenshots')}
       - name: Capture screenshots

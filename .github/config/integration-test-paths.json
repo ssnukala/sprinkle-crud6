@@ -1,7 +1,7 @@
 {
   "description": "Integration test paths configuration for CRUD6 sprinkle (auto-generated from schemas)",
   "generated_from": "Schema JSON files",
-  "generated_at": "2025-12-14T19:20:24.339Z",
+  "generated_at": "2025-12-14T20:46:48.766Z",
   "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
   "config": {
     "base_url": "http://localhost:8080",
@@ -1965,7 +1965,212 @@
           "note": "Relation names defined in model schema"
         }
       },
-      "frontend": {}
+      "frontend": {
+        "activities_list": {
+          "path": "/crud6/activities",
+          "description": "activities list page",
+          "screenshot": true,
+          "screenshot_name": "activities_list"
+        },
+        "activities_detail": {
+          "path": "/crud6/activities/100",
+          "description": "Single activity detail page",
+          "screenshot": true,
+          "screenshot_name": "activity_detail"
+        },
+        "categories_list": {
+          "path": "/crud6/categories",
+          "description": "categories list page",
+          "screenshot": true,
+          "screenshot_name": "categories_list"
+        },
+        "categories_detail": {
+          "path": "/crud6/categories/100",
+          "description": "Single category detail page",
+          "screenshot": true,
+          "screenshot_name": "category_detail"
+        },
+        "contacts_list": {
+          "path": "/crud6/contacts",
+          "description": "contacts list page",
+          "screenshot": true,
+          "screenshot_name": "contacts_list"
+        },
+        "contacts_detail": {
+          "path": "/crud6/contacts/100",
+          "description": "Single contact detail page",
+          "screenshot": true,
+          "screenshot_name": "contact_detail"
+        },
+        "tasks_list": {
+          "path": "/crud6/tasks",
+          "description": "tasks list page",
+          "screenshot": true,
+          "screenshot_name": "tasks_list"
+        },
+        "tasks_detail": {
+          "path": "/crud6/tasks/100",
+          "description": "Single task detail page",
+          "screenshot": true,
+          "screenshot_name": "task_detail"
+        },
+        "groups_list": {
+          "path": "/crud6/groups",
+          "description": "groups list page",
+          "screenshot": true,
+          "screenshot_name": "groups_list"
+        },
+        "groups_detail": {
+          "path": "/crud6/groups/100",
+          "description": "Single group detail page",
+          "screenshot": true,
+          "screenshot_name": "group_detail"
+        },
+        "order_details_list": {
+          "path": "/crud6/order_details",
+          "description": "order_details list page",
+          "screenshot": true,
+          "screenshot_name": "order_details_list"
+        },
+        "order_details_detail": {
+          "path": "/crud6/order_details/100",
+          "description": "Single order_detail detail page",
+          "screenshot": true,
+          "screenshot_name": "order_detail_detail"
+        },
+        "orders_list": {
+          "path": "/crud6/orders",
+          "description": "orders list page",
+          "screenshot": true,
+          "screenshot_name": "orders_list"
+        },
+        "orders_detail": {
+          "path": "/crud6/orders/100",
+          "description": "Single order detail page",
+          "screenshot": true,
+          "screenshot_name": "order_detail"
+        },
+        "permissions_list": {
+          "path": "/crud6/permissions",
+          "description": "permissions list page",
+          "screenshot": true,
+          "screenshot_name": "permissions_list"
+        },
+        "permissions_detail": {
+          "path": "/crud6/permissions/100",
+          "description": "Single permission detail page",
+          "screenshot": true,
+          "screenshot_name": "permission_detail"
+        },
+        "product_categories_list": {
+          "path": "/crud6/product_categories",
+          "description": "product_categories list page",
+          "screenshot": true,
+          "screenshot_name": "product_categories_list"
+        },
+        "product_categories_detail": {
+          "path": "/crud6/product_categories/100",
+          "description": "Single product_category detail page",
+          "screenshot": true,
+          "screenshot_name": "product_category_detail"
+        },
+        "products_list": {
+          "path": "/crud6/products",
+          "description": "products list page",
+          "screenshot": true,
+          "screenshot_name": "products_list"
+        },
+        "products_detail": {
+          "path": "/crud6/products/100",
+          "description": "Single product detail page",
+          "screenshot": true,
+          "screenshot_name": "product_detail"
+        },
+        "products_optimized_list": {
+          "path": "/crud6/products_optimized",
+          "description": "products_optimized list page",
+          "screenshot": true,
+          "screenshot_name": "products_optimized_list"
+        },
+        "products_optimized_detail": {
+          "path": "/crud6/products_optimized/100",
+          "description": "Single products_optimized detail page",
+          "screenshot": true,
+          "screenshot_name": "products_optimized_detail"
+        },
+        "products_with_template_file_list": {
+          "path": "/crud6/products_with_template_file",
+          "description": "products_with_template_file list page",
+          "screenshot": true,
+          "screenshot_name": "products_with_template_file_list"
+        },
+        "products_with_template_file_detail": {
+          "path": "/crud6/products_with_template_file/100",
+          "description": "Single products_with_template_file detail page",
+          "screenshot": true,
+          "screenshot_name": "products_with_template_file_detail"
+        },
+        "products_vue_template_list": {
+          "path": "/crud6/products_vue_template",
+          "description": "products_vue_template list page",
+          "screenshot": true,
+          "screenshot_name": "products_vue_template_list"
+        },
+        "products_vue_template_detail": {
+          "path": "/crud6/products_vue_template/100",
+          "description": "Single products_vue_template detail page",
+          "screenshot": true,
+          "screenshot_name": "products_vue_template_detail"
+        },
+        "roles_list": {
+          "path": "/crud6/roles",
+          "description": "roles list page",
+          "screenshot": true,
+          "screenshot_name": "roles_list"
+        },
+        "roles_detail": {
+          "path": "/crud6/roles/100",
+          "description": "Single role detail page",
+          "screenshot": true,
+          "screenshot_name": "role_detail"
+        },
+        "order_list": {
+          "path": "/crud6/order",
+          "description": "order list page",
+          "screenshot": true,
+          "screenshot_name": "order_list"
+        },
+        "order_detail": {
+          "path": "/crud6/order/100",
+          "description": "Single order detail page",
+          "screenshot": true,
+          "screenshot_name": "order_detail"
+        },
+        "order_legacy_list": {
+          "path": "/crud6/order_legacy",
+          "description": "order_legacy list page",
+          "screenshot": true,
+          "screenshot_name": "order_legacy_list"
+        },
+        "order_legacy_detail": {
+          "path": "/crud6/order_legacy/100",
+          "description": "Single order_legacy detail page",
+          "screenshot": true,
+          "screenshot_name": "order_legacy_detail"
+        },
+        "users_list": {
+          "path": "/crud6/users",
+          "description": "users list page",
+          "screenshot": true,
+          "screenshot_name": "users_list"
+        },
+        "users_detail": {
+          "path": "/crud6/users/100",
+          "description": "Single user detail page",
+          "screenshot": true,
+          "screenshot_name": "user_detail"
+        }
+      }
     },
     "unauthenticated": {
       "api": {},

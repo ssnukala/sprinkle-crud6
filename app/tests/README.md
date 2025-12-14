@@ -188,6 +188,23 @@ Tests verify:
 4. Database migrations run successfully
 5. Schema files load correctly
 6. Basic PHP functionality works
+7. **PHPUnit tests execute successfully** (added in integration workflow)
+
+### PHPUnit Testing in CI
+
+The integration workflow now includes a PHPUnit test step that:
+- Runs after the UserFrosting 6 application is fully set up
+- Executes all tests in `app/tests/` directory
+- Uses the sprinkle's `phpunit.xml` configuration
+- Tests controllers, models, services, and integration scenarios
+- Verifies functionality in a real UserFrosting environment
+
+The tests run within the context of a complete UserFrosting 6 installation with:
+- Configured database (MySQL)
+- Completed migrations
+- Test data loaded
+- Admin user created
+- All sprinkle dependencies available
 
 ## References
 

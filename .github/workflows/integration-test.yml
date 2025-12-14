@@ -812,6 +812,45 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       
+      - name: Run PHPUnit tests from sprinkle
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Running PHPUnit Tests from CRUD6 Sprinkle"
+          echo "========================================="
+          echo ""
+          echo "These tests verify CRUD6 functionality:"
+          echo "  - Controller actions"
+          echo "  - Model operations"
+          echo "  - Schema services"
+          echo "  - Integration tests"
+          echo ""
+          
+          # Check if sprinkle is installed
+          if [ ! -d "vendor/ssnukala/sprinkle-crud6" ]; then
+            echo "❌ CRUD6 sprinkle not found in vendor directory"
+            exit 1
+          fi
+          
+          # Change to the sprinkle directory to run tests
+          # This ensures the bootstrap path in phpunit.xml is correct
+          cd vendor/ssnukala/sprinkle-crud6
+          
+          # Run PHPUnit using the sprinkle's phpunit.xml configuration
+          # The tests will use the UserFrosting autoloader from the parent project
+          if [ -f "phpunit.xml" ]; then
+            echo "Running PHPUnit tests with sprinkle configuration..."
+            ../../../vendor/bin/phpunit --testdox --colors=always
+          else
+            echo "❌ PHPUnit configuration not found in sprinkle"
+            exit 1
+          fi
+          
+          echo ""
+          echo "========================================="
+          echo "✅ PHPUnit Tests Completed"
+          echo "========================================="
+      
       - name: Stop servers
         if: always()
         run: |

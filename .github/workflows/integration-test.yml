@@ -809,6 +809,7 @@ jobs:
         with:
           name: api-test-log
           path: /tmp/api-test-log.json
+          if-no-files-found: ignore
           retention-days: 7
       
       - name: Stop servers

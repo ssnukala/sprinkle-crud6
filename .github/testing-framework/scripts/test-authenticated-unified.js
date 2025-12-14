@@ -52,7 +52,8 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     path: pathConfig.path,
                     method: pathConfig.method || 'GET',
                     description: pathConfig.description || name,
-                    expected_status: pathConfig.expected_status || 200
+                    expected_status: pathConfig.expected_status || 200,
+                    payload: pathConfig.payload || {}
                 });
             }
         }
@@ -280,10 +281,10 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                         method: method,
                         url: url,
                         path: apiPath.path,
-                        headers: {
+                        headers: csrfToken ? {
                             ...headers,
-                            'X-CSRF-Token': csrfToken ? '[REDACTED]' : undefined
-                        },
+                            'X-CSRF-Token': '[REDACTED]'
+                        } : headers,
                         payload: payload
                     },
                     response: {

@@ -64,7 +64,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 
-use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 class MyTest extends AdminTestCase

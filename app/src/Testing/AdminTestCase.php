@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Tests;
+namespace UserFrosting\Sprinkle\CRUD6\Testing;
 
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
 use UserFrosting\Testing\TestCase;

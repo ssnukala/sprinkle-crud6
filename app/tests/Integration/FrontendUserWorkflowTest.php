@@ -18,7 +18,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Permission;
 use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Account\Database\Models\User;
 use UserFrosting\Sprinkle\Account\Testing\WithTestUser;
-use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
 use UserFrosting\Sprinkle\CRUD6\Testing\TracksApiCalls;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 

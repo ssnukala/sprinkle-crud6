@@ -17,7 +17,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Permission;
 use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
-use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**

@@ -47,6 +47,7 @@
           "path": "/api/crud6/users",
           "description": "Create new user via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201],
           "validation": {
             "type": "json",
             "contains": [
@@ -55,7 +56,7 @@
             ]
           },
           "requires_permission": "create_user",
-          "note": "Requires payload with model-specific fields",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
             "user_name": "apitest",
             "first_name": "API",
@@ -328,6 +329,7 @@
           "path": "/api/crud6/groups",
           "description": "Create new group via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201],
           "validation": {
             "type": "json",
             "contains": [
@@ -336,7 +338,7 @@
             ]
           },
           "requires_permission": "create_group",
-          "note": "Requires payload with model-specific fields",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
             "slug": "api_test_group",
             "name": "API Test Group",
@@ -469,6 +471,7 @@
           "path": "/api/crud6/roles",
           "description": "Create new role via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201],
           "validation": {
             "type": "json",
             "contains": [
@@ -477,7 +480,7 @@
             ]
           },
           "requires_permission": "create_role",
-          "note": "Requires payload with model-specific fields",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
             "slug": "api_test_role",
             "name": "API Test Role",
@@ -652,6 +655,7 @@
           "path": "/api/crud6/permissions",
           "description": "Create new permission via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201],
           "validation": {
             "type": "json",
             "contains": [
@@ -660,7 +664,7 @@
             ]
           },
           "requires_permission": "create_permission",
-          "note": "Requires payload with model-specific fields",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
             "slug": "api_test_permission",
             "name": "API Test Permission",
@@ -835,6 +839,7 @@
           "path": "/api/crud6/activities",
           "description": "Create new activity via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201],
           "validation": {
             "type": "json",
             "contains": [
@@ -843,7 +848,7 @@
             ]
           },
           "requires_permission": "create_activity",
-          "note": "Requires payload with model-specific fields",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
           "payload": {
             "user_id": 2,
             "type": "test_activity",

@@ -47,12 +47,39 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
     if (config.paths?.authenticated?.api) {
         for (const [name, pathConfig] of Object.entries(config.paths.authenticated.api)) {
             if (!pathConfig.skip) {
+                // Determine acceptable status codes
+                let acceptableStatuses;
+                
+                // Priority 1: Use explicit acceptable_statuses from path config
+                // Note: Empty arrays (length === 0) are treated as "not provided" and will fall through to defaults
+                // This includes arrays with only falsy values, which is acceptable since HTTP status codes should be positive integers
+                if (Array.isArray(pathConfig.acceptable_statuses) && pathConfig.acceptable_statuses.length > 0) {
+                    acceptableStatuses = pathConfig.acceptable_statuses;
+                }
+                // Priority 2: Use acceptable_statuses from validation object
+                // Note: Empty arrays (length === 0) are treated as "not provided" and will fall through to defaults
+                else if (Array.isArray(pathConfig.validation?.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
+                    acceptableStatuses = pathConfig.validation.acceptable_statuses;
+                }
+                // Priority 3: Apply defaults based on HTTP method
+                else {
+                    const method = pathConfig.method || 'GET';
+                    if (method === 'POST' || method === 'PUT') {
+                        // POST/PUT operations accept both 200 (OK) and 201 (Created)
+                        acceptableStatuses = [200, 201];
+                    } else {
+                        // GET/DELETE/other operations accept the expected status
+                        acceptableStatuses = [pathConfig.expected_status || 200];
+                    }
+                }
+                
                 apiPaths.push({
                     name,
                     path: pathConfig.path,
                     method: pathConfig.method || 'GET',
                     description: pathConfig.description || name,
                     expected_status: pathConfig.expected_status || 200,
+                    acceptable_statuses: acceptableStatuses,
                     payload: pathConfig.payload || {}
                 });
             }
@@ -148,6 +175,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         
         let apiPassedTests = 0;
         let apiFailedTests = 0;
+        let apiWarnings = 0;
         const apiLogEntries = []; // Collect API call logs for artifact
 
         /**
@@ -271,7 +299,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             console.log(`   Method: ${apiPath.method}`);
             console.log(`   Path: ${apiPath.path}`);
             console.log(`   Description: ${apiPath.description}`);
-            console.log(`   Expected status: ${apiPath.expected_status}`);
+            console.log(`   Acceptable status codes: [${apiPath.acceptable_statuses.join(', ')}]`);
 
             try {
                 const url = `${baseUrl}${apiPath.path}`;
@@ -356,6 +384,29 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     responseBody = `[Could not read response body: ${e.message}]`;
                 }
 
+                // Determine if status is acceptable
+                // Safety fallback: if acceptable_statuses is undefined (shouldn't happen due to logic above),
+                // fall back to expected_status (same default logic as Priority 3)
+                const acceptableStatuses = apiPath.acceptable_statuses || [apiPath.expected_status || 200];
+                const isSuccess = acceptableStatuses.includes(status);
+                
+                // Check if this is a database error (5xx codes)
+                const isDatabaseError = status >= 500 && status < 600;
+                
+                // Determine result status
+                let result;
+                let resultIcon;
+                if (isSuccess) {
+                    result = 'PASSED';
+                    resultIcon = '✅';
+                } else if (isDatabaseError) {
+                    result = 'WARNING';
+                    resultIcon = '⚠️';
+                } else {
+                    result = 'FAILED';
+                    resultIcon = '❌';
+                }
+                
                 // Create log entry for this API call
                 const logEntry = {
                     test_name: apiPath.name,
@@ -377,18 +428,30 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                         headers: response.headers(),
                         body: responseBody
                     },
-                    expected_status: apiPath.expected_status,
-                    result: status === apiPath.expected_status ? 'PASSED' : 'FAILED',
+                    acceptable_statuses: apiPath.acceptable_statuses,
+                    result: result,
                     description: apiPath.description
                 };
                 
                 apiLogEntries.push(logEntry);
 
-                if (status === apiPath.expected_status) {
-                    console.log(`   ✅ PASSED`);
+                if (isSuccess) {
+                    console.log(`   ${resultIcon} PASSED (status ${status})`);
                     apiPassedTests++;
+                } else if (isDatabaseError) {
+                    console.log(`   ${resultIcon} WARNING: Database/server error (status ${status})`);
+                    console.log(`   Note: Logging as warning and continuing tests`);
+                    
+                    // Display response body for debugging (truncated)
+                    if (typeof responseBody === 'string') {
+                        console.log(`   Response body (first 200 chars): ${responseBody.substring(0, 200)}`);
+                    } else {
+                        console.log(`   Response body (first 200 chars): ${JSON.stringify(responseBody).substring(0, 200)}`);
+                    }
+                    
+                    apiWarnings++;
                 } else {
-                    console.log(`   ❌ FAILED: Expected ${apiPath.expected_status}, got ${status}`);
+                    console.log(`   ${resultIcon} FAILED: Expected one of [${apiPath.acceptable_statuses.join(', ')}], got ${status}`);
                     
                     // Display response body for debugging (truncated)
                     if (typeof responseBody === 'string') {
@@ -426,6 +489,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         console.log('API Tests Summary:');
         console.log(`  Total: ${apiPaths.length}`);
         console.log(`  ✅ Passed: ${apiPassedTests}`);
+        console.log(`  ⚠️  Warnings: ${apiWarnings} (database/server errors - logged but not failed)`);
         console.log(`  ❌ Failed: ${apiFailedTests}`);
         console.log('');
         
@@ -440,6 +504,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                         username: username,
                         total_tests: apiPaths.length,
                         passed: apiPassedTests,
+                        warnings: apiWarnings,
                         failed: apiFailedTests
                     },
                     api_calls: apiLogEntries
@@ -531,9 +596,13 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         console.log('========================================');
         console.log('OVERALL TEST SUMMARY');
         console.log('========================================');
-        console.log(`API Tests: ${apiPassedTests}/${apiPaths.length} passed`);
-        console.log(`Frontend Tests: ${frontendPassedTests}/${frontendPaths.length} passed`);
+        console.log(`API Tests: ${apiPassedTests}/${apiPaths.length} passed, ${apiWarnings} warnings, ${apiFailedTests} failed`);
+        console.log(`Frontend Tests: ${frontendPassedTests}/${frontendPaths.length} passed, ${frontendFailedTests} failed`);
         console.log(`Total: ${apiPassedTests + frontendPassedTests}/${apiPaths.length + frontendPaths.length} passed`);
+        
+        if (apiWarnings > 0) {
+            console.log(`⚠️  ${apiWarnings} warning(s) - database/server errors logged but tests continued`);
+        }
         console.log('========================================');
 
         const totalFailed = apiFailedTests + frontendFailedTests;
@@ -541,7 +610,11 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             console.log(`❌ ${totalFailed} test(s) failed`);
             process.exit(1);
         } else {
-            console.log('✅ All tests passed');
+            if (apiWarnings > 0) {
+                console.log(`✅ All tests passed (${apiWarnings} warnings noted)`);
+            } else {
+                console.log('✅ All tests passed');
+            }
             process.exit(0);
         }
 

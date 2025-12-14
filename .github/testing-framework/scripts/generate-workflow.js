@@ -137,15 +137,9 @@ jobs:
           cd \${{ env.SPRINKLE_DIR }}
           
           if [ -d ".github/crud6-framework" ]; then
-            echo "✅ Using local framework (crud6-framework)"
-          elif [ -d ".github/testing-framework" ]; then
-            echo "✅ Using local framework (testing-framework)"
-            # Copy to crud6-framework for consistency
-            cp -r .github/testing-framework .github/crud6-framework
-            chmod +x .github/crud6-framework/scripts/*.php
-            echo "✅ Framework copied to crud6-framework"
+            echo "✅ Using local framework"
           else
-            echo "📦 Installing framework from remote..."
+            echo "📦 Installing framework..."
             git clone --depth 1 --branch \${{ env.FRAMEWORK_BRANCH }} \\
               https://github.com/\${{ env.FRAMEWORK_REPO }}.git /tmp/crud6-repo
             mkdir -p .github/crud6-framework
@@ -372,22 +366,15 @@ ${generateCustomSteps(customSteps, 'before_tests')}
           php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
 ${generateCustomSteps(customSteps, 'after_tests')}
-      - name: Install Playwright and prepare test scripts
+      - name: Install Playwright
         run: |
           cd userfrosting
-          
-          # Install playwright in userfrosting
-          npm install playwright
           npx playwright install chromium
-          
-          # Copy testing scripts to userfrosting as .mjs for ES6 module support
-          cp ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js take-screenshots-modular.mjs
-          echo "✅ Playwright installed and test scripts prepared"
 ${generateCustomSteps(customSteps, 'before_screenshots')}
       - name: Capture screenshots
         run: |
           cd userfrosting
-          node take-screenshots-modular.mjs \\
+          node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \\
             screenshots
 ${generateCustomSteps(customSteps, 'after_screenshots')}

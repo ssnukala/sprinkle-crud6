@@ -22,11 +22,10 @@ return [
          * - Validation and error handling
          * 
          * Set to true to enable debug logging, false to disable.
-         * Can be overridden via CRUD6_DEBUG_MODE environment variable.
          * 
          * @var bool
          */
-        'debug_mode' => filter_var(getenv('CRUD6_DEBUG_MODE') ?: true, FILTER_VALIDATE_BOOLEAN),
+        'debug_mode' => true,
 
         /**
          * Schema cache Time-To-Live (TTL) in seconds.

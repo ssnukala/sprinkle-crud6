@@ -48,17 +48,15 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         for (const [name, pathConfig] of Object.entries(config.paths.authenticated.api)) {
             if (!pathConfig.skip) {
                 // Determine acceptable status codes
-                let acceptableStatuses = pathConfig.acceptable_statuses || [];
+                let acceptableStatuses = Array.isArray(pathConfig.acceptable_statuses) ? pathConfig.acceptable_statuses : [];
                 
                 // If acceptable_statuses is not provided, use validation type or default
                 if (acceptableStatuses.length === 0) {
-                    if (pathConfig.validation?.acceptable_statuses && Array.isArray(pathConfig.validation.acceptable_statuses)) {
-                        acceptableStatuses = pathConfig.validation.acceptable_statuses;
-                    } else if (pathConfig.validation?.type === 'status_any' && pathConfig.validation?.acceptable_statuses && Array.isArray(pathConfig.validation.acceptable_statuses)) {
-                        // Use acceptable_statuses from validation when type is status_any
+                    if (pathConfig.validation?.acceptable_statuses && Array.isArray(pathConfig.validation.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
+                        // Use acceptable_statuses from validation object
                         acceptableStatuses = pathConfig.validation.acceptable_statuses;
                     } else {
-                        // Default: POST/PUT operations accept both 200 and 201
+                        // Default: POST/PUT operations accept both 200 and 201, others accept expected_status
                         const method = pathConfig.method || 'GET';
                         if (method === 'POST' || method === 'PUT') {
                             acceptableStatuses = [200, 201];
@@ -68,7 +66,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     }
                 }
                 
-                // Ensure acceptableStatuses is always an array
+                // Final safety check: ensure acceptableStatuses is always a non-empty array
                 if (!Array.isArray(acceptableStatuses) || acceptableStatuses.length === 0) {
                     acceptableStatuses = [pathConfig.expected_status || 200];
                 }
@@ -299,7 +297,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             console.log(`   Method: ${apiPath.method}`);
             console.log(`   Path: ${apiPath.path}`);
             console.log(`   Description: ${apiPath.description}`);
-            console.log(`   Acceptable status codes: [${(apiPath.acceptable_statuses || [200]).join(', ')}]`);
+            console.log(`   Acceptable status codes: [${Array.isArray(apiPath.acceptable_statuses) ? apiPath.acceptable_statuses.join(', ') : (apiPath.expected_status || 200)}]`);
 
             try {
                 const url = `${baseUrl}${apiPath.path}`;
@@ -449,7 +447,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     
                     apiWarnings++;
                 } else {
-                    console.log(`   ${resultIcon} FAILED: Expected one of [${(apiPath.acceptable_statuses || [200]).join(', ')}], got ${status}`);
+                    console.log(`   ${resultIcon} FAILED: Expected one of [${Array.isArray(apiPath.acceptable_statuses) ? apiPath.acceptable_statuses.join(', ') : (apiPath.expected_status || 200)}], got ${status}`);
                     
                     // Display response body for debugging (truncated)
                     if (typeof responseBody === 'string') {

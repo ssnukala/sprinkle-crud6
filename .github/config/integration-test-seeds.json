@@ -77,12 +77,12 @@
     }
   },
   "admin_user": {
-    "enabled": true,
+    "enabled": false,
     "username": "admin",
     "password": "admin123",
     "email": "admin@example.com",
     "firstName": "Admin",
     "lastName": "User",
-    "description": "Create admin user for testing authenticated routes"
+    "description": "Admin user is created via bakery create:admin-user in workflow before seeds run - DO NOT create here to avoid duplicate"
   }
 }

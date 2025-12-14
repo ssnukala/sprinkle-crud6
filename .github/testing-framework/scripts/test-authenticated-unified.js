@@ -148,6 +148,45 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         let apiPassedTests = 0;
         let apiFailedTests = 0;
 
+        /**
+         * Get CSRF token from the page
+         * UserFrosting 6 provides CSRF tokens via meta tags in HTML pages
+         */
+        async function getCsrfToken() {
+            try {
+                // Try to get CSRF token from meta tag on current page
+                let csrfToken = await page.evaluate(() => {
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    return metaTag ? metaTag.getAttribute('content') : null;
+                });
+                
+                if (csrfToken) {
+                    return csrfToken;
+                }
+                
+                // If no token on current page, navigate to dashboard to get one
+                console.log('   ⚠️  No CSRF token on current page, navigating to dashboard...');
+                await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+                
+                // Try again to get token from dashboard page
+                csrfToken = await page.evaluate(() => {
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    return metaTag ? metaTag.getAttribute('content') : null;
+                });
+                
+                if (csrfToken) {
+                    console.log('   ✅ CSRF token retrieved from dashboard page');
+                    return csrfToken;
+                }
+                
+                console.log('   ⚠️  Could not find CSRF token meta tag');
+                return null;
+            } catch (error) {
+                console.log('   ⚠️  Could not retrieve CSRF token:', error.message);
+                return null;
+            }
+        }
+
         for (const apiPath of apiPaths) {
             console.log('');
             console.log(`🔍 Testing API: ${apiPath.name}`);
@@ -157,9 +196,56 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
             console.log(`   Expected status: ${apiPath.expected_status}`);
 
             try {
-                const response = await page.request.fetch(`${baseUrl}${apiPath.path}`, {
-                    method: apiPath.method
-                });
+                const url = `${baseUrl}${apiPath.path}`;
+                const method = apiPath.method;
+                const payload = apiPath.payload || {};
+                
+                // Build headers
+                let headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                };
+                
+                // Get CSRF token for state-changing operations
+                if (['POST', 'PUT', 'DELETE'].includes(method)) {
+                    const csrfToken = await getCsrfToken();
+                    if (csrfToken) {
+                        headers['X-CSRF-Token'] = csrfToken;
+                    }
+                }
+                
+                // Log payload if present
+                if (Object.keys(payload).length > 0) {
+                    console.log(`   Payload: ${JSON.stringify(payload)}`);
+                }
+                
+                // Make the API request with appropriate method and payload
+                let response;
+                if (method === 'GET') {
+                    response = await page.request.get(url, { headers });
+                } else if (method === 'POST') {
+                    response = await page.request.post(url, { 
+                        headers,
+                        data: payload 
+                    });
+                } else if (method === 'PUT') {
+                    response = await page.request.put(url, { 
+                        headers,
+                        data: payload 
+                    });
+                } else if (method === 'DELETE') {
+                    response = await page.request.delete(url, { 
+                        headers,
+                        data: payload 
+                    });
+                } else {
+                    // Fallback to fetch for other methods
+                    response = await page.request.fetch(url, {
+                        method: method,
+                        headers: headers,
+                        data: Object.keys(payload).length > 0 ? payload : undefined
+                    });
+                }
                 
                 const status = response.status();
                 console.log(`   Response status: ${status}`);
@@ -173,7 +259,7 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     // Try to get response body for debugging
                     try {
                         const body = await response.text();
-                        console.log(`   Response body (first 200 chars): ${body.substring(0, 200)}`);
+                        console.log(`   Response body (first 500 chars): ${body.substring(0, 500)}`);
                     } catch (e) {
                         console.log(`   Could not read response body`);
                     }

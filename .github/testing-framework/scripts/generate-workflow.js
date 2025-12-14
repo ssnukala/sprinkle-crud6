@@ -372,20 +372,22 @@ ${generateCustomSteps(customSteps, 'before_tests')}
           php ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
 ${generateCustomSteps(customSteps, 'after_tests')}
-      - name: Install Playwright
+      - name: Install Playwright and prepare test scripts
         run: |
-          # Install playwright package in sprinkle directory (for script imports)
-          cd \${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts
-          npm install playwright
+          cd userfrosting
           
-          # Install chromium browser in userfrosting (for execution)
-          cd \$GITHUB_WORKSPACE/userfrosting
+          # Install playwright in userfrosting
+          npm install playwright
           npx playwright install chromium
+          
+          # Copy testing scripts to userfrosting as .mjs for ES6 module support
+          cp ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js take-screenshots-modular.mjs
+          echo "✅ Playwright installed and test scripts prepared"
 ${generateCustomSteps(customSteps, 'before_screenshots')}
       - name: Capture screenshots
         run: |
           cd userfrosting
-          node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \\
+          node take-screenshots-modular.mjs \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \\
             screenshots
 ${generateCustomSteps(customSteps, 'after_screenshots')}

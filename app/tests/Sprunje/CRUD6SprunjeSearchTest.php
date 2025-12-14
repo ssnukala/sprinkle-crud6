@@ -14,7 +14,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Tests\Sprunje;
 
 use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
-use UserFrosting\Sprinkle\CRUD6\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**

@@ -51,12 +51,13 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                 let acceptableStatuses;
                 
                 // Priority 1: Use explicit acceptable_statuses from path config
-                // Note: Empty arrays are treated as "not provided" and will fall through to defaults
+                // Note: Empty arrays (length === 0) are treated as "not provided" and will fall through to defaults
+                // This includes arrays with only falsy values, which is acceptable since HTTP status codes should be positive integers
                 if (Array.isArray(pathConfig.acceptable_statuses) && pathConfig.acceptable_statuses.length > 0) {
                     acceptableStatuses = pathConfig.acceptable_statuses;
                 }
                 // Priority 2: Use acceptable_statuses from validation object
-                // Note: Empty arrays are treated as "not provided" and will fall through to defaults
+                // Note: Empty arrays (length === 0) are treated as "not provided" and will fall through to defaults
                 else if (Array.isArray(pathConfig.validation?.acceptable_statuses) && pathConfig.validation.acceptable_statuses.length > 0) {
                     acceptableStatuses = pathConfig.validation.acceptable_statuses;
                 }

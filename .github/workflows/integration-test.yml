@@ -803,6 +803,15 @@ jobs:
           path: userfrosting/app/logs/
           retention-days: 7
       
+      - name: Upload API test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-log
+          path: /tmp/api-test-log.json
+          if-no-files-found: ignore
+          retention-days: 7
+      
       - name: Stop servers
         if: always()
         run: |

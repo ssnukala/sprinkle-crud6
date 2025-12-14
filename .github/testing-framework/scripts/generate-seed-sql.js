@@ -30,6 +30,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -716,78 +717,25 @@ try {
     fs.writeFileSync(testDataFile, JSON.stringify(testData, null, 2), 'utf8');
     console.log(`   ✅ Test data payloads: ${testDataFile}`);
     
-    // Update integration-test-paths.json with generated payloads
+    // Generate complete integration-test-paths.json from schemas
     console.log('');
-    console.log('📝 Updating integration-test-paths.json with generated payloads...');
+    console.log('📝 Generating integration-test-paths.json from schemas...');
     try {
         const pathsFile = '.github/config/integration-test-paths.json';
-        if (fs.existsSync(pathsFile)) {
-            const pathsContent = fs.readFileSync(pathsFile, 'utf8');
-            const paths = JSON.parse(pathsContent);
-            
-            // Update payloads in authenticated API paths
-            if (paths.paths?.authenticated?.api) {
-                for (const [pathName, pathConfig] of Object.entries(paths.paths.authenticated.api)) {
-                    // Extract model name from path
-                    const pathMatch = pathConfig.path.match(/\/api\/crud6\/([^\/]+)/);
-                    if (!pathMatch) continue;
-                    
-                    const modelName = pathMatch[1];
-                    const modelData = testData.models[modelName];
-                    if (!modelData) continue;
-                    
-                    // Update create payload
-                    if (pathName.includes('_create') && modelData.create_payloads[0]) {
-                        pathConfig.payload = modelData.create_payloads[0].payload;
-                        console.log(`   ✅ Updated ${pathName} payload from generated data`);
-                    }
-                    
-                    // Update update payload
-                    if (pathName.includes('_update') && !pathName.includes('_field') && modelData.update_payloads[0]) {
-                        pathConfig.payload = modelData.update_payloads[0].payload;
-                        console.log(`   ✅ Updated ${pathName} payload from generated data`);
-                    }
-                    
-                    // Update relationship payloads
-                    if (pathName.includes('_relationship_attach')) {
-                        const relationMatch = pathConfig.path.match(/\/(\w+)$/);
-                        if (relationMatch) {
-                            const relationName = relationMatch[1];
-                            if (modelData.relationship_payloads[relationName]) {
-                                pathConfig.payload = modelData.relationship_payloads[relationName].attach;
-                                console.log(`   ✅ Updated ${pathName} payload with relationship data`);
-                            }
-                        }
-                    }
-                    
-                    if (pathName.includes('_relationship_detach')) {
-                        const relationMatch = pathConfig.path.match(/\/(\w+)$/);
-                        if (relationMatch) {
-                            const relationName = relationMatch[1];
-                            if (modelData.relationship_payloads[relationName]) {
-                                pathConfig.payload = modelData.relationship_payloads[relationName].detach;
-                                console.log(`   ✅ Updated ${pathName} payload with relationship data`);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Add metadata about generation
-            paths._metadata = {
-                ...paths._metadata,
-                payloads_generated_at: new Date().toISOString(),
-                payloads_source: 'Generated from schemas by generate-seed-sql.js'
-            };
-            
-            // Write updated paths file
-            fs.writeFileSync(pathsFile, JSON.stringify(paths, null, 2), 'utf8');
-            console.log(`   ✅ Updated ${pathsFile} with generated payloads`);
+        const pathGeneratorScript = '.github/testing-framework/scripts/generate-integration-test-paths.js';
+        
+        if (fs.existsSync(pathGeneratorScript)) {
+            // Run the path generator script
+            const command = `node ${pathGeneratorScript} ${schemaDir} ${pathsFile}`;
+            console.log(`   Running: ${command}`);
+            execSync(command, { stdio: 'inherit' });
+            console.log(`   ✅ Generated complete ${pathsFile} from schemas`);
         } else {
-            console.log(`   ⚠️  ${pathsFile} not found, skipping path update`);
+            console.log(`   ⚠️  Path generator script not found: ${pathGeneratorScript}`);
+            console.log(`   Skipping integration test paths generation`);
         }
     } catch (error) {
-        console.log(`   ⚠️  Could not update paths file: ${error.message}`);
+        console.log(`   ⚠️  Could not generate paths file: ${error.message}`);
     }
     
     console.log('');

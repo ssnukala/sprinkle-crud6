@@ -1,7 +1,7 @@
 {
-  "description": "Integration test paths configuration for CRUD6 sprinkle (auto-generated from models)",
-  "generated_from": "integration-test-models.json",
-  "generated_at": "2025-12-12T04:00:00.000Z",
+  "description": "Integration test paths configuration for CRUD6 sprinkle (auto-generated from schemas)",
+  "generated_from": "Schema JSON files",
+  "generated_at": "2025-12-14T19:20:24.339Z",
   "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
   "config": {
     "base_url": "http://localhost:8080",
@@ -9,38 +9,1698 @@
       "username": "admin",
       "password": "admin123"
     },
-    "timeout": {
-      "api": 10,
-      "frontend": 30
-    },
-    "security": {
-      "csrf": {
-        "enabled": true,
-        "note": "CSRF protection is enforced by UserFrosting 6's CsrfGuardMiddleware. For PHPUnit tests, CSRF is automatically handled by the testing framework. For manual testing, include X-CSRF-Token header.",
-        "testing": {
-          "phpunit": "Automatically handled by createJsonRequest() method",
-          "manual": "Include X-CSRF-Token header with valid token"
-        },
-        "applies_to": [
-          "POST",
-          "PUT",
-          "DELETE"
-        ]
-      },
-      "authentication": {
-        "enabled": true,
-        "note": "All endpoints require authentication via AuthGuard middleware",
-        "applies_to": "all_endpoints"
-      },
-      "permissions": {
-        "enabled": true,
-        "note": "Operations require specific permissions as documented in model definitions"
-      }
+    "api_patterns": {
+      "main_api": "/api/crud6/",
+      "schema_api": "/api/crud6/{model}/schema"
     }
   },
   "paths": {
     "authenticated": {
       "api": {
+        "activities_schema": {
+          "method": "GET",
+          "path": "/api/crud6/activities/schema",
+          "description": "Get activities schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "activities_list": {
+          "method": "GET",
+          "path": "/api/crud6/activities",
+          "description": "Get list of activities via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "activities_create": {
+          "method": "POST",
+          "path": "/api/crud6/activities",
+          "description": "Create new activity via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_activity",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "ip_address": "Name100",
+            "user_id": 1,
+            "type": "Name100",
+            "description": "Test description for description - Record 100"
+          }
+        },
+        "activities_single": {
+          "method": "GET",
+          "path": "/api/crud6/activities/100",
+          "description": "Get single activity by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "activities_update": {
+          "method": "PUT",
+          "path": "/api/crud6/activities/100",
+          "description": "Update activity via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_activity_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "ip_address": "Name100",
+            "user_id": 1
+          }
+        },
+        "activities_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/activities/100",
+          "description": "Delete activity via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_activity"
+        },
+        "categories_schema": {
+          "method": "GET",
+          "path": "/api/crud6/categories/schema",
+          "description": "Get categories schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "categories_list": {
+          "method": "GET",
+          "path": "/api/crud6/categories",
+          "description": "Get list of categories via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "categories_create": {
+          "method": "POST",
+          "path": "/api/crud6/categories",
+          "description": "Create new category via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_category",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "name": "Name100",
+            "slug": "Name100",
+            "description": "Test description for description - Record 100",
+            "icon": "Name100",
+            "is_active": true
+          }
+        },
+        "categories_single": {
+          "method": "GET",
+          "path": "/api/crud6/categories/100",
+          "description": "Get single category by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "categories_update": {
+          "method": "PUT",
+          "path": "/api/crud6/categories/100",
+          "description": "Update category via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_category_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "name": "Name100",
+            "slug": "Name100"
+          }
+        },
+        "categories_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/categories/100",
+          "description": "Delete category via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_category"
+        },
+        "contacts_schema": {
+          "method": "GET",
+          "path": "/api/crud6/contacts/schema",
+          "description": "Get contacts schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "contacts_list": {
+          "method": "GET",
+          "path": "/api/crud6/contacts",
+          "description": "Get list of contacts via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "contacts_create": {
+          "method": "POST",
+          "path": "/api/crud6/contacts",
+          "description": "Create new contact via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_contact",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "first_name": "Name100",
+            "last_name": "Name100",
+            "email": "test100@example.com",
+            "address": "Name100",
+            "city": "Name100",
+            "state": "Name100",
+            "company": "Name100",
+            "position": "Name100",
+            "is_active": true,
+            "newsletter_opt_in": false
+          }
+        },
+        "contacts_single": {
+          "method": "GET",
+          "path": "/api/crud6/contacts/100",
+          "description": "Get single contact by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "contacts_update": {
+          "method": "PUT",
+          "path": "/api/crud6/contacts/100",
+          "description": "Update contact via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_contact_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "first_name": "Name100",
+            "last_name": "Name100"
+          }
+        },
+        "contacts_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/contacts/100",
+          "description": "Delete contact via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_contact"
+        },
+        "contacts_update_field_email": {
+          "method": "PUT",
+          "path": "/api/crud6/contacts/100/email",
+          "description": "Update single field for contact",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_contact_field",
+          "note": "Field name and value depend on model schema"
+        },
+        "tasks_schema": {
+          "method": "GET",
+          "path": "/api/crud6/tasks/schema",
+          "description": "Get tasks schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "tasks_list": {
+          "method": "GET",
+          "path": "/api/crud6/tasks",
+          "description": "Get list of tasks via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "tasks_create": {
+          "method": "POST",
+          "path": "/api/crud6/tasks",
+          "description": "Create new task via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_task",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "title": "Name100",
+            "description": "Test description for description - Record 100",
+            "status": "pending",
+            "priority": "medium",
+            "assigned_to": "Name100"
+          }
+        },
+        "tasks_single": {
+          "method": "GET",
+          "path": "/api/crud6/tasks/100",
+          "description": "Get single task by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "tasks_update": {
+          "method": "PUT",
+          "path": "/api/crud6/tasks/100",
+          "description": "Update task via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_task_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "title": "Name100",
+            "description": "Test description for description - Record 100"
+          }
+        },
+        "tasks_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/tasks/100",
+          "description": "Delete task via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_task"
+        },
+        "groups_schema": {
+          "method": "GET",
+          "path": "/api/crud6/groups/schema",
+          "description": "Get groups schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "groups_list": {
+          "method": "GET",
+          "path": "/api/crud6/groups",
+          "description": "Get list of groups via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "groups_create": {
+          "method": "POST",
+          "path": "/api/crud6/groups",
+          "description": "Create new group via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_group",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "description": "Test description for description - Record 100",
+            "icon": "fas fa-user"
+          }
+        },
+        "groups_single": {
+          "method": "GET",
+          "path": "/api/crud6/groups/100",
+          "description": "Get single group by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "groups_update": {
+          "method": "PUT",
+          "path": "/api/crud6/groups/100",
+          "description": "Update group via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_group_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100"
+          }
+        },
+        "groups_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/groups/100",
+          "description": "Delete group via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_group"
+        },
+        "groups_update_field_slug": {
+          "method": "PUT",
+          "path": "/api/crud6/groups/100/slug",
+          "description": "Update single field for group",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_group_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "slug": "test_slug_100"
+          }
+        },
+        "order_details_schema": {
+          "method": "GET",
+          "path": "/api/crud6/order_details/schema",
+          "description": "Get order_details schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "order_details_list": {
+          "method": "GET",
+          "path": "/api/crud6/order_details",
+          "description": "Get list of order_details via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "order_details_create": {
+          "method": "POST",
+          "path": "/api/crud6/order_details",
+          "description": "Create new order_detail via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_order_detail",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "order_id": 1,
+            "line_number": 1,
+            "sku": "Name100",
+            "product_name": "Name100",
+            "quantity": 1,
+            "notes": "Test description for notes - Record 100"
+          }
+        },
+        "order_details_single": {
+          "method": "GET",
+          "path": "/api/crud6/order_details/100",
+          "description": "Get single order_detail by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "order_details_update": {
+          "method": "PUT",
+          "path": "/api/crud6/order_details/100",
+          "description": "Update order_detail via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_order_detail_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "order_id": 1,
+            "line_number": 1
+          }
+        },
+        "order_details_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/order_details/100",
+          "description": "Delete order_detail via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_order_detail"
+        },
+        "orders_schema": {
+          "method": "GET",
+          "path": "/api/crud6/orders/schema",
+          "description": "Get orders schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "orders_list": {
+          "method": "GET",
+          "path": "/api/crud6/orders",
+          "description": "Get list of orders via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "orders_create": {
+          "method": "POST",
+          "path": "/api/crud6/orders",
+          "description": "Create new order via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_order",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "order_number": "test_order_number_100",
+            "customer_name": "Name100",
+            "customer_email": "test100@example.com",
+            "payment_status": "pending",
+            "notes": "Test description for notes - Record 100"
+          }
+        },
+        "orders_single": {
+          "method": "GET",
+          "path": "/api/crud6/orders/100",
+          "description": "Get single order by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "orders_update": {
+          "method": "PUT",
+          "path": "/api/crud6/orders/100",
+          "description": "Update order via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_order_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "order_number": "test_order_number_100",
+            "customer_name": "Name100"
+          }
+        },
+        "orders_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/orders/100",
+          "description": "Delete order via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_order"
+        },
+        "orders_update_field_order_number": {
+          "method": "PUT",
+          "path": "/api/crud6/orders/100/order_number",
+          "description": "Update single field for order",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_order_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "order_number": "test_order_number_100"
+          }
+        },
+        "permissions_schema": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/schema",
+          "description": "Get permissions schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "permissions_list": {
+          "method": "GET",
+          "path": "/api/crud6/permissions",
+          "description": "Get list of permissions via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "permissions_create": {
+          "method": "POST",
+          "path": "/api/crud6/permissions",
+          "description": "Create new permission via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_permission",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "conditions": "",
+            "description": "Test description for description - Record 100"
+          }
+        },
+        "permissions_single": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/100",
+          "description": "Get single permission by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "permissions_update": {
+          "method": "PUT",
+          "path": "/api/crud6/permissions/100",
+          "description": "Update permission via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_permission_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100"
+          }
+        },
+        "permissions_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/permissions/100",
+          "description": "Delete permission via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_permission"
+        },
+        "permissions_update_field_slug": {
+          "method": "PUT",
+          "path": "/api/crud6/permissions/100/slug",
+          "description": "Update single field for permission",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_permission_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "slug": "test_slug_100"
+          }
+        },
+        "permissions_relationship_attach_roles": {
+          "method": "POST",
+          "path": "/api/crud6/permissions/100/roles",
+          "description": "Attach related items to permission (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema",
+          "payload": {
+            "ids": [
+              100,
+              101
+            ]
+          }
+        },
+        "permissions_relationship_detach_roles": {
+          "method": "DELETE",
+          "path": "/api/crud6/permissions/100/roles",
+          "description": "Detach related items from permission (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "permissions_nested_relationship_roles": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/100/roles",
+          "description": "Get related items for permission (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "permissions_nested_relationship_users": {
+          "method": "GET",
+          "path": "/api/crud6/permissions/100/users",
+          "description": "Get related items for permission (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "product_categories_schema": {
+          "method": "GET",
+          "path": "/api/crud6/product_categories/schema",
+          "description": "Get product_categories schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "product_categories_list": {
+          "method": "GET",
+          "path": "/api/crud6/product_categories",
+          "description": "Get list of product_categories via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "product_categories_create": {
+          "method": "POST",
+          "path": "/api/crud6/product_categories",
+          "description": "Create new product_category via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_product_category",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "product_id": 1,
+            "category_id": 1
+          }
+        },
+        "product_categories_single": {
+          "method": "GET",
+          "path": "/api/crud6/product_categories/100",
+          "description": "Get single product_category by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "product_categories_update": {
+          "method": "PUT",
+          "path": "/api/crud6/product_categories/100",
+          "description": "Update product_category via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_product_category_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "product_id": 1,
+            "category_id": 1
+          }
+        },
+        "product_categories_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/product_categories/100",
+          "description": "Delete product_category via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_product_category"
+        },
+        "products_schema": {
+          "method": "GET",
+          "path": "/api/crud6/products/schema",
+          "description": "Get products schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "products_list": {
+          "method": "GET",
+          "path": "/api/crud6/products",
+          "description": "Get list of products via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "products_create": {
+          "method": "POST",
+          "path": "/api/crud6/products",
+          "description": "Create new product via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_product",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100",
+            "description": "Test description for description - Record 100",
+            "category_id": 1,
+            "tags": "Name100",
+            "is_active": true
+          }
+        },
+        "products_single": {
+          "method": "GET",
+          "path": "/api/crud6/products/100",
+          "description": "Get single product by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "products_update": {
+          "method": "PUT",
+          "path": "/api/crud6/products/100",
+          "description": "Update product via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_product_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100"
+          }
+        },
+        "products_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/products/100",
+          "description": "Delete product via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_product"
+        },
+        "products_update_field_sku": {
+          "method": "PUT",
+          "path": "/api/crud6/products/100/sku",
+          "description": "Update single field for product",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_product_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "sku": "test_sku_100"
+          }
+        },
+        "products_optimized_schema": {
+          "method": "GET",
+          "path": "/api/crud6/products_optimized/schema",
+          "description": "Get products_optimized schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "products_optimized_list": {
+          "method": "GET",
+          "path": "/api/crud6/products_optimized",
+          "description": "Get list of products_optimized via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "products_optimized_create": {
+          "method": "POST",
+          "path": "/api/crud6/products_optimized",
+          "description": "Create new products_optimized via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_products_optimized",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100",
+            "category_id": 1,
+            "description": "Test description for description - Record 100",
+            "tags": "Name100",
+            "is_active": true
+          }
+        },
+        "products_optimized_single": {
+          "method": "GET",
+          "path": "/api/crud6/products_optimized/100",
+          "description": "Get single products_optimized by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "products_optimized_update": {
+          "method": "PUT",
+          "path": "/api/crud6/products_optimized/100",
+          "description": "Update products_optimized via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_optimized_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100"
+          }
+        },
+        "products_optimized_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/products_optimized/100",
+          "description": "Delete products_optimized via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_products_optimized"
+        },
+        "products_optimized_update_field_sku": {
+          "method": "PUT",
+          "path": "/api/crud6/products_optimized/100/sku",
+          "description": "Update single field for products_optimized",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_optimized_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "sku": "test_sku_100"
+          }
+        },
+        "products_with_template_file_schema": {
+          "method": "GET",
+          "path": "/api/crud6/products_with_template_file/schema",
+          "description": "Get products_with_template_file schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "products_with_template_file_list": {
+          "method": "GET",
+          "path": "/api/crud6/products_with_template_file",
+          "description": "Get list of products_with_template_file via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "products_with_template_file_create": {
+          "method": "POST",
+          "path": "/api/crud6/products_with_template_file",
+          "description": "Create new products_with_template_file via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_products_with_template_file",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100",
+            "description": "Test description for description - Record 100",
+            "category_id": 1,
+            "tags": "Name100",
+            "is_active": true
+          }
+        },
+        "products_with_template_file_single": {
+          "method": "GET",
+          "path": "/api/crud6/products_with_template_file/100",
+          "description": "Get single products_with_template_file by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "products_with_template_file_update": {
+          "method": "PUT",
+          "path": "/api/crud6/products_with_template_file/100",
+          "description": "Update products_with_template_file via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_with_template_file_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100"
+          }
+        },
+        "products_with_template_file_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/products_with_template_file/100",
+          "description": "Delete products_with_template_file via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_products_with_template_file"
+        },
+        "products_with_template_file_update_field_sku": {
+          "method": "PUT",
+          "path": "/api/crud6/products_with_template_file/100/sku",
+          "description": "Update single field for products_with_template_file",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_with_template_file_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "sku": "test_sku_100"
+          }
+        },
+        "products_custom_action_duplicate_product": {
+          "method": "POST",
+          "path": "/api/crud6/products/100/a/duplicate_product",
+          "description": "Execute custom action on product",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema",
+          "payload": {}
+        },
+        "products_custom_action_publish_product": {
+          "method": "POST",
+          "path": "/api/crud6/products/100/a/publish_product",
+          "description": "Execute custom action on product",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema",
+          "payload": {}
+        },
+        "products_custom_action_archive_product": {
+          "method": "POST",
+          "path": "/api/crud6/products/100/a/archive_product",
+          "description": "Execute custom action on product",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema",
+          "payload": {}
+        },
+        "products_custom_action_bulk_import": {
+          "method": "POST",
+          "path": "/api/crud6/products/100/a/bulk_import",
+          "description": "Execute custom action on product",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema",
+          "payload": {}
+        },
+        "products_custom_action_export_products": {
+          "method": "POST",
+          "path": "/api/crud6/products/100/a/export_products",
+          "description": "Execute custom action on product",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              404,
+              500
+            ]
+          },
+          "note": "Action keys defined in model schema",
+          "payload": {}
+        },
+        "products_vue_template_schema": {
+          "method": "GET",
+          "path": "/api/crud6/products_vue_template/schema",
+          "description": "Get products_vue_template schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "products_vue_template_list": {
+          "method": "GET",
+          "path": "/api/crud6/products_vue_template",
+          "description": "Get list of products_vue_template via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "products_vue_template_create": {
+          "method": "POST",
+          "path": "/api/crud6/products_vue_template",
+          "description": "Create new products_vue_template via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_products_vue_template",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100",
+            "description": "Test description for description - Record 100",
+            "category_id": 1,
+            "tags": "Name100",
+            "is_active": true
+          }
+        },
+        "products_vue_template_single": {
+          "method": "GET",
+          "path": "/api/crud6/products_vue_template/100",
+          "description": "Get single products_vue_template by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "products_vue_template_update": {
+          "method": "PUT",
+          "path": "/api/crud6/products_vue_template/100",
+          "description": "Update products_vue_template via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_vue_template_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "name": "Name100",
+            "sku": "test_sku_100"
+          }
+        },
+        "products_vue_template_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/products_vue_template/100",
+          "description": "Delete products_vue_template via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_products_vue_template"
+        },
+        "products_vue_template_update_field_sku": {
+          "method": "PUT",
+          "path": "/api/crud6/products_vue_template/100/sku",
+          "description": "Update single field for products_vue_template",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_products_vue_template_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "sku": "test_sku_100"
+          }
+        },
+        "roles_schema": {
+          "method": "GET",
+          "path": "/api/crud6/roles/schema",
+          "description": "Get roles schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "roles_list": {
+          "method": "GET",
+          "path": "/api/crud6/roles",
+          "description": "Get list of roles via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "roles_create": {
+          "method": "POST",
+          "path": "/api/crud6/roles",
+          "description": "Create new role via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_role",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100",
+            "description": "Test description for description - Record 100"
+          }
+        },
+        "roles_single": {
+          "method": "GET",
+          "path": "/api/crud6/roles/100",
+          "description": "Get single role by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "roles_update": {
+          "method": "PUT",
+          "path": "/api/crud6/roles/100",
+          "description": "Update role via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_role_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "slug": "test_slug_100",
+            "name": "Name100"
+          }
+        },
+        "roles_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/roles/100",
+          "description": "Delete role via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_role"
+        },
+        "roles_update_field_slug": {
+          "method": "PUT",
+          "path": "/api/crud6/roles/100/slug",
+          "description": "Update single field for role",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_role_field",
+          "note": "Field name and value depend on model schema",
+          "payload": {
+            "slug": "test_slug_100"
+          }
+        },
+        "roles_relationship_attach_permissions": {
+          "method": "POST",
+          "path": "/api/crud6/roles/100/permissions",
+          "description": "Attach related items to role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema",
+          "payload": {
+            "ids": [
+              100,
+              101
+            ]
+          }
+        },
+        "roles_relationship_detach_permissions": {
+          "method": "DELETE",
+          "path": "/api/crud6/roles/100/permissions",
+          "description": "Detach related items from role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "roles_nested_relationship_permissions": {
+          "method": "GET",
+          "path": "/api/crud6/roles/100/permissions",
+          "description": "Get related items for role (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "roles_relationship_attach_users": {
+          "method": "POST",
+          "path": "/api/crud6/roles/100/users",
+          "description": "Attach related items to role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema",
+          "payload": {
+            "ids": [
+              100,
+              101
+            ]
+          }
+        },
+        "roles_relationship_detach_users": {
+          "method": "DELETE",
+          "path": "/api/crud6/roles/100/users",
+          "description": "Detach related items from role (many-to-many)",
+          "expected_status": 200,
+          "validation": {
+            "type": "status_any",
+            "acceptable_statuses": [
+              200,
+              403
+            ]
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "roles_nested_relationship_users": {
+          "method": "GET",
+          "path": "/api/crud6/roles/100/users",
+          "description": "Get related items for role (nested endpoint)",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "note": "Relation names defined in model schema"
+        },
+        "order_schema": {
+          "method": "GET",
+          "path": "/api/crud6/order/schema",
+          "description": "Get order schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "order_list": {
+          "method": "GET",
+          "path": "/api/crud6/order",
+          "description": "Get list of order via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "order_create": {
+          "method": "POST",
+          "path": "/api/crud6/order",
+          "description": "Create new order via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_order",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "order_number": "Name100",
+            "status": "pending",
+            "notes": "Test description for notes - Record 100"
+          }
+        },
+        "order_single": {
+          "method": "GET",
+          "path": "/api/crud6/order/100",
+          "description": "Get single order by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "order_update": {
+          "method": "PUT",
+          "path": "/api/crud6/order/100",
+          "description": "Update order via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_order_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "order_number": "Name100",
+            "status": "pending"
+          }
+        },
+        "order_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/order/100",
+          "description": "Delete order via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_order"
+        },
+        "order_legacy_schema": {
+          "method": "GET",
+          "path": "/api/crud6/order_legacy/schema",
+          "description": "Get order_legacy schema definition",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": [
+              "model",
+              "fields"
+            ]
+          }
+        },
+        "order_legacy_list": {
+          "method": "GET",
+          "path": "/api/crud6/order_legacy",
+          "description": "Get list of order_legacy via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{list_validation_keys}"
+          }
+        },
+        "order_legacy_create": {
+          "method": "POST",
+          "path": "/api/crud6/order_legacy",
+          "description": "Create new order_legacy via CRUD6 API",
+          "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201
+          ],
+          "validation": {
+            "type": "json",
+            "contains": [
+              "data",
+              "id"
+            ]
+          },
+          "requires_permission": "create_order_legacy",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "payload": {
+            "order_number": "Name100"
+          }
+        },
+        "order_legacy_single": {
+          "method": "GET",
+          "path": "/api/crud6/order_legacy/100",
+          "description": "Get single order_legacy by ID via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json",
+            "contains": "{api_validation_keys}"
+          }
+        },
+        "order_legacy_update": {
+          "method": "PUT",
+          "path": "/api/crud6/order_legacy/100",
+          "description": "Update order_legacy via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_order_legacy_field",
+          "note": "Requires payload with fields to update",
+          "payload": {
+            "order_number": "Name100"
+          }
+        },
+        "order_legacy_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/order_legacy/100",
+          "description": "Delete order_legacy via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_order_legacy"
+        },
         "users_schema": {
           "method": "GET",
           "path": "/api/crud6/users/schema",
@@ -61,9 +1721,7 @@
           "expected_status": 200,
           "validation": {
             "type": "json",
-            "contains": [
-              "rows"
-            ]
+            "contains": "{list_validation_keys}"
           }
         },
         "users_create": {
@@ -103,11 +1761,7 @@
           "expected_status": 200,
           "validation": {
             "type": "json",
-            "contains": [
-              "id",
-              "user_name",
-              "email"
-            ]
+            "contains": "{api_validation_keys}"
           }
         },
         "users_update": {
@@ -125,6 +1779,16 @@
             "first_name": "Name100"
           }
         },
+        "users_delete": {
+          "method": "DELETE",
+          "path": "/api/crud6/users/100",
+          "description": "Delete user via CRUD6 API",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "delete_user"
+        },
         "users_update_field_user_name": {
           "method": "PUT",
           "path": "/api/crud6/users/100/user_name",
@@ -134,10 +1798,21 @@
             "type": "json"
           },
           "requires_permission": "update_user_field",
-          "note": "Field name and value depend on model schema (field='user_name')",
+          "note": "Field name and value depend on model schema",
           "payload": {
-            "user_name": "apitest"
+            "user_name": "test_user_name_100"
           }
+        },
+        "users_update_field_email": {
+          "method": "PUT",
+          "path": "/api/crud6/users/100/email",
+          "description": "Update single field for user",
+          "expected_status": 200,
+          "validation": {
+            "type": "json"
+          },
+          "requires_permission": "update_user_field",
+          "note": "Field name and value depend on model schema"
         },
         "users_custom_action_toggle_enabled": {
           "method": "POST",
@@ -152,7 +1827,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='toggle_enabled')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_custom_action_toggle_verified": {
@@ -168,7 +1843,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='toggle_verified')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_custom_action_reset_password": {
@@ -184,7 +1859,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='reset_password')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_custom_action_password_action": {
@@ -200,7 +1875,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='password_action')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_custom_action_disable_user": {
@@ -216,7 +1891,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='disable_user')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_custom_action_enable_user": {
@@ -232,7 +1907,7 @@
               500
             ]
           },
-          "note": "Action keys defined in model schema (actionKey='enable_user')",
+          "note": "Action keys defined in model schema",
           "payload": {}
         },
         "users_relationship_attach_roles": {
@@ -247,30 +1922,11 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='roles')",
+          "note": "Relation names defined in model schema",
           "payload": {
             "ids": [
               100,
               101
-            ]
-          }
-        },
-        "users_relationship_attach_permissions": {
-          "method": "POST",
-          "path": "/api/crud6/users/100/permissions",
-          "description": "Attach related items to user (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='permissions')",
-          "payload": {
-            "permissions_ids": [
-              1
             ]
           }
         },
@@ -286,26 +1942,7 @@
               403
             ]
           },
-          "note": "Relation names defined in model schema (relation='roles')",
-          "payload": {
-            "ids": [
-              101
-            ]
-          }
-        },
-        "users_relationship_detach_permissions": {
-          "method": "DELETE",
-          "path": "/api/crud6/users/100/permissions",
-          "description": "Detach related items from user (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='permissions')"
+          "note": "Relation names defined in model schema"
         },
         "users_nested_relationship_roles": {
           "method": "GET",
@@ -315,7 +1952,7 @@
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema (relation='roles')"
+          "note": "Relation names defined in model schema"
         },
         "users_nested_relationship_permissions": {
           "method": "GET",
@@ -325,1170 +1962,14 @@
           "validation": {
             "type": "json"
           },
-          "note": "Relation names defined in model schema (relation='permissions')"
-        },
-        "users_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/users/100",
-          "description": "Delete user via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "delete_user"
-        },
-        "groups_schema": {
-          "method": "GET",
-          "path": "/api/crud6/groups/schema",
-          "description": "Get groups schema definition",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "model",
-              "fields"
-            ]
-          }
-        },
-        "groups_list": {
-          "method": "GET",
-          "path": "/api/crud6/groups",
-          "description": "Get list of groups via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "rows"
-            ]
-          }
-        },
-        "groups_create": {
-          "method": "POST",
-          "path": "/api/crud6/groups",
-          "description": "Create new group via CRUD6 API",
-          "expected_status": 200,
-          "acceptable_statuses": [
-            200,
-            201
-          ],
-          "validation": {
-            "type": "json",
-            "contains": [
-              "data",
-              "id"
-            ]
-          },
-          "requires_permission": "create_group",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100",
-            "description": "Test description for description - Record 100",
-            "icon": "fas fa-user"
-          }
-        },
-        "groups_single": {
-          "method": "GET",
-          "path": "/api/crud6/groups/100",
-          "description": "Get single group by ID via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "id",
-              "slug",
-              "name"
-            ]
-          }
-        },
-        "groups_update": {
-          "method": "PUT",
-          "path": "/api/crud6/groups/100",
-          "description": "Update group via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_group_field",
-          "note": "Requires payload with fields to update",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100"
-          }
-        },
-        "groups_update_field_slug": {
-          "method": "PUT",
-          "path": "/api/crud6/groups/100/slug",
-          "description": "Update single field for group",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_group_field",
-          "note": "Field name and value depend on model schema (field='slug')",
-          "payload": {
-            "slug": "api_test_group"
-          }
-        },
-        "groups_relationship_attach_users": {
-          "method": "POST",
-          "path": "/api/crud6/groups/100/users",
-          "description": "Attach related items to group (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')",
-          "payload": {
-            "users_ids": [
-              1
-            ]
-          }
-        },
-        "groups_relationship_detach_users": {
-          "method": "DELETE",
-          "path": "/api/crud6/groups/100/users",
-          "description": "Detach related items from group (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')"
-        },
-        "groups_nested_relationship_users": {
-          "method": "GET",
-          "path": "/api/crud6/groups/100/users",
-          "description": "Get related items for group (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema (relation='users')"
-        },
-        "groups_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/groups/100",
-          "description": "Delete group via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "delete_group"
-        },
-        "roles_schema": {
-          "method": "GET",
-          "path": "/api/crud6/roles/schema",
-          "description": "Get roles schema definition",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "model",
-              "fields"
-            ]
-          }
-        },
-        "roles_list": {
-          "method": "GET",
-          "path": "/api/crud6/roles",
-          "description": "Get list of roles via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "rows"
-            ]
-          }
-        },
-        "roles_create": {
-          "method": "POST",
-          "path": "/api/crud6/roles",
-          "description": "Create new role via CRUD6 API",
-          "expected_status": 200,
-          "acceptable_statuses": [
-            200,
-            201
-          ],
-          "validation": {
-            "type": "json",
-            "contains": [
-              "data",
-              "id"
-            ]
-          },
-          "requires_permission": "create_role",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100",
-            "description": "Test description for description - Record 100",
-            "permission_ids": "option1,option2"
-          }
-        },
-        "roles_single": {
-          "method": "GET",
-          "path": "/api/crud6/roles/100",
-          "description": "Get single role by ID via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "id",
-              "slug",
-              "name"
-            ]
-          }
-        },
-        "roles_update": {
-          "method": "PUT",
-          "path": "/api/crud6/roles/100",
-          "description": "Update role via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_role_field",
-          "note": "Requires payload with fields to update",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100"
-          }
-        },
-        "roles_update_field_slug": {
-          "method": "PUT",
-          "path": "/api/crud6/roles/100/slug",
-          "description": "Update single field for role",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_role_field",
-          "note": "Field name and value depend on model schema (field='slug')",
-          "payload": {
-            "slug": "api_test_role"
-          }
-        },
-        "roles_relationship_attach_permissions": {
-          "method": "POST",
-          "path": "/api/crud6/roles/100/permissions",
-          "description": "Attach related items to role (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='permissions')",
-          "payload": {
-            "ids": [
-              100,
-              101
-            ]
-          }
-        },
-        "roles_relationship_attach_users": {
-          "method": "POST",
-          "path": "/api/crud6/roles/100/users",
-          "description": "Attach related items to role (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')",
-          "payload": {
-            "ids": [
-              100,
-              101
-            ]
-          }
-        },
-        "roles_relationship_detach_permissions": {
-          "method": "DELETE",
-          "path": "/api/crud6/roles/100/permissions",
-          "description": "Detach related items from role (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='permissions')",
-          "payload": {
-            "ids": [
-              101
-            ]
-          }
-        },
-        "roles_relationship_detach_users": {
-          "method": "DELETE",
-          "path": "/api/crud6/roles/100/users",
-          "description": "Detach related items from role (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')",
-          "payload": {
-            "ids": [
-              101
-            ]
-          }
-        },
-        "roles_nested_relationship_permissions": {
-          "method": "GET",
-          "path": "/api/crud6/roles/100/permissions",
-          "description": "Get related items for role (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema (relation='permissions')"
-        },
-        "roles_nested_relationship_users": {
-          "method": "GET",
-          "path": "/api/crud6/roles/100/users",
-          "description": "Get related items for role (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema (relation='users')"
-        },
-        "roles_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/roles/100",
-          "description": "Delete role via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "delete_role"
-        },
-        "permissions_schema": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/schema",
-          "description": "Get permissions schema definition",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "model",
-              "fields"
-            ]
-          }
-        },
-        "permissions_list": {
-          "method": "GET",
-          "path": "/api/crud6/permissions",
-          "description": "Get list of permissions via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "rows"
-            ]
-          }
-        },
-        "permissions_create": {
-          "method": "POST",
-          "path": "/api/crud6/permissions",
-          "description": "Create new permission via CRUD6 API",
-          "expected_status": 200,
-          "acceptable_statuses": [
-            200,
-            201
-          ],
-          "validation": {
-            "type": "json",
-            "contains": [
-              "data",
-              "id"
-            ]
-          },
-          "requires_permission": "create_permission",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100",
-            "conditions": "",
-            "description": "Test description for description - Record 100"
-          }
-        },
-        "permissions_single": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/100",
-          "description": "Get single permission by ID via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "id",
-              "slug",
-              "name"
-            ]
-          }
-        },
-        "permissions_update": {
-          "method": "PUT",
-          "path": "/api/crud6/permissions/100",
-          "description": "Update permission via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_permission_field",
-          "note": "Requires payload with fields to update",
-          "payload": {
-            "slug": "test_slug_100",
-            "name": "Name100"
-          }
-        },
-        "permissions_update_field_slug": {
-          "method": "PUT",
-          "path": "/api/crud6/permissions/100/slug",
-          "description": "Update single field for permission",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_permission_field",
-          "note": "Field name and value depend on model schema (field='slug')",
-          "payload": {
-            "slug": "api_test_permission"
-          }
-        },
-        "permissions_relationship_attach_roles": {
-          "method": "POST",
-          "path": "/api/crud6/permissions/100/roles",
-          "description": "Attach related items to permission (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='roles')",
-          "payload": {
-            "ids": [
-              100,
-              101
-            ]
-          }
-        },
-        "permissions_relationship_attach_users": {
-          "method": "POST",
-          "path": "/api/crud6/permissions/100/users",
-          "description": "Attach related items to permission (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')",
-          "payload": {
-            "users_ids": [
-              1
-            ]
-          }
-        },
-        "permissions_relationship_detach_roles": {
-          "method": "DELETE",
-          "path": "/api/crud6/permissions/100/roles",
-          "description": "Detach related items from permission (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='roles')",
-          "payload": {
-            "ids": [
-              101
-            ]
-          }
-        },
-        "permissions_relationship_detach_users": {
-          "method": "DELETE",
-          "path": "/api/crud6/permissions/100/users",
-          "description": "Detach related items from permission (many-to-many)",
-          "expected_status": 200,
-          "validation": {
-            "type": "status_any",
-            "acceptable_statuses": [
-              200,
-              403
-            ]
-          },
-          "note": "Relation names defined in model schema (relation='users')"
-        },
-        "permissions_nested_relationship_roles": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/100/roles",
-          "description": "Get related items for permission (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema (relation='roles')"
-        },
-        "permissions_nested_relationship_users": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/100/users",
-          "description": "Get related items for permission (nested endpoint)",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "note": "Relation names defined in model schema (relation='users')"
-        },
-        "permissions_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/permissions/100",
-          "description": "Delete permission via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "delete_permission"
-        },
-        "activities_schema": {
-          "method": "GET",
-          "path": "/api/crud6/activities/schema",
-          "description": "Get activities schema definition",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "model",
-              "fields"
-            ]
-          }
-        },
-        "activities_list": {
-          "method": "GET",
-          "path": "/api/crud6/activities",
-          "description": "Get list of activities via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "rows"
-            ]
-          }
-        },
-        "activities_create": {
-          "method": "POST",
-          "path": "/api/crud6/activities",
-          "description": "Create new activity via CRUD6 API",
-          "expected_status": 200,
-          "acceptable_statuses": [
-            200,
-            201
-          ],
-          "validation": {
-            "type": "json",
-            "contains": [
-              "data",
-              "id"
-            ]
-          },
-          "requires_permission": "create_activity",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
-          "payload": {
-            "ip_address": "192.168.100.200",
-            "user_id": 100,
-            "type": "type_b",
-            "occurred_at": "2024-01-100 12:00:00",
-            "description": "Test description for description - Record 100"
-          }
-        },
-        "activities_single": {
-          "method": "GET",
-          "path": "/api/crud6/activities/100",
-          "description": "Get single activity by ID via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json",
-            "contains": [
-              "id",
-              "type"
-            ]
-          }
-        },
-        "activities_update": {
-          "method": "PUT",
-          "path": "/api/crud6/activities/100",
-          "description": "Update activity via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_activity_field",
-          "note": "Requires payload with fields to update",
-          "payload": {
-            "ip_address": "192.168.100.200",
-            "user_id": 100
-          }
-        },
-        "activities_update_field_ip_address": {
-          "method": "PUT",
-          "path": "/api/crud6/activities/100/ip_address",
-          "description": "Update single field for activity",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "update_activity_field",
-          "note": "Field name and value depend on model schema (field='ip_address')",
-          "payload": {
-            "ip_address": "test_value_1765411722943"
-          }
-        },
-        "activities_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/activities/100",
-          "description": "Delete activity via CRUD6 API",
-          "expected_status": 200,
-          "validation": {
-            "type": "json"
-          },
-          "requires_permission": "delete_activity"
+          "note": "Relation names defined in model schema"
         }
       },
-      "frontend": {
-        "users_list": {
-          "path": "/crud6/users",
-          "description": "users list page",
-          "screenshot": true,
-          "screenshot_name": "users_list"
-        },
-        "users_detail": {
-          "path": "/crud6/users/100",
-          "description": "Single user detail page",
-          "screenshot": true,
-          "screenshot_name": "user_detail"
-        },
-        "groups_list": {
-          "path": "/crud6/groups",
-          "description": "groups list page",
-          "screenshot": true,
-          "screenshot_name": "groups_list"
-        },
-        "groups_detail": {
-          "path": "/crud6/groups/100",
-          "description": "Single group detail page",
-          "screenshot": true,
-          "screenshot_name": "group_detail"
-        },
-        "roles_list": {
-          "path": "/crud6/roles",
-          "description": "roles list page",
-          "screenshot": true,
-          "screenshot_name": "roles_list"
-        },
-        "roles_detail": {
-          "path": "/crud6/roles/100",
-          "description": "Single role detail page",
-          "screenshot": true,
-          "screenshot_name": "role_detail"
-        },
-        "permissions_list": {
-          "path": "/crud6/permissions",
-          "description": "permissions list page",
-          "screenshot": true,
-          "screenshot_name": "permissions_list"
-        },
-        "permissions_detail": {
-          "path": "/crud6/permissions/100",
-          "description": "Single permission detail page",
-          "screenshot": true,
-          "screenshot_name": "permission_detail"
-        },
-        "activities_list": {
-          "path": "/crud6/activities",
-          "description": "activities list page",
-          "screenshot": true,
-          "screenshot_name": "activities_list"
-        },
-        "activities_detail": {
-          "path": "/crud6/activities/100",
-          "description": "Single activity detail page",
-          "screenshot": true,
-          "screenshot_name": "activity_detail"
-        }
-      }
+      "frontend": {}
     },
     "unauthenticated": {
-      "api": {
-        "users_schema": {
-          "method": "GET",
-          "path": "/api/crud6/users/schema",
-          "description": "Attempt to access users schema without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "users_list": {
-          "method": "GET",
-          "path": "/api/crud6/users",
-          "description": "Attempt to access users list without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "users_create": {
-          "method": "POST",
-          "path": "/api/crud6/users",
-          "description": "Attempt to create user without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "user_name": "apitest",
-            "first_name": "API",
-            "last_name": "Test",
-            "email": "apitest@example.com",
-            "password": "TestPassword123"
-          }
-        },
-        "users_single": {
-          "method": "GET",
-          "path": "/api/crud6/users/100",
-          "description": "Attempt to access single user without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "users_update": {
-          "method": "PUT",
-          "path": "/api/crud6/users/100",
-          "description": "Attempt to update user without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "user_name": "apitest"
-          }
-        },
-        "users_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/users/100",
-          "description": "Attempt to delete user without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "groups_schema": {
-          "method": "GET",
-          "path": "/api/crud6/groups/schema",
-          "description": "Attempt to access groups schema without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "groups_list": {
-          "method": "GET",
-          "path": "/api/crud6/groups",
-          "description": "Attempt to access groups list without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "groups_create": {
-          "method": "POST",
-          "path": "/api/crud6/groups",
-          "description": "Attempt to create group without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_group",
-            "name": "API Test Group",
-            "description": "Group created via API test",
-            "icon": "fa-users"
-          }
-        },
-        "groups_single": {
-          "method": "GET",
-          "path": "/api/crud6/groups/100",
-          "description": "Attempt to access single group without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "groups_update": {
-          "method": "PUT",
-          "path": "/api/crud6/groups/100",
-          "description": "Attempt to update group without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_group"
-          }
-        },
-        "groups_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/groups/100",
-          "description": "Attempt to delete group without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "roles_schema": {
-          "method": "GET",
-          "path": "/api/crud6/roles/schema",
-          "description": "Attempt to access roles schema without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "roles_list": {
-          "method": "GET",
-          "path": "/api/crud6/roles",
-          "description": "Attempt to access roles list without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "roles_create": {
-          "method": "POST",
-          "path": "/api/crud6/roles",
-          "description": "Attempt to create role without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_role",
-            "name": "API Test Role",
-            "description": "Role created via API test"
-          }
-        },
-        "roles_single": {
-          "method": "GET",
-          "path": "/api/crud6/roles/100",
-          "description": "Attempt to access single role without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "roles_update": {
-          "method": "PUT",
-          "path": "/api/crud6/roles/100",
-          "description": "Attempt to update role without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_role"
-          }
-        },
-        "roles_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/roles/100",
-          "description": "Attempt to delete role without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "permissions_schema": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/schema",
-          "description": "Attempt to access permissions schema without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "permissions_list": {
-          "method": "GET",
-          "path": "/api/crud6/permissions",
-          "description": "Attempt to access permissions list without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "permissions_create": {
-          "method": "POST",
-          "path": "/api/crud6/permissions",
-          "description": "Attempt to create permission without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_permission",
-            "name": "API Test Permission",
-            "description": "Permission created via API test"
-          }
-        },
-        "permissions_single": {
-          "method": "GET",
-          "path": "/api/crud6/permissions/100",
-          "description": "Attempt to access single permission without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "permissions_update": {
-          "method": "PUT",
-          "path": "/api/crud6/permissions/100",
-          "description": "Attempt to update permission without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "slug": "api_test_permission"
-          }
-        },
-        "permissions_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/permissions/100",
-          "description": "Attempt to delete permission without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "activities_schema": {
-          "method": "GET",
-          "path": "/api/crud6/activities/schema",
-          "description": "Attempt to access activities schema without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "activities_list": {
-          "method": "GET",
-          "path": "/api/crud6/activities",
-          "description": "Attempt to access activities list without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "activities_create": {
-          "method": "POST",
-          "path": "/api/crud6/activities",
-          "description": "Attempt to create activity without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "user_id": 2,
-            "type": "test_activity",
-            "occurred_at": "2024-01-01 12:00:00",
-            "description": "Activity created via API test"
-          }
-        },
-        "activities_single": {
-          "method": "GET",
-          "path": "/api/crud6/activities/100",
-          "description": "Attempt to access single activity without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        },
-        "activities_update": {
-          "method": "PUT",
-          "path": "/api/crud6/activities/100",
-          "description": "Attempt to update activity without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          },
-          "payload": {
-            "type": "test_activity"
-          }
-        },
-        "activities_delete": {
-          "method": "DELETE",
-          "path": "/api/crud6/activities/100",
-          "description": "Attempt to delete activity without authentication",
-          "expected_status": 401,
-          "validation": {
-            "type": "status_only"
-          }
-        }
-      },
-      "frontend": {
-        "users_list": {
-          "path": "/crud6/users",
-          "description": "Attempt to access users list page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "users_detail": {
-          "path": "/crud6/users/100",
-          "description": "Attempt to access user detail page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "groups_list": {
-          "path": "/crud6/groups",
-          "description": "Attempt to access groups list page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "groups_detail": {
-          "path": "/crud6/groups/100",
-          "description": "Attempt to access group detail page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "roles_list": {
-          "path": "/crud6/roles",
-          "description": "Attempt to access roles list page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "roles_detail": {
-          "path": "/crud6/roles/100",
-          "description": "Attempt to access role detail page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "permissions_list": {
-          "path": "/crud6/permissions",
-          "description": "Attempt to access permissions list page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "permissions_detail": {
-          "path": "/crud6/permissions/100",
-          "description": "Attempt to access permission detail page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "activities_list": {
-          "path": "/crud6/activities",
-          "description": "Attempt to access activities list page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        },
-        "activities_detail": {
-          "path": "/crud6/activities/100",
-          "description": "Attempt to access activity detail page without authentication (should redirect to login)",
-          "expected_status": 200,
-          "validation": {
-            "type": "redirect_to_login",
-            "contains": [
-              "/account/sign-in",
-              "login"
-            ]
-          }
-        }
-      }
+      "api": {},
+      "frontend": {}
     }
-  },
-  "_metadata": {
-    "payloads_generated_at": "2025-12-14T18:54:11.366Z",
-    "payloads_source": "Generated from schemas by generate-seed-sql.js"
   }
 }

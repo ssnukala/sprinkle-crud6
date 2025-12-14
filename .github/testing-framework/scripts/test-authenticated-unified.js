@@ -151,17 +151,17 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
         const apiLogEntries = []; // Collect API call logs for artifact
 
         /**
-         * Get CSRF tokens from the page
-         * UserFrosting 6 uses a dual-token CSRF protection with csrf_name and csrf_value
-         * Returns an object with {name: string, value: string} or null if not found
+         * Helper function to extract CSRF tokens from the current page (UserFrosting 6 format)
+         * UserFrosting 6 uses TWO meta tags for CSRF: csrf_name and csrf_value
+         * @param {Page} page - Playwright page object
+         * @returns {Promise<{name: string, value: string}|null>} CSRF tokens or null if not found
          */
-        async function getCsrfTokens() {
+        async function extractCsrfTokensFromPage(page) {
             try {
-                // Try to get CSRF tokens from meta tags on current page
-                let tokens = await page.evaluate(() => {
+                const tokens = await page.evaluate(() => {
                     const nameTag = document.querySelector('meta[name="csrf_name"]');
                     const valueTag = document.querySelector('meta[name="csrf_value"]');
-                    
+
                     if (nameTag && valueTag) {
                         return {
                             name: nameTag.getAttribute('content'),
@@ -170,42 +170,99 @@ async function testAuthenticatedUnified(configFile, baseUrlOverride, usernameOve
                     }
                     return null;
                 });
-                
-                if (tokens && tokens.name && tokens.value) {
-                    return tokens;
-                }
-                
-                // If no tokens on current page, navigate to dashboard to get them
-                console.log('   ⚠️  No CSRF tokens on current page, navigating to dashboard...');
-                await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 10000 });
-                
-                // Try again to get tokens from dashboard page
-                tokens = await page.evaluate(() => {
-                    const nameTag = document.querySelector('meta[name="csrf_name"]');
-                    const valueTag = document.querySelector('meta[name="csrf_value"]');
-                    
-                    if (nameTag && valueTag) {
-                        return {
-                            name: nameTag.getAttribute('content'),
-                            value: valueTag.getAttribute('content')
-                        };
-                    }
-                    return null;
-                });
-                
-                if (tokens && tokens.name && tokens.value) {
-                    console.log('   ✅ CSRF tokens retrieved from dashboard page');
-                    console.log(`      Token name: ${tokens.name}`);
-                    console.log(`      Token value length: ${tokens.value.length} chars`);
-                    return tokens;
-                }
-                
-                console.log('   ⚠️  Could not find CSRF token meta tags (csrf_name and csrf_value)');
-                return null;
+                return tokens;
             } catch (error) {
-                console.log('   ⚠️  Could not retrieve CSRF tokens:', error.message);
                 return null;
             }
+        }
+
+        /**
+         * Validate CSRF tokens structure
+         * @param {object|null} tokens - Tokens object with name and value
+         * @returns {boolean} True if tokens are valid
+         */
+        function isValidCsrfTokens(tokens) {
+            return tokens !== null && 
+                   tokens !== undefined && 
+                   typeof tokens.name === 'string' && 
+                   tokens.name.length > 0 &&
+                   typeof tokens.value === 'string' && 
+                   tokens.value.length > 0;
+        }
+
+        /**
+         * Get CSRF tokens from the current page or by navigating to known pages
+         * UserFrosting 6 uses a dual-token CSRF protection with csrf_name and csrf_value
+         * Tries multiple strategies to ensure CSRF tokens are obtained
+         *
+         * @param {Page} page - Playwright page object
+         * @param {string} baseUrl - Base URL of the application
+         * @returns {Promise<{name: string, value: string}|null>} CSRF tokens or null if not found after all attempts
+         */
+        async function getCsrfTokens() {
+            console.log('🔐 Attempting to load CSRF tokens (UserFrosting 6 format)...');
+            console.log('   Looking for meta tags: csrf_name and csrf_value');
+
+            // Strategy 1: Try to get tokens from current page first (most efficient)
+            try {
+                console.log('   📍 Strategy 1: Checking current page for CSRF tokens...');
+                const tokensFromCurrentPage = await extractCsrfTokensFromPage(page);
+
+                if (isValidCsrfTokens(tokensFromCurrentPage)) {
+                    console.log(`   ✅ CSRF tokens found on current page`);
+                    console.log(`   Token name: ${tokensFromCurrentPage.name}`);
+                    console.log(`   Token value length: ${tokensFromCurrentPage.value.length} chars`);
+                    return tokensFromCurrentPage;
+                } else {
+                    console.log('   ⚠️  No CSRF tokens on current page, trying next strategy...');
+                }
+            } catch (error) {
+                console.log(`   ⚠️  Error checking current page: ${error.message}`);
+            }
+
+            // Strategy 2: Navigate to dashboard page (most likely to have CSRF tokens after login)
+            try {
+                console.log('   📍 Strategy 2: Navigating to dashboard page...');
+                await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+                const tokensFromDashboard = await extractCsrfTokensFromPage(page);
+
+                if (isValidCsrfTokens(tokensFromDashboard)) {
+                    console.log(`   ✅ CSRF tokens found on dashboard page`);
+                    console.log(`   Token name: ${tokensFromDashboard.name}`);
+                    console.log(`   Token value length: ${tokensFromDashboard.value.length} chars`);
+                    return tokensFromDashboard;
+                } else {
+                    console.log('   ⚠️  No CSRF tokens on dashboard, trying next strategy...');
+                }
+            } catch (error) {
+                console.log(`   ⚠️  Error accessing dashboard: ${error.message}`);
+            }
+
+            // Strategy 3: Navigate to home page as fallback
+            try {
+                console.log('   📍 Strategy 3: Navigating to home page (/)...');
+                await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 15000 });
+
+                const tokensFromHome = await extractCsrfTokensFromPage(page);
+
+                if (isValidCsrfTokens(tokensFromHome)) {
+                    console.log(`   ✅ CSRF tokens found on home page`);
+                    console.log(`   Token name: ${tokensFromHome.name}`);
+                    console.log(`   Token value length: ${tokensFromHome.value.length} chars`);
+                    return tokensFromHome;
+                } else {
+                    console.log('   ⚠️  No CSRF tokens on home page either');
+                }
+            } catch (error) {
+                console.log(`   ⚠️  Error accessing home page: ${error.message}`);
+            }
+
+            // All strategies failed
+            console.error('   ❌ CRITICAL: Could not find CSRF tokens after trying all strategies!');
+            console.error('   ❌ Expected meta tags: <meta name="csrf_name"> and <meta name="csrf_value">');
+            console.error('   ❌ API tests requiring POST/PUT/DELETE will fail!');
+            return null;
         }
 
         for (const apiPath of apiPaths) {

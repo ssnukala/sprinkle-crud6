@@ -54,6 +54,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         parent::setUp();
         $this->refreshDatabase();
+        $this->seedDatabase();
         $this->startApiTracking();
     }
 

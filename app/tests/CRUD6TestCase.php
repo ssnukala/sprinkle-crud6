@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests;
 
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
+use UserFrosting\Sprinkle\CRUD6\Testing\WithDatabaseSeeds;
 use UserFrosting\Testing\TestCase;
 
 /**
@@ -21,6 +22,9 @@ use UserFrosting\Testing\TestCase;
  * Base test case with CRUD6 as main sprinkle.
  * All CRUD6 tests should extend this class to ensure proper sprinkle loading.
  * 
+ * This base class includes WithDatabaseSeeds trait to ensure tests that use
+ * RefreshDatabase also get necessary seed data automatically.
+ * 
  * Follows UserFrosting 6 testing patterns from sprinkle-admin and sprinkle-account.
  * 
  * @see \UserFrosting\Sprinkle\Admin\Tests\AdminTestCase
@@ -28,6 +32,8 @@ use UserFrosting\Testing\TestCase;
  */
 class CRUD6TestCase extends TestCase
 {
+    use WithDatabaseSeeds;
+
     /**
      * @var string Main sprinkle class for CRUD6 tests
      */

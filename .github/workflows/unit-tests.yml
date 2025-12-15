@@ -1,0 +1,93 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: userfrosting_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    
+    name: PHPUnit Tests (PHP ${{ matrix.php-version }})
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, gd, pdo_mysql
+          coverage: none
+      
+      - name: Validate composer.json
+        run: composer validate --strict
+      
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            php-${{ matrix.php-version }}-composer-
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      
+      - name: Create test database configuration
+        run: |
+          mkdir -p app/config
+          cat > app/config/.env.test << 'EOF'
+          UF_MODE=testing
+          DB_DRIVER=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_NAME=userfrosting_test
+          DB_USER=root
+          DB_PASSWORD=root
+          SMTP_HOST=localhost
+          SMTP_USER=
+          SMTP_PASSWORD=
+          EOF
+      
+      - name: Run PHPUnit tests
+        run: |
+          echo "========================================="
+          echo "Running PHPUnit Tests"
+          echo "========================================="
+          echo ""
+          echo "PHP Version: ${{ matrix.php-version }}"
+          echo "Test Directory: app/tests/"
+          echo "PHPUnit Config: phpunit.xml"
+          echo ""
+          vendor/bin/phpunit --testdox --colors=always
+      
+      - name: Check test coverage (PHP 8.1 only)
+        if: matrix.php-version == '8.1'
+        run: |
+          echo "========================================="
+          echo "Test Coverage Summary"
+          echo "========================================="
+          vendor/bin/phpunit --coverage-text --colors=never | tail -20

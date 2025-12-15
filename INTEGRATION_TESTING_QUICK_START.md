@@ -26,10 +26,12 @@ The workflow automatically:
 - Runs migrations
 - Creates admin user
 - Generates and loads test data via SQL
-- Runs API tests
+- Runs API tests (authentication, authorization, CRUD operations)
+- Tests frontend routes and pages
 - Takes screenshots
-- **Runs PHPUnit tests** (NEW: validates all sprinkle functionality)
 - Validates everything works
+
+> **Note**: PHPUnit unit tests are run separately in the "Unit Tests" workflow to ensure proper test environment and autoloading.
 
 ## Manual Local Testing
 

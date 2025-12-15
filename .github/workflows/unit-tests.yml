@@ -72,6 +72,12 @@ jobs:
           SMTP_PASSWORD=
           EOF
       
+      - name: Create runtime directories
+        run: |
+          mkdir -p app/storage/sessions app/storage/cache app/storage/logs
+          mkdir -p app/logs app/cache app/sessions
+          chmod -R 777 app/storage app/sessions app/logs app/cache
+      
       - name: Run PHPUnit tests
         run: |
           echo "========================================="

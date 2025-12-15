@@ -14,13 +14,13 @@ namespace UserFrosting\Sprinkle\CRUD6\Tests\Sprunje;
 
 use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
-use UserFrosting\Sprinkle\CRUD6\Testing\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**
  * Tests CRUD6Sprunje search functionality across multiple fields.
  */
-class CRUD6SprunjeSearchTest extends AdminTestCase
+class CRUD6SprunjeSearchTest extends CRUD6TestCase
 {
     use RefreshDatabase;
 

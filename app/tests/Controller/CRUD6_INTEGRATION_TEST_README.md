@@ -244,7 +244,7 @@ Ensure:
 When adding new tests:
 
 1. Follow existing test patterns
-2. Use `AdminTestCase` as base class
+2. Use `CRUD6TestCase` as base class
 3. Use `RefreshDatabase` trait for clean database state
 4. Use `WithTestUser` trait for authentication testing
 5. Document expected behavior clearly

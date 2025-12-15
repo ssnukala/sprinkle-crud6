@@ -23,7 +23,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * 
  * Usage in test class:
  * ```php
- * class MyIntegrationTest extends AdminTestCase
+ * class MyIntegrationTest extends CRUD6TestCase
  * {
  *     use TracksApiCalls;
  * 

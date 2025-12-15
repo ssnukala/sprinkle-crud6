@@ -61,12 +61,12 @@ The integration test workflow (`.github/workflows/integration-test.yml`) was att
 
 Features:
 - Runs on push/PR to main and develop branches
-- Matrix strategy for PHP 8.1, 8.2, 8.3
+- Tests on PHP 8.4 (current UserFrosting 6 version)
 - MySQL 8.0 service for database tests
 - Composer dependency caching
 - Creates test database configuration
 - Runs PHPUnit with proper autoloading from sprinkle root
-- Test coverage summary (PHP 8.1 only)
+- Test coverage summary
 
 #### 2. Removed PHPUnit from Integration Test
 **File**: `.github/workflows/integration-test.yml`
@@ -99,15 +99,15 @@ Changes:
 - Integration tests focus on end-to-end functionality
 - Clear separation makes debugging easier
 
-### 3. Multi-PHP Version Testing
-- Unit tests now run on PHP 8.1, 8.2, and 8.3
-- Ensures compatibility across PHP versions
-- Previous approach only tested with single PHP version
+### 3. Current PHP Version Testing
+- Unit tests now run on PHP 8.4 (current UserFrosting 6 version)
+- Ensures compatibility with UserFrosting 6 requirements
+- Tests on the version actually used in production
 
 ### 4. Test Coverage Reporting
 - Unit test workflow includes coverage summary
 - Helps identify untested code paths
-- Only runs on PHP 8.1 to save CI time
+- Runs with every test execution
 
 ## Verification
 

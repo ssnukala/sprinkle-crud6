@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.4']
     
     services:
       mysql:
@@ -84,8 +84,7 @@ jobs:
           echo ""
           vendor/bin/phpunit --testdox --colors=always
       
-      - name: Check test coverage (PHP 8.1 only)
-        if: matrix.php-version == '8.1'
+      - name: Check test coverage
         run: |
           echo "========================================="
           echo "Test Coverage Summary"

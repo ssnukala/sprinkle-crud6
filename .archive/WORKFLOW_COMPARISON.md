@@ -26,7 +26,7 @@
 ```
 .github/workflows/
 ├── unit-tests.yml (NEW)
-│   ├── Setup PHP (8.1, 8.2, 8.3)
+│   ├── Setup PHP 8.4
 │   ├── Setup MySQL
 │   ├── Install Dependencies (from sprinkle root)
 │   ├── ✅ Run PHPUnit Tests (WORKS - proper autoloading)
@@ -59,7 +59,7 @@
 - **Context**: Sprinkle root directory
 - **Dependencies**: Full dev dependencies
 - **Database**: MySQL test database
-- **PHP Versions**: 8.1, 8.2, 8.3
+- **PHP Version**: 8.4 (current UserFrosting 6 version)
 - **Coverage**: Code coverage reporting
 
 **Test Types**:
@@ -76,7 +76,7 @@
 - **Context**: UserFrosting installation
 - **Dependencies**: Production dependencies only
 - **Database**: MySQL with seeded data
-- **PHP Version**: 8.1 (single version)
+- **PHP Version**: 8.4 (current UserFrosting 6 version)
 - **Browser**: Playwright/Chromium
 
 **Test Types**:
@@ -93,7 +93,7 @@
 |--------|--------|-------|
 | **Test Execution** | Mixed (unit + integration) | Separated (clear purpose) |
 | **Autoloading** | ❌ Broken for unit tests | ✅ Working properly |
-| **PHP Versions** | Single (8.1) | Multiple (8.1, 8.2, 8.3) |
+| **PHP Version** | 8.1 | 8.4 (current UF6 version) |
 | **Test Focus** | Unclear | Clear separation |
 | **Debugging** | Difficult (mixed concerns) | Easy (isolated failures) |
 | **CI Speed** | Slower (everything together) | Faster (parallel execution) |
@@ -107,7 +107,7 @@ Trigger (push/PR)
     ↓
 Checkout Code
     ↓
-Setup PHP (Matrix: 8.1, 8.2, 8.3)
+Setup PHP 8.4
     ↓
 Setup MySQL Service
     ↓
@@ -117,9 +117,9 @@ Create Test DB Config
     ↓
 Run PHPUnit Tests ✅
     ↓
-Generate Coverage (PHP 8.1 only)
+Generate Coverage Report
     ↓
-Complete (3-5 minutes per PHP version)
+Complete (3-5 minutes)
 ```
 
 ### Integration Test Workflow
@@ -167,10 +167,8 @@ Both workflows can run in parallel:
 
 ```
 Git Push → GitHub Actions
-    ├── Unit Tests (3-5 min × 3 PHP versions)
-    │   ├── PHP 8.1 ✅
-    │   ├── PHP 8.2 ✅
-    │   └── PHP 8.3 ✅
+    ├── Unit Tests (3-5 min)
+    │   └── PHP 8.4 ✅
     │
     └── Integration Tests (15-20 min)
         ├── Setup ✅
@@ -184,7 +182,7 @@ vs. Previous: ~25-30 minutes (sequential with failures)
 ## Success Criteria
 
 ### Unit Tests Pass When:
-- ✅ All PHPUnit tests pass on PHP 8.1, 8.2, 8.3
+- ✅ All PHPUnit tests pass on PHP 8.4
 - ✅ No autoloader errors
 - ✅ Test coverage report generated
 - ✅ All test classes found and loaded

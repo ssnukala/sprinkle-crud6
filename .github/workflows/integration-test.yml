@@ -18,7 +18,7 @@ env:
   FRAMEWORK_REPO: ssnukala/sprinkle-crud6
   FRAMEWORK_BRANCH: main
   UF_VERSION: "^6.0-beta"
-  PHP_VERSION: "8.1"
+  PHP_VERSION: "8.4"
   NODE_VERSION: "20"
 
 jobs:

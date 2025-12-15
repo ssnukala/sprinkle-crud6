@@ -43,6 +43,7 @@ class DefaultSeedsTest extends CRUD6TestCase
         $this->refreshDatabase();
         
         // Seed Account sprinkle data first (simulating what bakery seed does)
+        // Using inherited seedAccountData() from WithDatabaseSeeds trait
         $this->seedAccountData();
     }
 
@@ -165,35 +166,6 @@ class DefaultSeedsTest extends CRUD6TestCase
         $this->assertEquals($initialPermissionCount, $finalPermissionCount);
     }
 
-    /**
-     * Seed Account sprinkle base data.
-     * 
-     * This simulates running Account sprinkle seeds before CRUD6 seeds.
-     * In real integration tests, this would be done via bakery seed commands.
-     */
-    protected function seedAccountData(): void
-    {
-        // Create a default group (simulating DefaultGroups seed)
-        Group::create([
-            'slug' => 'terran',
-            'name' => 'Terran',
-            'description' => 'The terrans are the default user group.',
-            'icon' => 'fa fa-user',
-        ]);
-        
-        // Create site-admin role (simulating DefaultRoles seed)
-        Role::create([
-            'slug' => 'site-admin',
-            'name' => 'Site Administrator',
-            'description' => 'This role is meant for "site administrators".',
-        ]);
-        
-        // Create some base permissions (simulating DefaultPermissions seed)
-        Permission::create([
-            'slug' => 'uri_users',
-            'name' => 'View users',
-            'conditions' => 'always()',
-            'description' => 'View the user listing page.',
-        ]);
-    }
+    // Note: seedAccountData() is now inherited from WithDatabaseSeeds trait
+    // No need to redefine it here
 }

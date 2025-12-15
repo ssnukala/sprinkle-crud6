@@ -47,6 +47,7 @@ class CRUD6GroupsIntegrationTest extends CRUD6TestCase
     {
         parent::setUp();
         $this->refreshDatabase();
+        $this->seedDatabase();
         $this->startApiTracking();
     }
 

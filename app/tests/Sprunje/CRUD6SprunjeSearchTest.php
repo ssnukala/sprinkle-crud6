@@ -30,6 +30,7 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
 
         // Set database up.
         $this->refreshDatabase();
+        $this->seedDatabase();
         $this->createData();
     }
 

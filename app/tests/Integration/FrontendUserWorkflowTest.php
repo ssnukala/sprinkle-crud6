@@ -402,7 +402,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/groups', $groupPayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         // Verify created
         $group = Group::where('slug', 'test-group')->first();
@@ -439,7 +439,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/roles', $rolePayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         $responseData = json_decode((string) $response->getBody(), true);
         $roleId = $responseData['data']['id'];

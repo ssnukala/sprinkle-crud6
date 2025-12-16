@@ -39,7 +39,15 @@ class CRUD6TestCase extends TestCase
      */
     protected string $mainSprinkle = CRUD6::class;
 
-
+    /**
+     * Get the name of the test.
+     * 
+     * @return string Test name
+     */
+    public function getName(): string
+    {
+        return static::class . '::' . $this->name();
+    }
 
     /**
      * Verify database connection is working correctly.

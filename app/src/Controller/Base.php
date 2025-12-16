@@ -73,6 +73,16 @@ abstract class Base
     }
 
     /**
+     * Check if debug mode is enabled.
+     * 
+     * @return bool True if debug mode is enabled
+     */
+    public function isDebugMode(): bool
+    {
+        return $this->debugMode;
+    }
+
+    /**
      * Log debug message if debug mode is enabled.
      * 
      * Wrapper around DebugLoggerInterface that only logs when debug_mode config is true.

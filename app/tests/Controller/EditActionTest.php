@@ -101,7 +101,7 @@ class EditActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         /** @var User */
         $testUser = User::factory()->create([
@@ -131,7 +131,7 @@ class EditActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         /** @var User */
         $testUser = User::factory()->create([
@@ -164,7 +164,7 @@ class EditActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users/999999');
         $response = $this->handleRequestWithTracking($request);

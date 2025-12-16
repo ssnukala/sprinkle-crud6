@@ -7,7 +7,7 @@
     "table": "permissions",
     "primary_key": "id",
     "permissions": {
-        "read": "uri_permissions",
+        "read": "uri_crud6",
         "create": "create_permission",
         "update": "update_permission",
         "delete": "delete_permission"

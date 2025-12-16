@@ -2,9 +2,30 @@
 
 This directory contains historical documentation, fix summaries, and issue-specific guides that were created during the development of the CRUD6 sprinkle. These documents are preserved for future reference but have been moved out of the repository root to keep it clean and organized.
 
+## 🔥 Latest: CI Failure Analysis (December 2025)
+
+**Workflow Run #20283052726** - Comprehensive analysis of 114 test failures:
+
+### Quick Start
+- **👔 Project Leads**: Read [`EXECUTIVE_SUMMARY.md`](EXECUTIVE_SUMMARY.md) (5 min)
+- **👨‍💻 Developers**: Read [`CI_FAILURE_QUICK_REFERENCE.md`](CI_FAILURE_QUICK_REFERENCE.md) (10 min)
+- **🔬 Deep Dive**: Read [`CI_RUN_20283052726_FAILURE_ANALYSIS.md`](CI_RUN_20283052726_FAILURE_ANALYSIS.md) (30 min)
+- **🎨 Visual Guide**: Read [`ERROR_FLOW_DIAGRAM.md`](ERROR_FLOW_DIAGRAM.md) (10 min)
+
+**Key Finding**: 3 critical issues cause 40+ failures. Fix in 4-6 hours → 96% pass rate.
+
+### CI Analysis Documents (Dec 16, 2025)
+- **EXECUTIVE_SUMMARY.md** (7KB) - Decision framework, ROI analysis, Go/No-Go criteria
+- **ERROR_FLOW_DIAGRAM.md** (12KB) - Visual diagrams, error cascade, priority matrix
+- **CI_RUN_20283052726_FAILURE_ANALYSIS.md** (15KB) - Complete technical breakdown
+- **CI_FAILURE_QUICK_REFERENCE.md** (6.5KB) - Developer quick start guide
+
+---
+
 ## What's in this Archive?
 
 This archive contains:
+- **CI Failure Analysis**: Comprehensive analysis of test failures with fix guidance (Latest!)
 - **Fix Summaries**: Detailed documentation of bug fixes and their implementations
 - **Visual Comparisons**: Before/after comparisons showing code changes
 - **Issue-Specific Guides**: Documentation created for specific GitHub issues and PRs

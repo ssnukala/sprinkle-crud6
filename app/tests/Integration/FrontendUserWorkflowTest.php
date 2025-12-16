@@ -83,7 +83,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'create_user']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'create_user']);
 
         // Step 1: Admin navigates to users page - loads list
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
@@ -112,7 +112,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userPayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         // Step 6 & 7: Verify user was created with relationships
         $createdUser = User::where('user_name', 'frontend_user')->first();
@@ -143,7 +143,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'update_user_field']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'update_user_field']);
 
         /** @var User */
         $targetUser = User::factory()->create([
@@ -198,7 +198,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'update_user_field']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'update_user_field']);
 
         /** @var User */
         $targetUser = User::factory()->create([
@@ -252,7 +252,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'update_user_field', 'uri_roles']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'update_user_field', 'uri_crud6']);
 
         /** @var User */
         $targetUser = User::factory()->create();
@@ -301,7 +301,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'update_user_field']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'update_user_field']);
 
         /** @var User */
         $targetUser = User::factory()->create();
@@ -347,7 +347,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users', 'delete_user']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'delete_user']);
 
         /** @var User */
         $targetUser = User::factory()->create([
@@ -385,7 +385,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_groups', 'create_group']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'create_group']);
 
         // Load schema
         $request = $this->createJsonRequest('GET', '/api/crud6/groups/schema');
@@ -402,7 +402,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/groups', $groupPayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         // Verify created
         $group = Group::where('slug', 'test-group')->first();
@@ -418,7 +418,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_roles', 'create_role', 'update_role_field', 'uri_permissions']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'create_role', 'update_role_field', 'uri_crud6']);
 
         /** @var Permission */
         $perm1 = Permission::factory()->create();
@@ -439,7 +439,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/roles', $rolePayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         $responseData = json_decode((string) $response->getBody(), true);
         $roleId = $responseData['data']['id'];
@@ -468,7 +468,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_users']);
+        $this->actAsUser($admin, permissions: ['uri_crud6']);
 
         // Create test users
         User::factory()->create(['user_name' => 'alice', 'first_name' => 'Alice']);
@@ -511,7 +511,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
     {
         /** @var User */
         $admin = User::factory()->create();
-        $this->actAsUser($admin, permissions: ['uri_roles', 'uri_users', 'uri_permissions']);
+        $this->actAsUser($admin, permissions: ['uri_crud6', 'uri_crud6', 'uri_crud6']);
 
         /** @var Role */
         $role = Role::factory()->create(['name' => 'Test Role']);

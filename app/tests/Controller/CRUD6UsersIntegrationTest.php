@@ -134,7 +134,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create some test users
         User::factory()->count(3)->create();
@@ -196,7 +196,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         /** @var User */
         $testUser = User::factory()->create([
@@ -236,7 +236,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create request with method and url and fetch response
         $request = $this->createJsonRequest('GET', '/api/crud6/users/999999');

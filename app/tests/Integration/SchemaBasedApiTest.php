@@ -151,7 +151,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
         // Test 3: Authenticated with permission should succeed
         echo "\n  [3] Testing authenticated request with permission returns 200...\n";
-        $this->actAsUser($userNoPerms, permissions: ['uri_users']);
+        $this->actAsUser($userNoPerms, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);
@@ -163,7 +163,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Test 4: POST request follows same security pattern
         echo "\n  [4] Testing POST request security (create endpoint)...\n";
         $userNoCreatePerm = User::factory()->create();
-        $this->actAsUser($userNoCreatePerm, permissions: ['uri_users']); // Can read but not create
+        $this->actAsUser($userNoCreatePerm, permissions: ['uri_crud6']); // Can read but not create
 
         $userData = [
             'user_name' => 'securitytest',
@@ -219,7 +219,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
         // 2. Test List Endpoint with authentication
         echo "\n  [2] Testing list endpoint with authentication...\n";
-        $user = $this->testListEndpointWithAuth('users', 'uri_users');
+        $user = $this->testListEndpointWithAuth('users', 'uri_crud6');
 
         // 3. Test Create Endpoint with validation
         echo "\n  [3] Testing create endpoint with validation...\n";
@@ -596,7 +596,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Create authenticated user with permissions
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles', 'create_role', 'update_role_field', 'delete_role']);
+        $this->actAsUser($user, permissions: ['uri_crud6', 'create_role', 'update_role_field', 'delete_role']);
 
         // 1. Test Schema Endpoint
         echo "\n  [1] Testing roles schema endpoint...\n";
@@ -689,7 +689,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Create authenticated user with permissions
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_groups', 'create_group', 'update_group_field', 'delete_group']);
+        $this->actAsUser($user, permissions: ['uri_crud6', 'create_group', 'update_group_field', 'delete_group']);
 
         // 1. Test Schema Endpoint
         echo "\n  [1] Testing groups schema endpoint...\n";
@@ -777,7 +777,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Create authenticated user with permissions
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_permissions', 'create_permission', 'update_permission', 'delete_permission']);
+        $this->actAsUser($user, permissions: ['uri_crud6', 'create_permission', 'update_permission', 'delete_permission']);
 
         // 1. Test Schema Endpoint
         echo "\n  [1] Testing permissions schema endpoint...\n";

@@ -88,7 +88,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create test users
         User::factory()->count(15)->create();
@@ -118,7 +118,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create test users
         User::factory()->count(25)->create();
@@ -144,7 +144,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create users with specific names
         User::factory()->create(['user_name' => 'zebra']);
@@ -181,7 +181,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create users with specific attributes
         User::factory()->create([
@@ -214,7 +214,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create users with specific names
         User::factory()->create(['user_name' => 'searchable_user']);
@@ -238,7 +238,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Filter for impossible condition
         $request = $this->createJsonRequest('GET', '/api/crud6/users?filters[user_name]=nonexistent_user_xyz');
@@ -258,7 +258,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users?size=10&page=0');
         $response = $this->handleRequestWithTracking($request);
@@ -281,7 +281,7 @@ class SprunjeActionTest extends CRUD6TestCase
     {
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_users']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         User::factory()->create();
 

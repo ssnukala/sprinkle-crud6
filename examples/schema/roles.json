@@ -7,7 +7,7 @@
     "table": "roles",
     "primary_key": "id",
     "permissions": {
-        "read": "uri_roles",
+        "read": "uri_crud6",
         "create": "create_role",
         "update": "update_role_field",
         "delete": "delete_role"

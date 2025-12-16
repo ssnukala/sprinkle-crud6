@@ -125,16 +125,19 @@ class ApiAction extends Base
             $this->debugLog("CRUD6: Schema filtered for context '{$context}' - model: {$filteredSchema['model']}");
         }
 
-        $responseData = [
-            'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $modelDisplayName]),
-            'model' => $filteredSchema['model'],
-            'modelDisplayName' => $modelDisplayName,
-            'schema' => $filteredSchema,
-            'breadcrumb' => [
-                'modelTitle' => $filteredSchema['title'] ?? ucfirst($filteredSchema['model']),
-                'singularTitle' => $filteredSchema['singular_title'] ?? ($filteredSchema['title'] ?? ucfirst($filteredSchema['model']))
-            ]
-        ];
+        // Build response with schema fields at root level for direct access
+        // This allows frontend to access $response.table, $response.fields, etc.
+        $responseData = array_merge(
+            [
+                'message' => $this->translator->translate('CRUD6.API.SUCCESS', ['model' => $modelDisplayName]),
+                'modelDisplayName' => $modelDisplayName,
+                'breadcrumb' => [
+                    'modelTitle' => $filteredSchema['title'] ?? ucfirst($filteredSchema['model']),
+                    'singularTitle' => $filteredSchema['singular_title'] ?? ($filteredSchema['title'] ?? ucfirst($filteredSchema['model']))
+                ]
+            ],
+            $filteredSchema // Merge schema fields at root level
+        );
 
         $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
             'model' => $filteredSchema['model'],

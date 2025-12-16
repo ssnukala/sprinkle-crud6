@@ -17,15 +17,6 @@ use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\MigrationRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\CRUD6;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CatalogTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CategoryTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\CommerceRolesTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\ProductCatalogTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\SalesOrderLinesTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderTable;
-use UserFrosting\Sprinkle\CRUD6\Database\Migrations\v600\PurchaseOrderLinesTable;
 
 /**
  * Test CRUD6 sprinkle configuration.
@@ -63,47 +54,20 @@ class CRUD6Test extends TestCase
     }
 
     /**
-     * Test that getMigrations returns expected migration classes.
+     * Test that getMigrations returns empty array.
+     * 
+     * CRUD6 sprinkle does not define any migrations - it works with existing tables
+     * defined by JSON schemas. This is intentional design as CRUD6 is schema-driven
+     * and doesn't require its own database migrations.
      */
-    public function testGetMigrationsReturnsExpectedClasses(): void
+    public function testGetMigrationsReturnsEmptyArray(): void
     {
         $sprinkle = new CRUD6();
         $migrations = $sprinkle->getMigrations();
 
-        // Assert that we have migrations
+        // Assert that migrations is an empty array (CRUD6 has no migrations by design)
         $this->assertIsArray($migrations);
-        $this->assertNotEmpty($migrations);
-
-        // Assert that all expected migrations are present
-        $expectedMigrations = [
-            CategoryTable::class,
-            CatalogTable::class,
-            ProductTable::class,
-            ProductCatalogTable::class,
-            SalesOrderTable::class,
-            SalesOrderLinesTable::class,
-            PurchaseOrderTable::class,
-            PurchaseOrderLinesTable::class,
-            CommerceRolesTable::class,
-        ];
-
-        $this->assertEquals($expectedMigrations, $migrations);
-    }
-
-    /**
-     * Test that all migration classes exist and are valid.
-     */
-    public function testMigrationClassesExist(): void
-    {
-        $sprinkle = new CRUD6();
-        $migrations = $sprinkle->getMigrations();
-
-        foreach ($migrations as $migrationClass) {
-            $this->assertTrue(
-                class_exists($migrationClass),
-                "Migration class {$migrationClass} should exist"
-            );
-        }
+        $this->assertEmpty($migrations);
     }
 
     /**

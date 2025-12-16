@@ -116,6 +116,116 @@ jobs:
           echo "Contents of app/schema/crud6:"
           ls -la app/schema/crud6/
       
+      - name: Merge locale messages from examples
+        run: |
+          echo "========================================="
+          echo "Merging Locale Messages from Examples"
+          echo "========================================="
+          
+          # Create locale directory if it doesn't exist
+          mkdir -p app/locale/en_US
+          
+          # Check that source messages file exists
+          if [ ! -f "examples/locale/en_US/messages.php" ]; then
+            echo "❌ ERROR: Source messages file not found: examples/locale/en_US/messages.php"
+            exit 1
+          fi
+          
+          # Check if destination messages file already exists in sprinkle-crud6's app/locale
+          if [ -f "app/locale/en_US/messages.php" ]; then
+            echo "Found existing app/locale messages file, keeping it as base..."
+            cp "app/locale/en_US/messages.php" "app/locale/en_US/messages.php.bak"
+            echo "  ✅ Backed up: messages.php from app/locale"
+          fi
+          
+          # Now merge example messages (append model-specific translations)
+          echo ""
+          echo "Merging example messages (model-specific translations)..."
+          
+          # Create a PHP script to merge the message files
+          cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
+          <?php
+          /**
+           * Merge example messages with existing messages.php
+           * This adds model-specific translations for CRUD6 testing
+           */
+          
+          $examplesPath = $argv[1] ?? '';
+          $destPath = $argv[2] ?? '';
+          
+          if (empty($examplesPath) || empty($destPath)) {
+              echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
+              exit(1);
+          }
+          
+          // Load existing messages if they exist
+          $existingMessages = [];
+          if (file_exists($destPath)) {
+              $existingMessages = require $destPath;
+              echo "  Loaded existing messages from: $destPath\n";
+          }
+          
+          // Load example messages
+          if (!file_exists($examplesPath)) {
+              echo "  ❌ Examples messages file not found: $examplesPath\n";
+              exit(1);
+          }
+          $exampleMessages = require $examplesPath;
+          echo "  Loaded example messages from: $examplesPath\n";
+          
+          // Deep merge function
+          function deepMerge(array $base, array $override): array {
+              foreach ($override as $key => $value) {
+                  if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
+                      $base[$key] = deepMerge($base[$key], $value);
+                  } else {
+                      $base[$key] = $value;
+                  }
+              }
+              return $base;
+          }
+          
+          // Merge messages (example messages override existing)
+          $mergedMessages = deepMerge($existingMessages, $exampleMessages);
+          
+          // Generate the merged PHP file
+          $output = "<?php\n\n";
+          $output .= "/*\n";
+          $output .= " * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)\n";
+          $output .= " *\n";
+          $output .= " * @link      https://github.com/userfrosting/sprinkle-crud6\n";
+          $output .= " * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette\n";
+          $output .= " * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)\n";
+          $output .= " */\n\n";
+          $output .= "/**\n";
+          $output .= " * US English message token translations for the 'crud6' sprinkle.\n";
+          $output .= " * Merged from app/locale and examples/locale for unit testing.\n";
+          $output .= " *\n";
+          $output .= " * @author Alexander Weissman\n";
+          $output .= " */\n";
+          $output .= "return " . var_export($mergedMessages, true) . ";\n";
+          
+          // Write merged messages
+          file_put_contents($destPath, $output);
+          echo "  ✅ Merged messages written to: $destPath\n";
+          
+          // Verify the file is valid PHP
+          exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
+          if ($lintReturnCode !== 0) {
+              echo "  ❌ ERROR: Generated messages file has syntax errors!\n";
+              echo "  " . implode("\n  ", $lintOutput) . "\n";
+              exit(1);
+          }
+          
+          echo "  ✅ Merged messages file is valid PHP\n";
+          MERGE_SCRIPT
+          
+          # Run the merge script
+          php /tmp/merge-messages.php "examples/locale/en_US/messages.php" "app/locale/en_US/messages.php"
+          
+          echo ""
+          echo "✅ Locale messages merged successfully"
+      
       - name: Run PHPUnit tests
         run: |
           echo "========================================="

@@ -74,7 +74,8 @@ class CRUD6TestCase extends TestCase
         fwrite(STDERR, "DATABASE CONFIGURATION DEBUG\n");
         fwrite(STDERR, "========================================\n");
         fwrite(STDERR, "Test Class: " . get_class($this) . "\n");
-        fwrite(STDERR, "Test Method: " . $this->getName() . "\n");
+        // PHPUnit 10+ compatible: use name() method instead of getName()
+        fwrite(STDERR, "Test Method: " . $this->name() . "\n");
         foreach ($dbConfig as $key => $value) {
             fwrite(STDERR, sprintf("  %-15s = %s\n", $key, $value));
         }

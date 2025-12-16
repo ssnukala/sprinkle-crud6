@@ -167,7 +167,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         
         // Return cached schema if available and not forcing reload
         if (!force && hasSchema(model, context)) {
-            debugLog('[useCRUD6SchemaStore] ✅ Using CACHED schema - cacheKey:', cacheKey, '(NO API CALL)')
+            debugLog('[useCRUD6SchemaStore] ✅ Using cached schema - cacheKey:', cacheKey, '(NO API CALL)')
             return schemas.value[cacheKey] || null
         }
 

@@ -112,9 +112,12 @@ class SchemaServiceDebugModeTest extends TestCase
     }
 
     /**
-     * Test SchemaService debugLog falls back to error_log when logger is null
+     * Test SchemaService debugLog handles logger properly when debug mode is enabled
+     * 
+     * Note: SchemaService requires a valid DebugLoggerInterface - null is not allowed.
+     * This test verifies the logger is called when debug mode is enabled.
      */
-    public function testDebugLogFallsBackToErrorLogWhenLoggerIsNull(): void
+    public function testDebugLogCallsLoggerWhenDebugModeEnabled(): void
     {
         // Create mock config with debug_mode = true
         $config = $this->createMock(Config::class);
@@ -122,8 +125,14 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(true);
 
-        // Create SchemaService with all required dependencies, but null logger
-        $deps = $this->createMockDependencies($config, null);
+        // Create mock logger that SHOULD be called
+        $logger = $this->createMock(DebugLoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('debug')
+            ->with('Test message', ['test' => 'data']);
+
+        // Create SchemaService with all required dependencies
+        $deps = $this->createMockDependencies($config, $logger);
         $service = new class(...$deps) extends SchemaService {
             public function testDebugLog(string $message, array $context = []): void
             {
@@ -131,9 +140,7 @@ class SchemaServiceDebugModeTest extends TestCase
             }
         };
 
-        // Capture error_log output
-        // Note: This is tricky to test in unit tests, so we just verify it doesn't throw an exception
-        $this->expectNotToPerformAssertions();
+        // Test that debugLog calls logger when debug_mode is true
         $service->testDebugLog("Test message", ['test' => 'data']);
     }
 
@@ -147,7 +154,10 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(false);
 
-        $deps = $this->createMockDependencies($config, null);
+        // Create mock logger (required, cannot be null)
+        $logger = $this->createMock(DebugLoggerInterface::class);
+
+        $deps = $this->createMockDependencies($config, $logger);
         $service = new class(...$deps) extends SchemaService {
             public function testIsDebugMode(): bool
             {
@@ -168,7 +178,10 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(true);
 
-        $deps = $this->createMockDependencies($config, null);
+        // Create mock logger (required, cannot be null)
+        $logger = $this->createMock(DebugLoggerInterface::class);
+
+        $deps = $this->createMockDependencies($config, $logger);
         $service = new class(...$deps) extends SchemaService {
             public function testIsDebugMode(): bool
             {

@@ -7,7 +7,7 @@
     "table": "users",
     "primary_key": "id",
     "permissions": {
-        "read": "uri_users",
+        "read": "uri_crud6",
         "create": "create_user",
         "update": "update_user_field",
         "delete": "delete_user"

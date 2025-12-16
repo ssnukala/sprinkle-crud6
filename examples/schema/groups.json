@@ -7,7 +7,7 @@
     "table": "groups",
     "primary_key": "id",
     "permissions": {
-        "read": "uri_groups",
+        "read": "uri_crud6",
         "create": "create_group",
         "update": "update_group_field",
         "delete": "delete_group"

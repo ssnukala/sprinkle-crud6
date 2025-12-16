@@ -86,7 +86,7 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a role
         /** @var Role */
@@ -164,7 +164,7 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a role without any users
         /** @var Role */
@@ -218,7 +218,7 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a role
         /** @var Role */

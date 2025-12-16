@@ -141,7 +141,7 @@ class NestedEndpointsTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_permissions']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a permission
         /** @var Permission */
@@ -197,7 +197,7 @@ class NestedEndpointsTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a role
         /** @var Role */
@@ -266,7 +266,7 @@ class NestedEndpointsTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_permissions']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a permission
         /** @var Permission */
@@ -334,7 +334,7 @@ class NestedEndpointsTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $this->actAsUser($user, permissions: ['uri_roles']);
+        $this->actAsUser($user, permissions: ['uri_crud6']);
 
         // Create a role
         /** @var Role */

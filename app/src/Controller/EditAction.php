@@ -190,14 +190,16 @@ class EditAction extends Base
                 'record_data_keys' => array_keys($recordData),
             ]);
             
-            $responseData = [
-                'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $translatedModel]),
-                'model' => $crudSchema['model'],
-                'modelDisplayName' => $modelDisplayName,
-                'id' => $recordId,
-                'data' => $recordData,
-                'breadcrumb' => $breadcrumbName  // Pre-computed breadcrumb display name
-            ];
+            // Flatten response: merge record data at root level with metadata
+            $responseData = array_merge(
+                $recordData, // Record fields at root level (id, slug, name, etc.)
+                [
+                    'message' => $this->translator->translate('CRUD6.EDIT.SUCCESS', ['model' => $translatedModel]),
+                    'model' => $crudSchema['model'],
+                    'modelDisplayName' => $modelDisplayName,
+                    'breadcrumb' => $breadcrumbName  // Pre-computed breadcrumb display name
+                ]
+            );
             
             // Add details to response if loaded
             if (!empty($details)) {

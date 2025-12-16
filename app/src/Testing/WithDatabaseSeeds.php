@@ -52,8 +52,18 @@ trait WithDatabaseSeeds
      */
     protected function seedDatabase(): void
     {
-        $this->seedAccountData();
-        $this->seedCRUD6Data();
+        fwrite(STDERR, "\n[SEEDING DATABASE] Starting database seed process...\n");
+        
+        try {
+            $this->seedAccountData();
+            $this->seedCRUD6Data();
+            
+            fwrite(STDERR, "[SEEDING DATABASE] ✅ Database seeding completed successfully\n\n");
+        } catch (\Exception $e) {
+            fwrite(STDERR, "[SEEDING DATABASE] ❌ Error during seeding: " . $e->getMessage() . "\n");
+            fwrite(STDERR, "[SEEDING DATABASE] Stack trace: " . $e->getTraceAsString() . "\n\n");
+            throw $e;
+        }
     }
 
     /**
@@ -68,28 +78,33 @@ trait WithDatabaseSeeds
      */
     protected function seedAccountData(): void
     {
+        fwrite(STDERR, "  [SEED] Creating Account sprinkle base data...\n");
+        
         // Create a default group (simulating DefaultGroups seed)
-        Group::create([
+        $group = Group::create([
             'slug' => 'terran',
             'name' => 'Terran',
             'description' => 'The terrans are the default user group.',
             'icon' => 'fa fa-user',
         ]);
+        fwrite(STDERR, "  [SEED] ✓ Created default group: {$group->slug}\n");
         
         // Create site-admin role (simulating DefaultRoles seed)
-        Role::create([
+        $role = Role::create([
             'slug' => 'site-admin',
             'name' => 'Site Administrator',
             'description' => 'This role is meant for "site administrators".',
         ]);
+        fwrite(STDERR, "  [SEED] ✓ Created site-admin role: {$role->slug}\n");
         
         // Create some base permissions (simulating DefaultPermissions seed)
-        Permission::create([
+        $permission = Permission::create([
             'slug' => 'uri_users',
             'name' => 'View users',
             'conditions' => 'always()',
             'description' => 'View the user listing page.',
         ]);
+        fwrite(STDERR, "  [SEED] ✓ Created base permission: {$permission->slug}\n");
     }
 
     /**
@@ -103,12 +118,16 @@ trait WithDatabaseSeeds
      */
     protected function seedCRUD6Data(): void
     {
+        fwrite(STDERR, "  [SEED] Running CRUD6 seeders...\n");
+        
         // Run DefaultRoles seed to create crud6-admin role
         $rolesSeed = new DefaultRoles();
         $rolesSeed->run();
+        fwrite(STDERR, "  [SEED] ✓ DefaultRoles seed completed\n");
         
         // Run DefaultPermissions seed to create CRUD6 permissions
         $permissionsSeed = new DefaultPermissions();
         $permissionsSeed->run();
+        fwrite(STDERR, "  [SEED] ✓ DefaultPermissions seed completed\n");
     }
 }

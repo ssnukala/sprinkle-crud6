@@ -69,9 +69,10 @@ trait WithDatabaseSeeds
      * Creates:
      * - Default group (terran)
      * - Site admin role
-     * - Base permissions
+     * - Base permissions for users, roles, groups, and permissions models
      * 
      * This simulates running Account sprinkle seeds before CRUD6 seeds.
+     * Includes all permissions needed by CRUD6 integration tests.
      */
     protected function seedAccountData(): void
     {
@@ -84,19 +85,134 @@ trait WithDatabaseSeeds
         ]);
         
         // Create site-admin role (simulating DefaultRoles seed)
-        Role::create([
+        $siteAdminRole = Role::create([
             'slug' => 'site-admin',
             'name' => 'Site Administrator',
             'description' => 'This role is meant for "site administrators".',
         ]);
         
-        // Create some base permissions (simulating DefaultPermissions seed)
-        Permission::create([
+        // Create base permissions for all models used in tests
+        // These match the permissions defined in example schemas
+        $permissions = [];
+        
+        // Users model permissions
+        $permissions[] = Permission::create([
             'slug' => 'uri_users',
             'name' => 'View users',
             'conditions' => 'always()',
             'description' => 'View the user listing page.',
         ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'create_user',
+            'name' => 'Create user',
+            'conditions' => 'always()',
+            'description' => 'Create a new user.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'update_user_field',
+            'name' => 'Update user field',
+            'conditions' => 'always()',
+            'description' => 'Update a user field.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'delete_user',
+            'name' => 'Delete user',
+            'conditions' => 'always()',
+            'description' => 'Delete a user.',
+        ]);
+        
+        // Roles model permissions
+        $permissions[] = Permission::create([
+            'slug' => 'uri_roles',
+            'name' => 'View roles',
+            'conditions' => 'always()',
+            'description' => 'View the role listing page.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'create_role',
+            'name' => 'Create role',
+            'conditions' => 'always()',
+            'description' => 'Create a new role.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'update_role_field',
+            'name' => 'Update role field',
+            'conditions' => 'always()',
+            'description' => 'Update a role field.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'delete_role',
+            'name' => 'Delete role',
+            'conditions' => 'always()',
+            'description' => 'Delete a role.',
+        ]);
+        
+        // Groups model permissions
+        $permissions[] = Permission::create([
+            'slug' => 'uri_groups',
+            'name' => 'View groups',
+            'conditions' => 'always()',
+            'description' => 'View the group listing page.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'create_group',
+            'name' => 'Create group',
+            'conditions' => 'always()',
+            'description' => 'Create a new group.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'update_group_field',
+            'name' => 'Update group field',
+            'conditions' => 'always()',
+            'description' => 'Update a group field.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'delete_group',
+            'name' => 'Delete group',
+            'conditions' => 'always()',
+            'description' => 'Delete a group.',
+        ]);
+        
+        // Permissions model permissions
+        $permissions[] = Permission::create([
+            'slug' => 'uri_permissions',
+            'name' => 'View permissions',
+            'conditions' => 'always()',
+            'description' => 'View the permission listing page.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'create_permission',
+            'name' => 'Create permission',
+            'conditions' => 'always()',
+            'description' => 'Create a new permission.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'update_permission',
+            'name' => 'Update permission',
+            'conditions' => 'always()',
+            'description' => 'Update a permission.',
+        ]);
+        
+        $permissions[] = Permission::create([
+            'slug' => 'delete_permission',
+            'name' => 'Delete permission',
+            'conditions' => 'always()',
+            'description' => 'Delete a permission.',
+        ]);
+        
+        // Attach all permissions to site-admin role
+        $siteAdminRole->permissions()->sync(collect($permissions)->pluck('id')->toArray());
     }
 
     /**

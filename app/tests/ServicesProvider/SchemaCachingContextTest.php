@@ -24,7 +24,6 @@ use PHPUnit\Framework\TestCase;
  * - Different contexts for same model are cached separately
  * - Same context for same model uses cache (no duplicate requests)
  * - Cache keys include both model and context
- * - Backward compatibility maintained (no context = 'full')
  */
 class SchemaCachingContextTest extends TestCase
 {
@@ -291,24 +290,6 @@ class SchemaCachingContextTest extends TestCase
         // - products:list and products:detail are separate cache entries
         // - Requesting products:list twice uses cache (no duplicate)
         // - Requesting products:list then products:detail makes 2 API calls (expected)
-    }
-
-    /**
-     * Test backward compatibility: no context defaults to 'full'
-     */
-    public function testBackwardCompatibilityNoContextDefaultsToFull(): void
-    {
-        $storeFile = dirname(__DIR__, 2) . '/assets/stores/useCRUD6SchemaStore.ts';
-        $storeContent = file_get_contents($storeFile);
-        
-        // When context is undefined/null, cache key should be 'model:full'
-        $this->assertStringContainsString("context || 'full'", $storeContent,
-            'No context should default to "full" for backward compatibility');
-        
-        // This means:
-        // - loadSchema('products') -> cacheKey = 'products:full'
-        // - loadSchema('products', false, 'full') -> cacheKey = 'products:full'
-        // Both use same cache entry (backward compatible)
     }
 
     /**

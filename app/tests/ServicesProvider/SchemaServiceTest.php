@@ -25,16 +25,37 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 class SchemaServiceTest extends TestCase
 {
     /**
-     * Test SchemaService construction with ResourceLocatorInterface
+     * Test SchemaService construction with all required dependencies
      */
     public function testSchemaServiceConstruction(): void
     {
-        // Create a mock ResourceLocatorInterface
+        // Create all required mocks for SchemaService constructor (11 parameters)
         $locator = $this->createMock(ResourceLocatorInterface::class);
         $config = $this->createMock(\UserFrosting\Config\Config::class);
+        $logger = $this->createMock(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface::class);
+        $i18n = $this->createMock(\UserFrosting\I18n\Translator::class);
+        $loader = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader::class);
+        $validator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator::class);
+        $normalizer = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaNormalizer::class);
+        $cache = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaCache::class);
+        $filter = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter::class);
+        $translator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaTranslator::class);
+        $actionManager = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaActionManager::class);
         
         // This should not throw an exception
-        $schemaService = new SchemaService($locator, $config);
+        $schemaService = new SchemaService(
+            $locator,
+            $config,
+            $logger,
+            $i18n,
+            $loader,
+            $validator,
+            $normalizer,
+            $cache,
+            $filter,
+            $translator,
+            $actionManager
+        );
         
         $this->assertInstanceOf(SchemaService::class, $schemaService);
     }
@@ -46,7 +67,7 @@ class SchemaServiceTest extends TestCase
      * - SchemaNormalizerTest - tests SchemaNormalizer::normalizeBooleanTypes() and other normalizations
      * - SchemaValidatorTest - tests SchemaValidator::validate() and hasPermission()
      * 
-     * The SchemaService class now orchestrates these services and maintains backward compatibility
-     * through its public API methods (getSchema, clearCache, filterSchemaForContext, etc.)
+     * The SchemaService class now orchestrates these services through its public API methods
+     * (getSchema, clearCache, filterSchemaForContext, etc.)
      */
 }

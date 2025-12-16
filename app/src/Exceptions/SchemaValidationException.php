@@ -12,25 +12,26 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Exceptions;
 
-use UserFrosting\Support\Exception\BadRequestException;
+use UserFrosting\Sprinkle\Core\Exceptions\UserFacingException;
+use UserFrosting\Support\Message\UserMessage;
 
 /**
  * Schema Validation Exception.
  * 
  * Thrown when a schema fails structural validation.
- * Extends UserFrosting's BadRequestException for consistency with framework patterns.
+ * Extends UserFrosting's UserFacingException for consistency with framework patterns.
  * 
- * @see \UserFrosting\Support\Exception\BadRequestException
+ * @see \UserFrosting\Sprinkle\Core\Exceptions\UserFacingException
  */
-class SchemaValidationException extends BadRequestException
+class SchemaValidationException extends UserFacingException
 {
     /**
-     * {@inheritdoc}
+     * @var string Translation key for exception title
      */
-    protected $defaultMessage = 'SCHEMA.VALIDATION_FAILED';
+    protected string $title = 'SCHEMA.VALIDATION_FAILED';
     
     /**
-     * {@inheritdoc}
+     * @var string|UserMessage Translation key or message for exception description
      */
-    protected int $httpErrorCode = 400;
+    protected string|UserMessage $description = 'SCHEMA.VALIDATION_FAILED';
 }

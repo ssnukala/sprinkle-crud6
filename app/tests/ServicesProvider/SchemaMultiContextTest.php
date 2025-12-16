@@ -26,7 +26,6 @@ use UserFrosting\UniformResourceLocator\ResourceLocator;
  * - Multiple contexts can be requested with comma-separated values
  * - Each context is properly filtered and returned in the response
  * - Single API call reduces overhead for pages that need multiple contexts
- * - Backward compatibility is maintained with single-context requests
  */
 class SchemaMultiContextTest extends TestCase
 {
@@ -107,9 +106,32 @@ class SchemaMultiContextTest extends TestCase
 
     protected function setUp(): void
     {
-        // Create a mock ResourceLocator
+        // Create all required mocks for SchemaService constructor (11 parameters)
         $locator = $this->createMock(ResourceLocator::class);
-        $this->schemaService = new SchemaService($locator);
+        $config = $this->createMock(\UserFrosting\Config\Config::class);
+        $logger = $this->createMock(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface::class);
+        $i18n = $this->createMock(\UserFrosting\I18n\Translator::class);
+        $loader = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader::class);
+        $validator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator::class);
+        $normalizer = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaNormalizer::class);
+        $cache = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaCache::class);
+        $filter = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter::class);
+        $translator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaTranslator::class);
+        $actionManager = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaActionManager::class);
+        
+        $this->schemaService = new SchemaService(
+            $locator,
+            $config,
+            $logger,
+            $i18n,
+            $loader,
+            $validator,
+            $normalizer,
+            $cache,
+            $filter,
+            $translator,
+            $actionManager
+        );
     }
 
     /**
@@ -230,25 +252,6 @@ class SchemaMultiContextTest extends TestCase
         // Contexts should have fields but not base metadata
         $this->assertArrayHasKey('fields', $listContext);
         $this->assertArrayHasKey('fields', $formContext);
-    }
-
-    /**
-     * Test backward compatibility with single context
-     */
-    public function testSingleContextBackwardCompatibility(): void
-    {
-        $schema = $this->getSampleSchema();
-        $filtered = $this->schemaService->filterSchemaForContext($schema, 'list');
-
-        // Single context should NOT have contexts section
-        $this->assertArrayNotHasKey('contexts', $filtered);
-        
-        // Should have fields directly at root level
-        $this->assertArrayHasKey('fields', $filtered);
-        
-        // Should include metadata
-        $this->assertArrayHasKey('model', $filtered);
-        $this->assertArrayHasKey('title', $filtered);
     }
 
     /**

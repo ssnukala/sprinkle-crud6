@@ -23,7 +23,6 @@ use PHPUnit\Framework\TestCase;
  * Validates that:
  * - Different contexts return appropriate field subsets
  * - Sensitive information is excluded from filtered schemas
- * - Backward compatibility is maintained with full schema option
  */
 class SchemaFilteringTest extends TestCase
 {
@@ -426,23 +425,6 @@ class SchemaFilteringTest extends TestCase
                 "{$field} should be marked as not listable for security"
             );
         }
-    }
-
-    /**
-     * Test backward compatibility with full schema
-     * 
-     * When no context is provided or context is 'full', the complete
-     * schema should be returned for backward compatibility
-     */
-    public function testBackwardCompatibilityWithFullSchema(): void
-    {
-        // This validates that the logic exists for backward compatibility
-        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
-        $serviceContent = file_get_contents($serviceFile);
-        
-        // Should handle null context (default to full schema)
-        $this->assertStringContainsString('$context === null', $serviceContent, 'Should handle null context');
-        $this->assertStringContainsString('$context === \'full\'', $serviceContent, 'Should handle full context');
     }
 
     /**

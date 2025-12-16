@@ -112,7 +112,7 @@ class FrontendUserWorkflowTest extends CRUD6TestCase
 
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userPayload);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        $this->assertResponseStatus(201, $response, 'CREATE operation should return 201 Created');
 
         // Step 6 & 7: Verify user was created with relationships
         $createdUser = User::where('user_name', 'frontend_user')->first();

@@ -68,6 +68,15 @@ class SchemaFilteringTest extends TestCase
             $actionManager
         );
     }
+
+    /**
+     * Create a SchemaFilter instance for testing
+     */
+    private function createSchemaFilter(): \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter
+    {
+        $logger = $this->createMock(DebugLoggerInterface::class);
+        return new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter($logger);
+    }
     /**
      * Sample test schema with various field types and properties
      */
@@ -370,21 +379,21 @@ class SchemaFilteringTest extends TestCase
             ],
         ];
 
-        // Load SchemaService and test the filtering
-        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
-        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        // Load SchemaFilter and test the filtering (getContextSpecificData is in SchemaFilter, not SchemaService)
+        $filterFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaFilter.php';
+        $this->assertFileExists($filterFile, 'SchemaFilter.php should exist');
         
-        require_once $serviceFile;
+        require_once $filterFile;
         
-        $schemaService = $this->createSchemaService();
+        $schemaFilter = $this->createSchemaFilter();
         
         // Use reflection to access the protected method
-        $reflection = new \ReflectionClass($schemaService);
+        $reflection = new \ReflectionClass($schemaFilter);
         $method = $reflection->getMethod('getContextSpecificData');
         $method->setAccessible(true);
         
         // Test detail context filtering
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         
         // Verify details array is included
         $this->assertArrayHasKey('details', $detailData, 'Detail context should include details array');
@@ -551,23 +560,23 @@ class SchemaFilteringTest extends TestCase
             ],
         ];
 
-        // Manually load SchemaService and test the filtering
-        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
-        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        // Manually load SchemaFilter and test the filtering (getContextSpecificData is in SchemaFilter)
+        $filterFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaFilter.php';
+        $this->assertFileExists($filterFile, 'SchemaFilter.php should exist');
         
-        // Include the service class
-        require_once $serviceFile;
+        // Include the filter class
+        require_once $filterFile;
         
-        // Create SchemaService instance with all required dependencies
-        $schemaService = $this->createSchemaService();
+        // Create SchemaFilter instance
+        $schemaFilter = $this->createSchemaFilter();
         
         // Use reflection to access the protected method
-        $reflection = new \ReflectionClass($schemaService);
+        $reflection = new \ReflectionClass($schemaFilter);
         $method = $reflection->getMethod('getContextSpecificData');
         $method->setAccessible(true);
         
         // Test detail context filtering
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         
         // Verify viewable fields are included
         $this->assertArrayHasKey('id', $detailData['fields'], 'id should be included (default viewable: true)');
@@ -616,29 +625,29 @@ class SchemaFilteringTest extends TestCase
             ],
         ];
 
-        // Load SchemaService
-        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
-        $this->assertFileExists($serviceFile, 'SchemaService.php should exist');
+        // Load SchemaFilter (getContextSpecificData is in SchemaFilter)
+        $filterFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaFilter.php';
+        $this->assertFileExists($filterFile, 'SchemaFilter.php should exist');
         
-        require_once $serviceFile;
+        require_once $filterFile;
         
-        // Create SchemaService instance with all required dependencies
-        $schemaService = $this->createSchemaService();
+        // Create SchemaFilter instance
+        $schemaFilter = $this->createSchemaFilter();
         
         // Use reflection to access protected method
-        $reflection = new \ReflectionClass($schemaService);
+        $reflection = new \ReflectionClass($schemaFilter);
         $method = $reflection->getMethod('getContextSpecificData');
         $method->setAccessible(true);
         
         // Test detail context includes title_field
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         
         $this->assertArrayHasKey('title_field', $detailData, 'title_field should be included in detail context');
         $this->assertEquals('user_name', $detailData['title_field'], 'title_field should match schema value');
         
         // Test with different title_field values
         $schema['title_field'] = 'email';
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         $this->assertEquals('email', $detailData['title_field'], 'title_field should be updated');
         
         // Test when title_field is not present in schema
@@ -655,13 +664,13 @@ class SchemaFilteringTest extends TestCase
      */
     public function testTitleFieldWithVariousFieldTypes(): void
     {
-        // Load SchemaService
-        $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
-        require_once $serviceFile;
+        // Load SchemaFilter (getContextSpecificData is in SchemaFilter)
+        $filterFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaFilter.php';
+        require_once $filterFile;
         
-        $schemaService = $this->createSchemaService();
+        $schemaFilter = $this->createSchemaFilter();
         
-        $reflection = new \ReflectionClass($schemaService);
+        $reflection = new \ReflectionClass($schemaFilter);
         $method = $reflection->getMethod('getContextSpecificData');
         $method->setAccessible(true);
         
@@ -673,19 +682,19 @@ class SchemaFilteringTest extends TestCase
             'title_field' => 'name',
             'fields' => ['name' => ['type' => 'string', 'label' => 'Product Name']],
         ];
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         $this->assertEquals('name', $detailData['title_field']);
         
         // Test with SKU/code field
         $schema['title_field'] = 'sku';
         $schema['fields']['sku'] = ['type' => 'string', 'label' => 'SKU'];
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         $this->assertEquals('sku', $detailData['title_field']);
         
         // Test with order_number field
         $schema['title_field'] = 'order_number';
         $schema['fields']['order_number'] = ['type' => 'string', 'label' => 'Order Number'];
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         $this->assertEquals('order_number', $detailData['title_field']);
     }
 }

@@ -262,6 +262,13 @@ class SchemaService
      * 
      * Delegates to filter service.
      * 
+     * Supported contexts:
+     * - 'list': Fields for listing/table view (listable fields only)
+     * - 'form': Fields for create/edit forms (editable fields with validation)
+     * - 'detail': Full field information for detail/view pages
+     * - 'meta': Just model metadata (no field details)
+     * - null/'full': Complete schema (backward compatible)
+     * 
      * @param array       $schema  The complete schema array
      * @param string|null $context The context to filter by
      * 

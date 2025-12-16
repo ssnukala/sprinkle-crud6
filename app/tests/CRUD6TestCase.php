@@ -39,48 +39,7 @@ class CRUD6TestCase extends TestCase
      */
     protected string $mainSprinkle = CRUD6::class;
 
-    /**
-     * Setup before each test.
-     * Logs database configuration for debugging.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        
-        // Log database configuration for debugging
-        $this->logDatabaseConfiguration();
-    }
 
-    /**
-     * Log database configuration to help debug connection issues.
-     * 
-     * This outputs environment variables and connection settings to help
-     * diagnose issues like empty database names or incorrect host settings.
-     */
-    protected function logDatabaseConfiguration(): void
-    {
-        $dbConfig = [
-            'DB_DRIVER' => getenv('DB_DRIVER') ?: $_ENV['DB_DRIVER'] ?? 'NOT SET',
-            'DB_HOST' => getenv('DB_HOST') ?: $_ENV['DB_HOST'] ?? 'NOT SET',
-            'DB_PORT' => getenv('DB_PORT') ?: $_ENV['DB_PORT'] ?? 'NOT SET',
-            'DB_NAME' => getenv('DB_NAME') ?: $_ENV['DB_NAME'] ?? 'NOT SET',
-            'DB_USER' => getenv('DB_USER') ?: $_ENV['DB_USER'] ?? 'NOT SET',
-            'DB_PASSWORD' => getenv('DB_PASSWORD') ? '***REDACTED***' : 'NOT SET',
-            'UF_MODE' => getenv('UF_MODE') ?: $_ENV['UF_MODE'] ?? 'NOT SET',
-        ];
-
-        // Log to stdout (captured by PHPUnit)
-        fwrite(STDERR, "\n========================================\n");
-        fwrite(STDERR, "DATABASE CONFIGURATION DEBUG\n");
-        fwrite(STDERR, "========================================\n");
-        fwrite(STDERR, "Test Class: " . get_class($this) . "\n");
-        // PHPUnit 10+ compatible: use name() method instead of getName()
-        fwrite(STDERR, "Test Method: " . $this->name() . "\n");
-        foreach ($dbConfig as $key => $value) {
-            fwrite(STDERR, sprintf("  %-15s = %s\n", $key, $value));
-        }
-        fwrite(STDERR, "========================================\n\n");
-    }
 
     /**
      * Verify database connection is working correctly.

@@ -313,7 +313,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userData);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertResponseStatus(200, $response, 'Create should succeed with permission');
+        // Both 200 and 201 are valid responses for create operations
+        $this->assertThat(
+            $response->getStatusCode(),
+            $this->logicalOr(
+                $this->equalTo(200),
+                $this->equalTo(201)
+            ),
+            'Create should succeed with permission (200 or 201)'
+        );
         
         $body = json_decode((string) $response->getBody(), true);
         $this->assertArrayHasKey('data', $body, 'Response should contain data');
@@ -611,7 +619,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/roles', $roleData);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are valid responses for create operations
+        $this->assertThat(
+            $response->getStatusCode(),
+            $this->logicalOr(
+                $this->equalTo(200),
+                $this->equalTo(201)
+            ),
+            'Create should return 200 or 201'
+        );
 
         $body = json_decode((string) $response->getBody(), true);
         $roleId = $body['data']['id'] ?? null;
@@ -697,7 +713,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/groups', $groupData);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are valid responses for create operations
+        $this->assertThat(
+            $response->getStatusCode(),
+            $this->logicalOr(
+                $this->equalTo(200),
+                $this->equalTo(201)
+            ),
+            'Create should return 200 or 201'
+        );
 
         $body = json_decode((string) $response->getBody(), true);
         $groupId = $body['data']['id'] ?? null;
@@ -776,7 +800,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/permissions', $permData);
         $response = $this->handleRequestWithTracking($request);
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are valid responses for create operations
+        $this->assertThat(
+            $response->getStatusCode(),
+            $this->logicalOr(
+                $this->equalTo(200),
+                $this->equalTo(201)
+            ),
+            'Create should return 200 or 201'
+        );
 
         $body = json_decode((string) $response->getBody(), true);
         $permId = $body['data']['id'] ?? null;

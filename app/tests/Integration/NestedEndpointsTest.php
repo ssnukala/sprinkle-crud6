@@ -65,7 +65,7 @@ class NestedEndpointsTest extends CRUD6TestCase
             if ($summary['total'] > 0) {
                 echo "\n";
                 echo "═══════════════════════════════════════════════════════════════\n";
-                echo "API Call Tracking Summary for " . $this->getName() . "\n";
+                echo "API Call Tracking Summary for " . $this->name() . "\n";
                 echo "═══════════════════════════════════════════════════════════════\n";
                 echo sprintf("  Total API Calls:        %d\n", $summary['total']);
                 echo sprintf("  Unique Calls:           %d\n", $summary['unique']);

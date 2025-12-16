@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 
 use PHPUnit\Framework\TestCase;
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
@@ -250,9 +251,10 @@ class ListableFieldsTest extends TestCase
         $authenticator = $this->createMock(Authenticator::class);
         $logger = $this->createMock(DebugLoggerInterface::class);
         $schemaService = $this->createMock(SchemaService::class);
+        $config = $this->createMock(Config::class);
         
         // Create an anonymous class that extends Base for testing
-        return new class($authorizer, $authenticator, $logger, $schemaService) extends Base {
+        return new class($authorizer, $authenticator, $logger, $schemaService, $config) extends Base {
             // Make protected methods accessible for testing
         };
     }

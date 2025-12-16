@@ -51,6 +51,9 @@ class PasswordFieldTest extends TestCase
             ->with('plaintext_password')
             ->andReturn('$2y$10$hashed_password_string');
 
+        // RequestDataTransformer is final, so we use a partial mock
+        $transformer = Mockery::mock(RequestDataTransformer::class)->makePartial();
+
         // Create the controller with mocked dependencies
         $controller = new CreateAction(
             Mockery::mock(AuthorizationManager::class),
@@ -61,7 +64,7 @@ class PasswordFieldTest extends TestCase
             Mockery::mock(Translator::class),
             Mockery::mock(Connection::class),
             Mockery::mock(UserActivityLogger::class),
-            Mockery::mock(RequestDataTransformer::class),
+            $transformer,
             Mockery::mock(ServerSideValidator::class),
             $hasher
         );
@@ -108,6 +111,9 @@ class PasswordFieldTest extends TestCase
         $hasher = Mockery::mock(Hasher::class);
         $hasher->shouldNotReceive('hash');
 
+        // RequestDataTransformer is final, so we use a partial mock
+        $transformer = Mockery::mock(RequestDataTransformer::class)->makePartial();
+
         // Create the controller with mocked dependencies
         $controller = new CreateAction(
             Mockery::mock(AuthorizationManager::class),
@@ -118,7 +124,7 @@ class PasswordFieldTest extends TestCase
             Mockery::mock(Translator::class),
             Mockery::mock(Connection::class),
             Mockery::mock(UserActivityLogger::class),
-            Mockery::mock(RequestDataTransformer::class),
+            $transformer,
             Mockery::mock(ServerSideValidator::class),
             $hasher
         );
@@ -167,6 +173,9 @@ class PasswordFieldTest extends TestCase
             ->with('new_password')
             ->andReturn('$2y$10$hashed_new_password');
 
+        // RequestDataTransformer is final, so we use a partial mock
+        $transformer = Mockery::mock(RequestDataTransformer::class)->makePartial();
+
         // Create the controller with mocked dependencies
         $controller = new EditAction(
             Mockery::mock(AuthorizationManager::class),
@@ -177,7 +186,7 @@ class PasswordFieldTest extends TestCase
             Mockery::mock(Translator::class),
             Mockery::mock(Connection::class),
             Mockery::mock(UserActivityLogger::class),
-            Mockery::mock(RequestDataTransformer::class),
+            $transformer,
             Mockery::mock(ServerSideValidator::class),
             $hasher
         );
@@ -222,6 +231,9 @@ class PasswordFieldTest extends TestCase
         $hasher = Mockery::mock(Hasher::class);
         $hasher->shouldNotReceive('hash');
 
+        // RequestDataTransformer is final, so we use a partial mock
+        $transformer = Mockery::mock(RequestDataTransformer::class)->makePartial();
+
         // Create the controller with mocked dependencies
         $controller = new CreateAction(
             Mockery::mock(AuthorizationManager::class),
@@ -232,7 +244,7 @@ class PasswordFieldTest extends TestCase
             Mockery::mock(Translator::class),
             Mockery::mock(Connection::class),
             Mockery::mock(UserActivityLogger::class),
-            Mockery::mock(RequestDataTransformer::class),
+            $transformer,
             Mockery::mock(ServerSideValidator::class),
             $hasher
         );
@@ -280,7 +292,10 @@ class PasswordFieldTest extends TestCase
         // Create a mock Hasher
         $hasher = Mockery::mock(Hasher::class);
 
-        // Create the controller with mocked dependencies
+        // RequestDataTransformer is final, so we use a partial mock
+        $transformer = Mockery::mock(RequestDataTransformer::class)->makePartial();
+
+        // Create the controller with mocked dependencies (11 parameters required)
         $controller = new UpdateFieldAction(
             Mockery::mock(AuthorizationManager::class),
             Mockery::mock(Authenticator::class),
@@ -290,7 +305,9 @@ class PasswordFieldTest extends TestCase
             Mockery::mock(Translator::class),
             Mockery::mock(UserActivityLogger::class),
             Mockery::mock(Connection::class),
-            $hasher
+            $hasher,
+            Mockery::mock(ServerSideValidator::class),
+            $transformer
         );
 
         // Use reflection to verify the hasher property exists and is set

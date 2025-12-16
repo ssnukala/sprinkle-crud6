@@ -270,6 +270,7 @@ class ListableFieldsTest extends TestCase
         $translator = $this->createMock(Translator::class);
         $sprunje = $this->createMock(CRUD6Sprunje::class);
         $schemaService = $this->createMock(SchemaService::class);
+        $config = $this->createMock(Config::class);
         $userSprunje = $this->createMock(UserSprunje::class);
         
         return new SprunjeAction(
@@ -279,6 +280,7 @@ class ListableFieldsTest extends TestCase
             $translator,
             $sprunje,
             $schemaService,
+            $config,
             $userSprunje
         );
     }

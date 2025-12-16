@@ -95,14 +95,27 @@ class CreateAction extends Base
             $title = $this->translator->translate('CRUD6.CREATE.SUCCESS_TITLE');
             $description = $this->translator->translate('CRUD6.CREATE.SUCCESS', ['model' => $translatedModel]);
             
+            // Include the created record data in response
+            $primaryKey = $crudSchema['primary_key'] ?? 'id';
+            $recordData = $record->toArray();
+            
             $this->debugLog("CRUD6 [CreateAction] Response prepared successfully", [
                 'model' => $crudSchema['model'],
                 'title' => $title,
                 'description' => $description,
                 'status' => 201,
+                'record_id' => $record->{$primaryKey} ?? null,
             ]);
 
-            return $this->jsonResponseWithTitle($response, $title, $description, 201);
+            // Return response with title, description, AND created record data
+            $payload = [
+                'title' => $title,
+                'description' => $description,
+                'data' => $recordData,
+            ];
+            
+            $response->getBody()->write(json_encode($payload));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
         } catch (\Exception $e) {
             $this->logger->error("Line:104 CRUD6 [CreateAction] ===== CREATE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],

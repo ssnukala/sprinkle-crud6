@@ -175,9 +175,9 @@ class SchemaCachingContextTest extends TestCase
         $composableContent = file_get_contents($composableFile);
         $this->assertNotFalse($composableContent, 'Should be able to read composable file');
         
-        // Should pass context when calling store.loadSchema
-        $this->assertStringContainsString('schemaStore.loadSchema(model, force, context)', $composableContent,
-            'Composable should pass context to store.loadSchema');
+        // Should pass context when calling store.loadSchema (with 4 parameters: model, force, context, includeRelated)
+        $this->assertStringContainsString('schemaStore.loadSchema(model, force, context, includeRelated)', $composableContent,
+            'Composable should pass context and includeRelated to store.loadSchema');
         
         // Should pass context when calling store.getError
         $this->assertStringContainsString('schemaStore.getError(model, context)', $composableContent,

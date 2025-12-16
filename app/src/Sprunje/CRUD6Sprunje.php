@@ -153,4 +153,35 @@ class CRUD6Sprunje extends Sprunje
             }
         });
     }
+
+    /**
+     * Transform a single model instance for output.
+     * 
+     * Filters the model's attributes to only include fields marked as listable
+     * in the schema. This prevents sensitive fields (like password) from being
+     * exposed in list views.
+     * 
+     * @param \Illuminate\Database\Eloquent\Model $item The model instance to transform
+     * 
+     * @return array The filtered attribute array
+     */
+    protected function transform($item): array
+    {
+        // Get all attributes from the model
+        $attributes = $item->toArray();
+        
+        // If listable fields are defined, filter to only those fields
+        if (!empty($this->listable)) {
+            $filtered = [];
+            foreach ($this->listable as $field) {
+                if (array_key_exists($field, $attributes)) {
+                    $filtered[$field] = $attributes[$field];
+                }
+            }
+            return $filtered;
+        }
+        
+        // If no listable fields defined, return all attributes
+        return $attributes;
+    }
 }

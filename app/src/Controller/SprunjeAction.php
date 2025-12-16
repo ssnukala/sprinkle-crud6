@@ -536,7 +536,11 @@ class SprunjeAction extends Base
     /**
      * Get listable fields from a schema array.
      * 
-     * Only fields with explicit `listable: true` are included.
+     * A field is considered listable if:
+     * - It has `show_in` array containing 'list', OR
+     * - It has explicit `listable: true`, OR
+     * - Neither is specified AND it's not a sensitive field type
+     * 
      * This prevents sensitive fields (password, timestamps, etc.) from being exposed by default.
      * 
      * @param array $schema The schema configuration
@@ -549,8 +553,24 @@ class SprunjeAction extends Base
 
         if (isset($schema['fields'])) {
             foreach ($schema['fields'] as $fieldName => $fieldConfig) {
-                // Only include fields explicitly marked as listable: true
-                if (isset($fieldConfig['listable']) && $fieldConfig['listable'] === true) {
+                // Check if field should be shown in list context
+                // Priority: show_in array > explicit listable flag > default (false for sensitive types)
+                $isListable = false;
+                
+                if (isset($fieldConfig['show_in'])) {
+                    // If show_in is defined, only include if 'list' is in the array
+                    $isListable = in_array('list', $fieldConfig['show_in']);
+                } elseif (isset($fieldConfig['listable'])) {
+                    // If no show_in but explicit listable flag exists
+                    $isListable = $fieldConfig['listable'] === true;
+                } else {
+                    // Default: exclude sensitive field types (password, etc.)
+                    $fieldType = $fieldConfig['type'] ?? 'string';
+                    $sensitiveTypes = ['password'];
+                    $isListable = !in_array($fieldType, $sensitiveTypes);
+                }
+                
+                if ($isListable) {
                     $listable[] = $fieldName;
                 }
             }

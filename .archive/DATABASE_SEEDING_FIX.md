@@ -20,7 +20,7 @@ This caused failures when tests tried to:
 ## Solution Implemented
 
 ### 1. Created `WithDatabaseSeeds` Trait
-**File**: `app/tests/Testing/WithDatabaseSeeds.php`
+**File**: `app/src/Testing/WithDatabaseSeeds.php` (moved from `app/tests/Testing/` for proper autoloading)
 
 This trait provides three methods:
 - `seedDatabase()` - Main method that seeds both Account and CRUD6 data

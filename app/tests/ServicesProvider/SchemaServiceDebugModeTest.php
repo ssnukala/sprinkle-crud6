@@ -14,8 +14,16 @@ namespace UserFrosting\Sprinkle\CRUD6\Tests\ServicesProvider;
 
 use PHPUnit\Framework\TestCase;
 use UserFrosting\Config\Config;
+use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaNormalizer;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaCache;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaTranslator;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaActionManager;
 use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**
@@ -25,6 +33,25 @@ use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
  */
 class SchemaServiceDebugModeTest extends TestCase
 {
+    /**
+     * Create mock dependencies for SchemaService
+     */
+    private function createMockDependencies(Config $config, ?DebugLoggerInterface $logger): array
+    {
+        return [
+            $this->createMock(ResourceLocatorInterface::class),
+            $config,
+            $logger,
+            $this->createMock(Translator::class),
+            $this->createMock(SchemaLoader::class),
+            $this->createMock(SchemaValidator::class),
+            $this->createMock(SchemaNormalizer::class),
+            $this->createMock(SchemaCache::class),
+            $this->createMock(SchemaFilter::class),
+            $this->createMock(SchemaTranslator::class),
+            $this->createMock(SchemaActionManager::class),
+        ];
+    }
     /**
      * Test SchemaService debugLog does not log when debug_mode is false
      */
@@ -41,12 +68,9 @@ class SchemaServiceDebugModeTest extends TestCase
         $logger->expects($this->never())
             ->method('debug');
 
-        // Create SchemaService with logger
-        $service = new class(
-            $this->createMock(ResourceLocatorInterface::class),
-            $config,
-            $logger
-        ) extends SchemaService {
+        // Create SchemaService with all required dependencies
+        $deps = $this->createMockDependencies($config, $logger);
+        $service = new class(...$deps) extends SchemaService {
             public function testDebugLog(string $message, array $context = []): void
             {
                 $this->debugLog($message, $context);
@@ -74,12 +98,9 @@ class SchemaServiceDebugModeTest extends TestCase
             ->method('debug')
             ->with('Test message', ['test' => 'data']);
 
-        // Create SchemaService with logger
-        $service = new class(
-            $this->createMock(ResourceLocatorInterface::class),
-            $config,
-            $logger
-        ) extends SchemaService {
+        // Create SchemaService with all required dependencies
+        $deps = $this->createMockDependencies($config, $logger);
+        $service = new class(...$deps) extends SchemaService {
             public function testDebugLog(string $message, array $context = []): void
             {
                 $this->debugLog($message, $context);
@@ -101,12 +122,9 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(true);
 
-        // Create SchemaService without logger (null)
-        $service = new class(
-            $this->createMock(ResourceLocatorInterface::class),
-            $config,
-            null  // No logger
-        ) extends SchemaService {
+        // Create SchemaService with all required dependencies, but null logger
+        $deps = $this->createMockDependencies($config, null);
+        $service = new class(...$deps) extends SchemaService {
             public function testDebugLog(string $message, array $context = []): void
             {
                 $this->debugLog($message, $context);
@@ -129,11 +147,8 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(false);
 
-        $service = new class(
-            $this->createMock(ResourceLocatorInterface::class),
-            $config,
-            null
-        ) extends SchemaService {
+        $deps = $this->createMockDependencies($config, null);
+        $service = new class(...$deps) extends SchemaService {
             public function testIsDebugMode(): bool
             {
                 return $this->isDebugMode();
@@ -153,11 +168,8 @@ class SchemaServiceDebugModeTest extends TestCase
             ->with('crud6.debug_mode', false)
             ->willReturn(true);
 
-        $service = new class(
-            $this->createMock(ResourceLocatorInterface::class),
-            $config,
-            null
-        ) extends SchemaService {
+        $deps = $this->createMockDependencies($config, null);
+        $service = new class(...$deps) extends SchemaService {
             public function testIsDebugMode(): bool
             {
                 return $this->isDebugMode();

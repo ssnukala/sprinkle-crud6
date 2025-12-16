@@ -13,6 +13,17 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\ServicesProvider;
 
 use PHPUnit\Framework\TestCase;
+use UserFrosting\Config\Config;
+use UserFrosting\I18n\Translator;
+use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaLoader;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaNormalizer;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaCache;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaTranslator;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaActionManager;
+use UserFrosting\UniformResourceLocator\ResourceLocatorInterface;
 
 /**
  * SchemaFilteringTest
@@ -26,6 +37,37 @@ use PHPUnit\Framework\TestCase;
  */
 class SchemaFilteringTest extends TestCase
 {
+    /**
+     * Create a SchemaService with all required mocked dependencies
+     */
+    private function createSchemaService(): \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService
+    {
+        $locator = $this->createMock(ResourceLocatorInterface::class);
+        $config = $this->createMock(Config::class);
+        $logger = $this->createMock(DebugLoggerInterface::class);
+        $translator = $this->createMock(Translator::class);
+        $loader = $this->createMock(SchemaLoader::class);
+        $validator = $this->createMock(SchemaValidator::class);
+        $normalizer = $this->createMock(SchemaNormalizer::class);
+        $cache = $this->createMock(SchemaCache::class);
+        $filter = $this->createMock(SchemaFilter::class);
+        $schemaTranslator = $this->createMock(SchemaTranslator::class);
+        $actionManager = $this->createMock(SchemaActionManager::class);
+
+        return new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService(
+            $locator,
+            $config,
+            $logger,
+            $translator,
+            $loader,
+            $validator,
+            $normalizer,
+            $cache,
+            $filter,
+            $schemaTranslator,
+            $actionManager
+        );
+    }
     /**
      * Sample test schema with various field types and properties
      */
@@ -334,8 +376,7 @@ class SchemaFilteringTest extends TestCase
         
         require_once $serviceFile;
         
-        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
-        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        $schemaService = $this->createSchemaService();
         
         // Use reflection to access the protected method
         $reflection = new \ReflectionClass($schemaService);
@@ -517,11 +558,8 @@ class SchemaFilteringTest extends TestCase
         // Include the service class
         require_once $serviceFile;
         
-        // Create a mock ResourceLocatorInterface
-        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
-        
-        // Create SchemaService instance
-        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        // Create SchemaService instance with all required dependencies
+        $schemaService = $this->createSchemaService();
         
         // Use reflection to access the protected method
         $reflection = new \ReflectionClass($schemaService);
@@ -584,9 +622,8 @@ class SchemaFilteringTest extends TestCase
         
         require_once $serviceFile;
         
-        // Create mock and SchemaService instance
-        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
-        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        // Create SchemaService instance with all required dependencies
+        $schemaService = $this->createSchemaService();
         
         // Use reflection to access protected method
         $reflection = new \ReflectionClass($schemaService);
@@ -622,8 +659,7 @@ class SchemaFilteringTest extends TestCase
         $serviceFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaService.php';
         require_once $serviceFile;
         
-        $locator = $this->createMock(\UserFrosting\UniformResourceLocator\ResourceLocatorInterface::class);
-        $schemaService = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService($locator);
+        $schemaService = $this->createSchemaService();
         
         $reflection = new \ReflectionClass($schemaService);
         $method = $reflection->getMethod('getContextSpecificData');

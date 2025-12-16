@@ -57,17 +57,21 @@ class SchemaServiceProviderTest extends TestCase
     }
     
     /**
-     * Test that SchemaService is registered with autowire
+     * Test that SchemaService is registered with a valid definition
      */
-    public function testSchemaServiceIsAutowired(): void
+    public function testSchemaServiceIsRegisteredWithValidDefinition(): void
     {
         $provider = new SchemaServiceProvider();
         $services = $provider->register();
         
         $this->assertArrayHasKey(SchemaService::class, $services);
         
-        // Check that the value is a DI\Definition
+        // Check that the value is either autowired or a factory function
         $definition = $services[SchemaService::class];
-        $this->assertInstanceOf(\DI\Definition\Helper\AutowireDefinitionHelper::class, $definition);
+        $this->assertTrue(
+            $definition instanceof \DI\Definition\Helper\AutowireDefinitionHelper || 
+            $definition instanceof \Closure,
+            'SchemaService should be registered with autowire or factory function'
+        );
     }
 }

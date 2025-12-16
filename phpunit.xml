@@ -5,6 +5,23 @@
          colors="true"
          stopOnFailure="false"
          cacheDirectory=".phpunit.cache">
+    <php>
+        <!-- Database Configuration for Testing -->
+        <env name="DB_DRIVER" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_NAME" value="userfrosting_test"/>
+        <env name="DB_USER" value="root"/>
+        <env name="DB_PASSWORD" value="root"/>
+        
+        <!-- Testing Mode -->
+        <env name="UF_MODE" value="testing"/>
+        
+        <!-- SMTP Configuration (not used in tests but required) -->
+        <env name="SMTP_HOST" value="localhost"/>
+        <env name="SMTP_USER" value=""/>
+        <env name="SMTP_PASSWORD" value=""/>
+    </php>
     <testsuites>
         <testsuite name="CRUD6">
             <directory>app/tests</directory>

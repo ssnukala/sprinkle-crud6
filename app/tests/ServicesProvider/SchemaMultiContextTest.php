@@ -115,7 +115,10 @@ class SchemaMultiContextTest extends TestCase
         $validator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator::class);
         $normalizer = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaNormalizer::class);
         $cache = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaCache::class);
-        $filter = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter::class);
+        
+        // Use real SchemaFilter to test multi-context functionality
+        $filter = new \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaFilter($config, $logger);
+        
         $translator = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaTranslator::class);
         $actionManager = $this->createMock(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaActionManager::class);
         

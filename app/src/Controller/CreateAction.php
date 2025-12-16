@@ -171,20 +171,8 @@ class CreateAction extends Base
             $primaryKey = $schema['primary_key'] ?? 'id';
             $insertId = $this->db->table($table)->insertGetId($insertData, $primaryKey);
             
-            $this->debugLog("CRUD6 [CreateAction] Record inserted into database", [
-                'model' => $schema['model'],
-                'table' => $table,
-                'insert_id' => $insertId,
-                'primary_key' => $primaryKey,
-            ]);
-            
             // Load the created record into the model
             $crudModel = $crudModel->newQuery()->find($insertId);
-            
-            $this->debugLog("CRUD6 [CreateAction] Created record loaded from database", [
-                'model' => $schema['model'],
-                'record_data' => $crudModel ? $crudModel->toArray() : null,
-            ]);
 
             // Process relationship actions for on_create event
             $this->processRelationshipActions($crudModel, $schema, $data, 'on_create');

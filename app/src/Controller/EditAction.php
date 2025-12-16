@@ -321,36 +321,15 @@ class EditAction extends Base
         $primaryKey = $crudSchema['primary_key'] ?? 'id';
         $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->debugLog("CRUD6 [EditAction] Starting database update", [
-            'model' => $crudSchema['model'],
-            'record_id' => $recordId,
-            'user' => $currentUser->user_name,
-            'user_id' => $currentUser->id,
-        ]);
-
         // Begin transaction - DB will be rolled back if an exception occurs
         $this->db->transaction(function () use ($crudSchema, $crudModel, $data, $currentUser, $recordId) {
             // Prepare update data
             $updateData = $this->prepareUpdateData($crudSchema, $data);
             
-            $this->debugLog("CRUD6 [EditAction] Update data prepared", [
-                'model' => $crudSchema['model'],
-                'record_id' => $recordId,
-                'update_data' => $updateData,
-                'table' => $crudModel->getTable(),
-            ]);
-            
             // Update the record using query builder
             $table = $crudModel->getTable();
             $primaryKey = $crudSchema['primary_key'] ?? 'id';
             $affected = $this->db->table($table)->where($primaryKey, $recordId)->update($updateData);
-            
-            $this->debugLog("CRUD6 [EditAction] Database update executed", [
-                'model' => $crudSchema['model'],
-                'record_id' => $recordId,
-                'table' => $table,
-                'affected_rows' => $affected,
-            ]);
 
             // Reload the model to get updated data
             $crudModel->refresh();

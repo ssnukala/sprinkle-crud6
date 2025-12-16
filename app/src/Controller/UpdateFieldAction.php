@@ -167,12 +167,6 @@ class UpdateFieldAction extends Base
                 }
 
                 $crudModel->save();
-                
-                $this->debugLog("CRUD6 [UpdateFieldAction] Model saved to database", [
-                    'model' => $crudSchema['model'],
-                    'record_id' => $recordId,
-                    'field' => $fieldName,
-                ]);
 
                 // Get the current user for logging
                 /** @var UserInterface */

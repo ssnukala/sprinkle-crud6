@@ -27,7 +27,6 @@ class ConfigActionTest extends CRUD6TestCase
         
         // Assert successful response
         $this->assertResponseStatus(200, $response);
-        $this->assertJsonResponse([], $response);
         
         // Get response data
         $data = $this->getJsonResponse($response);

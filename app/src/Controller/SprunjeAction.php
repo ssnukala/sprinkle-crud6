@@ -573,12 +573,10 @@ class SprunjeAction extends Base
                 } elseif (isset($fieldConfig['listable'])) {
                     // If no show_in but explicit listable flag exists
                     $isListable = $fieldConfig['listable'] === true;
-                } else {
-                    // Default: exclude sensitive field types (password, etc.)
-                    $fieldType = $fieldConfig['type'] ?? 'string';
-                    $sensitiveTypes = ['password'];
-                    $isListable = !in_array($fieldType, $sensitiveTypes);
                 }
+                // Default: false - fields must be explicitly marked as listable
+                // This prevents sensitive fields (password, tokens, etc.) from being exposed
+                // and enforces secure-by-default behavior
                 
                 if ($isListable) {
                     $listable[] = $fieldName;

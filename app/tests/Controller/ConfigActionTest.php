@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Controller;
 
+use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 
 /**
@@ -47,7 +48,7 @@ class ConfigActionTest extends CRUD6TestCase
     public function testConfigEndpointReturnsDebugModeWhenEnabled(): void
     {
         // Set debug_mode to true in config
-        $this->ci->get('config')->set('crud6.debug_mode', true);
+        $this->ci->get(Config::class)->set('crud6.debug_mode', true);
         
         // Create request to config endpoint
         $request = $this->createJsonRequest('GET', '/api/crud6/config');

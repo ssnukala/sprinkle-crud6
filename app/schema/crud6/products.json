@@ -1,0 +1,140 @@
+{
+    "model": "products",
+    "table": "products",
+    "primary_key": "id",
+    "title": "CRUD6.PRODUCTS.PAGE",
+    "singular_title": "CRUD6.PRODUCTS.1",
+    "title_field": "name",
+    "description": "CRUD6.PRODUCTS.PAGE_DESCRIPTION",
+    "default_sort": {
+        "id": "asc"
+    },
+    "permissions": {
+        "read": "uri_products",
+        "create": "create_product",
+        "update": "update_product_field",
+        "delete": "delete_product"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "CRUD6.PRODUCTS.ID",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "auto_increment": true,
+            "readonly": true
+        },
+        "sku": {
+            "type": "string",
+            "label": "CRUD6.PRODUCTS.SKU",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "unique": true,
+                "required": true
+            }
+        },
+        "name": {
+            "type": "string",
+            "label": "CRUD6.PRODUCTS.NAME",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "required": true
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "CRUD6.PRODUCTS.DESCRIPTION",
+            "required": false,
+            "sortable": false,
+            "filterable": true,
+            "show_in": [
+                "form",
+                "detail"
+            ]
+        },
+        "price": {
+            "type": "decimal",
+            "label": "CRUD6.PRODUCTS.PRICE",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "required": true,
+                "numeric": true,
+                "min": 0
+            }
+        },
+        "quantity": {
+            "type": "integer",
+            "label": "CRUD6.PRODUCTS.QUANTITY",
+            "required": false,
+            "sortable": true,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
+        },
+        "active": {
+            "type": "boolean",
+            "label": "CRUD6.PRODUCTS.ACTIVE",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "default": true
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "CRUD6.PRODUCTS.CREATED_AT",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "date_format": "Y-m-d H:i:s",
+            "readonly": true
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "CRUD6.PRODUCTS.UPDATED_AT",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "date_format": "Y-m-d H:i:s",
+            "readonly": true
+        }
+    }
+}

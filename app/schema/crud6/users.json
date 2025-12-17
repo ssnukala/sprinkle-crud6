@@ -1,0 +1,142 @@
+{
+    "model": "users",
+    "table": "users",
+    "primary_key": "id",
+    "title": "CRUD6.USERS.PAGE",
+    "singular_title": "CRUD6.USERS.1",
+    "title_field": "user_name",
+    "description": "CRUD6.USERS.PAGE_DESCRIPTION",
+    "default_sort": {
+        "id": "asc"
+    },
+    "permissions": {
+        "read": "uri_users",
+        "create": "create_user",
+        "update": "update_user_field",
+        "delete": "delete_user"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "CRUD6.USERS.ID",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "auto_increment": true,
+            "readonly": true
+        },
+        "user_name": {
+            "type": "string",
+            "label": "CRUD6.USERS.USER_NAME",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "unique": true,
+                "required": true
+            }
+        },
+        "first_name": {
+            "type": "string",
+            "label": "CRUD6.USERS.FIRST_NAME",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
+        },
+        "last_name": {
+            "type": "string",
+            "label": "CRUD6.USERS.LAST_NAME",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ]
+        },
+        "email": {
+            "type": "string",
+            "label": "CRUD6.USERS.EMAIL",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "email": true,
+                "unique": true,
+                "required": true
+            }
+        },
+        "password": {
+            "type": "string",
+            "label": "CRUD6.USERS.PASSWORD",
+            "required": true,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "form"
+            ],
+            "validation": {
+                "length": {
+                    "min": 8
+                },
+                "required": true
+            }
+        },
+        "flag_enabled": {
+            "type": "boolean",
+            "label": "CRUD6.USERS.FLAG_ENABLED",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "default": true
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "CRUD6.USERS.CREATED_AT",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "date_format": "Y-m-d H:i:s",
+            "readonly": true
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "CRUD6.USERS.UPDATED_AT",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "date_format": "Y-m-d H:i:s",
+            "readonly": true
+        }
+    }
+}

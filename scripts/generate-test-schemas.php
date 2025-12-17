@@ -17,21 +17,20 @@ declare(strict_types=1);
  * This script generates schema JSON files and locale translations
  * for CRUD6 testing using the SchemaBuilder helper.
  * 
+ * This is a standalone version that doesn't require composer autoload
+ * to work in CI environments.
+ * 
  * Usage:
- *   php generate-test-schemas.php
+ *   php scripts/generate-test-schemas.php
  * 
  * Or make executable and run:
- *   chmod +x generate-test-schemas.php
- *   ./generate-test-schemas.php
+ *   chmod +x scripts/generate-test-schemas.php
+ *   ./scripts/generate-test-schemas.php
  */
 
-// Autoload
-require_once __DIR__ . '/vendor/autoload.php';
-
-use UserFrosting\Sprinkle\CRUD6\Testing\GenerateSchemas;
+// Load helper classes directly
+require_once __DIR__ . '/SchemaBuilder.php';
+require_once __DIR__ . '/GenerateSchemas.php';
 
 // Generate schemas and translations
 GenerateSchemas::generate();
-
-echo "\nSchema files: app/schema/crud6/\n";
-echo "Translations: app/locale/en_US/messages.php\n";

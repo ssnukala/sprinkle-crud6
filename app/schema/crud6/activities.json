@@ -1,0 +1,106 @@
+{
+    "model": "activities",
+    "table": "activities",
+    "primary_key": "id",
+    "title": "CRUD6.ACTIVITIES.PAGE",
+    "singular_title": "CRUD6.ACTIVITIES.1",
+    "title_field": "type",
+    "description": "CRUD6.ACTIVITIES.PAGE_DESCRIPTION",
+    "default_sort": {
+        "id": "asc"
+    },
+    "permissions": {
+        "read": "uri_activities",
+        "create": "create_activity",
+        "update": "update_activity_field",
+        "delete": "delete_activity"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "CRUD6.ACTIVITIES.ID",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "show_in": [
+                "detail"
+            ],
+            "auto_increment": true,
+            "readonly": true
+        },
+        "user_id": {
+            "type": "integer",
+            "label": "CRUD6.ACTIVITIES.USER_ID",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "required": true
+            }
+        },
+        "type": {
+            "type": "string",
+            "label": "CRUD6.ACTIVITIES.TYPE",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "required": true
+            }
+        },
+        "occurred_at": {
+            "type": "datetime",
+            "label": "CRUD6.ACTIVITIES.OCCURRED_AT",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "date_format": "Y-m-d H:i:s",
+            "validation": {
+                "required": true
+            }
+        },
+        "ip_address": {
+            "type": "string",
+            "label": "CRUD6.ACTIVITIES.IP_ADDRESS",
+            "required": false,
+            "sortable": true,
+            "filterable": false,
+            "show_in": [
+                "list",
+                "form",
+                "detail"
+            ],
+            "validation": {
+                "length": {
+                    "max": 45
+                }
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "CRUD6.ACTIVITIES.DESCRIPTION",
+            "required": false,
+            "sortable": false,
+            "filterable": true,
+            "show_in": [
+                "form",
+                "detail"
+            ]
+        }
+    }
+}

@@ -250,12 +250,13 @@ abstract class Base
     /**
      * Get listable fields from the model schema.
      * 
-     * A field is considered listable if:
+     * A field is considered listable ONLY if:
      * - It has `show_in` array containing 'list', OR
-     * - It has explicit `listable: true`, OR
-     * - Neither is specified AND it's not a sensitive field type
+     * - It has explicit `listable: true`
      * 
-     * This prevents sensitive fields (password, timestamps, etc.) from being exposed by default.
+     * By default, fields are NOT listable unless explicitly marked as such.
+     * This prevents sensitive fields (password, timestamps, etc.) from being
+     * exposed accidentally.
      * 
      * @param string $modelName The model name
      * 
@@ -265,40 +266,10 @@ abstract class Base
     {
         $listable = [];
         $fields = $this->getFields($modelName);
-        
-        // Sensitive field names that should never be listable by default
-        $sensitiveFieldNames = ['password', 'password_hash', 'secret', 'token', 'api_key', 'api_token'];
-        $sensitiveTypes = ['password'];
-        
-        // Timestamp fields that should not be listable by default
-        $timestampFields = ['created_at', 'updated_at', 'deleted_at'];
 
         foreach ($fields as $name => $field) {
-            // Always exclude sensitive field names unless explicitly set to listable: true
-            if (in_array($name, $sensitiveFieldNames)) {
-                // Only include if explicitly marked as listable: true
-                if (isset($field['listable']) && $field['listable'] === true) {
-                    $listable[] = $name;
-                }
-                continue;
-            }
-            
-            // Exclude timestamp fields unless explicitly marked listable
-            if (in_array($name, $timestampFields)) {
-                if (!isset($field['listable']) || $field['listable'] !== true) {
-                    continue;
-                }
-            }
-            
-            // Exclude readonly fields unless explicitly marked listable
-            if (isset($field['readonly']) && $field['readonly'] === true) {
-                if (!isset($field['listable']) || $field['listable'] !== true) {
-                    continue;
-                }
-            }
-            
             // Check if field should be shown in list context
-            // Priority: show_in array > explicit listable flag > default (false for sensitive types)
+            // Priority: show_in array > explicit listable flag
             $isListable = false;
             
             if (isset($field['show_in'])) {
@@ -307,11 +278,8 @@ abstract class Base
             } elseif (isset($field['listable'])) {
                 // If no show_in but explicit listable flag exists
                 $isListable = $field['listable'] === true;
-            } else {
-                // Default: exclude sensitive field types (password, etc.)
-                $fieldType = $field['type'] ?? 'string';
-                $isListable = !in_array($fieldType, $sensitiveTypes);
             }
+            // Default: false - fields must be explicitly marked as listable
             
             if ($isListable) {
                 $listable[] = $name;

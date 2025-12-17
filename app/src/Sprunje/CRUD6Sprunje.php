@@ -139,6 +139,11 @@ class CRUD6Sprunje extends Sprunje
         return $query->where(function ($subQuery) use ($value, $tableName) {
             $isFirst = true;
             foreach ($this->filterable as $field) {
+                // Skip empty field names to prevent SQL errors
+                if (empty($field)) {
+                    continue;
+                }
+                
                 // Qualify field with table name if not already qualified
                 $qualifiedField = strpos($field, '.') !== false 
                     ? $field 

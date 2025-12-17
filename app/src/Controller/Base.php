@@ -171,7 +171,7 @@ abstract class Base
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
 
         if (!$this->authenticator->checkAccess($permission)) {
-            throw new ForbiddenException("Access denied for {$action} on {$schema['model']}");
+            throw new ForbiddenException("Access Denied");
         }
     }
 
@@ -269,6 +269,9 @@ abstract class Base
         // Sensitive field names that should never be listable by default
         $sensitiveFieldNames = ['password', 'password_hash', 'secret', 'token', 'api_key', 'api_token'];
         $sensitiveTypes = ['password'];
+        
+        // Timestamp fields that should not be listable by default
+        $timestampFields = ['created_at', 'updated_at', 'deleted_at'];
 
         foreach ($fields as $name => $field) {
             // Always exclude sensitive field names unless explicitly set to listable: true
@@ -278,6 +281,20 @@ abstract class Base
                     $listable[] = $name;
                 }
                 continue;
+            }
+            
+            // Exclude timestamp fields unless explicitly marked listable
+            if (in_array($name, $timestampFields)) {
+                if (!isset($field['listable']) || $field['listable'] !== true) {
+                    continue;
+                }
+            }
+            
+            // Exclude readonly fields unless explicitly marked listable
+            if (isset($field['readonly']) && $field['readonly'] === true) {
+                if (!isset($field['listable']) || $field['listable'] !== true) {
+                    continue;
+                }
             }
             
             // Check if field should be shown in list context

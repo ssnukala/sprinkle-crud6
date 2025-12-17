@@ -652,7 +652,7 @@ class SchemaFilteringTest extends TestCase
         
         // Test when title_field is not present in schema
         unset($schema['title_field']);
-        $detailData = $method->invoke($schemaService, $schema, 'detail');
+        $detailData = $method->invoke($schemaFilter, $schema, 'detail');
         $this->assertArrayNotHasKey('title_field', $detailData, 'title_field should not be in context when not in schema');
     }
 

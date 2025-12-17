@@ -43,8 +43,8 @@ class DefaultSeedsTest extends CRUD6TestCase
         $this->refreshDatabase();
         
         // Seed Account sprinkle data first (simulating what bakery seed does)
-        // Using inherited seedAccountData() from WithDatabaseSeeds trait
-        $this->seedAccountData();
+        // Using inherited seedDatabase() from WithDatabaseSeeds trait
+        $this->seedDatabase();
     }
 
     /**
@@ -166,6 +166,6 @@ class DefaultSeedsTest extends CRUD6TestCase
         $this->assertEquals($initialPermissionCount, $finalPermissionCount);
     }
 
-    // Note: seedAccountData() is now inherited from WithDatabaseSeeds trait
+    // Note: seedDatabase() is now inherited from WithDatabaseSeeds trait
     // No need to redefine it here
 }

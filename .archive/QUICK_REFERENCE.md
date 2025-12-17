@@ -42,11 +42,12 @@ throw new ForbiddenException("Access Denied");  // Change from verbose message
 
 ## 🔧 Quick Fixes Checklist
 
-- [ ] `Base.php:174` - Change to `throw new ForbiddenException("Access Denied");`
-- [ ] `Base.php:264-304` - Update `getListableFields()` to exclude timestamps/readonly
-- [ ] `DefaultSeedsTest.php:47` - Add `seedAccountData()` method
-- [ ] `SchemaFilteringTest.php:655` - Fix static method call to use instance
-- [ ] Find generic error handler - Fix "Force" message
+- [x] `Base.php:174` - Changed to `throw new ForbiddenException("Access Denied");` ✅
+- [x] `Base.php:264-310` - Updated `getListableFields()` to exclude timestamps/readonly ✅
+- [x] `DefaultSeedsTest.php:47` - Changed `seedAccountData()` to `seedDatabase()` ✅
+- [x] `SchemaFilteringTest.php:655` - Fixed static method call to use instance ✅
+- [x] `ConfigActionTest.php:30` - Removed contradictory assertion ✅
+- [ ] Find generic error handler - Fix "Force" message (needs CI diagnostics)
 
 ## 📁 Complete Documentation
 
@@ -73,10 +74,20 @@ throw new ForbiddenException("Access Denied");  // Change from verbose message
 2. **For process info**: Read `ANALYSIS_PROCESS_SUMMARY.md`
 3. **For quick reference**: This file!
 
-## 🎯 Success = All Green
+## 🎯 Success Criteria
 
-Target: **292 tests passing, 0 failures**
+**Target**: 292 tests passing, 0 failures
+
+**Current**: 25+ tests fixed (Phases 1-3 complete)
+- ✅ Phase 1: Permission messages (15 tests)
+- ✅ Phase 2: Listable fields + seeding (7 tests)
+- ✅ Phase 3: Config + schema filtering (3 tests)
+- ⏳ Phase 4: 500 errors investigation (~90 tests)
+
+**See Also**:
+- `.archive/PHASE_1_2_3_FIXES_APPLIED.md` - Detailed fix documentation
+- `.archive/COMPLETE_FIX_IMPLEMENTATION_SUMMARY.md` - Final summary
 
 ---
 
-*Created: 2025-12-17 | Ready for implementation*
+*Created: 2025-12-17 | Updated: 2025-12-17 | Phases 1-3 complete ✅*

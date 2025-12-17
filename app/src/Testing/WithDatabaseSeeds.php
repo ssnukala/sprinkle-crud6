@@ -57,6 +57,17 @@ trait WithDatabaseSeeds
      * 
      * This ensures that groups, roles, and permissions exist before any tests run,
      * and that an admin user is available for authenticated tests.
+     * 
+     * After seeding, the following will be available:
+     * - Groups: hippo, dove, dragon (from Account's DefaultGroups)
+     * - Roles: site-admin (Account), crud6-admin (CRUD6)
+     * - Permissions: All Account and CRUD6 permissions including:
+     *   - uri_crud6, uri_crud6_list, create_crud6, delete_crud6, update_crud6_field, view_crud6_field
+     *   - crud6.users.read, crud6.users.create, crud6.users.edit, crud6.users.delete
+     *   - crud6.groups.read, crud6.groups.create, crud6.groups.edit, crud6.groups.delete
+     *   - crud6.roles.read, crud6.roles.create, crud6.roles.edit, crud6.roles.delete
+     *   - crud6.permissions.read, crud6.permissions.create, crud6.permissions.edit, crud6.permissions.delete
+     * - Admin user: 'admin' with site-admin role (has all permissions)
      */
     protected function seedDatabase(): void
     {

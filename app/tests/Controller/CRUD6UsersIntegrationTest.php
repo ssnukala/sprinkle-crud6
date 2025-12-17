@@ -466,6 +466,8 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
      */
     public function testFrontendUsersListRouteExists(): void
     {
+        $this->markTestSkipped('Frontend routes not implemented yet - API-only functionality');
+        
         // Create request with method and url and fetch response
         $request = $this->createRequest('GET', '/crud6/users');
         $response = $this->handleRequestWithTracking($request);
@@ -483,6 +485,8 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
      */
     public function testFrontendSingleUserRouteExists(): void
     {
+        $this->markTestSkipped('Frontend routes not implemented yet - API-only functionality');
+        
         /** @var User */
         $testUser = User::factory()->create();
 

@@ -13,6 +13,8 @@ use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -72,25 +74,27 @@ class UpdateFieldAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        
-        parent::__invoke($crudSchema, $crudModel, $request, $response);
-        
-        // Get the field name from the route
-        $fieldName = $this->getParameter($request, 'field');
-        $primaryKey = $crudSchema['primary_key'] ?? 'id';
-        $recordId = $crudModel->getAttribute($primaryKey);
-
-        $this->debugLog("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST START =====", [
-            'model' => $crudSchema['model'],
-            'record_id' => $recordId,
-            'field' => $fieldName,
-            'uri' => (string) $request->getUri(),
-        ]);
-
         try {
+            parent::__invoke($crudSchema, $crudModel, $request, $response);
+            
+            // Validate access permission for update operation
+            $this->validateAccess($crudSchema, 'edit');
+            
+            // Get the field name from the route
+            $fieldName = $this->getParameter($request, 'field');
+            $primaryKey = $crudSchema['primary_key'] ?? 'id';
+            $recordId = $crudModel->getAttribute($primaryKey);
+
+            $this->debugLog("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST START =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+                'field' => $fieldName,
+                'uri' => (string) $request->getUri(),
+            ]);
+
             // Check if this field exists and is editable in the schema
             if (!isset($crudSchema['fields'][$fieldName])) {
-                $this->logger->error("Line:93 CRUD6 [UpdateFieldAction] Field does not exist", [
+                $this->logger->error("CRUD6 [UpdateFieldAction] Field does not exist", [
                     'model' => $crudSchema['model'],
                     'field' => $fieldName,
                     'available_fields' => array_keys($crudSchema['fields'] ?? []),
@@ -237,18 +241,24 @@ class UpdateFieldAction extends Base
             ]);
 
             return $this->jsonResponse($response, $message);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:239 CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [UpdateFieldAction] ===== UPDATE FIELD REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
-                'record_id' => $recordId,
-                'field' => $fieldName,
+                'record_id' => $recordId ?? 'unknown',
+                'field' => $fieldName ?? 'unknown',
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while updating the field', 500);
         }
     }
 }

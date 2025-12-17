@@ -14,6 +14,8 @@ use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
@@ -116,8 +118,14 @@ class CreateAction extends Base
             
             $response->getBody()->write(json_encode($payload));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:104 CRUD6 [CreateAction] ===== CREATE REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [CreateAction] ===== CREATE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),
@@ -125,7 +133,7 @@ class CreateAction extends Base
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while creating the record', 500);
         }
     }
 

@@ -10,6 +10,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -61,16 +63,18 @@ class DeleteAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, Response $response): Response
     {
-        
-        $primaryKey = $crudSchema['primary_key'] ?? 'id';
-        $recordId = $crudModel->getAttribute($primaryKey);
-
-        $this->debugLog("CRUD6 [DeleteAction] ===== DELETE REQUEST START =====", [
-            'model' => $crudSchema['model'],
-            'record_id' => $recordId,
-        ]);
-
         try {
+            // Validate access permission for delete operation
+            $this->validateAccess($crudSchema, 'delete');
+            
+            $primaryKey = $crudSchema['primary_key'] ?? 'id';
+            $recordId = $crudModel->getAttribute($primaryKey);
+
+            $this->debugLog("CRUD6 [DeleteAction] ===== DELETE REQUEST START =====", [
+                'model' => $crudSchema['model'],
+                'record_id' => $recordId,
+            ]);
+
             $modelDisplayName = $this->getModelDisplayName($crudSchema);
             $this->handle($crudSchema, $crudModel);
             
@@ -89,17 +93,23 @@ class DeleteAction extends Base
             ]);
 
             return $this->jsonResponseWithTitle($response, $title, $description);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:90 CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [DeleteAction] ===== DELETE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
-                'record_id' => $recordId,
+                'record_id' => $recordId ?? 'unknown',
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while deleting the record', 500);
         }
     }
 

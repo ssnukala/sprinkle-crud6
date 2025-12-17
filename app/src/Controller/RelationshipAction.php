@@ -13,6 +13,7 @@ use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
@@ -61,25 +62,27 @@ class RelationshipAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        
-        parent::__invoke($crudSchema, $crudModel, $request, $response);
-        
-        // Get the relationship name from the route
-        $relationName = $this->getParameter($request, 'relation');
-        
-        // Determine the HTTP method
-        $method = $request->getMethod();
-        
-        // Handle GET request - retrieve relationship data
-        if ($method === 'GET') {
-            return $this->handleGetRelationship($crudSchema, $crudModel, $request, $response, $relationName);
+        try {
+            parent::__invoke($crudSchema, $crudModel, $request, $response);
+            
+            // Validate access permission for relationship management
+            $this->validateAccess($crudSchema, 'edit');
+            
+            // Get the relationship name from the route
+            $relationName = $this->getParameter($request, 'relation');
+            
+            // Determine the HTTP method
+            $method = $request->getMethod();
+            
+            // Handle GET request - retrieve relationship data
+            if ($method === 'GET') {
+                return $this->handleGetRelationship($crudSchema, $crudModel, $request, $response, $relationName);
         }
         
         // Determine if this is attach (POST) or detach (DELETE)
         $isAttach = ($method === 'POST');
 
-        // Access control check
-        $this->validateAccess($crudSchema, 'update');
+        // Access validation is done in __invoke() method
 
         // The record is already loaded by the middleware into $crudModel
 
@@ -178,20 +181,39 @@ class RelationshipAction extends Base
             throw $e;
         }
 
-        // Success message
-        // Translate model and relation titles if they are translation keys
-        $modelTitle = $crudSchema['title'] ?? $crudSchema['model'];
-        $relationTitle = $relationshipConfig['title'] ?? $relationName;
-        $translatedModel = $this->translator->translate($modelTitle);
-        $translatedRelation = $this->translator->translate($relationTitle);
-        
-        $message = $this->translator->translate($messageKey, [
-            'model'    => $translatedModel,
-            'relation' => $translatedRelation,
-            'count'    => count($relatedIds),
-        ]);
+            // Success message
+            // Translate model and relation titles if they are translation keys
+            $modelTitle = $crudSchema['title'] ?? $crudSchema['model'];
+            $relationTitle = $relationshipConfig['title'] ?? $relationName;
+            $translatedModel = $this->translator->translate($modelTitle);
+            $translatedRelation = $this->translator->translate($relationTitle);
+            
+            $message = $this->translator->translate($messageKey, [
+                'model'    => $translatedModel,
+                'relation' => $translatedRelation,
+                'count'    => count($relatedIds),
+            ]);
 
-        return $this->jsonResponse($response, $message);
+            return $this->jsonResponse($response, $message);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
+        } catch (\Exception $e) {
+            $this->logger->error("CRUD6 [RelationshipAction] ===== REQUEST FAILED =====", [
+                'model' => $crudSchema['model'] ?? 'unknown',
+                'relation' => $relationName ?? 'unknown',
+                'method' => $method ?? 'unknown',
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->jsonResponse($response, 'An error occurred while managing the relationship', 500);
+        }
     }
 
     /**

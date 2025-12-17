@@ -9,6 +9,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 use UserFrosting\I18n\Translator;
@@ -68,16 +70,18 @@ class SprunjeAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-
-        parent::__invoke($crudSchema, $crudModel, $request, $response);
-
-        $this->debugLog("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
-            'model' => $crudSchema['model'],
-            'uri' => (string) $request->getUri(),
-            'query_params' => $request->getQueryParams(),
-        ]);
-
         try {
+            parent::__invoke($crudSchema, $crudModel, $request, $response);
+            
+            // Validate access permission for list operation
+            $this->validateAccess($crudSchema, 'read');
+
+            $this->debugLog("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST START =====", [
+                'model' => $crudSchema['model'],
+                'uri' => (string) $request->getUri(),
+                'query_params' => $request->getQueryParams(),
+            ]);
+
             // Get the relation parameter if it exists
             $relation = $this->getParameter($request, 'relation', 'NONE');
 
@@ -455,8 +459,14 @@ class SprunjeAction extends Base
             ]);
 
             return $this->sprunje->toResponse($response);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:459 CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [SprunjeAction] ===== SPRUNJE REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),
@@ -464,7 +474,7 @@ class SprunjeAction extends Base
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while fetching data', 500);
         }
     }
 

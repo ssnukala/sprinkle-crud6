@@ -37,6 +37,18 @@ use UserFrosting\Sprinkle\Core\Seeder\SeedRepositoryInterface;
  *         $this->refreshDatabase();
  *         $this->seedDatabase();
  *     }
+ *     
+ *     public function testUserCrud(): void
+ *     {
+ *         // Get permissions from schema file
+ *         $permissions = $this->getSchemaPermissions('users');
+ *         
+ *         $user = User::factory()->create();
+ *         $this->actAsUser($user, permissions: $permissions);
+ *         
+ *         // Now user has all permissions defined in users schema
+ *         // (read, create, update, delete)
+ *     }
  * }
  * ```
  * 
@@ -132,5 +144,63 @@ trait WithDatabaseSeeds
         ]);
         
         return $admin;
+    }
+    
+    /**
+     * Get permissions from a schema file for use with actAsUser().
+     * 
+     * Extracts all permission values from a schema's permissions object and returns
+     * them as an array that can be passed to actAsUser().
+     * 
+     * Usage:
+     * ```php
+     * $permissions = $this->getSchemaPermissions('users');
+     * // Returns: ['uri_crud6', 'create_user', 'update_user_field', 'delete_user']
+     * 
+     * $user = User::factory()->create();
+     * $this->actAsUser($user, permissions: $permissions);
+     * ```
+     * 
+     * @param string $modelName The model name (e.g., 'users', 'groups', 'roles')
+     * @param string[] $operations Optional array of operations to include (e.g., ['read', 'create']).
+     *                            If empty, all permissions from schema are returned.
+     * 
+     * @return string[] Array of permission slugs from the schema
+     * 
+     * @throws Exception If schema service is not available or schema not found
+     */
+    protected function getSchemaPermissions(string $modelName, array $operations = []): array
+    {
+        // @phpstan-ignore-next-line Allow for extra protection in case Trait is misused.
+        if (!isset($this->ci) || !$this->ci instanceof ContainerInterface) {
+            throw new Exception('CI/Container not available. Make sure you extend the correct TestCase');
+        }
+        
+        // Get SchemaService from container
+        $schemaService = $this->ci->get(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService::class);
+        
+        // Load the schema for the model
+        $schema = $schemaService->getSchema($modelName);
+        
+        if (!isset($schema['permissions']) || !is_array($schema['permissions'])) {
+            return [];
+        }
+        
+        $permissions = [];
+        
+        // If specific operations requested, filter to those
+        if (!empty($operations)) {
+            foreach ($operations as $operation) {
+                if (isset($schema['permissions'][$operation])) {
+                    $permissions[] = $schema['permissions'][$operation];
+                }
+            }
+        } else {
+            // Return all permissions from schema
+            $permissions = array_values($schema['permissions']);
+        }
+        
+        // Remove duplicates and return
+        return array_unique($permissions);
     }
 }

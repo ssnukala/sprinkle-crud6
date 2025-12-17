@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Database\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use UserFrosting\Sprinkle\Core\Database\Models\Model;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 
@@ -39,6 +40,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 class CRUD6Model extends Model implements CRUD6ModelInterface
 {
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * @var string The name of the table for the current model.
@@ -65,8 +67,15 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
     /**
      * @var string|null The name of the "deleted at" column for soft deletes.
+     * This is a custom property for CRUD6 schema configuration.
      */
     protected $deleted_at = null;
+    
+    /**
+     * @var string[] The attributes that should be mutated to dates.
+     * Will include 'deleted_at' when soft deletes are enabled.
+     */
+    protected $dates = [];
 
     /**
      * @var array<string, array<string, array>> Static storage for relationship configurations.
@@ -107,7 +116,15 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $this->timestamps = $schema['timestamps'] ?? false;
 
         // Configure soft deletes
-        $this->deleted_at = ($schema['soft_delete'] ?? false) ? 'deleted_at' : null;
+        if ($schema['soft_delete'] ?? false) {
+            $this->deleted_at = 'deleted_at';
+            // Add deleted_at to dates array for SoftDeletes trait
+            if (!in_array('deleted_at', $this->dates)) {
+                $this->dates[] = 'deleted_at';
+            }
+        } else {
+            $this->deleted_at = null;
+        }
 
         // Set fillable attributes and casts based on schema fields
         $this->configureFillableAndCasts($schema);

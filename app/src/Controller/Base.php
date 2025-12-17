@@ -261,8 +261,21 @@ abstract class Base
     {
         $listable = [];
         $fields = $this->getFields($modelName);
+        
+        // Sensitive field names that should never be listable by default
+        $sensitiveFieldNames = ['password', 'password_hash', 'secret', 'token', 'api_key', 'api_token'];
+        $sensitiveTypes = ['password'];
 
         foreach ($fields as $name => $field) {
+            // Always exclude sensitive field names unless explicitly set to listable: true
+            if (in_array($name, $sensitiveFieldNames)) {
+                // Only include if explicitly marked as listable: true
+                if (isset($field['listable']) && $field['listable'] === true) {
+                    $listable[] = $name;
+                }
+                continue;
+            }
+            
             // Check if field should be shown in list context
             // Priority: show_in array > explicit listable flag > default (false for sensitive types)
             $isListable = false;
@@ -276,7 +289,6 @@ abstract class Base
             } else {
                 // Default: exclude sensitive field types (password, etc.)
                 $fieldType = $field['type'] ?? 'string';
-                $sensitiveTypes = ['password'];
                 $isListable = !in_array($fieldType, $sensitiveTypes);
             }
             
@@ -292,7 +304,8 @@ abstract class Base
      * 
      * Fields are considered editable if:
      * - They have `editable: true` explicitly set, OR
-     * - They don't have `editable: false`, `auto_increment: true`, or `computed: true`
+     * - They don't have `editable: false`, `readonly: true`, `auto_increment: true`, or `computed: true`
+     * - They are not timestamp fields (created_at, updated_at, deleted_at) unless explicitly editable
      * 
      * @param string|array $modelNameOrSchema The model name or schema array
      * 
@@ -305,9 +318,16 @@ abstract class Base
             : $modelNameOrSchema;
 
         $editable = [];
+        $timestampFields = ['created_at', 'updated_at', 'deleted_at'];
+        
         foreach ($schema['fields'] ?? [] as $name => $field) {
             // Check if field is explicitly marked as not editable
             if (isset($field['editable']) && $field['editable'] === false) {
+                continue;
+            }
+
+            // Check for readonly flag
+            if (isset($field['readonly']) && $field['readonly'] === true) {
                 continue;
             }
 
@@ -317,6 +337,13 @@ abstract class Base
             }
             if ($field['computed'] ?? false) {
                 continue;
+            }
+            
+            // Exclude timestamp fields unless explicitly marked as editable
+            if (in_array($name, $timestampFields)) {
+                if (!isset($field['editable']) || $field['editable'] !== true) {
+                    continue;
+                }
             }
 
             // Field is editable by default

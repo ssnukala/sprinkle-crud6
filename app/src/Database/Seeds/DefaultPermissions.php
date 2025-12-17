@@ -43,7 +43,8 @@ class DefaultPermissions implements SeedInterface
      */
     protected function getPermissions(): array
     {
-        return [
+        $permissions = [
+            // Legacy generic CRUD6 permissions (kept for backward compatibility)
             'create_crud6' => new Permission([
                 'slug'        => 'create_crud6',
                 'name'        => 'Create crud6',
@@ -81,6 +82,24 @@ class DefaultPermissions implements SeedInterface
                 'description' => 'View certain properties of any crud6.',
             ]),
         ];
+        
+        // Add model-specific permissions for common models (users, groups, roles, permissions)
+        $models = ['users', 'groups', 'roles', 'permissions'];
+        $actions = ['read', 'create', 'edit', 'delete'];
+        
+        foreach ($models as $model) {
+            foreach ($actions as $action) {
+                $slug = "crud6.{$model}.{$action}";
+                $permissions[$slug] = new Permission([
+                    'slug'        => $slug,
+                    'name'        => ucfirst($action) . ' ' . $model,
+                    'conditions'  => 'always()',
+                    'description' => ucfirst($action) . ' ' . $model . ' via CRUD6.',
+                ]);
+            }
+        }
+        
+        return $permissions;
     }
 
     /**
@@ -118,27 +137,27 @@ class DefaultPermissions implements SeedInterface
         /** @var Role|null */
         $roleSiteAdmin = Role::where('slug', 'site-admin')->first();
         if ($roleSiteAdmin !== null) {
-            $roleSiteAdmin->permissions()->sync([
-                $permissions['create_crud6']->id,
-                $permissions['delete_crud6']->id,
-                $permissions['update_crud6_field']->id,
-                $permissions['uri_crud6']->id,
-                $permissions['uri_crud6_list']->id,
-                $permissions['view_crud6_field']->id,
-            ]);
+            // Collect all permission IDs for site-admin
+            $permissionIds = [];
+            foreach ($permissions as $permission) {
+                $permissionIds[] = $permission->id;
+            }
+            
+            // Sync all CRUD6 permissions to site-admin role
+            $roleSiteAdmin->permissions()->syncWithoutDetaching($permissionIds);
         }
 
         /** @var Role|null */
         $rolecrud6Admin = Role::where('slug', 'crud6-admin')->first();
         if ($rolecrud6Admin !== null) {
-            $rolecrud6Admin->permissions()->sync([
-                $permissions['create_crud6']->id,
-                $permissions['delete_crud6']->id,
-                $permissions['update_crud6_field']->id,
-                $permissions['uri_crud6']->id,
-                $permissions['uri_crud6_list']->id,
-                $permissions['view_crud6_field']->id,
-            ]);
+            // Collect all permission IDs for crud6-admin
+            $permissionIds = [];
+            foreach ($permissions as $permission) {
+                $permissionIds[] = $permission->id;
+            }
+            
+            // Sync all CRUD6 permissions to crud6-admin role
+            $rolecrud6Admin->permissions()->syncWithoutDetaching($permissionIds);
         }
     }
 }

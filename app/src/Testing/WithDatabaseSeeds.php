@@ -12,18 +12,17 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Testing;
 
-use UserFrosting\Sprinkle\Account\Database\Models\Group;
-use UserFrosting\Sprinkle\Account\Database\Models\Permission;
-use UserFrosting\Sprinkle\Account\Database\Models\Role;
-use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
-use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
+use Exception;
+use Psr\Container\ContainerInterface;
+use UserFrosting\Sprinkle\Account\Database\Models\User;
+use UserFrosting\Sprinkle\Core\Seeder\SeedRepositoryInterface;
 
 /**
  * WithDatabaseSeeds Trait
  * 
  * Provides database seeding functionality for tests that use RefreshDatabase.
- * This trait ensures tests have the necessary base data (groups, roles, permissions)
- * that the application expects.
+ * This trait runs all registered seeds from UserFrosting sprinkles and creates
+ * an admin user following the same pattern as the CI workflow.
  * 
  * Usage:
  * ```php
@@ -41,36 +40,48 @@ use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
  * }
  * ```
  * 
- * This follows the pattern from DefaultSeedsTest and integration tests.
+ * This follows the CI workflow pattern:
+ * 1. Run migrations (via RefreshDatabase)
+ * 2. Run all registered seeds (groups, roles, permissions)
+ * 3. Create admin user (triggers default group/role assignment)
  */
 trait WithDatabaseSeeds
 {
     /**
-     * Seed database with Account and CRUD6 data.
+     * Seed database using UserFrosting's registered seeds and create admin user.
      * 
      * Call this after refreshDatabase() to ensure tests have necessary data.
-     * This method ensures migrations are run before seeds, following UserFrosting 6 patterns.
+     * This method follows the CI workflow pattern:
+     * 1. Runs all seeds registered in sprinkles via SeedRepositoryInterface
+     * 2. Creates an admin user (similar to `php bakery create:admin-user`)
      * 
-     * Order of operations:
-     * 1. Migrations are run (via RefreshDatabase trait)
-     * 2. Account sprinkle base data is seeded
-     * 3. CRUD6 sprinkle seeds are run (DefaultRoles, DefaultPermissions)
+     * This ensures that groups, roles, and permissions exist before any tests run,
+     * and that an admin user is available for authenticated tests.
      */
     protected function seedDatabase(): void
     {
+        // @phpstan-ignore-next-line Allow for extra protection in case Trait is misused.
+        if (!isset($this->ci) || !$this->ci instanceof ContainerInterface) {
+            throw new Exception('CI/Container not available. Make sure you extend the correct TestCase');
+        }
+
         try {
-            // Log seeding start
-            fwrite(STDERR, "\n[SEEDING] Starting database seed...\n");
+            // Step 1: Run all registered seeds from all sprinkles
+            // This includes Account's DefaultGroups, DefaultRoles, DefaultPermissions
+            // and CRUD6's DefaultRoles, DefaultPermissions
+            /** @var SeedRepositoryInterface */
+            $seedRepository = $this->ci->get(SeedRepositoryInterface::class);
             
-            // Seed Account sprinkle base data first
-            fwrite(STDERR, "[SEEDING] Step 1: Seeding Account data...\n");
-            $this->seedAccountData();
+            $seeds = $seedRepository->all();
             
-            // Run CRUD6 seeds (which depend on Account data)
-            fwrite(STDERR, "[SEEDING] Step 2: Seeding CRUD6 data...\n");
-            $this->seedCRUD6Data();
+            foreach ($seeds as $seed) {
+                $seed->run();
+            }
             
-            fwrite(STDERR, "[SEEDING] Database seed complete.\n\n");
+            // Step 2: Create admin user (similar to CI workflow's create:admin-user)
+            // This will trigger UserCreatedEvent listeners that assign default groups/roles
+            $this->createAdminUser();
+            
         } catch (\Exception $e) {
             // Log errors to help debug seeding failures
             fwrite(STDERR, "\n[SEEDING ERROR] " . $e->getMessage() . "\n");
@@ -78,206 +89,37 @@ trait WithDatabaseSeeds
             throw $e;
         }
     }
-
+    
     /**
-     * Seed Account sprinkle base data.
+     * Create admin user following the same pattern as the CI workflow.
      * 
-     * Creates:
-     * - Default group (terran)
-     * - Site admin role
-     * - Base permissions for users, roles, groups, and permissions models
+     * Creates a user with admin credentials that can be used in tests.
+     * The user creation will trigger UserCreatedEvent listeners that automatically
+     * assign default groups and roles (via AssignDefaultGroups and AssignDefaultRoles).
      * 
-     * This simulates running Account sprinkle seeds before CRUD6 seeds.
-     * Includes all permissions needed by CRUD6 integration tests.
+     * @return User The created admin user
      */
-    protected function seedAccountData(): void
+    protected function createAdminUser(): User
     {
-        // Create a default group (simulating DefaultGroups seed)
-        fwrite(STDERR, "[SEEDING] - Creating default group (terran)...\n");
-        Group::create([
-            'slug' => 'terran',
-            'name' => 'Terran',
-            'description' => 'The terrans are the default user group.',
-            'icon' => 'fa fa-user',
-        ]);
-        
-        // Create site-admin role (simulating DefaultRoles seed)
-        fwrite(STDERR, "[SEEDING] - Creating site-admin role...\n");
-        $siteAdminRole = Role::create([
-            'slug' => 'site-admin',
-            'name' => 'Site Administrator',
-            'description' => 'This role is meant for "site administrators".',
-        ]);
-        fwrite(STDERR, "[SEEDING] - Created site-admin role (ID: {$siteAdminRole->id})\n");
-        
-        // Create base permissions for all models used in tests
-        // These match the permissions defined in example schemas
-        fwrite(STDERR, "[SEEDING] - Creating base Account permissions...\n");
-        $permissions = [];
-        
-        // Users model permissions
-        $permissions[] = Permission::create([
-            'slug' => 'uri_users',
-            'name' => 'View users',
-            'conditions' => 'always()',
-            'description' => 'View the user listing page.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'create_user',
-            'name' => 'Create user',
-            'conditions' => 'always()',
-            'description' => 'Create a new user.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'update_user_field',
-            'name' => 'Update user field',
-            'conditions' => 'always()',
-            'description' => 'Update a user field.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'delete_user',
-            'name' => 'Delete user',
-            'conditions' => 'always()',
-            'description' => 'Delete a user.',
-        ]);
-        
-        // Roles model permissions
-        $permissions[] = Permission::create([
-            'slug' => 'uri_roles',
-            'name' => 'View roles',
-            'conditions' => 'always()',
-            'description' => 'View the role listing page.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'create_role',
-            'name' => 'Create role',
-            'conditions' => 'always()',
-            'description' => 'Create a new role.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'update_role_field',
-            'name' => 'Update role field',
-            'conditions' => 'always()',
-            'description' => 'Update a role field.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'delete_role',
-            'name' => 'Delete role',
-            'conditions' => 'always()',
-            'description' => 'Delete a role.',
-        ]);
-        
-        // Groups model permissions
-        $permissions[] = Permission::create([
-            'slug' => 'uri_groups',
-            'name' => 'View groups',
-            'conditions' => 'always()',
-            'description' => 'View the group listing page.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'create_group',
-            'name' => 'Create group',
-            'conditions' => 'always()',
-            'description' => 'Create a new group.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'update_group_field',
-            'name' => 'Update group field',
-            'conditions' => 'always()',
-            'description' => 'Update a group field.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'delete_group',
-            'name' => 'Delete group',
-            'conditions' => 'always()',
-            'description' => 'Delete a group.',
-        ]);
-        
-        // Permissions model permissions
-        $permissions[] = Permission::create([
-            'slug' => 'uri_permissions',
-            'name' => 'View permissions',
-            'conditions' => 'always()',
-            'description' => 'View the permission listing page.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'create_permission',
-            'name' => 'Create permission',
-            'conditions' => 'always()',
-            'description' => 'Create a new permission.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'update_permission',
-            'name' => 'Update permission',
-            'conditions' => 'always()',
-            'description' => 'Update a permission.',
-        ]);
-        
-        $permissions[] = Permission::create([
-            'slug' => 'delete_permission',
-            'name' => 'Delete permission',
-            'conditions' => 'always()',
-            'description' => 'Delete a permission.',
-        ]);
-        
-        // Attach all permissions to site-admin role
-        $permissionIds = collect($permissions)->pluck('id')->toArray();
-        $siteAdminRole->permissions()->sync($permissionIds);
-        fwrite(STDERR, "[SEEDING] - Created " . count($permissions) . " Account permissions\n");
-        fwrite(STDERR, "[SEEDING] - Synced " . count($permissionIds) . " permissions to site-admin role\n");
-    }
-
-    /**
-     * Seed CRUD6 sprinkle data.
-     * 
-     * Runs:
-     * - DefaultRoles seed (creates crud6-admin role)
-     * - DefaultPermissions seed (creates CRUD6 permissions and syncs with roles)
-     * 
-     * This ensures CRUD6-specific roles and permissions are available for tests.
-     * This method is called AFTER seedAccountData() to ensure Account data exists.
-     */
-    protected function seedCRUD6Data(): void
-    {
-        // Run DefaultRoles seed to create crud6-admin role
-        fwrite(STDERR, "[SEEDING] - Running DefaultRoles seed...\n");
-        $rolesSeed = new DefaultRoles();
-        $rolesSeed->run();
-        
-        // Verify crud6-admin role was created
-        $crud6Role = Role::where('slug', 'crud6-admin')->first();
-        if ($crud6Role) {
-            fwrite(STDERR, "[SEEDING] - Created crud6-admin role (ID: {$crud6Role->id})\n");
+        // Check if admin user already exists
+        $existingAdmin = User::where('user_name', 'admin')->first();
+        if ($existingAdmin) {
+            return $existingAdmin;
         }
         
-        // Run DefaultPermissions seed to create CRUD6 permissions
-        fwrite(STDERR, "[SEEDING] - Running DefaultPermissions seed...\n");
-        $permissionsSeed = new DefaultPermissions();
-        $permissionsSeed->run();
+        // Create admin user - this will trigger the UserCreatedEvent
+        // which in turn triggers AssignDefaultGroups and AssignDefaultRoles listeners
+        /** @var User */
+        $admin = User::factory()->create([
+            'user_name' => 'admin',
+            'email' => 'admin@example.com',
+            'first_name' => 'Admin',
+            'last_name' => 'User',
+            'password' => 'admin123',
+            'flag_verified' => true,
+            'flag_enabled' => true,
+        ]);
         
-        // Verify CRUD6 permissions were created
-        $crud6Permissions = Permission::whereIn('slug', [
-            'create_crud6', 'delete_crud6', 'update_crud6_field',
-            'uri_crud6', 'uri_crud6_list', 'view_crud6_field'
-        ])->count();
-        fwrite(STDERR, "[SEEDING] - Created {$crud6Permissions} CRUD6 permissions\n");
-        
-        // Verify site-admin role has CRUD6 permissions
-        $siteAdmin = Role::where('slug', 'site-admin')->first();
-        if ($siteAdmin) {
-            $permCount = $siteAdmin->permissions()->count();
-            fwrite(STDERR, "[SEEDING] - site-admin role has {$permCount} total permissions\n");
-        }
+        return $admin;
     }
 }

@@ -18,6 +18,7 @@ use UserFrosting\Config\Config;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
@@ -70,14 +71,18 @@ class CustomActionController extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        parent::__invoke($crudSchema, $crudModel, $request, $response);
-        
-        // Get the action key from the route
-        $actionKey = $this->getParameter($request, 'actionKey');
-        $primaryKey = $crudSchema['primary_key'] ?? 'id';
-        $recordId = $crudModel->getAttribute($primaryKey);
+        try {
+            parent::__invoke($crudSchema, $crudModel, $request, $response);
+            
+            // Validate access permission for custom action
+            $this->validateAccess($crudSchema, 'edit');
+            
+            // Get the action key from the route
+            $actionKey = $this->getParameter($request, 'actionKey');
+            $primaryKey = $crudSchema['primary_key'] ?? 'id';
+            $recordId = $crudModel->getAttribute($primaryKey);
 
-        $this->debugLog("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST START =====", [
+            $this->debugLog("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST START =====", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'action_key' => $actionKey,
@@ -153,17 +158,23 @@ class CustomActionController extends Base
             ]);
 
             return $this->jsonResponse($response, $description);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:151 CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
-                'record_id' => $recordId,
-                'action_key' => $actionKey,
+                'record_id' => $recordId ?? 'unknown',
+                'action_key' => $actionKey ?? 'unknown',
                 'error_type' => get_class($e),
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
                 'error_line' => $e->getLine(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while executing the custom action', 500);
         }
     }
 

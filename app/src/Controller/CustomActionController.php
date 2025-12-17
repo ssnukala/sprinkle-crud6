@@ -71,18 +71,14 @@ class CustomActionController extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, Request $request, Response $response): Response
     {
-        try {
-            parent::__invoke($crudSchema, $crudModel, $request, $response);
-            
-            // Validate access permission for custom action
-            $this->validateAccess($crudSchema, 'edit');
-            
-            // Get the action key from the route
-            $actionKey = $this->getParameter($request, 'actionKey');
-            $primaryKey = $crudSchema['primary_key'] ?? 'id';
-            $recordId = $crudModel->getAttribute($primaryKey);
+        parent::__invoke($crudSchema, $crudModel, $request, $response);
+        
+        // Get the action key from the route
+        $actionKey = $this->getParameter($request, 'actionKey');
+        $primaryKey = $crudSchema['primary_key'] ?? 'id';
+        $recordId = $crudModel->getAttribute($primaryKey);
 
-            $this->debugLog("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST START =====", [
+        $this->debugLog("CRUD6 [CustomActionController] ===== CUSTOM ACTION REQUEST START =====", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
             'action_key' => $actionKey,
@@ -90,6 +86,8 @@ class CustomActionController extends Base
         ]);
 
         try {
+            // Validate access permission for custom action
+            $this->validateAccess($crudSchema, 'edit');
             // Find the action configuration in the schema
             $actionConfig = $this->findActionConfig($crudSchema, $actionKey);
             

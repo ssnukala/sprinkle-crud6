@@ -172,13 +172,18 @@ The codebase uses proper debug logging via `$this->logger->debug()` with structu
 
 1. ✅ Identified root cause (missing exception imports)
 2. ✅ Applied fix to ApiAction.php
-3. ⏳ Run test suite to verify fix
-4. ⏳ Address remaining test failures if any
-5. ⏳ Commit and push changes
+3. ✅ Address remaining test failures
+4. ✅ Commit and push changes
+5. ⏳ Run test suite to verify all fixes
 6. ⏳ Verify CI passes
 
 ## Files Changed
 - `app/src/Controller/ApiAction.php` - Added exception imports
+- `app/tests/CRUD6TestCase.php` - Added getJsonResponse() helper method
+- `app/src/Controller/Base.php` - Simplified listable fields logic (opt-in only)
+- `app/src/ServicesProvider/SchemaFilter.php` - Added password readonly handling
+- `app/config/default.php` - Set debug_mode to false by default
+- `app/src/Controller/CustomActionController.php` - Fixed duplicate try block syntax error
 
 ## Commit Message
 ```

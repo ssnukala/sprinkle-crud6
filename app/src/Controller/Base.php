@@ -73,6 +73,16 @@ abstract class Base
     }
 
     /**
+     * Check if debug mode is enabled.
+     * 
+     * @return bool True if debug mode is enabled
+     */
+    public function isDebugMode(): bool
+    {
+        return $this->debugMode;
+    }
+
+    /**
      * Log debug message if debug mode is enabled.
      * 
      * Wrapper around DebugLoggerInterface that only logs when debug_mode config is true.
@@ -236,7 +246,11 @@ abstract class Base
     /**
      * Get listable fields from the model schema.
      * 
-     * Only fields with explicit `listable: true` are included.
+     * A field is considered listable if:
+     * - It has `show_in` array containing 'list', OR
+     * - It has explicit `listable: true`, OR
+     * - Neither is specified AND it's not a sensitive field type
+     * 
      * This prevents sensitive fields (password, timestamps, etc.) from being exposed by default.
      * 
      * @param string $modelName The model name
@@ -249,8 +263,24 @@ abstract class Base
         $fields = $this->getFields($modelName);
 
         foreach ($fields as $name => $field) {
-            // Only include fields explicitly marked as listable: true
-            if (isset($field['listable']) && $field['listable'] === true) {
+            // Check if field should be shown in list context
+            // Priority: show_in array > explicit listable flag > default (false for sensitive types)
+            $isListable = false;
+            
+            if (isset($field['show_in'])) {
+                // If show_in is defined, only include if 'list' is in the array
+                $isListable = in_array('list', $field['show_in']);
+            } elseif (isset($field['listable'])) {
+                // If no show_in but explicit listable flag exists
+                $isListable = $field['listable'] === true;
+            } else {
+                // Default: exclude sensitive field types (password, etc.)
+                $fieldType = $field['type'] ?? 'string';
+                $sensitiveTypes = ['password'];
+                $isListable = !in_array($fieldType, $sensitiveTypes);
+            }
+            
+            if ($isListable) {
                 $listable[] = $name;
             }
         }

@@ -119,8 +119,9 @@ class CreateAction extends Base
             $response->getBody()->write(json_encode($payload));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
         } catch (ForbiddenException $e) {
-            // User lacks permission - return 403
-            return $this->jsonResponse($response, $e->getMessage(), 403);
+            // Let ForbiddenException bubble up to framework's error handler
+            // which provides the proper translated permission error message
+            throw $e;
         } catch (NotFoundException $e) {
             // Resource not found - return 404
             return $this->jsonResponse($response, $e->getMessage(), 404);

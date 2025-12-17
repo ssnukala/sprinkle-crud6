@@ -171,7 +171,8 @@ abstract class Base
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
 
         if (!$this->authenticator->checkAccess($permission)) {
-            throw new ForbiddenException("Access Denied");
+            // Throw without message to use UserFrosting's default permission error message
+            throw new ForbiddenException();
         }
     }
 

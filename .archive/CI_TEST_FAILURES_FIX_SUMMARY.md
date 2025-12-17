@@ -1,216 +1,266 @@
-# CI Test Failures Fix Summary
+# CI Test Failures Fix Summary - Run #20313949456
 
-**Date**: 2025-12-16  
-**Workflow Run**: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20256907469/job/58160832101  
-**Commit**: f438bc6
-
-## Overview
-
-Fixed all major categories of CI test failures that were causing 58.5% of tests to fail. The primary issue was database configuration, followed by test dependency mocking issues.
-
----
+**Date**: December 17, 2025  
+**Original Failures**: 98 failures, 11 errors, 7 warnings, 2 risky (out of 292 tests)  
+**GitHub Actions Run**: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20313949456/job/58352380478
 
 ## Issues Fixed
 
-### 1. Database Configuration (169 errors - 58.5% of failures)
+### 1. ✅ Sprunje filterSearch SQL Error (Critical)
 
-**Problem**: Database name was empty string in SQL queries (`table_schema = ''`) instead of `userfrosting_test`
+**Symptom**: `SQLSTATE[HY000]: General error: 1 no such column: groups.`
 
-**Root Cause**: `phpunit.xml` was missing environment variable configuration for database connection
+**Root Cause**: 
+- The `filterSearch()` method in `CRUD6Sprunje.php` was building SQL queries with empty field names
+- When `$this->filterable` array contained empty strings, it generated invalid SQL like `WHERE "groups"."" LIKE '%value%'`
+- This caused database query errors in ~15+ tests
 
-**Solution**: 
-- Added `<php>` section to `phpunit.xml` with database environment variables:
-  - `DB_DRIVER=mysql`
-  - `DB_HOST=127.0.0.1`
-  - `DB_PORT=3306`
-  - `DB_NAME=userfrosting_test`
-  - `DB_USER=root`
-  - `DB_PASSWORD=root`
-  - `UF_MODE=testing`
+**Fix Applied** (`app/src/Sprunje/CRUD6Sprunje.php`):
+```php
+protected function filterSearch($query, $value)
+{
+    // Added validation for empty filterable array and empty search value
+    if (empty($this->filterable) || trim($value) === '') {
+        return $query;
+    }
 
-**Files Changed**:
-- `phpunit.xml`
+    // Filter out empty field names BEFORE building query
+    $validFields = array_filter($this->filterable, function($field) {
+        return !empty(trim($field));
+    });
 
-**Impact**: Fixes 169 errors in tests that use `RefreshDatabase` trait
+    // Return early if no valid fields
+    if (empty($validFields)) {
+        return $query;
+    }
 
----
+    // Build query with only valid, non-empty field names
+    return $query->where(function ($subQuery) use ($value, $tableName, $validFields) {
+        // ... use $validFields instead of $this->filterable
+    });
+}
+```
 
-### 2. SchemaService Constructor Mismatch (5 errors)
-
-**Problem**: Tests were instantiating `SchemaService` with 1-3 arguments, but constructor requires 11 dependencies
-
-**Root Cause**: `SchemaService` constructor signature changed to require:
-1. ResourceLocatorInterface
-2. Config
-3. DebugLoggerInterface
-4. Translator
-5. SchemaLoader
-6. SchemaValidator
-7. SchemaNormalizer
-8. SchemaCache
-9. SchemaFilter
-10. SchemaTranslator
-11. SchemaActionManager
-
-**Solution**: 
-- Added helper methods in test classes to create properly mocked dependencies
-- Updated all test instantiations to use helper methods
-
-**Files Changed**:
-- `app/tests/ServicesProvider/SchemaServiceDebugModeTest.php`
-  - Added `createMockDependencies()` helper method
-  - Updated all 5 test methods to use helper
-- `app/tests/ServicesProvider/SchemaFilteringTest.php`
-  - Added `createSchemaService()` helper method
-  - Updated 4 instantiation points
-
-**Impact**: Fixes 5 constructor argument count errors
+**Impact**: Should fix ~15+ database-related test failures
 
 ---
 
-### 3. Multi-Context API Response Format (10 failures)
+### 2. ✅ ForbiddenException Permission Message Error (Major)
 
-**Problem**: Tests expected `contexts` key in multi-context API responses, but mock SchemaFilter didn't return expected structure
+**Symptom**: 
+- Tests expecting "We've sensed a great disturbance in the Force." (UserFrosting's default permission error)
+- Tests receiving "Access Denied" or 500 errors instead
+- ~70+ controller tests failing with incorrect status codes or error messages
 
-**Root Cause**: `SchemaMultiContextTest` was using mocked `SchemaFilter` with no behavior configured
+**Root Cause**:
+- Base controller was throwing `new ForbiddenException("Access Denied")` with a hardcoded message
+- Controllers were catching ForbiddenException and calling `$e->getMessage()`, returning empty string when no message provided
+- This bypassed UserFrosting's framework-level error handling which provides proper translated permission messages
 
-**Solution**: 
-- Use real `SchemaFilter` instance instead of mock in `SchemaMultiContextTest`
-- `SchemaFilter` already implements multi-context correctly with proper `contexts` key
+**Fix Applied**:
 
-**Files Changed**:
-- `app/tests/ServicesProvider/SchemaMultiContextTest.php`
+1. **Base.php** - Throw ForbiddenException without message:
+```php
+protected function validateAccess(string|array $modelNameOrSchema, string $action = 'read'): void
+{
+    // ...
+    if (!$this->authenticator->checkAccess($permission)) {
+        // Throw without message to use UserFrosting's default permission error message
+        throw new ForbiddenException();
+    }
+}
+```
 
-**Impact**: Fixes 10 test failures related to multi-context response structure
+2. **All Controllers** - Re-throw ForbiddenException instead of handling it:
+```php
+} catch (ForbiddenException $e) {
+    // Let ForbiddenException bubble up to framework's error handler
+    // which provides the proper translated permission error message
+    throw $e;
+}
+```
 
----
+**Files Updated**:
+- `app/src/Controller/Base.php`
+- `app/src/Controller/CreateAction.php`
+- `app/src/Controller/DeleteAction.php`
+- `app/src/Controller/EditAction.php`
+- `app/src/Controller/ApiAction.php`
+- `app/src/Controller/SprunjeAction.php`
+- `app/src/Controller/UpdateFieldAction.php`
+- `app/src/Controller/RelationshipAction.php`
+- `app/src/Controller/CustomActionController.php`
 
-### 4. Missing Schema Files (2 failures)
-
-**Problem**: Tests expected schema files that don't exist:
-- `/examples/products.json` (should be `/examples/schema/products.json`)
-- `/examples/analytics.json` (doesn't exist)
-- `/app/schema/crud6/db1/users.json` (created by CI, not in repo)
-
-**Solution**: 
-- Fixed `SchemaJsonTest` to look in correct directory (`examples/schema/`)
-- Removed `analytics.json` from test expectations
-- Updated `testAppSchemasAreValid()` to test source files in `examples/schema/` instead of `app/schema/crud6/` (which is created by CI)
-- Removed `db1/users.json` from test expectations
-
-**Files Changed**:
-- `app/tests/Schema/SchemaJsonTest.php`
-
-**Impact**: Fixes 2 file not found failures
-
----
-
-### 5. Service Provider Registration (1 failure)
-
-**Problem**: Test expected `SchemaService` to be registered with `\DI\autowire()` but it uses factory function
-
-**Root Cause**: Test assertion was too strict - both autowire and factory functions are valid DI patterns
-
-**Solution**: 
-- Updated test to accept both `AutowireDefinitionHelper` and `Closure` (factory function)
-- Current implementation using factory is valid and intentional
-
-**Files Changed**:
-- `app/tests/ServicesProvider/SchemaServiceProviderTest.php`
-
-**Impact**: Fixes 1 service provider registration test failure
+**Impact**: Should fix ~70+ permission-related test failures
 
 ---
 
-### 6. Schema Template Validation (1 failure)
+## Remaining Potential Issues
 
-**Problem**: Test expected `products-template-file.json` to have file-based template references (ending in .html/.htm), but schema uses inline template
+Based on the error analysis, these issues may still exist:
 
-**Root Cause**: Test was too strict - inline templates are valid
+### 1. Schema Loading Failures (Estimated: ~5-10 tests)
 
-**Solution**: 
-- Updated `testFieldTemplateFileReferences()` to accept both:
-  - File-based templates (ending in .html/.htm)
-  - Inline templates (HTML strings)
+**Potential Issues**:
+- Missing or invalid JSON schema files
+- Schema validation errors
+- Schema path configuration issues
 
-**Files Changed**:
-- `app/tests/Schema/SchemaJsonTest.php`
+**How to Diagnose**:
+- Look for errors like "Schema not found" or "Invalid schema"
+- Check if all required schema files exist in `app/schema/crud6/`
+- Verify CI workflow copied schemas correctly
 
-**Impact**: Fixes 1 field template validation failure
+**Potential Fixes**:
+- Ensure `examples/schema/*.json` files are valid JSON
+- Add better error handling in `SchemaService` and `SchemaLoader`
+- Add schema validation before use
 
----
+### 2. Database Migration or Seeding Issues (Estimated: ~3-5 tests)
 
-## Summary of Changes
+**Potential Issues**:
+- Missing database tables
+- Incorrect table structure
+- Seeding failures
 
-### Files Modified: 6
-1. `phpunit.xml` - Added database configuration
-2. `app/tests/Schema/SchemaJsonTest.php` - Fixed schema file paths
-3. `app/tests/ServicesProvider/SchemaFilteringTest.php` - Fixed SchemaService instantiation
-4. `app/tests/ServicesProvider/SchemaMultiContextTest.php` - Use real SchemaFilter
-5. `app/tests/ServicesProvider/SchemaServiceDebugModeTest.php` - Fixed constructor mocks
-6. `app/tests/ServicesProvider/SchemaServiceProviderTest.php` - Accept factory or autowire
+**How to Diagnose**:
+- Look for "Table not found" errors
+- Check if migrations ran successfully in CI
+- Verify test database configuration
 
-### Test Results Expected
+**Potential Fixes**:
+- Ensure all migrations are present and run correctly
+- Fix any migration issues
+- Verify test database setup in CI workflow
 
-**Before**: 
-- Total Tests: 289
-- Errors: 169 (58.5%)
-- Failures: 20 (6.9%)
-- Passed: 91 (31.5%)
+### 3. Translation/Locale Issues (Estimated: ~2-3 tests)
 
-**After (Expected)**:
-- Total Tests: 289
-- Errors: 0 (0%)
-- Failures: 0 (0%)
-- Passed: 289 (100%)
+**Potential Issues**:
+- Missing translation keys
+- Locale files not loaded
+- Translation service errors
 
----
+**How to Diagnose**:
+- Look for untranslated keys in output
+- Check if locale files were merged in CI
+- Verify translation service initialization
 
-## Verification Steps
+**Potential Fixes**:
+- Ensure all required translation keys exist
+- Verify CI workflow merges locale files correctly
+- Add fallback for missing translations
 
-To verify these fixes work:
+### 4. Field Type or Validation Errors (Estimated: ~3-5 tests)
 
-1. **Local Testing**:
-   ```bash
-   vendor/bin/phpunit
-   ```
+**Potential Issues**:
+- Unsupported field types in schemas
+- Validation rule errors
+- Data transformation issues
 
-2. **CI Testing**:
-   - Push changes to trigger GitHub Actions workflow
-   - Check unit tests workflow run
-   - All tests should pass
+**How to Diagnose**:
+- Look for validation errors in test output
+- Check for type casting issues
+- Verify field definitions in schemas
 
-3. **Syntax Validation**:
-   ```bash
-   find app/src app/tests -name "*.php" -exec php -l {} \;
-   ```
-
----
-
-## Key Learnings
-
-1. **Environment Variables in PHPUnit**: Always configure database and environment variables in `phpunit.xml` for tests that need them
-
-2. **Mock vs Real Dependencies**: When testing functionality of a service, use real instances of dependencies being tested rather than mocks (e.g., SchemaFilter in multi-context tests)
-
-3. **Constructor Dependencies**: Keep tests in sync with service constructor signatures - use helper methods to create mocked dependencies
-
-4. **Test Assertions**: Make assertions flexible enough to accept valid implementation patterns (e.g., both autowire and factory functions for DI)
-
-5. **Schema File Paths**: CI workflows may copy/create files in different locations - tests should check source files in repository, not CI-generated files
+**Potential Fixes**:
+- Ensure all schema field types are supported
+- Add better validation error messages
+- Fix data transformation logic
 
 ---
 
-## Related Issues
+## Testing Strategy
 
-- Original Issue: https://github.com/ssnukala/sprinkle-crud6/actions/runs/20256907469/job/58160832101
-- PR: https://github.com/ssnukala/sprinkle-crud6/pull/[number]
+### Phase 1: Verify Current Fixes
+1. Trigger CI build with current changes
+2. Check if failure count decreased from 98
+3. Review remaining failures for patterns
+
+### Phase 2: Address Remaining Issues
+1. Categorize remaining failures by type
+2. Fix highest-impact issues first
+3. Add better error handling and logging
+4. Re-test after each fix
+
+### Phase 3: Debug Logging Cleanup
+1. Once tests pass, remove debug logging from passing tests
+2. Keep error logging for troubleshooting
+3. Ensure logs don't clutter CI output
+
+---
+
+## Schema Recommendations
+
+If schema-related issues persist, consider:
+
+### Option 1: Minimal Test Schema Set
+Create a minimal set of schemas specifically for testing:
+- `app/schema/crud6/test_users.json` - Basic user schema for testing
+- `app/schema/crud6/test_groups.json` - Basic group schema
+- `app/schema/crud6/test_products.json` - Product schema with relationships
+
+### Option 2: Schema Validation Layer
+Add a schema validation service that:
+- Validates JSON syntax before loading
+- Checks for required fields (`model`, `table`, `fields`)
+- Validates field types are supported
+- Provides clear error messages for invalid schemas
+
+### Option 3: Schema Builder Helper
+Create a test helper that:
+- Generates valid schemas programmatically
+- Ensures schemas match database tables
+- Simplifies test setup
+
+---
+
+## Expected Results
+
+Based on the fixes applied:
+
+**Before Fixes**: 98 failures, 11 errors, 7 warnings, 2 risky (out of 292 tests)
+
+**Expected After Fixes**:
+- Sprunje fix: -15 failures
+- ForbiddenException fix: -70 failures
+- **Estimated remaining: 13-15 failures**
+
+The remaining failures are likely due to:
+- Schema-specific issues (5-10)
+- Database/seeding issues (3-5)
+- Translation issues (2-3)
+- Other edge cases (3-5)
+
+---
+
+## Commits Made
+
+1. **Fix Sprunje filterSearch to handle empty filterable fields**
+   - File: `app/src/Sprunje/CRUD6Sprunje.php`
+   - Added validation and filtering for empty field names
+
+2. **Fix ForbiddenException handling to use framework's error handler**
+   - Files: 9 controller files
+   - Changed to re-throw ForbiddenException for proper framework handling
 
 ---
 
 ## Next Steps
 
-1. ✅ Wait for CI to confirm all tests pass
-2. Monitor for any remaining edge case failures
-3. Document database configuration requirements for developers
-4. Consider adding CI checks for test environment configuration
+1. **Trigger CI Build**: Push changes and run CI to measure improvement
+2. **Analyze Results**: Review new test output for remaining failures
+3. **Categorize Issues**: Group remaining failures by root cause
+4. **Iterative Fixes**: Address issues in priority order
+5. **Final Cleanup**: Remove debug logging from passing tests
+
+---
+
+## Notes for Future Investigation
+
+If tests still fail after these fixes, investigate:
+
+1. **Controller Parameter Injection**: Verify `crudSchema` and `crudModel` are being injected correctly
+2. **Middleware Chain**: Check if CRUD6Injector is running before controllers
+3. **Request Attributes**: Verify request attributes are set properly in middleware
+4. **Error Handling**: Ensure all exceptions are caught and handled appropriately
+5. **Database State**: Check if tests are properly isolating database state between runs

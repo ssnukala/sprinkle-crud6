@@ -78,153 +78,58 @@ jobs:
           mkdir -p app/logs app/cache app/sessions
           chmod -R 777 app/storage app/sessions app/logs app/cache
       
-      - name: Copy CRUD6 Schema Files
+      - name: Generate CRUD6 Schema Files and Translations
         run: |
           echo "========================================="
-          echo "Copying CRUD6 Schema Files from Examples"
+          echo "Generating CRUD6 Schemas and Translations"
           echo "========================================="
           
-          # Create schema directory if it doesn't exist
-          mkdir -p app/schema/crud6
+          # Run the schema generator script
+          php generate-test-schemas.php
           
-          # Define the schema files needed for unit tests
-          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json products.json"
+          echo ""
+          echo "✅ Schema and translation generation complete"
+          echo ""
+          echo "Generated schemas in app/schema/crud6:"
+          ls -la app/schema/crud6/
+          echo ""
+          echo "Generated translations:"
+          ls -la app/locale/en_US/
+      
+      - name: Verify generated schemas and translations
+        run: |
+          echo "========================================="
+          echo "Verifying Generated Files"
+          echo "========================================="
           
-          # Check that source directory exists
-          if [ ! -d "examples/schema" ]; then
-            echo "❌ ERROR: examples/schema directory not found"
+          # Verify schemas were generated
+          if [ ! -d "app/schema/crud6" ]; then
+            echo "❌ ERROR: Schema directory not created"
             exit 1
           fi
           
-          echo "Source: examples/schema"
-          echo "Target: app/schema/crud6"
-          echo ""
-          
-          # Copy required schema files
-          echo "Copying required schema files..."
+          # Check key schema files exist
+          REQUIRED_SCHEMAS="users.json groups.json products.json roles.json permissions.json activities.json"
           for schema in $REQUIRED_SCHEMAS; do
-            if [ -f "examples/schema/$schema" ]; then
-              cp "examples/schema/$schema" "app/schema/crud6/"
-              echo "  ✅ Copied: $schema"
-            else
-              echo "  ⚠️  WARNING: Schema file not found: $schema"
+            if [ ! -f "app/schema/crud6/$schema" ]; then
+              echo "❌ ERROR: Schema file not generated: $schema"
+              exit 1
             fi
           done
           
-          echo ""
-          echo "✅ Schema files copied successfully"
-          echo "Contents of app/schema/crud6:"
-          ls -la app/schema/crud6/
-      
-      - name: Merge locale messages from examples
-        run: |
-          echo "========================================="
-          echo "Merging Locale Messages from Examples"
-          echo "========================================="
-          
-          # Create locale directory if it doesn't exist
-          mkdir -p app/locale/en_US
-          
-          # Check that source messages file exists
-          if [ ! -f "examples/locale/en_US/messages.php" ]; then
-            echo "❌ ERROR: Source messages file not found: examples/locale/en_US/messages.php"
+          # Verify translations were generated
+          if [ ! -f "app/locale/en_US/messages.php" ]; then
+            echo "❌ ERROR: Translations file not generated"
             exit 1
           fi
           
-          # Check if destination messages file already exists in sprinkle-crud6's app/locale
-          if [ -f "app/locale/en_US/messages.php" ]; then
-            echo "Found existing app/locale messages file, keeping it as base..."
-            cp "app/locale/en_US/messages.php" "app/locale/en_US/messages.php.bak"
-            echo "  ✅ Backed up: messages.php from app/locale"
-          fi
-          
-          # Now merge example messages (append model-specific translations)
-          echo ""
-          echo "Merging example messages (model-specific translations)..."
-          
-          # Create a PHP script to merge the message files
-          cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
-          <?php
-          /**
-           * Merge example messages with existing messages.php
-           * This adds model-specific translations for CRUD6 testing
-           */
-          
-          $examplesPath = $argv[1] ?? '';
-          $destPath = $argv[2] ?? '';
-          
-          if (empty($examplesPath) || empty($destPath)) {
-              echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
-              exit(1);
-          }
-          
-          // Load existing messages if they exist
-          $existingMessages = [];
-          if (file_exists($destPath)) {
-              $existingMessages = require $destPath;
-              echo "  Loaded existing messages from: $destPath\n";
-          }
-          
-          // Load example messages
-          if (!file_exists($examplesPath)) {
-              echo "  ❌ Examples messages file not found: $examplesPath\n";
-              exit(1);
-          }
-          $exampleMessages = require $examplesPath;
-          echo "  Loaded example messages from: $examplesPath\n";
-          
-          // Deep merge function
-          function deepMerge(array $base, array $override): array {
-              foreach ($override as $key => $value) {
-                  if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
-                      $base[$key] = deepMerge($base[$key], $value);
-                  } else {
-                      $base[$key] = $value;
-                  }
-              }
-              return $base;
-          }
-          
-          // Merge messages (example messages override existing)
-          $mergedMessages = deepMerge($existingMessages, $exampleMessages);
-          
-          // Generate the merged PHP file
-          $output = "<?php\n\n";
-          $output .= "/*\n";
-          $output .= " * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)\n";
-          $output .= " *\n";
-          $output .= " * @link      https://github.com/userfrosting/sprinkle-crud6\n";
-          $output .= " * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette\n";
-          $output .= " * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)\n";
-          $output .= " */\n\n";
-          $output .= "/**\n";
-          $output .= " * US English message token translations for the 'crud6' sprinkle.\n";
-          $output .= " * Merged from app/locale and examples/locale for unit testing.\n";
-          $output .= " *\n";
-          $output .= " * @author Alexander Weissman\n";
-          $output .= " */\n";
-          $output .= "return " . var_export($mergedMessages, true) . ";\n";
-          
-          // Write merged messages
-          file_put_contents($destPath, $output);
-          echo "  ✅ Merged messages written to: $destPath\n";
-          
-          // Verify the file is valid PHP
-          exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
-          if ($lintReturnCode !== 0) {
-              echo "  ❌ ERROR: Generated messages file has syntax errors!\n";
-              echo "  " . implode("\n  ", $lintOutput) . "\n";
-              exit(1);
-          }
-          
-          echo "  ✅ Merged messages file is valid PHP\n";
-          MERGE_SCRIPT
-          
-          # Run the merge script
-          php /tmp/merge-messages.php "examples/locale/en_US/messages.php" "app/locale/en_US/messages.php"
+          # Verify translations are valid PHP
+          php -l app/locale/en_US/messages.php
           
           echo ""
-          echo "✅ Locale messages merged successfully"
+          echo "✅ All generated files verified"
+          echo ""
+          echo "Note: Example schemas and translations in examples/ are kept for reference"
       
       - name: Run PHPUnit tests
         run: |

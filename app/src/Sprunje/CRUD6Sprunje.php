@@ -127,23 +127,28 @@ class CRUD6Sprunje extends Sprunje
      */
     protected function filterSearch($query, $value)
     {
-        // Only apply search if we have filterable fields
-        if (empty($this->filterable)) {
+        // Only apply search if we have filterable fields and non-empty search value
+        if (empty($this->filterable) || trim($value) === '') {
             return $query;
         }
 
         // Get the table name for qualifying field names
         $tableName = $this->name;
 
-        // Apply search to all filterable fields using OR logic
-        return $query->where(function ($subQuery) use ($value, $tableName) {
+        // Filter out empty field names before applying search
+        $validFields = array_filter($this->filterable, function($field) {
+            return !empty(trim($field));
+        });
+
+        // If no valid filterable fields after filtering, return query unchanged
+        if (empty($validFields)) {
+            return $query;
+        }
+
+        // Apply search to all valid filterable fields using OR logic
+        return $query->where(function ($subQuery) use ($value, $tableName, $validFields) {
             $isFirst = true;
-            foreach ($this->filterable as $field) {
-                // Skip empty field names to prevent SQL errors
-                if (empty($field)) {
-                    continue;
-                }
-                
+            foreach ($validFields as $field) {
                 // Qualify field with table name if not already qualified
                 $qualifiedField = strpos($field, '.') !== false 
                     ? $field 

@@ -242,8 +242,8 @@ class UpdateFieldAction extends Base
 
             return $this->jsonResponse($response, $message);
         } catch (ForbiddenException $e) {
-            // User lacks permission - return 403
-            return $this->jsonResponse($response, $e->getMessage(), 403);
+            // Let ForbiddenException bubble up to framework's error handler
+            throw $e;
         } catch (NotFoundException $e) {
             // Resource not found - return 404
             return $this->jsonResponse($response, $e->getMessage(), 404);

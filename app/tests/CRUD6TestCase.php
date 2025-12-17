@@ -50,6 +50,23 @@ class CRUD6TestCase extends TestCase
     }
 
     /**
+     * Get JSON response data from a PSR-7 response.
+     * 
+     * Helper method to decode JSON response body into an associative array.
+     * 
+     * @param \Psr\Http\Message\ResponseInterface $response The HTTP response
+     * 
+     * @return array The decoded JSON data
+     * 
+     * @throws \JsonException If JSON decoding fails
+     */
+    protected function getJsonResponse(\Psr\Http\Message\ResponseInterface $response): array
+    {
+        $body = (string) $response->getBody();
+        return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
      * Verify database connection is working correctly.
      * 
      * This method can be called in tests to verify the database

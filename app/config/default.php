@@ -22,10 +22,12 @@ return [
          * - Validation and error handling
          * 
          * Set to true to enable debug logging, false to disable.
+         * Default is false for production. Can be enabled via environment variable
+         * or local configuration for development debugging.
          * 
          * @var bool
          */
-        'debug_mode' => true,
+        'debug_mode' => false,
 
         /**
          * Schema cache Time-To-Live (TTL) in seconds.

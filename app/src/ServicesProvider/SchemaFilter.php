@@ -303,10 +303,17 @@ class SchemaFilter
                 : ($field['viewable'] ?? true);
             
             if ($showInDetail) {
+                $fieldType = $field['type'] ?? 'string';
+                
+                // Password fields should always be readonly in detail view
+                $isPasswordField = $fieldType === 'password';
+                $readonly = $field['readonly'] ?? $isPasswordField;
+                
                 $data['fields'][$fieldKey] = [
-                    'type' => $field['type'] ?? 'string',
+                    'type' => $fieldType,
                     'label' => $field['label'] ?? $fieldKey,
-                    'editable' => $field['editable'] ?? true,
+                    'editable' => $field['editable'] ?? !$readonly,
+                    'readonly' => $readonly,
                 ];
 
                 // Include description if present
@@ -317,11 +324,6 @@ class SchemaFilter
                 // Include field_template if specified
                 if (isset($field['field_template'])) {
                     $data['fields'][$fieldKey]['field_template'] = $field['field_template'];
-                }
-
-                // Include editable flag for detail pages that allow inline editing
-                if (isset($field['editable'])) {
-                    $data['fields'][$fieldKey]['editable'] = $field['editable'];
                 }
 
                 // Include default value for display purposes

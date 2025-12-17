@@ -104,9 +104,13 @@ abstract class Base
     /**
      * Common invoke logic for CRUD6 controllers.
      * 
-     * Sets up common state for all CRUD6 operations including schema caching
-     * and access validation. Child controllers should call this parent method
-     * before their specific logic.
+     * Sets up common state for all CRUD6 operations including schema caching.
+     * Child controllers should call this parent method before their specific logic,
+     * and must handle access validation inside their own try-catch blocks.
+     * 
+     * NOTE: This method does NOT validate access anymore. Each child controller
+     * must call validateAccess() inside their own try-catch block to properly
+     * handle ForbiddenException and return 403 responses.
      * 
      * @param array                  $crudSchema The schema configuration array
      * @param CRUD6ModelInterface    $crudModel  The configured model instance
@@ -114,8 +118,6 @@ abstract class Base
      * @param ResponseInterface      $response   The HTTP response
      * 
      * @return ResponseInterface The HTTP response
-     * 
-     * @throws ForbiddenException If user lacks required permissions
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
@@ -130,10 +132,12 @@ abstract class Base
             'schema_keys' => array_keys($crudSchema),
         ]);
 
-        // Common logic here, e.g. logging, validation, etc.
+        // Common logic here: caching schema
         $modelName = $this->getModelNameFromRequest($request);
         $this->cachedSchema[$modelName] = $crudSchema;
-        $this->validateAccess($modelName, 'read');
+        
+        // NOTE: validateAccess() removed from here - each controller must validate
+        // access inside their own try-catch block to handle ForbiddenException properly
 
         $this->debugLog("CRUD6 [Base] Common initialization complete", [
             'model' => $modelName,

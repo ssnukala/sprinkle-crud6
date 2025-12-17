@@ -70,37 +70,41 @@ class ApiAction extends Base
      */
     public function __invoke(array $crudSchema, CRUD6ModelInterface $crudModel, ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        // Get context parameter from query string
-        $queryParams = $request->getQueryParams();
-        $context = $queryParams['context'] ?? null;
-        $includeRelated = filter_var($queryParams['include_related'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        $relatedContext = $queryParams['related_context'] ?? 'list';
-        
-        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
-            'model' => $crudSchema['model'],
-            'context' => $context ?? 'null/full',
-            'include_related' => $includeRelated ? 'true' : 'false',
-            'related_context' => $includeRelated ? $relatedContext : 'n/a',
-            'uri' => (string) $request->getUri(),
-        ]);
+        try {
+            // Validate access permission for schema endpoint
+            $this->validateAccess($crudSchema, 'read');
+            
+            // Get context parameter from query string
+            $queryParams = $request->getQueryParams();
+            $context = $queryParams['context'] ?? null;
+            $includeRelated = filter_var($queryParams['include_related'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $relatedContext = $queryParams['related_context'] ?? 'list';
+            
+            $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API REQUEST =====", [
+                'model' => $crudSchema['model'],
+                'context' => $context ?? 'null/full',
+                'include_related' => $includeRelated ? 'true' : 'false',
+                'related_context' => $includeRelated ? $relatedContext : 'n/a',
+                'uri' => (string) $request->getUri(),
+            ]);
 
-        // Filter schema based on context, optionally including related schemas
-        $this->debugLog("CRUD6 [ApiAction] Filtering schema for context", [
-            'context' => $context ?? 'null/full',
-            'include_related' => $includeRelated ? 'true' : 'false',
-        ]);
+            // Filter schema based on context, optionally including related schemas
+            $this->debugLog("CRUD6 [ApiAction] Filtering schema for context", [
+                'context' => $context ?? 'null/full',
+                'include_related' => $includeRelated ? 'true' : 'false',
+            ]);
 
-        // Use filterSchemaWithRelated if include_related is requested
-        if ($includeRelated) {
-            $filteredSchema = $this->schemaService->filterSchemaWithRelated(
-                $crudSchema,
-                $context,
-                true,
-                $relatedContext
-            );
-        } else {
-            $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
-        }
+            // Use filterSchemaWithRelated if include_related is requested
+            if ($includeRelated) {
+                $filteredSchema = $this->schemaService->filterSchemaWithRelated(
+                    $crudSchema,
+                    $context,
+                    true,
+                    $relatedContext
+                );
+            } else {
+                $filteredSchema = $this->schemaService->filterSchemaForContext($crudSchema, $context);
+            }
 
         // Translate all translatable fields in the schema (labels, titles, etc.)
         $filteredSchema = $this->schemaService->translateSchema($filteredSchema);
@@ -139,13 +143,29 @@ class ApiAction extends Base
             $filteredSchema // Merge schema fields at root level
         );
 
-        $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
-            'model' => $filteredSchema['model'],
-            'context' => $context ?? 'null/full',
-            'response_size' => strlen(json_encode($responseData)) . ' bytes',
-        ]);
+            $this->debugLog("CRUD6 [ApiAction] ===== SCHEMA API RESPONSE =====", [
+                'model' => $filteredSchema['model'],
+                'context' => $context ?? 'null/full',
+                'response_size' => strlen(json_encode($responseData)) . ' bytes',
+            ]);
 
-        $response->getBody()->write(json_encode($responseData));
-        return $response->withHeader('Content-Type', 'application/json');
+            $response->getBody()->write(json_encode($responseData));
+            return $response->withHeader('Content-Type', 'application/json');
+            
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
+        } catch (\Exception $e) {
+            // Log unexpected errors and return 500
+            $this->logger->error("CRUD6 [ApiAction] Unexpected error: " . $e->getMessage(), [
+                'model' => $crudSchema['model'] ?? 'unknown',
+                'exception' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->jsonResponse($response, 'An error occurred while processing the schema request', 500);
+        }
     }
 }

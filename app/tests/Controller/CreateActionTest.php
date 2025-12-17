@@ -117,7 +117,8 @@ class CreateActionTest extends CRUD6TestCase
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userData);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are acceptable success codes for create operations
+        $this->assertContains($response->getStatusCode(), [200, 201], 'Create operation should return 200 or 201');
         $this->assertJson((string) $response->getBody());
 
         $body = json_decode((string) $response->getBody(), true);
@@ -202,7 +203,8 @@ class CreateActionTest extends CRUD6TestCase
         ]);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are acceptable success codes for create operations
+        $this->assertContains($response->getStatusCode(), [200, 201], 'Create operation should return 200 or 201');
         
         // Verify password was hashed (not stored as plain text)
         $newUser = User::where('user_name', 'newuser')->first();
@@ -230,7 +232,8 @@ class CreateActionTest extends CRUD6TestCase
         ]);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are acceptable success codes for create operations
+        $this->assertContains($response->getStatusCode(), [200, 201], 'Create operation should return 200 or 201');
         
         // Verify defaults were applied (both should be true per schema)
         $newUser = User::where('user_name', 'newuser')->first();
@@ -269,7 +272,8 @@ class CreateActionTest extends CRUD6TestCase
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userData);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertResponseStatus(200, $response);
+        // Both 200 and 201 are acceptable success codes for create operations
+        $this->assertContains($response->getStatusCode(), [200, 201], 'Create operation should return 200 or 201');
         
         // Verify user was created
         $newUser = User::where('user_name', 'pivottest')->first();

@@ -13,6 +13,8 @@ use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
+use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
+use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -94,6 +96,9 @@ class EditAction extends Base
         ]);
 
         try {
+            // Validate access permission for read/edit operations
+            $this->validateAccess($crudSchema, 'edit');
+            
             // Handle GET request (read operation)
             if ($method === 'GET') {
                 $this->debugLog("CRUD6 [EditAction] Processing GET request", [
@@ -113,7 +118,7 @@ class EditAction extends Base
             }
             
             // Method not allowed
-            $this->logger->warning("Line:116 CRUD6 [EditAction] Method not allowed", [
+            $this->logger->warning("CRUD6 [EditAction] Method not allowed", [
                 'model' => $crudSchema['model'],
                 'method' => $method,
                 'allowed_methods' => ['GET', 'PUT'],
@@ -121,8 +126,14 @@ class EditAction extends Base
 
             $response->getBody()->write(json_encode(['error' => 'Method not allowed']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(405);
+        } catch (ForbiddenException $e) {
+            // User lacks permission - return 403
+            return $this->jsonResponse($response, $e->getMessage(), 403);
+        } catch (NotFoundException $e) {
+            // Resource not found - return 404
+            return $this->jsonResponse($response, $e->getMessage(), 404);
         } catch (\Exception $e) {
-            $this->logger->error("Line:125 CRUD6 [EditAction] ===== REQUEST FAILED =====", [
+            $this->logger->error("CRUD6 [EditAction] ===== REQUEST FAILED =====", [
                 'model' => $crudSchema['model'],
                 'method' => $method,
                 'error_type' => get_class($e),
@@ -131,7 +142,7 @@ class EditAction extends Base
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            throw $e;
+            return $this->jsonResponse($response, 'An error occurred while processing the request', 500);
         }
     }
 
@@ -256,9 +267,9 @@ class EditAction extends Base
             'record_id' => $recordId,
         ]);
 
-        $this->validateAccess($crudSchema, 'edit');
+        // Access validation is done in __invoke() method
         
-        $this->debugLog("CRUD6 [EditAction] Access validated for update", [
+        $this->debugLog("CRUD6 [EditAction] Processing update", [
             'model' => $crudSchema['model'],
             'record_id' => $recordId,
         ]);

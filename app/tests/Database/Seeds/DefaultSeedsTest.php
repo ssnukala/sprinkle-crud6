@@ -100,14 +100,15 @@ class DefaultSeedsTest extends CRUD6TestCase
         }
         
         // Verify permissions are synced with crud6-admin role
+        // crud6-admin should have 6 legacy permissions + 16 model-specific permissions = 22 total
         $role = Role::where('slug', 'crud6-admin')->first();
         $this->assertNotNull($role);
-        $this->assertCount(6, $role->permissions);
+        $this->assertCount(22, $role->permissions);
         
         // Verify site-admin role also has CRUD6 permissions (if it exists)
         $siteAdminRole = Role::where('slug', 'site-admin')->first();
         if ($siteAdminRole !== null) {
-            $this->assertGreaterThanOrEqual(6, $siteAdminRole->permissions->count());
+            $this->assertGreaterThanOrEqual(22, $siteAdminRole->permissions->count());
         }
     }
 

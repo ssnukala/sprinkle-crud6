@@ -42,3 +42,8 @@ temp/*.backup
 
 # Testing framework runtime copies (never commit these)
 .github/crud6-framework/
+
+# Schema files (generated dynamically for testing only)
+# This sprinkle is a generic CRUD utility - it should not contain schema files
+# Schemas are generated during testing via scripts/generate-test-schemas.php
+app/schema/

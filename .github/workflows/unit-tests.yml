@@ -79,73 +79,26 @@ jobs:
           chmod -R 777 app/storage app/sessions app/logs app/cache
       
       - name: Generate CRUD6 Schema Files and Translations
-        run: |
-          echo "========================================="
-          echo "Generating CRUD6 Schemas and Translations"
-          echo "========================================="
-          
-          # Run the schema generator script
-          php generate-test-schemas.php
-          
-          echo ""
-          echo "✅ Schema and translation generation complete"
-          echo ""
-          echo "Generated schemas in app/schema/crud6:"
-          ls -la app/schema/crud6/
-          echo ""
-          echo "Generated translations:"
-          ls -la app/locale/en_US/
+        run: php scripts/generate-test-schemas.php
       
       - name: Verify generated schemas and translations
         run: |
-          echo "========================================="
-          echo "Verifying Generated Files"
-          echo "========================================="
-          
           # Verify schemas were generated
-          if [ ! -d "app/schema/crud6" ]; then
-            echo "❌ ERROR: Schema directory not created"
-            exit 1
-          fi
+          test -d "app/schema/crud6" || (echo "ERROR: Schema directory not created" && exit 1)
           
           # Check key schema files exist
-          REQUIRED_SCHEMAS="users.json groups.json products.json roles.json permissions.json activities.json"
-          for schema in $REQUIRED_SCHEMAS; do
-            if [ ! -f "app/schema/crud6/$schema" ]; then
-              echo "❌ ERROR: Schema file not generated: $schema"
-              exit 1
-            fi
+          for schema in users.json groups.json products.json roles.json permissions.json activities.json; do
+            test -f "app/schema/crud6/$schema" || (echo "ERROR: Schema file not generated: $schema" && exit 1)
           done
           
-          # Verify translations were generated
-          if [ ! -f "app/locale/en_US/messages.php" ]; then
-            echo "❌ ERROR: Translations file not generated"
-            exit 1
-          fi
+          # Verify translations were generated and are valid PHP
+          test -f "app/locale/en_US/messages.php" || (echo "ERROR: Translations file not generated" && exit 1)
+          php -l app/locale/en_US/messages.php > /dev/null || exit 1
           
-          # Verify translations are valid PHP
-          php -l app/locale/en_US/messages.php
-          
-          echo ""
-          echo "✅ All generated files verified"
-          echo ""
-          echo "Note: Example schemas and translations in examples/ are kept for reference"
+          echo "Schema and translation files verified"
       
       - name: Run PHPUnit tests
-        run: |
-          echo "========================================="
-          echo "Running PHPUnit Tests"
-          echo "========================================="
-          echo ""
-          echo "PHP Version: ${{ matrix.php-version }}"
-          echo "Test Directory: app/tests/"
-          echo "PHPUnit Config: phpunit.xml"
-          echo ""
-          vendor/bin/phpunit --testdox --colors=always
+        run: vendor/bin/phpunit --testdox --colors=always
       
       - name: Check test coverage
-        run: |
-          echo "========================================="
-          echo "Test Coverage Summary"
-          echo "========================================="
-          vendor/bin/phpunit --coverage-text --colors=never | tail -20
+        run: vendor/bin/phpunit --coverage-text --colors=never | tail -20

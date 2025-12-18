@@ -15,6 +15,7 @@ namespace UserFrosting\Sprinkle\CRUD6;
 use UserFrosting\Sprinkle\Account\Account;
 use UserFrosting\Sprinkle\Admin\Admin;
 use UserFrosting\Sprinkle\Core\Core;
+use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\CommandRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\MigrationRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
@@ -22,6 +23,7 @@ use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\FieldTypeServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaServiceProvider;
+use UserFrosting\Sprinkle\CRUD6\Bakery\GenerateSchemaCommand;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
 
@@ -36,7 +38,7 @@ use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
  * - Sortable and filterable data queries
  * - Frontend-agnostic design for Vue.js integration
  */
-class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
+class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe, CommandRecipe
 {
     /**
      * {@inheritdoc}
@@ -106,6 +108,16 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe
             CRUD6ModelService::class,
             SchemaServiceProvider::class,
             FieldTypeServiceProvider::class,
+        ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCommands(): array
+    {
+        return [
+            GenerateSchemaCommand::class,
         ];
     }
 }

@@ -20,6 +20,9 @@ declare(strict_types=1);
  * This is a standalone version that doesn't require composer autoload
  * to work in CI environments.
  * 
+ * For production use, use the Bakery command instead:
+ *   php bakery crud6:generate-schema
+ * 
  * Usage:
  *   php scripts/generate-test-schemas.php
  * 
@@ -28,9 +31,9 @@ declare(strict_types=1);
  *   ./scripts/generate-test-schemas.php
  */
 
-// Load helper classes directly
+// Load helper classes directly (standalone versions without namespace)
 require_once __DIR__ . '/SchemaBuilder.php';
 require_once __DIR__ . '/GenerateSchemas.php';
 
-// Generate schemas and translations
+// Generate schemas and translations using standalone classes
 GenerateSchemas::generate();

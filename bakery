@@ -1,0 +1,76 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2024 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
+/**
+ * Bakery CLI Tool Bootstrap
+ * 
+ * This is a minimal bakery bootstrap for testing the CRUD6 sprinkle in isolation.
+ * In a full UserFrosting application, the bakery command is provided by the framework.
+ */
+
+use DI\ContainerBuilder;
+use Slim\Factory\AppFactory;
+use UserFrosting\Sprinkle\CRUD6\CRUD6;
+use UserFrosting\Sprinkle\BakeryRecipe;
+use UserFrosting\Bakery\Bakery;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+
+// Require composer autoloader
+require_once __DIR__ . '/vendor/autoload.php';
+
+try {
+    // Create DI container
+    $containerBuilder = new ContainerBuilder();
+    $containerBuilder->useAutowiring(true);
+    $containerBuilder->useAttributes(false);
+    
+    // Build container
+    $container = $containerBuilder->build();
+    
+    // Create Slim app
+    $app = AppFactory::createFromContainer($container);
+    
+    // Initialize sprinkle
+    $sprinkle = new CRUD6();
+    
+    // Get commands from sprinkle
+    $commands = [];
+    if (method_exists($sprinkle, 'getCommands')) {
+        foreach ($sprinkle->getCommands() as $commandClass) {
+            $commands[] = new $commandClass();
+        }
+    }
+    
+    // Create Bakery CLI application
+    $bakery = new \Symfony\Component\Console\Application('UserFrosting Bakery', '6.0');
+    
+    // Add commands
+    foreach ($commands as $command) {
+        $bakery->add($command);
+    }
+    
+    // Run bakery
+    $input = new ArgvInput();
+    $output = new ConsoleOutput();
+    $exitCode = $bakery->run($input, $output);
+    
+    exit($exitCode);
+    
+} catch (\Exception $e) {
+    fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+    if (getenv('VERBOSE')) {
+        fwrite(STDERR, $e->getTraceAsString() . "\n");
+    }
+    exit(1);
+}

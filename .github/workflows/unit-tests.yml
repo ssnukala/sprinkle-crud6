@@ -78,8 +78,8 @@ jobs:
           mkdir -p app/logs app/cache app/sessions
           chmod -R 777 app/storage app/sessions app/logs app/cache
       
-      - name: Generate CRUD6 Schema Files and Translations
-        run: php scripts/generate-test-schemas.php
+      - name: Generate CRUD6 Schema Files and Translations (using Bakery command)
+        run: php bakery crud6:generate-schema --force
       
       - name: Verify generated schemas and translations
         run: |

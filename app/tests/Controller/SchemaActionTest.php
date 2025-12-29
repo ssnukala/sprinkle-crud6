@@ -71,7 +71,7 @@ class SchemaActionTest extends CRUD6TestCase
     public function testSchemaRequiresPermission(): void
     {
         /** @var User */
-        $user = User::factory()->create();
+        $user = User::factory()->createQuietly();
         $this->actAsUser($user);  // No permissions
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users/schema');
@@ -87,7 +87,7 @@ class SchemaActionTest extends CRUD6TestCase
     public function testSchemaReturnsValidSchema(): void
     {
         /** @var User */
-        $user = User::factory()->create();
+        $user = User::factory()->createQuietly();
         $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users/schema');
@@ -115,7 +115,7 @@ class SchemaActionTest extends CRUD6TestCase
     public function testSchemaFieldsHaveProperStructure(): void
     {
         /** @var User */
-        $user = User::factory()->create();
+        $user = User::factory()->createQuietly();
         $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users/schema');
@@ -138,7 +138,7 @@ class SchemaActionTest extends CRUD6TestCase
     public function testSchemaContainsActions(): void
     {
         /** @var User */
-        $user = User::factory()->create();
+        $user = User::factory()->createQuietly();
         $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users/schema');
@@ -171,7 +171,7 @@ class SchemaActionTest extends CRUD6TestCase
     public function testSchemaNonExistentModelReturnsError(): void
     {
         /** @var User */
-        $user = User::factory()->create();
+        $user = User::factory()->createQuietly();
         $this->actAsUser($user, permissions: ['uri_crud6']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/nonexistent_model/schema');

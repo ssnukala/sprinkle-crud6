@@ -117,8 +117,8 @@ trait WithDatabaseSeeds
      * Create admin user following the same pattern as the CI workflow.
      * 
      * Creates a user with admin credentials that can be used in tests.
-     * The user creation will trigger UserCreatedEvent listeners that automatically
-     * assign default groups and roles (via AssignDefaultGroups and AssignDefaultRoles).
+     * Uses createQuietly() to avoid triggering UserCreatedEvent listeners
+     * that cause SQL errors when default group configuration is missing.
      * 
      * @return User The created admin user
      */
@@ -130,10 +130,11 @@ trait WithDatabaseSeeds
             return $existingAdmin;
         }
         
-        // Create admin user - this will trigger the UserCreatedEvent
-        // which in turn triggers AssignDefaultGroups and AssignDefaultRoles listeners
+        // Create admin user WITHOUT triggering events
+        // This prevents AssignDefaultGroups listener from causing SQL errors
+        // when querying groups with empty column name
         /** @var User */
-        $admin = User::factory()->create([
+        $admin = User::factory()->createQuietly([
             'user_name' => 'admin',
             'email' => 'admin@example.com',
             'first_name' => 'Admin',

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Testing;
+// Standalone version - no namespace needed
 
 /**
  * Schema and Translation Generator for CRUD6 Tests.
@@ -33,12 +33,12 @@ class GenerateSchemas
     /**
      * Base directory for schema files.
      */
-    private const SCHEMA_DIR = __DIR__ . '/../../../schema/crud6';
+    private const SCHEMA_DIR = __DIR__ . '/../app/schema/crud6';
 
     /**
      * Base directory for locale files.
      */
-    private const LOCALE_DIR = __DIR__ . '/../../../locale/en_US';
+    private const LOCALE_DIR = __DIR__ . '/../app/locale/en_US';
 
     /**
      * Generate all schemas and translations.
@@ -47,9 +47,7 @@ class GenerateSchemas
      */
     public static function generate(): void
     {
-        echo "========================================\n";
-        echo "Generating CRUD6 Schemas and Translations\n";
-        echo "========================================\n\n";
+        echo "Generating CRUD6 Schemas and Translations...\n";
 
         // Create directories if they don't exist
         self::createDirectories();
@@ -61,7 +59,7 @@ class GenerateSchemas
         // Generate translations
         self::generateTranslations($schemas);
 
-        echo "\n✅ Schema and translation generation complete!\n";
+        echo "Schema and translation generation complete\n";
     }
 
     /**
@@ -73,12 +71,10 @@ class GenerateSchemas
     {
         if (!is_dir(self::SCHEMA_DIR)) {
             mkdir(self::SCHEMA_DIR, 0755, true);
-            echo "📁 Created directory: " . self::SCHEMA_DIR . "\n";
         }
 
         if (!is_dir(self::LOCALE_DIR)) {
             mkdir(self::LOCALE_DIR, 0755, true);
-            echo "📁 Created directory: " . self::LOCALE_DIR . "\n";
         }
     }
 
@@ -108,18 +104,15 @@ class GenerateSchemas
      */
     private static function generateSchemaFiles(array $schemas): void
     {
-        echo "\nGenerating schema files:\n";
-        echo "------------------------\n";
-
         foreach ($schemas as $name => $schemaFn) {
             $schema = $schemaFn();
             $filename = self::SCHEMA_DIR . "/{$name}.json";
             
             $json = json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             file_put_contents($filename, $json);
-            
-            echo "✅ Generated: {$name}.json\n";
         }
+        
+        echo "Generated " . count($schemas) . " schema files\n";
     }
 
     /**
@@ -131,9 +124,6 @@ class GenerateSchemas
      */
     private static function generateTranslations(array $schemas): void
     {
-        echo "\nGenerating translations:\n";
-        echo "------------------------\n";
-
         $filename = self::LOCALE_DIR . '/messages.php';
         
         // Load existing base translations if the file exists
@@ -151,7 +141,7 @@ class GenerateSchemas
         $content = self::generateTranslationFile($mergedTranslations);
         file_put_contents($filename, $content);
         
-        echo "✅ Generated: messages.php\n";
+        echo "Generated translations file\n";
     }
 
     /**

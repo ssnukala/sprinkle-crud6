@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Testing;
 
 use PHPUnit\Framework\TestCase;
-use UserFrosting\Sprinkle\CRUD6\Testing\SchemaBuilder;
+use UserFrosting\Sprinkle\CRUD6\Schema\SchemaBuilder;
 
 /**
  * Tests for SchemaBuilder helper class.

@@ -10,7 +10,9 @@ declare(strict_types=1);
  * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
-namespace UserFrosting\Sprinkle\CRUD6\Testing;
+namespace UserFrosting\Sprinkle\CRUD6\Tests\Testing;
+
+use UserFrosting\Sprinkle\CRUD6\Schema\SchemaBuilder;
 
 /**
  * Schema and Translation Generator for CRUD6 Tests.

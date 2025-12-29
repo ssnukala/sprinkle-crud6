@@ -42,5 +42,17 @@ return [
          * @var int
          */
         'cache_ttl' => 3600,
-    ]
+    ],
+    
+    // Fix for test environment: Disable automatic group/role assignment
+    // This prevents SQL errors when User::factory()->create() is called
+    // and no default group is configured
+    'site' => [
+        'registration' => [
+            'user_defaults' => [
+                'group' => null,
+                'roles' => [],
+            ],
+        ],
+    ],
 ];

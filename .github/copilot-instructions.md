@@ -406,6 +406,7 @@ Since this is a UserFrosting 6 sprinkle:
 3. **Controller Extensions**: Extend base controllers in `app/src/Controller/Base/`
 4. **Route Additions**: Update `app/src/Routes/CRUD6Routes.php` for new API endpoints
 5. **Testing**: Add corresponding tests in `app/tests/` following the existing pattern
+6. **Update Example Schemas**: After feature upgrades that affect schema structure, regenerate example schemas in `examples/schema/` using `php scripts/generate-test-schemas.php` and copy the updated schemas to keep them current for users of the sprinkle
 
 ### Working with Examples
 - Review example schemas: `examples/schema/products.json` and `app/schema/crud6/users.json`

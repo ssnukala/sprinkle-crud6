@@ -289,7 +289,9 @@ PHP;
             ->addTextField('description', filterable: true, listable: true)
             ->addDateTimeField('created_at', readonly: true)
             ->addDateTimeField('updated_at', readonly: true)
-            ->addDetail('permissions', 'role_id', ['slug', 'name', 'description'], 'CRUD6.ROLE.PERMISSIONS')
+            // Many-to-many details - no foreign_key, relies on relationships array
+            ->addManyToManyDetail('permissions', ['slug', 'name', 'description'], 'CRUD6.ROLE.PERMISSIONS')
+            ->addManyToManyDetail('users', ['user_name', 'first_name', 'last_name', 'email', 'flag_enabled'], 'CRUD6.ROLE.USERS')
             ->build();
     }
 
@@ -315,6 +317,9 @@ PHP;
             ->addTextField('conditions', listable: false)
             ->addDateTimeField('created_at', readonly: true)
             ->addDateTimeField('updated_at', readonly: true)
+            // Many-to-many details - no foreign_key, relies on relationships array
+            ->addManyToManyDetail('roles', ['name', 'slug', 'description'], 'ROLE.2')
+            ->addManyToManyDetail('users', ['user_name', 'first_name', 'last_name', 'email'], 'CRUD6.PERMISSION.USERS')
             ->build();
     }
 

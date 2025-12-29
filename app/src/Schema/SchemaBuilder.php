@@ -518,18 +518,21 @@ class SchemaBuilder
     }
 
     /**
-     * Add a relationship definition.
+     * Add a relationship definition for display purposes.
      * 
-     * @param string $model       Related model name
-     * @param string $foreignKey  Foreign key field
-     * @param array  $listFields  Fields to display in related list
-     * @param string $title       Translation key for relationship title
+     * Use this for has-many relationships where the related model has a foreign key.
+     * For many-to-many relationships, use addManyToManyDetail() or don't include foreign_key.
+     * 
+     * @param string      $model       Related model name
+     * @param string|null $foreignKey  Foreign key field (for has-many), null for many-to-many
+     * @param array       $listFields  Fields to display in related list
+     * @param string|null $title       Translation key for relationship title
      * 
      * @return self
      */
     public function addDetail(
         string $model,
-        string $foreignKey,
+        ?string $foreignKey = null,
         array $listFields = [],
         ?string $title = null
     ): self {
@@ -539,9 +542,13 @@ class SchemaBuilder
 
         $detail = [
             'model' => $model,
-            'foreign_key' => $foreignKey,
             'list_fields' => $listFields,
         ];
+
+        // Only add foreign_key if provided (for has-many relationships)
+        if ($foreignKey !== null) {
+            $detail['foreign_key'] = $foreignKey;
+        }
 
         if ($title !== null) {
             $detail['title'] = $title;
@@ -549,6 +556,26 @@ class SchemaBuilder
 
         $this->schema['details'][] = $detail;
         return $this;
+    }
+    
+    /**
+     * Add a many-to-many relationship detail (no foreign_key).
+     * 
+     * This is a convenience method for adding details without a foreign_key.
+     * Use this when the relationship is many-to-many and relies on a pivot table.
+     * 
+     * @param string      $model       Related model name
+     * @param array       $listFields  Fields to display in related list
+     * @param string|null $title       Translation key for relationship title
+     * 
+     * @return self
+     */
+    public function addManyToManyDetail(
+        string $model,
+        array $listFields = [],
+        ?string $title = null
+    ): self {
+        return $this->addDetail($model, null, $listFields, $title);
     }
 
     /**

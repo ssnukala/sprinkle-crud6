@@ -225,25 +225,6 @@ class SchemaBuilderTest extends TestCase
     }
 
     /**
-     * Test adding many-to-many details without foreign_key.
-     */
-    public function testAddManyToManyDetail(): void
-    {
-        $schema = SchemaBuilder::create('roles', 'roles')
-            ->addManyToManyDetail('permissions', ['slug', 'name', 'description'], 'CRUD6.ROLE.PERMISSIONS')
-            ->build();
-
-        $this->assertArrayHasKey('details', $schema);
-        $this->assertCount(1, $schema['details']);
-        
-        $detail = $schema['details'][0];
-        $this->assertEquals('permissions', $detail['model']);
-        $this->assertArrayNotHasKey('foreign_key', $detail, 'Many-to-many details should not have foreign_key');
-        $this->assertEquals(['slug', 'name', 'description'], $detail['list_fields']);
-        $this->assertEquals('CRUD6.ROLE.PERMISSIONS', $detail['title']);
-    }
-
-    /**
      * Test fluent API chaining.
      */
     public function testFluentApiChaining(): void

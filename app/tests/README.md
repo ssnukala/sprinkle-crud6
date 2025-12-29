@@ -4,9 +4,11 @@ This directory contains tests for the CRUD6 sprinkle, following UserFrosting 6 t
 
 ## Testing Philosophy
 
+**Important**: All PHPUnit tests in this directory require the UserFrosting 6 framework to run. This sprinkle cannot be tested in complete isolation because it depends on UserFrosting's authentication, routing, database, and service container infrastructure.
+
 Following UserFrosting 6 best practices:
 
-1. **PHP Unit Tests**: Tests in this directory test PHP functionality (controllers, models, services, etc.)
+1. **PHPUnit Tests**: Tests in this directory test PHP functionality within UserFrosting context (controllers, models, services, etc.)
 2. **Frontend Tests**: Frontend tests are in `app/assets/tests/` and use Vitest
 3. **Integration Tests**: GitHub Actions workflow tests package installation in a real UserFrosting 6 environment
 4. **Asset Building**: Left to consuming applications - we don't build assets in CI
@@ -16,10 +18,20 @@ Following UserFrosting 6 best practices:
 ```
 app/tests/
 ├── CRUD6TestCase.php           # Base test case for CRUD6 tests
-├── Controller/                 # Controller action tests
-│   ├── Group/                  # Group-related controller tests
-│   ├── Role/                   # Role-related controller tests
-│   └── User/                   # User-related controller tests
+├── Integration/                # Multi-step workflow and relationship tests
+│   ├── CRUD6UsersIntegrationTest.php    # Full user model integration
+│   ├── CRUD6GroupsIntegrationTest.php   # Full group model integration
+│   ├── SchemaBasedApiTest.php           # Schema-driven API testing
+│   ├── FrontendUserWorkflowTest.php     # Frontend workflow simulation
+│   ├── RedundantApiCallsTest.php        # API call optimization tests
+│   ├── NestedEndpointsTest.php          # Nested relationship endpoints
+│   └── RoleUsersRelationshipTest.php    # Role-user relationships
+├── Controller/                 # Individual controller action tests
+│   ├── CreateActionTest.php    # POST /api/crud6/{model}
+│   ├── EditActionTest.php      # PUT /api/crud6/{model}/{id}
+│   ├── DeleteActionTest.php    # DELETE /api/crud6/{model}/{id}
+│   ├── SprunjeActionTest.php   # GET /api/crud6/{model} (list)
+│   └── ...                     # Other controller action tests
 ├── Database/                   # Database model and migration tests
 ├── Middlewares/                # Middleware tests
 ├── ServicesProvider/           # Service provider tests
@@ -28,14 +40,14 @@ app/tests/
 
 ## Running Tests
 
-### PHP Unit Tests
+### PHPUnit Tests (Require UserFrosting Framework)
 
 ```bash
-# Run all PHP tests
+# Run all PHPUnit tests
 vendor/bin/phpunit
 
 # Run specific test file
-vendor/bin/phpunit app/tests/Sprunje/UserSprunjeTest.php
+vendor/bin/phpunit app/tests/Integration/SchemaBasedApiTest.php
 
 # Run specific test method
 vendor/bin/phpunit --filter testBaseSprunje
@@ -102,14 +114,32 @@ describe('MyComponent', () => {
 
 ## Integration Testing
 
-The GitHub Actions integration test workflow:
+The GitHub Actions integration test workflow (`.github/workflows/integration-test.yml`):
 - Creates a fresh UserFrosting 6 installation
 - Installs the CRUD6 sprinkle as a Composer and NPM package
 - Runs database migrations
 - Verifies PHP functionality
+- Tests with full PHP server and Vite dev server
+- Uses Playwright for browser automation
 - Does NOT build frontend assets (left to consuming applications)
 
-See `.github/workflows/integration-test.yml` for details.
+### PHPUnit vs GitHub Integration Testing
+
+**PHPUnit Tests** (`vendor/bin/phpunit`):
+- Run within the sprinkle's development environment
+- Require UserFrosting framework dependencies
+- Test individual components and workflows
+- Use test database with RefreshDatabase trait
+- Fast feedback during development
+
+**GitHub Integration Tests** (`.github/workflows/integration-test.yml`):
+- Test the sprinkle as an installed package
+- Validate Composer and NPM installation
+- Verify sprinkle works in a fresh UserFrosting 6 project
+- Test end-to-end with browser automation
+- Confirm production-like deployment
+
+Both are essential - PHPUnit for development, GitHub Actions for release validation.
 
 ## Test Patterns from UserFrosting 6
 
@@ -176,47 +206,67 @@ Current test coverage includes:
 
 ## Continuous Integration
 
-The GitHub Actions workflow runs on:
+The GitHub Actions workflows run on:
 - Push to `main` or `develop` branches
 - Pull requests to `main` or `develop` branches
 - Manual trigger via `workflow_dispatch`
 
-Tests verify:
-1. Package can be installed via Composer
-2. Package can be installed via NPM
-3. Sprinkle can be registered in a UserFrosting 6 app
-4. Database migrations run successfully
-5. Schema files load correctly
-6. Basic PHP functionality works
-7. **PHPUnit tests execute successfully** (added in integration workflow)
+### PHPUnit Tests Workflow (`.github/workflows/phpunit-tests.yml`)
 
-### PHPUnit Testing in CI
+Runs all PHPUnit tests in the sprinkle's development environment:
+1. Sets up PHP and MySQL database
+2. Installs Composer dependencies
+3. Generates CRUD6 schema files and translations
+4. Runs `vendor/bin/phpunit --testdox --colors=always`
+5. Reports test coverage
 
-The integration workflow now includes a PHPUnit test step that runs alongside other UserFrosting framework operations:
+**Note**: These tests require the UserFrosting 6 framework to run. They test:
+- Controller actions (authentication, authorization, CRUD operations)
+- Database models and relationships
+- Service providers and middleware
+- Sprunje data listing and filtering
+- Integration workflows and API endpoints
 
-**UserFrosting Framework Usage in Integration Testing:**
-- `php bakery migrate` - Database migrations
-- `php bakery create:admin-user` - User creation
-- `php bakery bake` - Asset building
-- `php bakery serve` - PHP development server
-- `php bakery assets:vite` - Vite dev server
-- **PHPUnit tests** - Sprinkle functionality validation (NEW)
+### Integration Test Workflow (`.github/workflows/integration-test.yml`)
 
-The PHPUnit step:
-- Runs after the UserFrosting 6 application is fully set up
-- Executes all tests in `app/tests/` directory
-- Uses the sprinkle's `phpunit.xml` configuration
-- Tests controllers, models, services, and integration scenarios
-- Verifies functionality in a real UserFrosting environment
-- Has full access to UserFrosting framework classes and services
+Tests the sprinkle as an installed package in a fresh UserFrosting 6 project:
+1. Creates fresh UserFrosting 6 installation
+2. Installs CRUD6 sprinkle via Composer and NPM
+3. Runs migrations and creates admin user
+4. Generates and loads test data
+5. Starts PHP server and Vite dev server
+6. Tests API endpoints (unauthenticated and authenticated)
+7. Tests frontend pages with Playwright
+8. Captures screenshots and logs
 
-The tests run within the context of a complete UserFrosting 6 installation with:
-- Configured database (MySQL)
-- Completed migrations (via `php bakery migrate`)
-- Test data loaded
-- Admin user created (via `php bakery create:admin-user`)
-- Application running (via `php bakery serve`)
-- All UserFrosting framework dependencies available
+## Test Organization: Integration vs Controller
+
+### Integration Tests (`app/tests/Integration/`)
+Multi-step workflows and relationship tests that span multiple endpoints:
+
+- **SchemaBasedApiTest.php**: Dynamic schema-driven testing of all CRUD endpoints
+- **CRUD6UsersIntegrationTest.php**: Full user model workflow testing
+- **CRUD6GroupsIntegrationTest.php**: Full group model workflow testing
+- **FrontendUserWorkflowTest.php**: Simulates real frontend user interactions
+- **RedundantApiCallsTest.php**: Tests for API call optimization
+- **NestedEndpointsTest.php**: Tests nested relationship endpoints
+- **RoleUsersRelationshipTest.php**: Tests many-to-many relationships
+- **BooleanToggleSchemaTest.php**: Schema-based boolean toggle testing
+
+### Controller Tests (`app/tests/Controller/`)
+Focused tests for individual controller actions:
+
+- **CreateActionTest.php**: POST /api/crud6/{model}
+- **EditActionTest.php**: PUT /api/crud6/{model}/{id}
+- **UpdateFieldActionTest.php**: PUT /api/crud6/{model}/{id}/{field}
+- **DeleteActionTest.php**: DELETE /api/crud6/{model}/{id}
+- **SprunjeActionTest.php**: GET /api/crud6/{model} (list)
+- **SchemaActionTest.php**: GET /api/crud6/{model}/schema
+- **RelationshipActionTest.php**: Relationship attach/detach operations
+
+Both directories contain tests that require UserFrosting framework, but they differ in scope:
+- **Integration**: Multi-step workflows, cross-model operations, relationship testing
+- **Controller**: Single action focus, specific endpoint validation
 
 ## References
 

@@ -213,9 +213,17 @@ public function __invoke(
 - [.archive/MIDDLEWARE_INJECTION_PATTERN_CLARIFICATION.md](.archive/MIDDLEWARE_INJECTION_PATTERN_CLARIFICATION.md) - Detailed explanation
 
 #### 5. Testing Standards
+- **ALL tests require UserFrosting framework** - This is a sprinkle that cannot be tested in isolation
 - Follow testing patterns from sprinkle-admin and sprinkle-account
 - Use `RefreshDatabase` trait for database tests
-- Use `AdminTestCase` or `AccountTestCase` as base classes
+- Use `CRUD6TestCase` as base class (which bootstraps UserFrosting)
+- Test organization:
+  - `app/tests/Integration/` - Multi-step workflows, relationship testing, schema-driven tests
+  - `app/tests/Controller/` - Individual controller action tests
+  - `app/tests/Database/` - Model and migration tests
+  - `app/tests/Middlewares/` - Middleware tests
+  - `app/tests/ServicesProvider/` - Service provider tests
+  - `app/tests/Sprunje/` - Data listing tests
 - Test service providers, controllers, and business logic separately
 - Mock external dependencies appropriately
 
@@ -313,10 +321,13 @@ class MySprunje extends Sprunje
 
 ### Testing
 - **DEPENDENCY REQUIREMENT**: Full testing requires `composer install` to complete successfully
-- Run unit tests: `vendor/bin/phpunit` -- takes 2-3 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
+- Run PHPUnit tests: `vendor/bin/phpunit` -- takes 2-3 minutes. NEVER CANCEL. Set timeout to 10+ minutes.
   - **CRITICAL**: This sprinkle requires a UserFrosting 6 application context for full functionality
+  - **ALL tests require UserFrosting framework** - they are NOT traditional unit tests
   - If dependencies not installed: Tests will fail with missing class errors
-  - Unit tests for models: `vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php`
+  - Tests for models: `vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php`
+  - Integration tests: `vendor/bin/phpunit app/tests/Integration/`
+  - Controller tests: `vendor/bin/phpunit app/tests/Controller/`
 - **MANUAL VALIDATION**: When composer install fails, validate JSON schemas and PHP syntax manually
 - **JSON Schema Validation**: `php -r "echo json_encode(json_decode(file_get_contents('examples/schema/products.json')), JSON_PRETTY_PRINT) ? 'JSON valid' : 'JSON invalid';"`
 

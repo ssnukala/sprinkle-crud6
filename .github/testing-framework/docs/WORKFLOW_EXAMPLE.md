@@ -289,13 +289,13 @@ Speed up workflow with caching:
 
 ```yaml
 - name: Cache Composer dependencies
-  uses: actions/cache@v3
+  uses: actions/cache@v4
   with:
     path: ~/.composer/cache
     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
 
 - name: Cache NPM dependencies
-  uses: actions/cache@v3
+  uses: actions/cache@v4
   with:
     path: ~/.npm
     key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}

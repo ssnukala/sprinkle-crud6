@@ -46,7 +46,7 @@ jobs:
         run: composer validate --strict
       
       - name: Cache Composer dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vendor
           key: php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -102,7 +102,7 @@ jobs:
       
       - name: Upload test logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-logs-php-${{ matrix.php-version }}
           path: |

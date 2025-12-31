@@ -302,4 +302,112 @@ class CRUD6ModelTest extends TestCase
 
         $this->assertNull($connection);
     }
+
+    /**
+     * Test getDeletedAtColumn returns null for empty string
+     * 
+     * This test validates the fix for the SQL error:
+     * SQLSTATE[HY000]: General error: 1 no such column: groups.
+     * (Connection: memory, SQL: select count(*) as aggregate from "groups" where "groups"."" is null)
+     * 
+     * The issue was that getDeletedAtColumn() could return an empty string "",
+     * which would cause the query builder to generate invalid SQL with an empty column name.
+     */
+    public function testGetDeletedAtColumnReturnsNullForEmptyString(): void
+    {
+        $model = new CRUD6Model();
+        
+        // Set deleted_at to empty string using reflection (simulating corrupted state)
+        $reflection = new \ReflectionClass($model);
+        $deletedAtProperty = $reflection->getProperty('deleted_at');
+        $deletedAtProperty->setAccessible(true);
+        $deletedAtProperty->setValue($model, '');
+        
+        // getDeletedAtColumn should return null, not empty string
+        $this->assertNull($model->getDeletedAtColumn(), 
+            'getDeletedAtColumn() should return null when deleted_at is empty string');
+    }
+
+    /**
+     * Test getDeletedAtColumn with soft delete disabled
+     */
+    public function testGetDeletedAtColumnWhenSoftDeleteDisabled(): void
+    {
+        $schema = [
+            'model' => 'test_table',
+            'table' => 'test_table',
+            'soft_delete' => false, // Explicitly disabled
+            'fields' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string']
+            ]
+        ];
+
+        $model = new CRUD6Model();
+        $model->configureFromSchema($schema);
+
+        // Should return null when soft delete is disabled
+        $this->assertNull($model->getDeletedAtColumn(),
+            'getDeletedAtColumn() should return null when soft_delete is false');
+        
+        // Should not have soft deletes enabled
+        $this->assertFalse($model->hasSoftDeletes(),
+            'hasSoftDeletes() should return false when soft_delete is false');
+    }
+
+    /**
+     * Test getDeletedAtColumn with soft delete enabled
+     */
+    public function testGetDeletedAtColumnWhenSoftDeleteEnabled(): void
+    {
+        $schema = [
+            'model' => 'test_table',
+            'table' => 'test_table',
+            'soft_delete' => true, // Enabled
+            'fields' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string']
+            ]
+        ];
+
+        $model = new CRUD6Model();
+        $model->configureFromSchema($schema);
+
+        // Should return 'deleted_at' when soft delete is enabled
+        $this->assertEquals('deleted_at', $model->getDeletedAtColumn(),
+            'getDeletedAtColumn() should return "deleted_at" when soft_delete is true');
+        
+        // Should have soft deletes enabled
+        $this->assertTrue($model->hasSoftDeletes(),
+            'hasSoftDeletes() should return true when soft_delete is true');
+    }
+
+    /**
+     * Test that empty string in static config is also handled correctly
+     */
+    public function testGetDeletedAtColumnWithEmptyStringInStaticConfig(): void
+    {
+        $model = new CRUD6Model();
+        
+        // Manually set up a scenario where static config has empty string
+        $reflection = new \ReflectionClass($model);
+        $staticSchemaConfigProperty = $reflection->getProperty('staticSchemaConfig');
+        $staticSchemaConfigProperty->setAccessible(true);
+        
+        $model->setTable('test_table');
+        
+        // Set static config with empty deleted_at
+        $staticSchemaConfigProperty->setValue(null, [
+            'test_table' => [
+                'fillable' => ['name'],
+                'casts' => [],
+                'timestamps' => false,
+                'deleted_at' => '', // Empty string in static config
+            ]
+        ]);
+        
+        // Should still return null
+        $this->assertNull($model->getDeletedAtColumn(),
+            'getDeletedAtColumn() should return null when static config has empty string');
+    }
 }

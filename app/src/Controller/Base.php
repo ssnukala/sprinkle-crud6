@@ -169,10 +169,13 @@ abstract class Base
             : $modelNameOrSchema;
 
         $permission = $schema['permissions'][$action] ?? "crud6.{$schema['model']}.{$action}";
+        $modelName = $schema['model'] ?? 'unknown';
 
         if (!$this->authenticator->checkAccess($permission)) {
-            // Throw without message to use UserFrosting's default permission error message
-            throw new ForbiddenException();
+            // Provide detailed error message for debugging permission issues
+            throw new ForbiddenException(
+                "Access denied for action '{$action}' on model '{$modelName}' (requires permission: '{$permission}')"
+            );
         }
     }
 

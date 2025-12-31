@@ -2,7 +2,33 @@
 
 This directory contains historical documentation, fix summaries, and issue-specific guides that were created during the development of the CRUD6 sprinkle. These documents are preserved for future reference but have been moved out of the repository root to keep it clean and organized.
 
-## 🔥 Latest: CI Failure Analysis (December 2025)
+## 🔥 Latest: UserFrosting Log Error Fixes (December 31, 2025)
+
+**Workflow Run #20620475296** - Fixed critical errors in userfrosting.log:
+
+### Quick Navigation
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| **[COMPLETE_FIX_DOCUMENTATION.md](COMPLETE_FIX_DOCUMENTATION.md)** | 📋 Complete overview | Everyone |
+| **[VISUAL_COMPARISON.md](VISUAL_COMPARISON.md)** | 🎨 Before/After diagrams | Developers |
+| **[USERFROSTING_LOG_ERRORS_FIX_SUMMARY.md](USERFROSTING_LOG_ERRORS_FIX_SUMMARY.md)** | ⚙️ Implementation details | Developers |
+| **[TESTING_LOG_ERROR_FIXES.md](TESTING_LOG_ERROR_FIXES.md)** | 🧪 Testing guide | QA |
+| **[USERFROSTING_LOG_ERRORS_ANALYSIS.md](USERFROSTING_LOG_ERRORS_ANALYSIS.md)** | 🔍 Root cause analysis | Technical |
+
+**Issues Fixed**: 
+1. ✅ Empty column names in SQL queries (`"groups".""` → valid columns)
+2. ✅ ForbiddenException with empty messages (now includes model, action, permission)
+
+### Log Error Fix Documents (Dec 31, 2025)
+- **COMPLETE_FIX_DOCUMENTATION.md** (9KB) - Executive summary, all changes consolidated
+- **VISUAL_COMPARISON.md** (8KB) - Code flow diagrams, before/after comparisons
+- **USERFROSTING_LOG_ERRORS_FIX_SUMMARY.md** (7KB) - Code changes, GitHub token setup
+- **TESTING_LOG_ERROR_FIXES.md** (7KB) - Complete testing instructions
+- **USERFROSTING_LOG_ERRORS_ANALYSIS.md** (6KB) - Detailed error analysis
+
+---
+
+## 📊 Previous: CI Failure Analysis (December 16, 2025)
 
 **Workflow Run #20283052726** - Comprehensive analysis of 114 test failures:
 

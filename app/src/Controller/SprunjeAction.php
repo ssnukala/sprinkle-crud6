@@ -240,9 +240,15 @@ class SprunjeAction extends Base
                 // For other relations, use CRUD6Sprunje with dynamic configuration
                 $relatedModel = $this->schemaService->getModelInstance($relation);
 
+                // Extract field arrays from schema
                 $sortableFields = $this->getSortableFieldsFromSchema($relatedSchema);
                 $filterableFields = $this->getFilterableFieldsFromSchema($relatedSchema);
                 $listFields = $detailConfig['list_fields'] ?? $this->getListableFieldsFromSchema($relatedSchema);
+
+                // CRITICAL: Filter out empty field names to prevent SQL errors like "table".""
+                $sortableFields = $this->filterEmptyFieldNames($sortableFields);
+                $filterableFields = $this->filterEmptyFieldNames($filterableFields);
+                $listFields = $this->filterEmptyFieldNames($listFields);
 
                 $this->debugLog("CRUD6 [SprunjeAction] Sprunje configuration prepared", [
                     'relation' => $relation,
@@ -432,9 +438,15 @@ class SprunjeAction extends Base
             $modelName = $this->getModelNameFromRequest($request);
             $params = $request->getQueryParams();
 
+            // Extract field arrays from schema
             $sortableFields = $this->getSortableFields($modelName);
             $filterableFields = $this->getFilterableFields($modelName);
             $listFields = $this->getListableFields($modelName);
+
+            // CRITICAL: Filter out empty field names to prevent SQL errors like "table".""
+            $sortableFields = $this->filterEmptyFieldNames($sortableFields);
+            $filterableFields = $this->filterEmptyFieldNames($filterableFields);
+            $listFields = $this->filterEmptyFieldNames($listFields);
 
             $this->debugLog("CRUD6 [SprunjeAction] Setting up main model sprunje", [
                 'model' => $modelName,
@@ -585,5 +597,36 @@ class SprunjeAction extends Base
         }
 
         return $listable;
+    }
+
+    /**
+     * Filter out empty or invalid field names from array.
+     * 
+     * Ensures all field names are non-empty strings to prevent SQL errors
+     * like "table"."" with empty column names.
+     * 
+     * @param array $fields Array of field names (may contain empty strings or non-strings)
+     * 
+     * @return array Filtered array containing only valid non-empty string field names
+     */
+    protected function filterEmptyFieldNames(array $fields): array
+    {
+        $filtered = array_filter($fields, function($field) {
+            return is_string($field) && trim($field) !== '';
+        });
+
+        // Log if any fields were filtered out
+        $removedCount = count($fields) - count($filtered);
+        if ($removedCount > 0) {
+            $this->debugLog("CRUD6 [SprunjeAction] Filtered out empty field names", [
+                'original_count' => count($fields),
+                'filtered_count' => count($filtered),
+                'removed_count' => $removedCount,
+                'original_fields' => $fields,
+                'filtered_fields' => array_values($filtered),
+            ]);
+        }
+
+        return array_values($filtered); // Re-index array
     }
 }

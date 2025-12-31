@@ -127,8 +127,21 @@ class CRUD6Sprunje extends Sprunje
      */
     protected function filterSearch($query, $value)
     {
+        // DEBUG: Log entry to filterSearch with field analysis
+        $this->debugLogger->debug("CRUD6 [CRUD6Sprunje] filterSearch() called", [
+            'table' => $this->name,
+            'search_value' => $value,
+            'filterable_fields' => $this->filterable,
+            'filterable_count' => count($this->filterable),
+            'has_empty_strings' => in_array('', $this->filterable, true),
+            'empty_after_trim' => count(array_filter($this->filterable, fn($f) => is_string($f) && trim($f) === '')),
+        ]);
+
         // Only apply search if we have filterable fields and non-empty search value
         if (empty($this->filterable) || trim($value) === '') {
+            $this->debugLogger->debug("CRUD6 [CRUD6Sprunje] filterSearch() skipped", [
+                'reason' => empty($this->filterable) ? 'no filterable fields' : 'empty search value',
+            ]);
             return $query;
         }
 
@@ -142,8 +155,16 @@ class CRUD6Sprunje extends Sprunje
 
         // If no valid filterable fields after filtering, return query unchanged
         if (empty($validFields)) {
+            $this->debugLogger->debug("CRUD6 [CRUD6Sprunje] filterSearch() no valid fields after filtering", [
+                'original_filterable' => $this->filterable,
+            ]);
             return $query;
         }
+
+        $this->debugLogger->debug("CRUD6 [CRUD6Sprunje] filterSearch() applying to fields", [
+            'valid_fields' => array_values($validFields),
+            'qualified_fields' => array_map(fn($f) => "{$tableName}.{$f}", $validFields),
+        ]);
 
         // Apply search to all valid filterable fields using OR logic
         return $query->where(function ($subQuery) use ($value, $tableName, $validFields) {

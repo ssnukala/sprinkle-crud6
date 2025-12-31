@@ -240,6 +240,7 @@ class SchemaService
      * Get a configured CRUD6Model instance for a model.
      * 
      * Loads schema and returns a fully configured model instance ready for use.
+     * Injects the debug logger to enable debug logging in CRUD6Model.
      *
      * @param string $model The model name
      * 
@@ -252,6 +253,10 @@ class SchemaService
         $schema = $this->getSchema($model);
 
         $modelInstance = new \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model();
+        
+        // Inject logger for debug logging
+        \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::setDebugLogger($this->logger);
+        
         $modelInstance->configureFromSchema($schema);
 
         return $modelInstance;

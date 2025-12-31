@@ -100,5 +100,15 @@ jobs:
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit --testdox --colors=always
       
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs-php-${{ matrix.php-version }}
+          path: |
+            app/logs/userfrosting.log
+            app/storage/logs/*.log
+          if-no-files-found: warn
+      
       - name: Check test coverage
         run: vendor/bin/phpunit --coverage-text --colors=never | tail -20

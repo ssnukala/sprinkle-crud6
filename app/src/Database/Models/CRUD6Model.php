@@ -43,6 +43,11 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     use SoftDeletes;
 
     /**
+     * @var \UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface|null Static logger instance for debugging
+     */
+    protected static ?\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface $debugLogger = null;
+
+    /**
      * @var string The name of the table for the current model.
      * Default value indicates the table has not been set yet.
      */
@@ -96,6 +101,31 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     protected static array $staticSchemaConfig = [];
 
     /**
+     * Set the debug logger for all CRUD6Model instances
+     * 
+     * @param \UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface $logger
+     * @return void
+     */
+    public static function setDebugLogger(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface $logger): void
+    {
+        static::$debugLogger = $logger;
+    }
+
+    /**
+     * Log debug information if logger is available
+     * 
+     * @param string $message
+     * @param array $context
+     * @return void
+     */
+    protected function logDebug(string $message, array $context = []): void
+    {
+        if (static::$debugLogger !== null) {
+            static::$debugLogger->debug($message, $context);
+        }
+    }
+
+    /**
      * Configure the model with schema information
      *
      * @param array $schema The JSON schema configuration
@@ -107,6 +137,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         if (isset($schema['table'])) {
             $this->table = $schema['table'];
         }
+
+        $this->logDebug('[CRUD6Model] Configuring model from schema', [
+            'table' => $this->table,
+            'has_soft_delete' => $schema['soft_delete'] ?? false,
+            'has_timestamps' => $schema['timestamps'] ?? false,
+        ]);
 
         // Configure database connection
         // Use connection from schema if specified, otherwise use null for default connection
@@ -122,8 +158,16 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
             if (!in_array('deleted_at', $this->dates)) {
                 $this->dates[] = 'deleted_at';
             }
+            $this->logDebug('[CRUD6Model] Soft deletes ENABLED', [
+                'table' => $this->table,
+                'deleted_at_column' => $this->deleted_at,
+            ]);
         } else {
             $this->deleted_at = null;
+            $this->logDebug('[CRUD6Model] Soft deletes DISABLED', [
+                'table' => $this->table,
+                'deleted_at_column' => 'null',
+            ]);
         }
 
         // Set fillable attributes and casts based on schema fields
@@ -140,6 +184,11 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
                 'timestamps' => $this->timestamps,
                 'deleted_at' => $this->deleted_at,
             ];
+            
+            $this->logDebug('[CRUD6Model] Schema config stored in static storage', [
+                'table' => $this->table,
+                'config' => static::$staticSchemaConfig[$this->table],
+            ]);
         }
 
         return $this;
@@ -594,8 +643,19 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
 
         // Automatically apply soft delete filter if enabled (but only if deleted_at column exists)
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn !== null) {
+        
+        if ($deletedAtColumn !== null && $deletedAtColumn !== '') {
+            $this->logDebug('[CRUD6Model] Applying soft delete filter in newQuery', [
+                'table' => $this->table,
+                'deleted_at_column' => $deletedAtColumn,
+            ]);
             $query->whereNull($deletedAtColumn);
+        } else {
+            $this->logDebug('[CRUD6Model] NOT applying soft delete filter in newQuery', [
+                'table' => $this->table,
+                'deleted_at_column' => $deletedAtColumn ?? 'null',
+                'reason' => $deletedAtColumn === null ? 'column is null' : 'column is empty string',
+            ]);
         }
 
         return $query;
@@ -605,22 +665,49 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      * Get the name of the "deleted at" column.
      * 
      * Checks static storage for hydrated instances.
+     * 
+     * IMPORTANT: Returns null if the column name is empty or invalid to prevent
+     * SQL errors like: WHERE "table"."" IS NULL
      *
      * @return string|null
      */
     public function getDeletedAtColumn(): ?string
     {
+        $columnName = null;
+        
         // Check instance property first
-        if ($this->deleted_at !== null) {
-            return $this->deleted_at;
+        if ($this->deleted_at !== null && $this->deleted_at !== '') {
+            $columnName = $this->deleted_at;
+            $this->logDebug('[CRUD6Model] getDeletedAtColumn from instance property', [
+                'table' => $this->table,
+                'column' => $columnName,
+                'source' => 'instance_property',
+            ]);
         }
 
         // Fall back to static storage for hydrated instances
-        if ($this->table && isset(static::$staticSchemaConfig[$this->table]['deleted_at'])) {
-            return static::$staticSchemaConfig[$this->table]['deleted_at'];
+        if ($columnName === null && $this->table && isset(static::$staticSchemaConfig[$this->table]['deleted_at'])) {
+            $storedValue = static::$staticSchemaConfig[$this->table]['deleted_at'];
+            // Only use the stored value if it's not empty
+            if ($storedValue !== null && $storedValue !== '') {
+                $columnName = $storedValue;
+                $this->logDebug('[CRUD6Model] getDeletedAtColumn from static storage', [
+                    'table' => $this->table,
+                    'column' => $columnName,
+                    'source' => 'static_storage',
+                ]);
+            }
         }
 
-        return null;
+        if ($columnName === null) {
+            $this->logDebug('[CRUD6Model] getDeletedAtColumn returning NULL (soft deletes disabled)', [
+                'table' => $this->table,
+                'instance_deleted_at' => $this->deleted_at ?? 'not_set',
+                'has_static_config' => isset(static::$staticSchemaConfig[$this->table]),
+            ]);
+        }
+
+        return $columnName;
     }
 
     /**

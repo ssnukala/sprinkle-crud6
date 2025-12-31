@@ -31,7 +31,7 @@ The workflow automatically:
 - Takes screenshots
 - Validates everything works
 
-> **Note**: PHPUnit unit tests are run separately in the "Unit Tests" workflow to ensure proper test environment and autoloading.
+> **Note**: PHPUnit tests are run separately in the "PHPUnit Tests" workflow to ensure proper test environment and autoloading. These tests require UserFrosting 6 framework context and are NOT traditional unit tests.
 
 ## Manual Local Testing
 
@@ -204,16 +204,19 @@ Since only user ID 1 is reserved, you can safely:
 - Delete roles with ID >= 100
 - Modify or remove any test data
 
-## Running Unit Tests
+## Running PHPUnit Tests
+
+**Important**: These tests require the UserFrosting 6 framework to run. They are NOT traditional unit tests that can run in isolation.
 
 ```bash
-# Run CRUD6 unit tests
+# Run CRUD6 PHPUnit tests
 cd vendor/ssnukala/sprinkle-crud6
 composer test
 
 # Or specific test suites
-vendor/bin/phpunit app/tests/Database/
 vendor/bin/phpunit app/tests/Integration/
+vendor/bin/phpunit app/tests/Controller/
+vendor/bin/phpunit app/tests/Database/
 ```
 
 ## Troubleshooting

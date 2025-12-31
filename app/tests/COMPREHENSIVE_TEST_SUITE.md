@@ -1,8 +1,20 @@
 # CRUD6 Comprehensive Test Suite
 
 **Created**: 2025-11-19  
+**Updated**: 2025-12-29 - Reorganized test structure  
 **Purpose**: Independent testing infrastructure for CRUD6 to detect bugs without relying on dependent sprinkles like C6Admin  
 **Status**: ✅ Complete Test Coverage
+
+## Important Note About Test Classification
+
+**All PHPUnit tests in this sprinkle require UserFrosting 6 framework to run.** While traditionally "unit tests" refer to isolated component testing, this sprinkle cannot be tested in complete isolation because it depends on:
+- UserFrosting's authentication and authorization system
+- Eloquent ORM and database layer
+- Routing and middleware infrastructure
+- Service container and dependency injection
+- Session management and CSRF protection
+
+Therefore, all tests in `app/tests/` are technically integration tests that require the UserFrosting framework context. The GitHub workflow has been renamed from "unit-tests.yml" to "phpunit-tests.yml" to reflect this reality.
 
 ## Overview
 
@@ -12,19 +24,31 @@ This test suite provides comprehensive coverage of all CRUD6 API endpoints and f
 
 ### Modular Structure
 
-Tests are organized by controller/feature for easy maintenance and targeted testing:
+Tests are organized by scope and purpose for easy maintenance and targeted testing:
 
 ```
-app/tests/Controller/
-├── CreateActionTest.php          - POST   /api/crud6/{model}
-├── EditActionTest.php             - PUT    /api/crud6/{model}/{id}
-├── UpdateFieldActionTest.php      - PUT    /api/crud6/{model}/{id}/{field}
-├── DeleteActionTest.php           - DELETE /api/crud6/{model}/{id}
-├── SprunjeActionTest.php          - GET    /api/crud6/{model} (list)
-├── SchemaActionTest.php           - GET    /api/crud6/{model}/schema
-├── CRUD6UsersIntegrationTest.php  - Full user model integration tests
-├── CRUD6GroupsIntegrationTest.php - Full group model integration tests
-└── BooleanToggleSchemaTest.php    - Schema-based validation tests
+app/tests/
+├── Integration/                    # Multi-step workflows and relationship tests
+│   ├── CRUD6UsersIntegrationTest.php    # Full user model integration
+│   ├── CRUD6GroupsIntegrationTest.php   # Full group model integration
+│   ├── SchemaBasedApiTest.php           # Schema-driven API testing
+│   ├── FrontendUserWorkflowTest.php     # Frontend workflow simulation
+│   ├── RedundantApiCallsTest.php        # API call optimization
+│   ├── NestedEndpointsTest.php          # Nested relationship endpoints
+│   ├── RoleUsersRelationshipTest.php    # Role-user relationships
+│   └── BooleanToggleSchemaTest.php      # Schema-based boolean toggles
+├── Controller/                     # Individual controller action tests
+│   ├── CreateActionTest.php        # POST   /api/crud6/{model}
+│   ├── EditActionTest.php          # PUT    /api/crud6/{model}/{id}
+│   ├── UpdateFieldActionTest.php   # PUT    /api/crud6/{model}/{id}/{field}
+│   ├── DeleteActionTest.php        # DELETE /api/crud6/{model}/{id}
+│   ├── SprunjeActionTest.php       # GET    /api/crud6/{model} (list)
+│   ├── SchemaActionTest.php        # GET    /api/crud6/{model}/schema
+│   └── ...                         # Other controller action tests
+├── Database/                       # Model and migration tests
+├── Middlewares/                    # Middleware tests
+├── ServicesProvider/               # Service provider tests
+└── Sprunje/                        # Sprunje (data listing) tests
 ```
 
 ## Test Coverage Matrix
@@ -55,7 +79,7 @@ app/tests/Controller/
 | - Readonly Protection | | ✅ | Readonly fields |
 | - Authentication | | ✅ | Requires login |
 | - Authorization | | ✅ | Requires permission |
-| **Boolean Toggles** | PUT /api/crud6/users/{id}/flag_* | CRUD6UsersIntegrationTest.php | ✅ Complete |
+| **Boolean Toggles** | PUT /api/crud6/users/{id}/flag_* | Integration/CRUD6UsersIntegrationTest.php | ✅ Complete |
 | - Toggle Enabled | | ✅ | flag_enabled true ↔ false |
 | - Toggle Verified | | ✅ | flag_verified true ↔ false |
 | - Database Update | | ✅ | Values persisted |
@@ -84,10 +108,10 @@ app/tests/Controller/
 
 | Feature | Path | Test Status | Notes |
 |---------|------|-------------|-------|
-| User List Page | /crud6/users | ⏳ Manual | Route exists (CRUD6UsersIntegrationTest) |
-| User Detail Page | /crud6/users/{id} | ⏳ Manual | Route exists (CRUD6UsersIntegrationTest) |
-| Group List Page | /crud6/groups | ⏳ Manual | Route exists (CRUD6GroupsIntegrationTest) |
-| Group Detail Page | /crud6/groups/{id} | ⏳ Manual | Route exists (CRUD6GroupsIntegrationTest) |
+| User List Page | /crud6/users | ⏳ Manual | Route exists (Integration/CRUD6UsersIntegrationTest) |
+| User Detail Page | /crud6/users/{id} | ⏳ Manual | Route exists (Integration/CRUD6UsersIntegrationTest) |
+| Group List Page | /crud6/groups | ⏳ Manual | Route exists (Integration/CRUD6GroupsIntegrationTest) |
+| Group Detail Page | /crud6/groups/{id} | ⏳ Manual | Route exists (Integration/CRUD6GroupsIntegrationTest) |
 
 **Frontend Testing**: These tests verify routes exist but require browser automation (Playwright/Selenium) or manual testing for full UI validation. Consider adding:
 - `app/tests/Frontend/` directory for Playwright tests
@@ -98,11 +122,11 @@ app/tests/Controller/
 
 | Schema File | Test File | Coverage |
 |-------------|-----------|----------|
-| users.json | BooleanToggleSchemaTest.php | ✅ Complete |
-| groups.json | BooleanToggleSchemaTest.php | ✅ Complete |
-| permissions.json | BooleanToggleSchemaTest.php | ✅ Complete |
-| roles.json | BooleanToggleSchemaTest.php | ✅ Complete |
-| activities.json | BooleanToggleSchemaTest.php | ✅ Complete |
+| users.json | Integration/BooleanToggleSchemaTest.php | ✅ Complete |
+| groups.json | Integration/BooleanToggleSchemaTest.php | ✅ Complete |
+| permissions.json | Integration/BooleanToggleSchemaTest.php | ✅ Complete |
+| roles.json | Integration/BooleanToggleSchemaTest.php | ✅ Complete |
+| activities.json | Integration/BooleanToggleSchemaTest.php | ✅ Complete |
 
 ## Running Tests
 
@@ -123,13 +147,16 @@ vendor/bin/phpunit --coverage-html coverage/
 vendor/bin/phpunit app/tests/Controller/CreateActionTest.php
 
 # Run only boolean toggle tests
-vendor/bin/phpunit app/tests/Controller/CRUD6UsersIntegrationTest.php --filter Toggle
+vendor/bin/phpunit app/tests/Integration/CRUD6UsersIntegrationTest.php --filter Toggle
 
 # Run only sprunje tests
 vendor/bin/phpunit app/tests/Controller/SprunjeActionTest.php
 
 # Run all integration tests
-vendor/bin/phpunit app/tests/Controller/CRUD6*IntegrationTest.php
+vendor/bin/phpunit app/tests/Integration/
+
+# Run all controller tests
+vendor/bin/phpunit app/tests/Controller/
 ```
 
 ### Quick Validation (No Dependencies Required)
@@ -316,8 +343,8 @@ class MyNewFeatureTest extends CRUD6TestCase
 ### For New Models
 
 1. Add schema file to `app/schema/crud6/`
-2. Create integration test in `app/tests/Controller/CRUD6{Model}IntegrationTest.php`
-3. Add schema validation test in `BooleanToggleSchemaTest.php`
+2. Create integration test in `app/tests/Integration/CRUD6{Model}IntegrationTest.php`
+3. Add schema validation test in `Integration/BooleanToggleSchemaTest.php`
 4. Test all CRUD operations for the new model
 
 ## Debugging Failed Tests

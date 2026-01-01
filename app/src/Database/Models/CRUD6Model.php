@@ -733,6 +733,31 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     }
 
     /**
+     * Get the fully qualified "deleted at" column.
+     * 
+     * Overrides the SoftDeletes trait method to handle the case where
+     * getDeletedAtColumn() returns null (soft deletes disabled).
+     * 
+     * CRITICAL: This prevents Laravel from generating SQL with empty column names
+     * like: WHERE "table"."" IS NULL
+     * 
+     * @return string|null
+     */
+    public function getQualifiedDeletedAtColumn(): ?string
+    {
+        $column = $this->getDeletedAtColumn();
+        
+        // If soft deletes are disabled (no column name), return null
+        // This tells Laravel's SoftDeletingScope to not apply the WHERE clause
+        if ($column === null || $column === '') {
+            return null;
+        }
+        
+        // Otherwise, return the table-qualified column name
+        return $this->qualifyColumn($column);
+    }
+
+    /**
      * Check if soft deletes are enabled for this model.
      * 
      * @return bool

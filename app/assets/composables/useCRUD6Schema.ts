@@ -150,7 +150,7 @@ export interface CRUD6Schema {
     title: string
     singular_title?: string
     description?: string
-    table: string
+    table?: string
     primary_key: string
     timestamps?: boolean
     soft_delete?: boolean
@@ -161,6 +161,10 @@ export interface CRUD6Schema {
         delete?: string
     }
     default_sort?: Record<string, 'asc' | 'desc'>
+    /** 
+     * Fields for the schema
+     * When multi-context response is received, frontend reconstructs this from contexts
+     */
     fields: Record<string, SchemaField>
     /** Single detail configuration (backward compatible) */
     detail?: DetailConfig

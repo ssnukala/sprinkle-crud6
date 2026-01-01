@@ -16,14 +16,13 @@ use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
-use UserFrosting\Sprinkle\Admin\Sprunje\UserSprunje;
 
 /**
  * Sprunje action for CRUD6 models.
  * 
  * Handles listing, filtering, sorting, and pagination for any CRUD6 model.
  * Uses the Sprunje pattern from UserFrosting for data table operations.
- * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * All Sprunje instances are dynamically created based on schema configuration.
  * 
  * Route: GET /api/crud6/{model}
  * 
@@ -40,7 +39,6 @@ class SprunjeAction extends Base
      * @param Translator           $translator    Translator for i18n messages
      * @param CRUD6Sprunje         $sprunje       CRUD6 Sprunje for data operations
      * @param SchemaService        $schemaService Schema service
-     * @param UserSprunje          $userSprunje   User Sprunje for relation queries
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
@@ -50,7 +48,6 @@ class SprunjeAction extends Base
         protected CRUD6Sprunje $sprunje,
         protected SchemaService $schemaService,
         protected Config $config,
-        protected UserSprunje $userSprunje,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -182,61 +179,8 @@ class SprunjeAction extends Base
                     'query_params' => $params,
                 ]);
 
-                // Check if schema specifies a custom sprunje class to use
-                // This allows schema to override the default CRUD6Sprunje with a specialized one (e.g., UserSprunje)
-                $useCustomSprunje = $relatedSchema['sprunje_class'] ?? null;
-                
-                if ($useCustomSprunje === 'UserSprunje') {
-                    // Use custom Sprunje class specified in schema
-                    $this->debugLog("CRUD6 [SprunjeAction] Using custom Sprunje from schema", [
-                        'relation' => $relation,
-                        'table' => $relatedSchema['table'],
-                        'sprunje_class' => $useCustomSprunje,
-                        'has_relationship_config' => $relationshipConfig !== null,
-                        'relationship_type' => $relationshipConfig['type'] ?? 'direct',
-                    ]);
-
-                    $this->userSprunje->setOptions($params);
-                    
-                    // Handle many-to-many relationship with proper JOIN
-                    if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
-                        $relatedTable = $relatedSchema['table'];
-                        
-                        $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many relationship", [
-                            'pivot_table' => $relationshipConfig['pivot_table'] ?? null,
-                            'foreign_key' => $relationshipConfig['foreign_key'] ?? null,
-                            'related_key' => $relationshipConfig['related_key'] ?? null,
-                            'related_table' => $relatedTable,
-                        ]);
-                        
-                        // Build JOIN query for many-to-many
-                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $relationshipConfig, $relatedTable) {
-                            $pivotTable = $relationshipConfig['pivot_table'];
-                            $foreignKey = $relationshipConfig['foreign_key'];
-                            $relatedKey = $relationshipConfig['related_key'];
-                            
-                            return $query->join(
-                                $pivotTable,
-                                "{$relatedTable}.id",
-                                '=',
-                                "{$pivotTable}.{$relatedKey}"
-                            )->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
-                        });
-                    } else {
-                        // Direct relationship - qualify the column with table name to avoid ambiguity
-                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedSchema) {
-                            $relatedTable = $relatedSchema['table'];
-                            $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
-                                ? $foreignKey 
-                                : "{$relatedTable}.{$foreignKey}";
-                            return $query->where($qualifiedForeignKey, $crudModel->id);
-                        });
-                    }
-                    
-                    return $this->userSprunje->toResponse($response);
-                }
-
-                // For other relations, use CRUD6Sprunje with dynamic configuration
+                // All Sprunje instances are created dynamically based on schema
+                // Use CRUD6Sprunje with dynamic configuration for all relations
                 $relatedModel = $this->schemaService->getModelInstance($relation);
 
                 // Extract field arrays from schema

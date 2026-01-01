@@ -6,7 +6,6 @@
     "description": "CRUD6.USER.PAGE_DESCRIPTION",
     "table": "users",
     "primary_key": "id",
-    "sprunje_class": "UserSprunje",
     "permissions": {
         "read": "uri_crud6",
         "create": "create_user",

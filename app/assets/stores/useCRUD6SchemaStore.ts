@@ -343,23 +343,45 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 let mergedFields: Record<string, any> = {}
                 let mergedContextData: any = {}
                 
+                debugLog('[useCRUD6SchemaStore] 🔍 Processing multi-context merge', {
+                    requestedContexts,
+                    availableContexts: Object.keys(response.data.contexts)
+                })
+                
                 for (const ctxName of requestedContexts) {
                     if (response.data.contexts[ctxName]) {
                         const ctxData = response.data.contexts[ctxName]
+                        debugLog(`[useCRUD6SchemaStore] 🔍 Merging context "${ctxName}"`, {
+                            hasFields: 'fields' in ctxData,
+                            fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0,
+                            ctxDataKeys: Object.keys(ctxData)
+                        })
+                        
                         // Merge fields from this context
                         if (ctxData.fields) {
                             mergedFields = { ...mergedFields, ...ctxData.fields }
                         }
                         // Merge other context-specific properties (last one wins for non-field properties)
-                        mergedContextData = { ...mergedContextData, ...ctxData }
+                        // But EXCLUDE 'fields' since we're handling it separately
+                        const { fields: _, ...ctxDataWithoutFields } = ctxData
+                        mergedContextData = { ...mergedContextData, ...ctxDataWithoutFields }
+                    } else {
+                        debugLog(`[useCRUD6SchemaStore] ⚠️ Requested context "${ctxName}" not found in response`)
                     }
                 }
                 
+                debugLog('[useCRUD6SchemaStore] 🔍 After merging contexts', {
+                    mergedFieldsCount: Object.keys(mergedFields).length,
+                    mergedFieldsKeys: Object.keys(mergedFields),
+                    mergedContextDataKeys: Object.keys(mergedContextData)
+                })
+                
                 // Build final schema with fields at root level
+                // IMPORTANT: Set fields AFTER spreading mergedContextData to ensure fields at root take precedence
                 schemaData = {
                     ...baseSchema,
                     ...mergedContextData,
-                    fields: mergedFields
+                    fields: mergedFields  // This MUST come after mergedContextData to overwrite any nested fields
                 } as CRUD6Schema
                 
                 debugLog('[useCRUD6SchemaStore] ✅ Reconstructed schema with fields at root', {

@@ -179,8 +179,23 @@ class SprunjeAction extends Base
                     'query_params' => $params,
                 ]);
 
-                // All Sprunje instances are created dynamically based on schema
-                // Use CRUD6Sprunje with dynamic configuration for all relations
+                // Check if schema specifies a custom sprunje class
+                // This allows users to provide their own Sprunje implementations if needed
+                // If not specified, uses default CRUD6Sprunje with dynamic configuration
+                $customSprunjeClass = $relatedSchema['sprunje_class'] ?? null;
+                
+                if ($customSprunjeClass !== null) {
+                    // TODO: Implement dynamic Sprunje instantiation from DI container
+                    // For now, log that custom sprunje was requested but not yet implemented
+                    $this->debugLog("CRUD6 [SprunjeAction] Custom sprunje class specified but not yet implemented", [
+                        'relation' => $relation,
+                        'sprunje_class' => $customSprunjeClass,
+                        'note' => 'Falling back to CRUD6Sprunje with dynamic configuration',
+                    ]);
+                }
+                
+                // Use CRUD6Sprunje with dynamic configuration
+                // All configuration extracted from schema - fully dynamic
                 $relatedModel = $this->schemaService->getModelInstance($relation);
 
                 // Extract field arrays from schema

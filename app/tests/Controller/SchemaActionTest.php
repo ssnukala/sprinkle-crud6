@@ -166,6 +166,57 @@ class SchemaActionTest extends CRUD6TestCase
     }
 
     /**
+     * Test schema with single context returns fields at root level
+     */
+    public function testSchemaSingleContextReturnsFieldsAtRoot(): void
+    {
+        /** @var User */
+        $user = User::factory()->createQuietly();
+        $this->actAsUser($user, permissions: ['uri_crud6']);
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/schema?context=list');
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(200, $response);
+        $body = json_decode((string) $response->getBody(), true);
+        
+        // Single context should have fields at root level
+        $this->assertArrayHasKey('fields', $body, 'Single context should have fields at root level');
+        $this->assertArrayNotHasKey('contexts', $body, 'Single context should NOT have contexts object');
+        $this->assertEquals('users', $body['model']);
+    }
+
+    /**
+     * Test schema with multiple contexts returns contexts object
+     */
+    public function testSchemaMultiContextReturnsContextsObject(): void
+    {
+        /** @var User */
+        $user = User::factory()->createQuietly();
+        $this->actAsUser($user, permissions: ['uri_crud6']);
+
+        $request = $this->createJsonRequest('GET', '/api/crud6/users/schema?context=list,form');
+        $response = $this->handleRequestWithTracking($request);
+
+        $this->assertResponseStatus(200, $response);
+        $body = json_decode((string) $response->getBody(), true);
+        
+        // Multi-context should have contexts object, not root fields
+        $this->assertArrayHasKey('contexts', $body, 'Multi-context should have contexts object');
+        $this->assertArrayNotHasKey('fields', $body, 'Multi-context should NOT have fields at root level');
+        
+        // Should have both requested contexts
+        $this->assertArrayHasKey('list', $body['contexts'], 'Should have list context');
+        $this->assertArrayHasKey('form', $body['contexts'], 'Should have form context');
+        
+        // Each context should have its own fields
+        $this->assertArrayHasKey('fields', $body['contexts']['list'], 'List context should have fields');
+        $this->assertArrayHasKey('fields', $body['contexts']['form'], 'Form context should have fields');
+        
+        $this->assertEquals('users', $body['model']);
+    }
+
+    /**
      * Test schema for non-existent model returns error
      */
     public function testSchemaNonExistentModelReturnsError(): void

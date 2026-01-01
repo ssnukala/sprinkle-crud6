@@ -16,14 +16,13 @@ use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
 use UserFrosting\I18n\Translator;
 use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
-use UserFrosting\Sprinkle\Admin\Sprunje\UserSprunje;
 
 /**
  * Sprunje action for CRUD6 models.
  * 
  * Handles listing, filtering, sorting, and pagination for any CRUD6 model.
  * Uses the Sprunje pattern from UserFrosting for data table operations.
- * Follows the UserFrosting 6 action controller pattern from sprinkle-admin.
+ * All Sprunje instances are dynamically configured based on schema.
  * 
  * Route: GET /api/crud6/{model}
  * 
@@ -40,7 +39,6 @@ class SprunjeAction extends Base
      * @param Translator           $translator    Translator for i18n messages
      * @param CRUD6Sprunje         $sprunje       CRUD6 Sprunje for data operations
      * @param SchemaService        $schemaService Schema service
-     * @param UserSprunje          $userSprunje   User Sprunje for relation queries
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
@@ -50,7 +48,6 @@ class SprunjeAction extends Base
         protected CRUD6Sprunje $sprunje,
         protected SchemaService $schemaService,
         protected Config $config,
-        protected UserSprunje $userSprunje,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -101,8 +98,7 @@ class SprunjeAction extends Base
                 'has_relationships' => isset($crudSchema['relationships']) ? 'yes' : 'no',
             ]);
 
-            // Check if this relation is configured in the schema's detail/details section
-            // Support both singular 'detail' (legacy) and plural 'details' array
+            // Check if this relation is configured in the schema's details section
             $detailConfig = null;
             if (isset($crudSchema['details']) && is_array($crudSchema['details'])) {
                 // Search through details array for matching model
@@ -124,15 +120,6 @@ class SprunjeAction extends Base
                         $detailConfig = $config;
                         break;
                     }
-                }
-            } elseif (isset($crudSchema['detail']) && is_array($crudSchema['detail'])) {
-                // Backward compatibility: support singular 'detail' object
-                $this->debugLog("CRUD6 [SprunjeAction] Checking singular detail config", [
-                    'model' => $crudSchema['detail']['model'] ?? 'null',
-                ]);
-
-                if (isset($crudSchema['detail']['model']) && $crudSchema['detail']['model'] === $relation) {
-                    $detailConfig = $crudSchema['detail'];
                 }
             }
 
@@ -192,52 +179,8 @@ class SprunjeAction extends Base
                     'query_params' => $params,
                 ]);
 
-                // For 'users' relation, use UserSprunje for compatibility
-                if ($relation === 'users') {
-                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation", [
-                        'has_relationship_config' => $relationshipConfig !== null,
-                        'relationship_type' => $relationshipConfig['type'] ?? 'direct',
-                    ]);
-
-                    $this->userSprunje->setOptions($params);
-                    
-                    // Handle many-to-many relationship with proper JOIN
-                    if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
-                        $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many for users relation", [
-                            'pivot_table' => $relationshipConfig['pivot_table'] ?? null,
-                            'foreign_key' => $relationshipConfig['foreign_key'] ?? null,
-                            'related_key' => $relationshipConfig['related_key'] ?? null,
-                        ]);
-                        
-                        // Build JOIN query for many-to-many
-                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $relationshipConfig) {
-                            $pivotTable = $relationshipConfig['pivot_table'];
-                            $foreignKey = $relationshipConfig['foreign_key'];
-                            $relatedKey = $relationshipConfig['related_key'];
-                            
-                            return $query->join(
-                                $pivotTable,
-                                "users.id",
-                                '=',
-                                "{$pivotTable}.{$relatedKey}"
-                            )->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
-                        });
-                    } else {
-                        // Direct relationship - qualify the column with table name to avoid ambiguity
-                        // UserSprunje may join with activities table, making unqualified 'id' ambiguous
-                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedSchema) {
-                            $relatedTable = $relatedSchema['table'] ?? 'users';
-                            $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
-                                ? $foreignKey 
-                                : "{$relatedTable}.{$foreignKey}";
-                            return $query->where($qualifiedForeignKey, $crudModel->id);
-                        });
-                    }
-                    
-                    return $this->userSprunje->toResponse($response);
-                }
-
-                // For other relations, use CRUD6Sprunje with dynamic configuration
+                // Use CRUD6Sprunje with dynamic configuration from schema
+                // Models are already injected based on schema through existing injector functionality
                 $relatedModel = $this->schemaService->getModelInstance($relation);
 
                 // Extract field arrays from schema

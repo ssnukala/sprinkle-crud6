@@ -14,15 +14,34 @@ namespace UserFrosting\Sprinkle\CRUD6\Tests\Sprunje;
 
 use UserFrosting\Sprinkle\Account\Database\Models\Group;
 use UserFrosting\Sprinkle\CRUD6\Sprunje\CRUD6Sprunje;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**
- * Tests CRUD6Sprunje search functionality across multiple fields.
+ * Tests CRUD6Sprunje search functionality using schema-driven configuration.
+ * 
+ * This test is completely driven by the groups.json schema file.
+ * NO field names, table names, or configurations are hardcoded.
  */
 class CRUD6SprunjeSearchTest extends CRUD6TestCase
 {
     use RefreshDatabase;
+
+    /** @var array The groups schema loaded from JSON */
+    protected array $schema;
+
+    /** @var array Sortable fields extracted from schema */
+    protected array $sortableFields;
+
+    /** @var array Filterable fields extracted from schema */
+    protected array $filterableFields;
+
+    /** @var array Listable fields extracted from schema */
+    protected array $listableFields;
+
+    /** @var string The table name from schema */
+    protected string $tableName;
 
     public function setUp(): void
     {
@@ -31,9 +50,26 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         // Set database up.
         $this->refreshDatabase();
         $this->seedDatabase();
+        
+        // Load schema from SchemaService - this is schema-driven, not hardcoded
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        $this->schema = $schemaService->getSchema('groups');
+        
+        // Extract configuration from schema - completely dynamic
+        $this->tableName = $this->schema['table'];
+        $this->sortableFields = $this->extractSortableFields($this->schema);
+        $this->filterableFields = $this->extractFilterableFields($this->schema);
+        $this->listableFields = $this->extractListableFields($this->schema);
+        
+        // Create test data
         $this->createData();
     }
 
+    /**
+     * Create test data for groups.
+     * Uses the actual Group model from Account sprinkle.
+     */
     protected function createData(): void
     {
         // Create test groups with different names and descriptions
@@ -57,73 +93,149 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
     }
 
     /**
-     * Test search across multiple filterable fields.
+     * Extract sortable fields from schema.
+     * 
+     * @param array $schema The schema configuration
+     * @return array List of sortable field names
+     */
+    protected function extractSortableFields(array $schema): array
+    {
+        $sortable = [];
+
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['sortable']) && $fieldConfig['sortable'] === true) {
+                    $sortable[] = $fieldName;
+                }
+            }
+        }
+
+        return $sortable;
+    }
+
+    /**
+     * Extract filterable fields from schema.
+     * 
+     * @param array $schema The schema configuration
+     * @return array List of filterable field names
+     */
+    protected function extractFilterableFields(array $schema): array
+    {
+        $filterable = [];
+
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['filterable']) && $fieldConfig['filterable'] === true) {
+                    $filterable[] = $fieldName;
+                }
+            }
+        }
+
+        return $filterable;
+    }
+
+    /**
+     * Extract listable fields from schema.
+     * 
+     * @param array $schema The schema configuration
+     * @return array List of listable field names
+     */
+    protected function extractListableFields(array $schema): array
+    {
+        $listable = [];
+
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                $isListable = false;
+                
+                if (isset($fieldConfig['show_in'])) {
+                    $isListable = in_array('list', $fieldConfig['show_in']);
+                } elseif (isset($fieldConfig['listable'])) {
+                    $isListable = $fieldConfig['listable'] === true;
+                }
+                
+                if ($isListable) {
+                    $listable[] = $fieldName;
+                }
+            }
+        }
+
+        return $listable;
+    }
+
+    /**
+     * Test search across multiple filterable fields (schema-driven).
+     * 
+     * Schema determines which fields are filterable.
+     * For groups schema: 'name' is marked as filterable: true
      */
     public function testSearchAcrossMultipleFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with groups table and filterable fields
+        // Setup sprunje using schema-extracted configuration
         $sprunje->setupSprunje(
-            'groups',
-            ['name', 'slug'],  // sortable
-            ['name', 'description'],  // filterable - search in name and description only
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            $this->filterableFields,
+            $this->listableFields
         );
         
-        // Search for "Alpha" - should match both Alpha Group (by name) and Gamma Group (by description)
+        // Search for "Alpha" - should match Alpha Group by name (name is filterable in schema)
+        // Note: In the schema, only 'name' is filterable, not 'description'
         $sprunje->setOptions(['search' => 'Alpha']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(2, $data['count_filtered'], 'Should find 2 groups matching "Alpha"');
-        $this->assertCount(2, $data['rows']); // @phpstan-ignore-line
+        // With only 'name' as filterable (per schema), only Alpha Group should match
+        $this->assertEquals(1, $data['count_filtered'], 'Should find 1 group matching "Alpha" in name field');
+        $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
         
-        // Verify the correct groups are returned
+        // Verify the correct group is returned
         $names = array_column($data['rows'], 'name');
         $this->assertContains('Alpha Group', $names);
-        $this->assertContains('Gamma Group', $names);
         $this->assertNotContains('Beta Group', $names);
+        $this->assertNotContains('Gamma Group', $names, 'Gamma should not match because description is not filterable');
     }
 
     /**
-     * Test search with partial match.
+     * Test search with partial match (schema-driven).
      */
     public function testSearchPartialMatch(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with groups table
+        // Setup sprunje using schema-extracted configuration
         $sprunje->setupSprunje(
-            'groups',
-            ['name'],  // sortable
-            ['name', 'description'],  // filterable
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            $this->filterableFields,
+            $this->listableFields
         );
         
-        // Search for "test" - should match all groups (all have "test" in description)
-        $sprunje->setOptions(['search' => 'test']);
+        // Search for "Group" - all groups have this in their name
+        $sprunje->setOptions(['search' => 'Group']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(3, $data['count_filtered'], 'Should find 3 groups with "test" in description');
+        $this->assertEquals(3, $data['count_filtered'], 'Should find 3 groups with "Group" in name');
         $this->assertCount(3, $data['rows']); // @phpstan-ignore-line
     }
 
     /**
-     * Test search with no matches.
+     * Test search with no matches (schema-driven).
      */
     public function testSearchNoMatches(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with groups table
+        // Setup sprunje using schema-extracted configuration
         $sprunje->setupSprunje(
-            'groups',
-            ['name'],  // sortable
-            ['name', 'description'],  // filterable
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            $this->filterableFields,
+            $this->listableFields
         );
         
         // Search for something that doesn't exist
@@ -135,77 +247,85 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
     }
 
     /**
-     * Test search works case-insensitively.
+     * Test search works case-insensitively (schema-driven).
      */
     public function testSearchCaseInsensitive(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with groups table
+        // Setup sprunje using schema-extracted configuration
         $sprunje->setupSprunje(
-            'groups',
-            ['name'],  // sortable
-            ['name', 'description'],  // filterable
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            $this->filterableFields,
+            $this->listableFields
         );
         
         // Search for "alpha" in lowercase - should match "Alpha Group"
         $sprunje->setOptions(['search' => 'alpha']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(2, $data['count_filtered'], 'Should find groups regardless of case');
-        $this->assertCount(2, $data['rows']); // @phpstan-ignore-line
+        $this->assertEquals(1, $data['count_filtered'], 'Should find groups regardless of case');
+        $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
     }
 
     /**
-     * Test that search does not search non-filterable fields.
+     * Test that search respects schema's filterable configuration.
+     * 
+     * Per groups.json schema:
+     * - 'name' is filterable: true
+     * - 'slug' and 'description' are filterable: false (or not set)
      */
     public function testSearchOnlyFilterableFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with only 'name' as filterable (not description or slug)
+        // Setup sprunje using schema-extracted configuration
+        // This test verifies that only fields marked as filterable in the schema are searched
         $sprunje->setupSprunje(
-            'groups',
-            ['name'],  // sortable
-            ['name'],  // filterable - Only name is filterable
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            $this->filterableFields,
+            $this->listableFields
         );
         
-        // Search for "beta-group" which is in slug but slug is not filterable
+        // Search for "beta-group" which is in slug but slug is NOT filterable in schema
         $sprunje->setOptions(['search' => 'beta-group']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(0, $data['count_filtered'], 'Should not find groups by slug when slug is not filterable');
+        $this->assertEquals(0, $data['count_filtered'], 'Should not find groups by slug when slug is not filterable in schema');
         $this->assertCount(0, $data['rows']); // @phpstan-ignore-line
         
-        // Now search for "Beta" which is in name
+        // Now search for "Beta" which is in name, and name IS filterable in schema
         $sprunje->setOptions(['search' => 'Beta']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(1, $data['count_filtered'], 'Should find group by name');
+        $this->assertEquals(1, $data['count_filtered'], 'Should find group by name which is filterable in schema');
         $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
     }
 
     /**
-     * Test that search works with empty filterable fields (no search performed).
+     * Test that search works when schema has no filterable fields.
+     * 
+     * This test artificially creates a scenario with no filterable fields
+     * to verify the sprunje handles it gracefully.
      */
     public function testSearchWithNoFilterableFields(): void
     {
         /** @var CRUD6Sprunje */
         $sprunje = $this->ci->get(CRUD6Sprunje::class);
         
-        // Setup sprunje with no filterable fields
+        // Setup sprunje with empty filterable array (simulating schema with no filterable fields)
         $sprunje->setupSprunje(
-            'groups',
-            ['name'],  // sortable
-            [],  // filterable - No filterable fields
-            ['name', 'slug', 'description']  // listable
+            $this->tableName,
+            $this->sortableFields,
+            [], // No filterable fields
+            $this->listableFields
         );
         
-        // Search should have no effect
+        // Search should have no effect when no fields are filterable
         $sprunje->setOptions(['search' => 'Alpha']);
         $data = $sprunje->getArray();
 

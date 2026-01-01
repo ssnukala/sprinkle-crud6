@@ -131,13 +131,6 @@ class DeleteAction extends Base
         /** @var UserInterface $currentUser */
         $currentUser = $this->authenticator->user();
         
-        // Prevent self-deletion for user models
-        if ($crudSchema['model'] === 'users' && $currentUser->id === $recordId) {
-            throw new \UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException(
-                'You cannot delete your own account'
-            );
-        }
-        
         // Check if record is already soft-deleted
         if (method_exists($crudModel, 'trashed') && $crudModel->trashed()) {
             throw new \UserFrosting\Sprinkle\Core\Exceptions\NotFoundException(

@@ -13,7 +13,11 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Middlewares;
 
 use PHPUnit\Framework\TestCase;
+use UserFrosting\Config\Config;
+use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
+use UserFrosting\Sprinkle\CRUD6\Database\Models\Interfaces\CRUD6ModelInterface;
 use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
 
 /**
  * CRUD6Injector Test
@@ -23,14 +27,25 @@ use UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector;
 class CRUD6InjectorTest extends TestCase
 {
     /**
+     * Create a real CRUD6Injector instance with mocked dependencies
+     */
+    private function createInjector(): CRUD6Injector
+    {
+        $crudModel = $this->createMock(CRUD6ModelInterface::class);
+        $debugLogger = $this->createMock(DebugLoggerInterface::class);
+        $schemaService = $this->createMock(SchemaService::class);
+        $config = $this->createMock(Config::class);
+        $config->method('get')->willReturn(false);
+        
+        return new CRUD6Injector($crudModel, $debugLogger, $schemaService, $config);
+    }
+    
+    /**
      * Test parsing model name without connection
      */
     public function testParseModelNameWithoutConnection(): void
     {
-        $injector = $this->getMockBuilder(CRUD6Injector::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods([])
-            ->getMock();
+        $injector = $this->createInjector();
 
         $reflection = new \ReflectionClass($injector);
         $method = $reflection->getMethod('parseModelAndConnection');
@@ -56,10 +71,7 @@ class CRUD6InjectorTest extends TestCase
      */
     public function testParseModelNameWithConnection(): void
     {
-        $injector = $this->getMockBuilder(CRUD6Injector::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods([])
-            ->getMock();
+        $injector = $this->createInjector();
 
         $reflection = new \ReflectionClass($injector);
         $method = $reflection->getMethod('parseModelAndConnection');
@@ -85,10 +97,7 @@ class CRUD6InjectorTest extends TestCase
      */
     public function testParseModelNameWithMultipleAtSymbols(): void
     {
-        $injector = $this->getMockBuilder(CRUD6Injector::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods([])
-            ->getMock();
+        $injector = $this->createInjector();
 
         $reflection = new \ReflectionClass($injector);
         $method = $reflection->getMethod('parseModelAndConnection');
@@ -114,10 +123,7 @@ class CRUD6InjectorTest extends TestCase
      */
     public function testValidateModelName(): void
     {
-        $injector = $this->getMockBuilder(CRUD6Injector::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods([])
-            ->getMock();
+        $injector = $this->createInjector();
 
         $reflection = new \ReflectionClass($injector);
         $method = $reflection->getMethod('validateModelName');

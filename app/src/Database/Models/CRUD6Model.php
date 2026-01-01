@@ -43,6 +43,17 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     use SoftDeletes;
 
     /**
+     * The name of the "deleted at" column.
+     * 
+     * This constant is used by Laravel's SoftDeletes trait.
+     * We set it to null by default, and override getDeletedAtColumn() to provide
+     * dynamic behavior based on schema configuration.
+     * 
+     * IMPORTANT: This prevents the trait from using a hardcoded 'deleted_at' column name.
+     */
+    const DELETED_AT = null;
+
+    /**
      * @var \UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface|null Static logger instance for debugging
      */
     protected static ?\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface $debugLogger = null;
@@ -668,6 +679,9 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      * 
      * IMPORTANT: Returns null if the column name is empty or invalid to prevent
      * SQL errors like: WHERE "table"."" IS NULL
+     * 
+     * This method is called by Laravel's SoftDeletes trait global scope.
+     * Returning null effectively disables soft deletes for this model instance.
      *
      * @return string|null
      */
@@ -676,6 +690,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         $columnName = null;
         
         // Check instance property first
+        // CRITICAL: Explicitly check for empty string to prevent SQL errors
         if ($this->deleted_at !== null && $this->deleted_at !== '') {
             $columnName = $this->deleted_at;
             $this->logDebug('[CRUD6Model] getDeletedAtColumn from instance property', [
@@ -689,6 +704,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
         if ($columnName === null && $this->table && isset(static::$staticSchemaConfig[$this->table]['deleted_at'])) {
             $storedValue = static::$staticSchemaConfig[$this->table]['deleted_at'];
             // Only use the stored value if it's not empty
+            // CRITICAL: Explicitly check for empty string to prevent SQL errors
             if ($storedValue !== null && $storedValue !== '') {
                 $columnName = $storedValue;
                 $this->logDebug('[CRUD6Model] getDeletedAtColumn from static storage', [
@@ -705,6 +721,12 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
                 'instance_deleted_at' => $this->deleted_at ?? 'not_set',
                 'has_static_config' => isset(static::$staticSchemaConfig[$this->table]),
             ]);
+        }
+
+        // FINAL SAFETY CHECK: If somehow an empty string got through, return null
+        // This prevents SQL errors like: WHERE "table"."" IS NULL
+        if ($columnName === '') {
+            return null;
         }
 
         return $columnName;

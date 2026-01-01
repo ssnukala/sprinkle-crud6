@@ -2,6 +2,32 @@
 
 This document describes the frontend testing approach for the CRUD6 sprinkle, following UserFrosting 6 standards.
 
+## Testing Strategy
+
+The CRUD6 sprinkle uses a **two-layer testing approach**:
+
+### 1. Vitest Unit Tests (app/assets/tests/)
+Fast unit tests for Vue 3 components focusing on:
+- Component rendering and props
+- User interactions (clicks, form input)
+- Event emission
+- Computed properties and watchers
+- Simple component behavior
+
+**Use Vitest when:** Testing component UI logic in isolation
+
+### 2. PHPUnit Integration Tests (app/tests/Integration/)
+Integration tests for API endpoints that components depend on:
+- API response structure and data
+- Complete workflows (create, read, update, delete)
+- Schema loading and validation
+- Relationship endpoints
+- Permission and authentication
+
+**Use PHPUnit when:** Testing backend API layer or complex data flows
+
+> **Note:** For complex components with many dependencies, PHPUnit integration tests are preferred over complex Vitest mocks. See [FRONTEND_INTEGRATION_TESTING.md](FRONTEND_INTEGRATION_TESTING.md) for details.
+
 ## Testing Stack
 
 - **Framework**: [Vitest](https://vitest.dev/) - Fast unit test framework for Vite projects
@@ -338,6 +364,65 @@ Coverage reports are generated in `./_meta/_coverage/` directory.
 - [Vue Test Utils Guide](https://test-utils.vuejs.org/guide/)
 - [UserFrosting 6 Theme Pink Cupcake Tests](https://github.com/userfrosting/theme-pink-cupcake/tree/6.0/src/tests)
 - [Testing Vue 3 Components](https://vuejs.org/guide/scaling-up/testing.html)
+- **[Frontend Integration Testing with PHPUnit](FRONTEND_INTEGRATION_TESTING.md)** - Testing components with real backend data
+
+## Integration Testing Alternative
+
+For complex components with multiple dependencies, consider using **PHPUnit integration tests** instead of complex Vitest mocks:
+
+### When to Use PHPUnit Integration Tests
+
+Use PHPUnit integration tests when:
+- ✅ Component has multiple composable dependencies (useCRUD6Api, useCRUD6Schema, etc.)
+- ✅ Testing complete workflows (create → edit → delete)
+- ✅ Need real API responses and database interactions
+- ✅ Mocking would be more complex than the component logic itself
+
+### Benefits of Integration Testing
+
+```php
+// PHPUnit Integration Test - No mocking needed!
+public function testFormComponentSubmission(): void
+{
+    $this->actAsUser($admin, permissions: ['uri_crud6']);
+    
+    // Real API call - no mocking
+    $response = $this->post('/api/crud6/users', [
+        'user_name' => 'test_user',
+        'email' => 'test@example.com'
+    ]);
+    
+    // Verify real database
+    $this->assertDatabaseHas('users', ['user_name' => 'test_user']);
+}
+```
+
+**Advantages:**
+- ✅ Tests real backend behavior
+- ✅ No complex composable mocking
+- ✅ Catches integration issues
+- ✅ Documents API contracts
+- ✅ Faster to write for complex scenarios
+
+**See:** [FRONTEND_INTEGRATION_TESTING.md](FRONTEND_INTEGRATION_TESTING.md) for complete guide
+
+### Test Coverage Strategy
+
+```
+Simple Components (ToggleSwitch, Details)
+    → Vitest unit tests (fast, isolated)
+
+Complex Components (Form, UnifiedModal, PageRow)
+    → PHPUnit integration tests (real data, complete workflows)
+
+API Endpoints
+    → PHPUnit integration tests (comprehensive coverage)
+```
+
+This two-layer approach provides:
+- **Fast** unit tests for UI logic
+- **Reliable** integration tests for data layer
+- **Comprehensive** coverage without complex mocking
 
 ## Contributing Tests
 
@@ -348,5 +433,6 @@ When adding new components or features:
 3. Aim for meaningful test coverage (critical paths and edge cases)
 4. Run tests locally before committing: `npm test`
 5. Ensure all tests pass in CI before merging
+6. **Consider integration tests** for components with complex dependencies
 
 For questions or issues with tests, refer to the [UserFrosting forums](https://forums.userfrosting.com/) or open an issue on GitHub.

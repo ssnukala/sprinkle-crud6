@@ -537,7 +537,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function scopeWithoutSoftDeleted(Builder $query): Builder
     {
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn !== null) {
+        if ($deletedAtColumn !== null && $deletedAtColumn !== '') {
             return $query->whereNull($deletedAtColumn);
         }
 
@@ -553,7 +553,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function scopeOnlySoftDeleted(Builder $query): Builder
     {
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn !== null) {
+        if ($deletedAtColumn !== null && $deletedAtColumn !== '') {
             return $query->whereNotNull($deletedAtColumn);
         }
 
@@ -580,7 +580,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function softDelete(): bool
     {
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn !== null) {
+        if ($deletedAtColumn !== null && $deletedAtColumn !== '') {
             $this->{$deletedAtColumn} = date('Y-m-d H:i:s');
             return $this->save();
         }
@@ -596,7 +596,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function restore(): bool
     {
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn !== null) {
+        if ($deletedAtColumn !== null && $deletedAtColumn !== '') {
             $this->{$deletedAtColumn} = null;
             return $this->save();
         }
@@ -612,7 +612,7 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
     public function isSoftDeleted(): bool
     {
         $deletedAtColumn = $this->getDeletedAtColumn();
-        if ($deletedAtColumn === null) {
+        if ($deletedAtColumn === null || $deletedAtColumn === '') {
             return false;
         }
 
@@ -717,7 +717,8 @@ class CRUD6Model extends Model implements CRUD6ModelInterface
      */
     public function hasSoftDeletes(): bool
     {
-        return $this->getDeletedAtColumn() !== null;
+        $column = $this->getDeletedAtColumn();
+        return $column !== null && $column !== '';
     }
 
     /**

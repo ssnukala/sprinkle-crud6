@@ -101,8 +101,7 @@ class SprunjeAction extends Base
                 'has_relationships' => isset($crudSchema['relationships']) ? 'yes' : 'no',
             ]);
 
-            // Check if this relation is configured in the schema's detail/details section
-            // Support both singular 'detail' (legacy) and plural 'details' array
+            // Check if this relation is configured in the schema's details section
             $detailConfig = null;
             if (isset($crudSchema['details']) && is_array($crudSchema['details'])) {
                 // Search through details array for matching model
@@ -124,15 +123,6 @@ class SprunjeAction extends Base
                         $detailConfig = $config;
                         break;
                     }
-                }
-            } elseif (isset($crudSchema['detail']) && is_array($crudSchema['detail'])) {
-                // Backward compatibility: support singular 'detail' object
-                $this->debugLog("CRUD6 [SprunjeAction] Checking singular detail config", [
-                    'model' => $crudSchema['detail']['model'] ?? 'null',
-                ]);
-
-                if (isset($crudSchema['detail']['model']) && $crudSchema['detail']['model'] === $relation) {
-                    $detailConfig = $crudSchema['detail'];
                 }
             }
 
@@ -196,15 +186,14 @@ class SprunjeAction extends Base
                 // This allows schema to override the default CRUD6Sprunje with a specialized one (e.g., UserSprunje)
                 $useCustomSprunje = $relatedSchema['sprunje_class'] ?? null;
                 
-                if ($useCustomSprunje === 'UserSprunje' || ($useCustomSprunje === null && $relatedSchema['table'] === 'users')) {
-                    // Use UserSprunje for users table (for backward compatibility if not explicitly configured)
-                    // In the future, all schemas should explicitly specify sprunje_class if they need a custom one
-                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for relation", [
+                if ($useCustomSprunje === 'UserSprunje') {
+                    // Use custom Sprunje class specified in schema
+                    $this->debugLog("CRUD6 [SprunjeAction] Using custom Sprunje from schema", [
                         'relation' => $relation,
                         'table' => $relatedSchema['table'],
+                        'sprunje_class' => $useCustomSprunje,
                         'has_relationship_config' => $relationshipConfig !== null,
                         'relationship_type' => $relationshipConfig['type'] ?? 'direct',
-                        'sprunje_source' => $useCustomSprunje !== null ? 'schema_config' : 'backward_compat',
                     ]);
 
                     $this->userSprunje->setOptions($params);
@@ -235,7 +224,6 @@ class SprunjeAction extends Base
                         });
                     } else {
                         // Direct relationship - qualify the column with table name to avoid ambiguity
-                        // UserSprunje may join with activities table, making unqualified 'id' ambiguous
                         $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedSchema) {
                             $relatedTable = $relatedSchema['table'];
                             $qualifiedForeignKey = strpos($foreignKey, '.') !== false 

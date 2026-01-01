@@ -310,12 +310,34 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     }
                 }
             } else if (response.data.fields) {
-                // Response is the schema itself
+                // Response is the schema itself (single context or full)
                 schemaData = response.data as CRUD6Schema
                 debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (direct)', {
                     model: schemaData.model,
                     fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0
                 })
+            } else if (response.data.contexts) {
+                // Response has multi-context structure (e.g., context=list,form)
+                schemaData = response.data as CRUD6Schema
+                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (multi-context)', {
+                    model: schemaData.model,
+                    contexts: Object.keys(schemaData.contexts)
+                })
+                
+                // Cache each context separately for future single-context requests
+                const baseSchema = { ...schemaData }
+                delete baseSchema.contexts
+                
+                for (const [ctxName, ctxData] of Object.entries(schemaData.contexts)) {
+                    const ctxCacheKey = getCacheKey(model, ctxName)
+                    const ctxSchema = { ...baseSchema, ...ctxData }
+                    schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
+                    debugLog('[useCRUD6SchemaStore] ✅ Cached context separately', {
+                        context: ctxName,
+                        cacheKey: ctxCacheKey,
+                        fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
+                    })
+                }
             } else {
                 debugError('[useCRUD6SchemaStore] ❌ Invalid schema response structure', {
                     dataKeys: Object.keys(response.data),

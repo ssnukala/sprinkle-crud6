@@ -260,6 +260,13 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 cacheKey,
                 timestamp: new Date().toISOString()
             })
+            
+            // DEBUG: Log the raw response data structure
+            debugLog('[useCRUD6SchemaStore] 🔍 RAW RESPONSE DATA', {
+                responseData: response.data,
+                responseDataType: typeof response.data,
+                responseDataStringified: JSON.stringify(response.data, null, 2).substring(0, 500) + '...'
+            })
 
             // Handle different response structures
             let schemaData: CRUD6Schema
@@ -278,6 +285,30 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
             
             // Check for multi-context response FIRST (priority order changed)
             // Multi-context: has 'contexts' but NO 'fields' at root
+            
+            // DETAILED DEBUG: Check each condition separately
+            const hasContextsKey = 'contexts' in response.data
+            const contextsIsTruthy = !!response.data.contexts
+            const contextsType = typeof response.data.contexts
+            const contextsIsObject = response.data.contexts && typeof response.data.contexts === 'object'
+            const contextsIsArray = Array.isArray(response.data.contexts)
+            const contextsKeys = response.data.contexts && typeof response.data.contexts === 'object' && !Array.isArray(response.data.contexts) 
+                ? Object.keys(response.data.contexts) 
+                : []
+            const contextsLength = contextsKeys.length
+            
+            debugLog('[useCRUD6SchemaStore] 🔍 DETAILED validation check for contexts', {
+                hasContextsKey,
+                contextsIsTruthy,
+                contextsType,
+                contextsIsObject,
+                contextsIsArray,
+                contextsKeys,
+                contextsLength,
+                rawContextsValue: response.data.contexts,
+                allConditionsMet: hasContextsKey && contextsIsTruthy && contextsIsObject && !contextsIsArray && contextsLength > 0
+            })
+            
             if ('contexts' in response.data && 
                 response.data.contexts && 
                 typeof response.data.contexts === 'object' && 
@@ -312,23 +343,45 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 let mergedFields: Record<string, any> = {}
                 let mergedContextData: any = {}
                 
+                debugLog('[useCRUD6SchemaStore] 🔍 Processing multi-context merge', {
+                    requestedContexts,
+                    availableContexts: Object.keys(response.data.contexts)
+                })
+                
                 for (const ctxName of requestedContexts) {
                     if (response.data.contexts[ctxName]) {
                         const ctxData = response.data.contexts[ctxName]
+                        debugLog(`[useCRUD6SchemaStore] 🔍 Merging context "${ctxName}"`, {
+                            hasFields: 'fields' in ctxData,
+                            fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0,
+                            ctxDataKeys: Object.keys(ctxData)
+                        })
+                        
                         // Merge fields from this context
                         if (ctxData.fields) {
                             mergedFields = { ...mergedFields, ...ctxData.fields }
                         }
                         // Merge other context-specific properties (last one wins for non-field properties)
-                        mergedContextData = { ...mergedContextData, ...ctxData }
+                        // But EXCLUDE 'fields' since we're handling it separately
+                        const { fields: _, ...ctxDataWithoutFields } = ctxData
+                        mergedContextData = { ...mergedContextData, ...ctxDataWithoutFields }
+                    } else {
+                        debugLog(`[useCRUD6SchemaStore] ⚠️ Requested context "${ctxName}" not found in response`)
                     }
                 }
                 
+                debugLog('[useCRUD6SchemaStore] 🔍 After merging contexts', {
+                    mergedFieldsCount: Object.keys(mergedFields).length,
+                    mergedFieldsKeys: Object.keys(mergedFields),
+                    mergedContextDataKeys: Object.keys(mergedContextData)
+                })
+                
                 // Build final schema with fields at root level
+                // IMPORTANT: Set fields AFTER spreading mergedContextData to ensure fields at root take precedence
                 schemaData = {
                     ...baseSchema,
                     ...mergedContextData,
-                    fields: mergedFields
+                    fields: mergedFields  // This MUST come after mergedContextData to overwrite any nested fields
                 } as CRUD6Schema
                 
                 debugLog('[useCRUD6SchemaStore] ✅ Reconstructed schema with fields at root', {
@@ -391,16 +444,52 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0
                 })
             } else {
-                debugError('[useCRUD6SchemaStore] ❌ Invalid schema response structure', {
+                // DETAILED DEBUG: Show exactly why validation failed
+                const hasSchemaKey = 'schema' in response.data
+                const hasFieldsKey = 'fields' in response.data
+                const hasContextsKey = 'contexts' in response.data
+                const fieldsValue = response.data.fields
+                const schemaValue = response.data.schema
+                
+                debugError('[useCRUD6SchemaStore] ❌ Invalid schema response structure - DETAILED BREAKDOWN', {
+                    // Top-level keys
                     dataKeys: Object.keys(response.data),
-                    hasSchema: 'schema' in response.data,
-                    hasFields: 'fields' in response.data,
-                    hasContexts: 'contexts' in response.data,
-                    contextsValue: response.data.contexts,
-                    contextsType: typeof response.data.contexts,
-                    data: response.data
+                    
+                    // Check for each expected structure
+                    checks: {
+                        multiContext: {
+                            hasContextsKey,
+                            contextsIsTruthy: !!response.data.contexts,
+                            contextsType: typeof response.data.contexts,
+                            contextsIsObject: response.data.contexts && typeof response.data.contexts === 'object',
+                            contextsIsArray: Array.isArray(response.data.contexts),
+                            contextsLength: response.data.contexts && typeof response.data.contexts === 'object' && !Array.isArray(response.data.contexts) 
+                                ? Object.keys(response.data.contexts).length 
+                                : 0,
+                            rawContextsValue: response.data.contexts
+                        },
+                        nestedSchema: {
+                            hasSchemaKey,
+                            schemaIsTruthy: !!schemaValue,
+                            schemaType: typeof schemaValue,
+                            schemaHasFields: schemaValue && typeof schemaValue === 'object' && 'fields' in schemaValue
+                        },
+                        directFields: {
+                            hasFieldsKey,
+                            fieldsIsTruthy: !!fieldsValue,
+                            fieldsType: typeof fieldsValue,
+                            fieldsIsObject: fieldsValue && typeof fieldsValue === 'object'
+                        }
+                    },
+                    
+                    // Full response data for inspection
+                    fullResponseData: response.data,
+                    
+                    // Request context
+                    requestedModel: model,
+                    requestedContext: context
                 })
-                throw new Error('Invalid schema response')
+                throw new Error('Invalid schema response - see debug logs for details')
             }
             
             schemas.value[cacheKey] = schemaData

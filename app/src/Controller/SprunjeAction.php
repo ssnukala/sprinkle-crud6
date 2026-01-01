@@ -192,32 +192,43 @@ class SprunjeAction extends Base
                     'query_params' => $params,
                 ]);
 
-                // For 'users' relation, use UserSprunje for compatibility
-                if ($relation === 'users') {
-                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for users relation", [
+                // Check if schema specifies a custom sprunje class to use
+                // This allows schema to override the default CRUD6Sprunje with a specialized one (e.g., UserSprunje)
+                $useCustomSprunje = $relatedSchema['sprunje_class'] ?? null;
+                
+                if ($useCustomSprunje === 'UserSprunje' || ($useCustomSprunje === null && $relatedSchema['table'] === 'users')) {
+                    // Use UserSprunje for users table (for backward compatibility if not explicitly configured)
+                    // In the future, all schemas should explicitly specify sprunje_class if they need a custom one
+                    $this->debugLog("CRUD6 [SprunjeAction] Using UserSprunje for relation", [
+                        'relation' => $relation,
+                        'table' => $relatedSchema['table'],
                         'has_relationship_config' => $relationshipConfig !== null,
                         'relationship_type' => $relationshipConfig['type'] ?? 'direct',
+                        'sprunje_source' => $useCustomSprunje !== null ? 'schema_config' : 'backward_compat',
                     ]);
 
                     $this->userSprunje->setOptions($params);
                     
                     // Handle many-to-many relationship with proper JOIN
                     if ($relationshipConfig !== null && $relationshipConfig['type'] === 'many_to_many') {
-                        $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many for users relation", [
+                        $relatedTable = $relatedSchema['table'];
+                        
+                        $this->debugLog("CRUD6 [SprunjeAction] Using many-to-many relationship", [
                             'pivot_table' => $relationshipConfig['pivot_table'] ?? null,
                             'foreign_key' => $relationshipConfig['foreign_key'] ?? null,
                             'related_key' => $relationshipConfig['related_key'] ?? null,
+                            'related_table' => $relatedTable,
                         ]);
                         
                         // Build JOIN query for many-to-many
-                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $relationshipConfig) {
+                        $this->userSprunje->extendQuery(function ($query) use ($crudModel, $relationshipConfig, $relatedTable) {
                             $pivotTable = $relationshipConfig['pivot_table'];
                             $foreignKey = $relationshipConfig['foreign_key'];
                             $relatedKey = $relationshipConfig['related_key'];
                             
                             return $query->join(
                                 $pivotTable,
-                                "users.id",
+                                "{$relatedTable}.id",
                                 '=',
                                 "{$pivotTable}.{$relatedKey}"
                             )->where("{$pivotTable}.{$foreignKey}", $crudModel->id);
@@ -226,7 +237,7 @@ class SprunjeAction extends Base
                         // Direct relationship - qualify the column with table name to avoid ambiguity
                         // UserSprunje may join with activities table, making unqualified 'id' ambiguous
                         $this->userSprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedSchema) {
-                            $relatedTable = $relatedSchema['table'] ?? 'users';
+                            $relatedTable = $relatedSchema['table'];
                             $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
                                 ? $foreignKey 
                                 : "{$relatedTable}.{$foreignKey}";

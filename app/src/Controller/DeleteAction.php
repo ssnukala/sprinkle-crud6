@@ -131,10 +131,14 @@ class DeleteAction extends Base
         /** @var UserInterface $currentUser */
         $currentUser = $this->authenticator->user();
         
-        // Prevent self-deletion for user models
-        if ($crudSchema['model'] === 'users' && $currentUser->id === $recordId) {
+        // Prevent self-deletion for user-type models
+        // Check if schema defines this model as preventing self-deletion
+        // For backward compatibility, also check if table is 'users'
+        $preventSelfDeletion = $crudSchema['prevent_self_deletion'] ?? ($crudSchema['table'] === 'users');
+        
+        if ($preventSelfDeletion && $currentUser->id === $recordId) {
             throw new \UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException(
-                'You cannot delete your own account'
+                $crudSchema['self_deletion_message'] ?? 'You cannot delete your own account'
             );
         }
         

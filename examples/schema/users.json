@@ -6,6 +6,9 @@
     "description": "CRUD6.USER.PAGE_DESCRIPTION",
     "table": "users",
     "primary_key": "id",
+    "sprunje_class": "UserSprunje",
+    "prevent_self_deletion": true,
+    "self_deletion_message": "You cannot delete your own account",
     "permissions": {
         "read": "uri_crud6",
         "create": "create_user",

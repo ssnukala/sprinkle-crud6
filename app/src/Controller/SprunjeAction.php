@@ -6,6 +6,7 @@ namespace UserFrosting\Sprinkle\CRUD6\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Container\ContainerInterface;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
 use UserFrosting\Sprinkle\Account\Authenticate\Authenticator;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
@@ -39,6 +40,7 @@ class SprunjeAction extends Base
      * @param Translator           $translator    Translator for i18n messages
      * @param CRUD6Sprunje         $sprunje       CRUD6 Sprunje for data operations
      * @param SchemaService        $schemaService Schema service
+     * @param ContainerInterface   $ci            DI container for dynamic instantiation
      */
     public function __construct(
         protected AuthorizationManager $authorizer,
@@ -48,6 +50,7 @@ class SprunjeAction extends Base
         protected CRUD6Sprunje $sprunje,
         protected SchemaService $schemaService,
         protected Config $config,
+        protected ContainerInterface $ci,
     ) {
         parent::__construct($authorizer, $authenticator, $logger, $schemaService, $config);
     }
@@ -180,22 +183,33 @@ class SprunjeAction extends Base
                 ]);
 
                 // Check if schema specifies a custom sprunje class
-                // This allows users to provide their own Sprunje implementations if needed
-                // If not specified, uses default CRUD6Sprunje with dynamic configuration
+                // If specified, try to instantiate it from DI container
+                // Otherwise, use CRUD6Sprunje with dynamic configuration
                 $customSprunjeClass = $relatedSchema['sprunje_class'] ?? null;
+                $sprunjeToUse = $this->sprunje; // Default to CRUD6Sprunje
                 
                 if ($customSprunjeClass !== null) {
-                    // TODO: Implement dynamic Sprunje instantiation from DI container
-                    // For now, log that custom sprunje was requested but not yet implemented
-                    $this->debugLog("CRUD6 [SprunjeAction] Custom sprunje class specified but not yet implemented", [
-                        'relation' => $relation,
-                        'sprunje_class' => $customSprunjeClass,
-                        'note' => 'Falling back to CRUD6Sprunje with dynamic configuration',
-                    ]);
+                    try {
+                        // Try to get custom Sprunje from DI container
+                        $sprunjeToUse = $this->ci->get($customSprunjeClass);
+                        
+                        $this->debugLog("CRUD6 [SprunjeAction] Using custom sprunje class from schema", [
+                            'relation' => $relation,
+                            'sprunje_class' => $customSprunjeClass,
+                            'instantiation' => 'success',
+                        ]);
+                    } catch (\Exception $e) {
+                        // If instantiation fails, fall back to CRUD6Sprunje
+                        $this->debugLog("CRUD6 [SprunjeAction] Custom sprunje instantiation failed, using CRUD6Sprunje", [
+                            'relation' => $relation,
+                            'sprunje_class' => $customSprunjeClass,
+                            'error' => $e->getMessage(),
+                            'fallback' => 'CRUD6Sprunje',
+                        ]);
+                    }
                 }
                 
-                // Use CRUD6Sprunje with dynamic configuration
-                // All configuration extracted from schema - fully dynamic
+                // Configure Sprunje with schema-based configuration
                 $relatedModel = $this->schemaService->getModelInstance($relation);
 
                 // Extract field arrays from schema
@@ -214,17 +228,18 @@ class SprunjeAction extends Base
                     'sortable_fields' => $sortableFields,
                     'filterable_fields' => $filterableFields,
                     'list_fields' => $listFields,
+                    'using_sprunje' => get_class($sprunjeToUse),
                 ]);
 
                 // Setup sprunje with related model configuration
-                $this->sprunje->setupSprunje(
+                $sprunjeToUse->setupSprunje(
                     $relatedModel->getTable(),
                     $sortableFields,
                     $filterableFields,
                     $listFields
                 );
 
-                $this->sprunje->setOptions($params);
+                $sprunjeToUse->setOptions($params);
 
                 $debugMode = $this->debugMode; // Capture debug mode for use in closure
 
@@ -260,7 +275,7 @@ class SprunjeAction extends Base
                         'parent_model_table' => $crudModel->getTable(),
                     ]);
 
-                    $this->sprunje->extendQuery(function ($query) use (
+                    $sprunjeToUse->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
@@ -319,7 +334,7 @@ class SprunjeAction extends Base
 
                     $logger = $this->logger; // Capture logger for use in closure
 
-                    $this->sprunje->extendQuery(function ($query) use (
+                    $sprunjeToUse->extendQuery(function ($query) use (
                         $crudModel,
                         $relationshipConfig,
                         $relatedModel,
@@ -375,7 +390,7 @@ class SprunjeAction extends Base
                     ]);
 
                     // Qualify the foreign key with table name to avoid ambiguity when joins are present
-                    $this->sprunje->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedModel) {
+                    $sprunjeToUse->extendQuery(function ($query) use ($crudModel, $foreignKey, $relatedModel) {
                         $relatedTable = $relatedModel->getTable();
                         $qualifiedForeignKey = strpos($foreignKey, '.') !== false 
                             ? $foreignKey 
@@ -389,7 +404,7 @@ class SprunjeAction extends Base
                     'parent_id' => $crudModel->id,
                 ]);
 
-                return $this->sprunje->toResponse($response);
+                return $sprunjeToUse->toResponse($response);
             }
 
             // Default sprunje for main model listing

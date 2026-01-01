@@ -269,25 +269,33 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                 hasSchema: 'schema' in response.data,
                 hasFields: 'fields' in response.data,
                 hasContexts: 'contexts' in response.data,
+                contextsIsObject: response.data.contexts && typeof response.data.contexts === 'object',
+                contextsIsArray: Array.isArray(response.data.contexts),
+                contextsKeys: response.data.contexts ? Object.keys(response.data.contexts) : [],
                 dataKeys: Object.keys(response.data),
                 model: response.data.model
             })
             
             // Check for multi-context response FIRST (priority order changed)
             // Multi-context: has 'contexts' but NO 'fields' at root
-            if ('contexts' in response.data && response.data.contexts && typeof response.data.contexts === 'object') {
+            if ('contexts' in response.data && 
+                response.data.contexts && 
+                typeof response.data.contexts === 'object' && 
+                !Array.isArray(response.data.contexts) &&
+                Object.keys(response.data.contexts).length > 0) {
                 // Response has multi-context structure (e.g., context=list,form)
-                schemaData = response.data as CRUD6Schema
-                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (multi-context)', {
-                    model: schemaData.model,
-                    contexts: Object.keys(schemaData.contexts)
+                debugLog('[useCRUD6SchemaStore] ✅ Multi-context response detected', {
+                    model: response.data.model,
+                    contexts: Object.keys(response.data.contexts),
+                    requestedContext: context
                 })
                 
-                // Cache each context separately for future single-context requests
-                const baseSchema = { ...schemaData }
+                // Extract base schema (without contexts)
+                const baseSchema = { ...response.data }
                 delete baseSchema.contexts
                 
-                for (const [ctxName, ctxData] of Object.entries(schemaData.contexts)) {
+                // Cache each context separately for future single-context requests
+                for (const [ctxName, ctxData] of Object.entries(response.data.contexts)) {
                     const ctxCacheKey = getCacheKey(model, ctxName)
                     const ctxSchema = { ...baseSchema, ...ctxData }
                     schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
@@ -297,6 +305,37 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                         fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
                     })
                 }
+                
+                // Reconstruct schema for the requested context with fields at root
+                // If multiple contexts requested (e.g., "list,form"), merge all their fields
+                const requestedContexts = context ? context.split(',').map(c => c.trim()) : []
+                let mergedFields: Record<string, any> = {}
+                let mergedContextData: any = {}
+                
+                for (const ctxName of requestedContexts) {
+                    if (response.data.contexts[ctxName]) {
+                        const ctxData = response.data.contexts[ctxName]
+                        // Merge fields from this context
+                        if (ctxData.fields) {
+                            mergedFields = { ...mergedFields, ...ctxData.fields }
+                        }
+                        // Merge other context-specific properties (last one wins for non-field properties)
+                        mergedContextData = { ...mergedContextData, ...ctxData }
+                    }
+                }
+                
+                // Build final schema with fields at root level
+                schemaData = {
+                    ...baseSchema,
+                    ...mergedContextData,
+                    fields: mergedFields
+                } as CRUD6Schema
+                
+                debugLog('[useCRUD6SchemaStore] ✅ Reconstructed schema with fields at root', {
+                    model: schemaData.model,
+                    fieldCount: Object.keys(mergedFields).length,
+                    contexts: requestedContexts
+                })
             } else if (response.data.schema) {
                 // Response has nested schema property
                 schemaData = response.data.schema as CRUD6Schema

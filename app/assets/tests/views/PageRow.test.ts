@@ -29,7 +29,7 @@ vi.mock('../../composables/useCRUD6Schema', () => ({
     },
     loading: { value: false },
     error: { value: null },
-    loadSchema: vi.fn(),
+    loadSchema: vi.fn(() => Promise.resolve()),
     hasPermission: vi.fn(() => true)
   })
 }))
@@ -41,7 +41,10 @@ vi.mock('../../composables/useCRUD6Api', () => ({
       name: 'Test Product',
       price: 99.99
     })),
-    apiLoading: { value: false }
+    apiLoading: { value: false },
+    createRow: vi.fn(),
+    updateRow: vi.fn(),
+    deleteRow: vi.fn()
   })
 }))
 

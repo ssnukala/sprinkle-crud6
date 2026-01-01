@@ -96,6 +96,8 @@ jobs:
           touch logs/userfrosting.log
       
       - name: Configure Composer dependencies
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
         run: |
           cd userfrosting
           

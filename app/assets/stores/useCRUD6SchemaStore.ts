@@ -263,7 +263,41 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
 
             // Handle different response structures
             let schemaData: CRUD6Schema
-            if (response.data.schema) {
+            
+            // Log response structure for debugging
+            debugLog('[useCRUD6SchemaStore] Analyzing response structure', {
+                hasSchema: 'schema' in response.data,
+                hasFields: 'fields' in response.data,
+                hasContexts: 'contexts' in response.data,
+                dataKeys: Object.keys(response.data),
+                model: response.data.model
+            })
+            
+            // Check for multi-context response FIRST (priority order changed)
+            // Multi-context: has 'contexts' but NO 'fields' at root
+            if ('contexts' in response.data && response.data.contexts && typeof response.data.contexts === 'object') {
+                // Response has multi-context structure (e.g., context=list,form)
+                schemaData = response.data as CRUD6Schema
+                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (multi-context)', {
+                    model: schemaData.model,
+                    contexts: Object.keys(schemaData.contexts)
+                })
+                
+                // Cache each context separately for future single-context requests
+                const baseSchema = { ...schemaData }
+                delete baseSchema.contexts
+                
+                for (const [ctxName, ctxData] of Object.entries(schemaData.contexts)) {
+                    const ctxCacheKey = getCacheKey(model, ctxName)
+                    const ctxSchema = { ...baseSchema, ...ctxData }
+                    schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
+                    debugLog('[useCRUD6SchemaStore] ✅ Cached context separately', {
+                        context: ctxName,
+                        cacheKey: ctxCacheKey,
+                        fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
+                    })
+                }
+            } else if (response.data.schema) {
                 // Response has nested schema property
                 schemaData = response.data.schema as CRUD6Schema
                 debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data.schema', {
@@ -309,38 +343,22 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                         })
                     }
                 }
-            } else if (response.data.fields) {
+            } else if ('fields' in response.data && response.data.fields) {
                 // Response is the schema itself (single context or full)
+                // Has 'fields' at root level
                 schemaData = response.data as CRUD6Schema
                 debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (direct)', {
                     model: schemaData.model,
                     fieldCount: schemaData.fields ? Object.keys(schemaData.fields).length : 0
                 })
-            } else if (response.data.contexts) {
-                // Response has multi-context structure (e.g., context=list,form)
-                schemaData = response.data as CRUD6Schema
-                debugLog('[useCRUD6SchemaStore] ✅ Schema found in response.data (multi-context)', {
-                    model: schemaData.model,
-                    contexts: Object.keys(schemaData.contexts)
-                })
-                
-                // Cache each context separately for future single-context requests
-                const baseSchema = { ...schemaData }
-                delete baseSchema.contexts
-                
-                for (const [ctxName, ctxData] of Object.entries(schemaData.contexts)) {
-                    const ctxCacheKey = getCacheKey(model, ctxName)
-                    const ctxSchema = { ...baseSchema, ...ctxData }
-                    schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
-                    debugLog('[useCRUD6SchemaStore] ✅ Cached context separately', {
-                        context: ctxName,
-                        cacheKey: ctxCacheKey,
-                        fieldCount: ctxData.fields ? Object.keys(ctxData.fields).length : 0
-                    })
-                }
             } else {
                 debugError('[useCRUD6SchemaStore] ❌ Invalid schema response structure', {
                     dataKeys: Object.keys(response.data),
+                    hasSchema: 'schema' in response.data,
+                    hasFields: 'fields' in response.data,
+                    hasContexts: 'contexts' in response.data,
+                    contextsValue: response.data.contexts,
+                    contextsType: typeof response.data.contexts,
                     data: response.data
                 })
                 throw new Error('Invalid schema response')

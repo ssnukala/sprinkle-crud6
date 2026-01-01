@@ -258,7 +258,8 @@ class UpdateFieldAction extends Base
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return $this->jsonResponse($response, 'An error occurred while updating the field', 500);
+            // Include the original exception message which contains field name and details
+            return $this->jsonResponse($response, $e->getMessage(), 500);
         }
     }
 }

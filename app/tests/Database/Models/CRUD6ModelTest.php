@@ -410,4 +410,67 @@ class CRUD6ModelTest extends TestCase
         $this->assertNull($model->getDeletedAtColumn(),
             'getDeletedAtColumn() should return null when static config has empty string');
     }
+
+    /**
+     * Test getQualifiedDeletedAtColumn returns null when soft deletes are disabled.
+     * 
+     * This test verifies the fix for the SQL error: WHERE "table"."" IS NULL
+     * which was caused by getQualifiedDeletedAtColumn() not checking for null/empty.
+     */
+    public function testGetQualifiedDeletedAtColumnWithNullColumn(): void
+    {
+        $model = new CRUD6Model();
+        $model->setTable('test_table');
+        
+        // When getDeletedAtColumn returns null, getQualifiedDeletedAtColumn should also return null
+        $this->assertNull($model->getQualifiedDeletedAtColumn(),
+            'getQualifiedDeletedAtColumn() should return null when soft deletes are disabled');
+    }
+
+    /**
+     * Test getQualifiedDeletedAtColumn returns table-qualified column when soft deletes are enabled.
+     */
+    public function testGetQualifiedDeletedAtColumnWithValidColumn(): void
+    {
+        $schema = [
+            'model' => 'test_model',
+            'table' => 'test_table',
+            'soft_delete' => true,
+            'timestamps' => false,
+            'fields' => [
+                'id' => ['type' => 'integer'],
+                'name' => ['type' => 'string'],
+            ]
+        ];
+        
+        $model = new CRUD6Model();
+        $model->configureFromSchema($schema);
+        
+        // Should return table-qualified column name
+        $this->assertEquals('test_table.deleted_at', $model->getQualifiedDeletedAtColumn(),
+            'getQualifiedDeletedAtColumn() should return qualified column name when soft deletes are enabled');
+    }
+
+    /**
+     * Test getQualifiedDeletedAtColumn with empty string (edge case).
+     * 
+     * This ensures that even if somehow an empty string gets through,
+     * getQualifiedDeletedAtColumn will return null instead of generating
+     * invalid SQL like: WHERE "table"."" IS NULL
+     */
+    public function testGetQualifiedDeletedAtColumnWithEmptyString(): void
+    {
+        $model = new CRUD6Model();
+        $model->setTable('test_table');
+        
+        // Force deleted_at to empty string using reflection (simulating corrupted state)
+        $reflection = new \ReflectionClass($model);
+        $deletedAtProperty = $reflection->getProperty('deleted_at');
+        $deletedAtProperty->setAccessible(true);
+        $deletedAtProperty->setValue($model, ''); // Force empty string
+        
+        // getQualifiedDeletedAtColumn should return null, not "test_table."
+        $this->assertNull($model->getQualifiedDeletedAtColumn(),
+            'getQualifiedDeletedAtColumn() should return null when deleted_at is empty string');
+    }
 }

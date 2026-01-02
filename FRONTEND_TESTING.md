@@ -51,6 +51,8 @@ npm run test:ui
 npm run test:coverage
 ```
 
+**CI Automation:** Tests run automatically via GitHub Actions workflow (`.github/workflows/vitest-tests.yml`) on every push and pull request to `main` or `develop` branches.
+
 ## Test Structure
 
 Tests are organized in `app/assets/tests/` following this structure:
@@ -342,7 +344,23 @@ it('loads data', async () => {
 
 ## Continuous Integration
 
-Tests are automatically run in CI workflows. Ensure all tests pass before merging:
+Tests are automatically run in CI workflows via `.github/workflows/vitest-tests.yml`:
+
+**Automated in CI:**
+- ✅ Runs on push to `main` or `develop` branches
+- ✅ Runs on pull requests
+- ✅ Can be triggered manually via workflow_dispatch
+- ✅ Uploads coverage reports as artifacts
+
+**Workflow steps:**
+1. Checkout code
+2. Setup Node.js 20 with npm cache
+3. Install dependencies (`npm ci`)
+4. Run tests (`npm test`)
+5. Generate coverage report
+6. Upload coverage artifacts
+
+Ensure all tests pass before merging:
 
 ```bash
 npm test # Must exit with code 0

@@ -1,0 +1,57 @@
+name: Vitest Frontend Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: ['20']
+    
+    name: Vitest Tests (Node ${{ matrix.node-version }})
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run Vitest tests
+        run: npm test
+      
+      - name: Generate coverage report
+        run: npm run test:coverage
+        continue-on-error: true
+      
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-node-${{ matrix.node-version }}
+          path: _meta/_coverage
+          if-no-files-found: warn
+      
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Vitest Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Frontend component tests completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Test files location: \`app/assets/tests/\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Run locally with: \`npm test\`" >> $GITHUB_STEP_SUMMARY

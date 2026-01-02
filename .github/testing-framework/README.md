@@ -88,6 +88,8 @@ With JSON configuration, **everything** is automated:
 - **Reusable Testing Scripts** - PHP and JavaScript scripts that work for any sprinkle
 - **Configuration Templates** - JSON templates you customize for your sprinkle
 - **GitHub Actions Workflow** - Complete CI/CD workflow ready to use
+- **Frontend Testing** - **NEW!** Vitest integration for Vue component testing with JSON fixtures
+- **PHPUnit Testing** - Backend integration tests for API endpoints
 - **Documentation** - Comprehensive guides and examples
 - **Installer Script** - Automated setup with parameterization
 
@@ -216,6 +218,8 @@ Defines database seeds and validation rules.
 
 Once configured, use these commands in your GitHub Actions workflow or locally:
 
+### Backend Testing (PHPUnit)
+
 ```bash
 # Run database seeds
 php .github/scripts/run-seeds.php .github/config/integration-test-seeds.json
@@ -232,6 +236,35 @@ php .github/scripts/test-paths.php .github/config/integration-test-paths.json
 # Take screenshots of frontend pages
 node .github/scripts/take-screenshots-modular.js .github/config/integration-test-paths.json
 ```
+
+### Frontend Testing (Vitest) - NEW!
+
+```bash
+# Run Vue component tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+**Frontend Test Fixtures:**
+
+The framework supports JSON fixtures for realistic test data:
+
+```
+examples/test/vitest/
+├── fixtures/          # Test data records
+│   ├── products.json
+│   └── users.json
+└── schemas/           # Schema definitions
+    ├── products.json
+    └── users.json
+```
+
+See [Frontend Testing Guide](docs/FRONTEND_TESTING.md) for complete documentation.
 
 ## ⚠️ Frontend Integration Nuances
 

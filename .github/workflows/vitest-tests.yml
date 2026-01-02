@@ -30,15 +30,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Setup test fixtures
+      - name: Verify test data sources
         run: |
-          echo "📦 Copying test fixtures from examples/test/vitest/"
-          # Fixtures are already in the repository, just verify they exist
-          test -d "examples/test/vitest/fixtures" || (echo "ERROR: Test fixtures not found" && exit 1)
-          test -d "examples/test/vitest/schemas" || (echo "ERROR: Test schemas not found" && exit 1)
-          echo "✅ Test fixtures ready"
-          ls -la examples/test/vitest/fixtures/
-          ls -la examples/test/vitest/schemas/
+          echo "📦 Verifying centralized test data"
+          # Frontend tests use same data as integration tests
+          test -d "examples/schema" || (echo "ERROR: Schema directory not found" && exit 1)
+          test -f ".github/config/integration-test-models.json" || (echo "ERROR: Models config not found" && exit 1)
+          echo "✅ Test data sources verified"
+          echo ""
+          echo "Schemas available:"
+          ls -1 examples/schema/*.json | wc -l
+          echo "Models configured:"
+          cat .github/config/integration-test-models.json | grep -o '"[a-z_]*":' | wc -l
       
       - name: Run Vitest tests
         run: npm test

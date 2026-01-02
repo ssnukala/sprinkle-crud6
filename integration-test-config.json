@@ -27,6 +27,33 @@
     "mysql_version": "8.0",
     "userfrosting_version": "^6.0-beta"
   },
+  "frontend": {
+    "enabled": true,
+    "test_command": "npm test",
+    "test_data": {
+      "source": "integration_framework",
+      "schemas_path": "examples/schema",
+      "models_config": ".github/config/integration-test-models.json"
+    },
+    "coverage": {
+      "enabled": true,
+      "command": "npm run test:coverage",
+      "upload_artifacts": true
+    },
+    "additional_test_commands": []
+  },
+  "phpunit": {
+    "enabled": true,
+    "test_command": "vendor/bin/phpunit",
+    "coverage": {
+      "enabled": true,
+      "command": "vendor/bin/phpunit --coverage-text"
+    },
+    "testsuites": {
+      "all": "vendor/bin/phpunit",
+      "integration": "vendor/bin/phpunit --testsuite Integration"
+    }
+  },
   "vite": {
     "optimize_deps": ["limax", "lodash.deburr"]
   },

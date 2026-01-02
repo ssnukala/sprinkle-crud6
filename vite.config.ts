@@ -19,6 +19,7 @@ export default defineConfig({
             include: ['app/assets/**/*.*'],
             exclude: ['app/assets/tests/**/*.*']
         },
+        setupFiles: ['app/assets/tests/setup.ts'],
         environment: 'happy-dom',
         exclude: [
             ...configDefaults.exclude,

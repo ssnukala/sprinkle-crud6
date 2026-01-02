@@ -105,6 +105,27 @@ function convertSchemaToRegleRules(schema: CRUD6Schema): any {
             fieldRules.required = withMessage(required, `${fieldLabel} is required`)
         }
 
+        // Type-based validations (outside validation object so they work even without validation)
+        // Email validation - from type or explicit validation
+        if (field.type === 'email' || field.validation?.email) {
+            fieldRules.email = withMessage(email, `${fieldLabel} must be a valid email address`)
+        }
+
+        // URL validation - from type or explicit validation
+        if (field.type === 'url' || field.validation?.url) {
+            fieldRules.url = withMessage(url, `${fieldLabel} must be a valid URL`)
+        }
+
+        // Integer validation - from type or explicit validation
+        if (field.type === 'integer' || field.validation?.integer) {
+            fieldRules.integer = withMessage(integer, `${fieldLabel} must be an integer`)
+        }
+
+        // Numeric validation - from type or explicit validation
+        if (['number', 'decimal', 'float'].includes(field.type) || field.validation?.numeric) {
+            fieldRules.numeric = withMessage(numeric, `${fieldLabel} must be a number`)
+        }
+
         // Process validation rules from field.validation
         if (field.validation) {
             // Length validation
@@ -123,16 +144,6 @@ function convertSchemaToRegleRules(schema: CRUD6Schema): any {
                 }
             }
 
-            // Email validation
-            if (field.validation.email || field.type === 'email') {
-                fieldRules.email = withMessage(email, `${fieldLabel} must be a valid email address`)
-            }
-
-            // URL validation
-            if (field.validation.url || field.type === 'url') {
-                fieldRules.url = withMessage(url, `${fieldLabel} must be a valid URL`)
-            }
-
             // Numeric range validation
             if (field.validation.min !== undefined) {
                 fieldRules.minValue = withMessage(
@@ -145,16 +156,6 @@ function convertSchemaToRegleRules(schema: CRUD6Schema): any {
                     maxValue(field.validation.max),
                     `${fieldLabel} must be at most ${field.validation.max}`
                 )
-            }
-
-            // Integer validation
-            if (field.type === 'integer' || field.validation.integer) {
-                fieldRules.integer = withMessage(integer, `${fieldLabel} must be an integer`)
-            }
-
-            // Numeric validation
-            if (['number', 'decimal', 'float'].includes(field.type) || field.validation.numeric) {
-                fieldRules.numeric = withMessage(numeric, `${fieldLabel} must be a number`)
             }
 
             // Pattern (regex) validation

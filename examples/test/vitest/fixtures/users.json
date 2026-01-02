@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "user_name": "test_user",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test@example.com",
+    "active": true
+  },
+  {
+    "id": 2,
+    "user_name": "admin_user",
+    "first_name": "Admin",
+    "last_name": "User",
+    "email": "admin@example.com",
+    "active": true
+  },
+  {
+    "id": 3,
+    "user_name": "inactive_user",
+    "first_name": "Inactive",
+    "last_name": "User",
+    "email": "inactive@example.com",
+    "active": false
+  }
+]

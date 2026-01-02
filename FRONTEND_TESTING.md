@@ -60,6 +60,8 @@ Tests are organized in `app/assets/tests/` following this structure:
 ```
 app/assets/tests/
 ├── setup.ts                      # Global test setup and mocks
+├── fixtures.ts                   # Test fixtures loader utility
+├── fixtures.test.ts              # Fixture loader tests
 ├── components/                   # Component tests
 │   ├── ToggleSwitch.test.ts     # Toggle switch component
 │   ├── Details.test.ts          # Details display component
@@ -75,6 +77,29 @@ app/assets/tests/
 ├── useCRUD6ValidationAdapter.test.ts  # Validation adapter
 └── useMasterDetail.test.ts      # Master-detail composable
 ```
+
+## Test Fixtures
+
+Instead of inline mock data, use JSON fixtures from `examples/test/vitest/`:
+
+```typescript
+import { loadSchemaFixture, loadDataFixture } from './fixtures'
+
+// Load realistic schema from fixture
+const schema = loadSchemaFixture('products')
+
+// Load test data records
+const products = loadDataFixture('products')
+const product = loadSingleRecordFixture('products', 0)
+```
+
+**Benefits:**
+- ✅ Realistic test data based on actual schemas
+- ✅ Maintainable - update once, affects all tests
+- ✅ Consistent across all tests
+- ✅ Documents expected data structure
+
+See [examples/test/vitest/README.md](../examples/test/vitest/README.md) for detailed fixture documentation.
 
 ## Writing Tests
 

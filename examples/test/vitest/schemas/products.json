@@ -1,0 +1,82 @@
+{
+  "model": "products",
+  "title": "Product Management",
+  "singular_title": "Product",
+  "description": "Manage your product catalog",
+  "table": "products",
+  "title_field": "name",
+  "primary_key": "id",
+  "permissions": {
+    "read": "view_products",
+    "create": "create_product",
+    "update": "edit_product",
+    "delete": "delete_product"
+  },
+  "fields": {
+    "id": {
+      "type": "integer",
+      "label": "ID",
+      "auto_increment": true,
+      "editable": false,
+      "viewable": true,
+      "listable": true
+    },
+    "name": {
+      "type": "string",
+      "label": "Product Name",
+      "required": true,
+      "editable": true,
+      "viewable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 2,
+          "max": 255
+        }
+      }
+    },
+    "sku": {
+      "type": "string",
+      "label": "SKU",
+      "required": true,
+      "editable": true,
+      "viewable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "length": {
+          "min": 3,
+          "max": 50
+        }
+      }
+    },
+    "price": {
+      "type": "decimal",
+      "label": "Price",
+      "required": true,
+      "editable": true,
+      "viewable": true,
+      "listable": true,
+      "validation": {
+        "required": true,
+        "min": 0
+      }
+    },
+    "description": {
+      "type": "text",
+      "label": "Description",
+      "editable": true,
+      "viewable": true,
+      "listable": false
+    },
+    "active": {
+      "type": "boolean",
+      "label": "Active",
+      "editable": true,
+      "viewable": true,
+      "listable": true,
+      "default": true
+    }
+  }
+}

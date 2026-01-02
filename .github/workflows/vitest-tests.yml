@@ -30,6 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Setup test fixtures
+        run: |
+          echo "📦 Copying test fixtures from examples/test/vitest/"
+          # Fixtures are already in the repository, just verify they exist
+          test -d "examples/test/vitest/fixtures" || (echo "ERROR: Test fixtures not found" && exit 1)
+          test -d "examples/test/vitest/schemas" || (echo "ERROR: Test schemas not found" && exit 1)
+          echo "✅ Test fixtures ready"
+          ls -la examples/test/vitest/fixtures/
+          ls -la examples/test/vitest/schemas/
+      
       - name: Run Vitest tests
         run: npm test
       

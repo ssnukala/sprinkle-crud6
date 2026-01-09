@@ -120,6 +120,7 @@ return array (
       'EMAIL' => 'Email',
       'PASSWORD' => 'Password',
       'FLAG_ENABLED' => 'Flag Enabled',
+      'FLAG_VERIFIED' => 'Flag Verified',
       'CREATED_AT' => 'Created At',
       'UPDATED_AT' => 'Updated At',
     ),

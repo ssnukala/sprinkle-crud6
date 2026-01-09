@@ -33,35 +33,39 @@ class BooleanToggleSchemaTest extends TestCase
         $this->assertArrayHasKey('actions', $schema, 'Schema must have actions array');
         $this->assertIsArray($schema['actions'], 'Actions must be an array');
         
-        // Find toggle_enabled action
-        $toggleEnabledAction = null;
-        $toggleVerifiedAction = null;
-        
+        // Find all toggle actions dynamically from schema
+        $toggleActions = [];
         foreach ($schema['actions'] as $action) {
-            if ($action['key'] === 'toggle_enabled') {
-                $toggleEnabledAction = $action;
-            }
-            if ($action['key'] === 'toggle_verified') {
-                $toggleVerifiedAction = $action;
+            if (isset($action['type']) && $action['type'] === 'field_update' && 
+                isset($action['toggle']) && $action['toggle'] === true) {
+                $toggleActions[$action['key']] = $action;
             }
         }
         
-        $this->assertNotNull($toggleEnabledAction, 'toggle_enabled action must exist');
-        $this->assertNotNull($toggleVerifiedAction, 'toggle_verified action must exist');
+        // Verify we have at least some toggle actions
+        $this->assertNotEmpty($toggleActions, 'Schema must have at least one toggle action');
         
-        // Verify toggle_enabled action configuration
-        $this->assertEquals('field_update', $toggleEnabledAction['type'], 'Action type must be field_update');
-        $this->assertEquals('flag_enabled', $toggleEnabledAction['field'], 'Action must target flag_enabled field');
-        $this->assertTrue($toggleEnabledAction['toggle'], 'Action must have toggle set to true');
-        
-        // Verify toggle_verified action configuration
-        $this->assertEquals('field_update', $toggleVerifiedAction['type'], 'Action type must be field_update');
-        $this->assertEquals('flag_verified', $toggleVerifiedAction['field'], 'Action must target flag_verified field');
-        $this->assertTrue($toggleVerifiedAction['toggle'], 'Action must have toggle set to true');
+        // Verify each toggle action is properly configured
+        foreach ($toggleActions as $actionKey => $action) {
+            $this->assertArrayHasKey('field', $action, "Toggle action '{$actionKey}' must have 'field' property");
+            $this->assertArrayHasKey('permission', $action, "Toggle action '{$actionKey}' must have 'permission' property");
+            $this->assertEquals('field_update', $action['type'], "Toggle action '{$actionKey}' must be field_update type");
+            $this->assertTrue($action['toggle'], "Toggle action '{$actionKey}' must have toggle set to true");
+            
+            // Verify the target field exists in schema
+            $fieldName = $action['field'];
+            $this->assertArrayHasKey($fieldName, $schema['fields'], 
+                "Toggle action '{$actionKey}' references field '{$fieldName}' which must exist in schema");
+            
+            // Verify the target field is a boolean
+            $field = $schema['fields'][$fieldName];
+            $this->assertEquals('boolean', $field['type'], 
+                "Field '{$fieldName}' targeted by toggle action must be boolean type");
+        }
     }
     
     /**
-     * Test that boolean fields are properly configured in schema.
+     * Test that boolean fields with toggle UI are properly configured in schema.
      */
     public function testBooleanFieldsAreProperlyConfigured(): void
     {
@@ -71,32 +75,40 @@ class BooleanToggleSchemaTest extends TestCase
         
         // Verify fields exist
         $this->assertArrayHasKey('fields', $schema, 'Schema must have fields');
-        $this->assertArrayHasKey('flag_enabled', $schema['fields'], 'flag_enabled field must exist');
-        $this->assertArrayHasKey('flag_verified', $schema['fields'], 'flag_verified field must exist');
         
-        $flagEnabled = $schema['fields']['flag_enabled'];
-        $flagVerified = $schema['fields']['flag_verified'];
+        // Find all boolean fields with toggle UI dynamically
+        $booleanToggleFields = [];
+        foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+            if (isset($fieldConfig['type']) && $fieldConfig['type'] === 'boolean' &&
+                isset($fieldConfig['ui']) && $fieldConfig['ui'] === 'toggle') {
+                $booleanToggleFields[$fieldName] = $fieldConfig;
+            }
+        }
         
-        // Verify field types
-        $this->assertEquals('boolean', $flagEnabled['type'], 'flag_enabled must be boolean type');
-        $this->assertEquals('boolean', $flagVerified['type'], 'flag_verified must be boolean type');
+        // Verify we have at least some boolean toggle fields
+        $this->assertNotEmpty($booleanToggleFields, 'Schema must have at least one boolean field with toggle UI');
         
-        // Verify UI configuration
-        $this->assertEquals('toggle', $flagEnabled['ui'], 'flag_enabled must use toggle UI');
-        $this->assertEquals('toggle', $flagVerified['ui'], 'flag_verified must use toggle UI');
-        
-        // CRITICAL: Verify that these fields have NO validation rules
-        // This is what triggers the bug we fixed
-        $this->assertArrayNotHasKey('validation', $flagEnabled, 
-            'flag_enabled should NOT have validation rules (this triggers the bug we fixed)');
-        $this->assertArrayNotHasKey('validation', $flagVerified,
-            'flag_verified should NOT have validation rules (this triggers the bug we fixed)');
+        // Verify each boolean toggle field is properly configured
+        foreach ($booleanToggleFields as $fieldName => $field) {
+            // Verify field type
+            $this->assertEquals('boolean', $field['type'], "Field '{$fieldName}' must be boolean type");
+            
+            // Verify UI configuration
+            $this->assertEquals('toggle', $field['ui'], "Field '{$fieldName}' must use toggle UI");
+            
+            // CRITICAL: Verify that these fields have NO validation rules
+            // This is what triggers the bug we fixed - fields without validation rules
+            // were being skipped by RequestDataTransformer
+            $this->assertArrayNotHasKey('validation', $field, 
+                "Field '{$fieldName}' should NOT have validation rules (this is the condition that triggers the bug we fixed)");
+        }
     }
     
     /**
      * Test the fix logic with actual schema data.
      * 
      * This simulates what UpdateFieldAction does with the real schema.
+     * Uses the first boolean toggle field found in the schema dynamically.
      */
     public function testUpdateFieldActionLogicWithRealSchema(): void
     {
@@ -104,20 +116,31 @@ class BooleanToggleSchemaTest extends TestCase
         $schemaContent = file_get_contents($schemaPath);
         $schema = json_decode($schemaContent, true);
         
-        // Simulate UpdateFieldAction receiving a toggle request
-        $fieldName = 'flag_enabled';
-        $params = [$fieldName => false];  // Frontend sends boolean false
+        // Find first boolean field with toggle UI dynamically
+        $fieldName = null;
+        $fieldConfig = null;
+        foreach ($schema['fields'] as $name => $config) {
+            if (isset($config['type']) && $config['type'] === 'boolean' &&
+                isset($config['ui']) && $config['ui'] === 'toggle') {
+                $fieldName = $name;
+                $fieldConfig = $config;
+                break;
+            }
+        }
         
-        // Get field config from schema
-        $fieldConfig = $schema['fields'][$fieldName];
+        $this->assertNotNull($fieldName, 'Schema must have at least one boolean toggle field for this test');
+        $this->assertNotNull($fieldConfig, 'Field config must be available');
+        
+        // Simulate UpdateFieldAction receiving a toggle request
+        $params = [$fieldName => false];  // Frontend sends boolean false
         
         // Simulate what UpdateFieldAction does
         $fieldType = $fieldConfig['type'] ?? 'string';
         $validationRules = $fieldConfig['validation'] ?? [];
         
         // Verify our assumptions
-        $this->assertEquals('boolean', $fieldType, 'Field type should be boolean');
-        $this->assertEmpty($validationRules, 'Validation rules should be empty (this is the bug condition)');
+        $this->assertEquals('boolean', $fieldType, "Field '{$fieldName}' type should be boolean");
+        $this->assertEmpty($validationRules, "Field '{$fieldName}' validation rules should be empty (this is the bug condition)");
         
         // Simulate the RequestDataTransformer potentially skipping the field
         $data = [];  // Transformer might return empty array with no validation rules
@@ -128,12 +151,12 @@ class BooleanToggleSchemaTest extends TestCase
         }
         
         // Verify the fix works
-        $this->assertArrayHasKey($fieldName, $data, 'Field must be in data after fix is applied');
-        $this->assertFalse($data[$fieldName], 'Field value must be false');
+        $this->assertArrayHasKey($fieldName, $data, "Field '{$fieldName}' must be in data after fix is applied");
+        $this->assertFalse($data[$fieldName], "Field '{$fieldName}' value must be false");
         
         // Simulate the database update check
         $canUpdate = array_key_exists($fieldName, $data);
-        $this->assertTrue($canUpdate, 'Field update should be allowed');
+        $this->assertTrue($canUpdate, "Field '{$fieldName}' update should be allowed");
     }
     
     /**

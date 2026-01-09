@@ -37,9 +37,7 @@ describe('UnifiedModal.vue', () => {
       key: 'delete',
       label: 'Delete Record',
       type: 'delete',
-      confirm: {
-        message: 'Are you sure?'
-      }
+      confirm: 'Are you sure?'
     }
 
     const wrapper = mount(UnifiedModal, {
@@ -64,9 +62,7 @@ describe('UnifiedModal.vue', () => {
       key: 'archive',
       label: 'Archive',
       type: 'action',
-      confirm: {
-        message: 'Archive this record?'
-      }
+      confirm: 'Archive this record?'
     }
 
     const wrapper = mount(UnifiedModal, {
@@ -91,9 +87,7 @@ describe('UnifiedModal.vue', () => {
       key: 'delete',
       label: 'Delete',
       type: 'delete',
-      confirm: {
-        message: 'Delete?'
-      }
+      confirm: 'Delete?'
     }
 
     const wrapper = mount(UnifiedModal, {
@@ -124,9 +118,7 @@ describe('UnifiedModal.vue', () => {
       key: 'delete',
       label: 'Delete',
       type: 'delete',
-      confirm: {
-        message: 'Delete?'
-      }
+      confirm: 'Delete?'
     }
 
     const wrapper = mount(UnifiedModal, {
@@ -157,9 +149,7 @@ describe('UnifiedModal.vue', () => {
       key: 'delete',
       label: 'Delete User',
       type: 'delete',
-      confirm: {
-        message: 'Delete user {{user_name}}?'
-      }
+      confirm: 'Delete user {{user_name}}?'
     }
 
     const record = {
@@ -230,21 +220,25 @@ describe('UnifiedModal.vue', () => {
       key: 'custom',
       label: 'Custom Action',
       type: 'action',
-      confirm: {
-        message: 'Enter value',
-        inputs: [
-          {
-            name: 'reason',
-            type: 'text',
-            label: 'Reason'
-          }
-        ]
+      confirm: 'Enter value',
+      modal_config: {
+        type: 'input',
+        fields: ['reason']
+      }
+    }
+
+    const schemaFields = {
+      reason: {
+        type: 'text',
+        label: 'Reason',
+        editable: true
       }
     }
 
     const wrapper = mount(UnifiedModal, {
       props: {
-        action
+        action,
+        schemaFields
       },
       global: {
         components: {
@@ -264,26 +258,29 @@ describe('UnifiedModal.vue', () => {
       key: 'transfer',
       label: 'Transfer',
       type: 'action',
-      confirm: {
-        message: 'Transfer details',
-        inputs: [
-          {
-            name: 'amount',
-            type: 'number',
-            label: 'Amount'
-          },
-          {
-            name: 'notes',
-            type: 'text',
-            label: 'Notes'
-          }
-        ]
+      confirm: 'Transfer details',
+      modal_config: {
+        type: 'input',
+        fields: ['amount', 'notes']
       }
+    }
+
+    const schemaFields = {
+      amount: {
+        type: 'number',
+        label: 'Amount',
+        editable: true
+      },
+      notes: {
+        type: 'text',
+        label: 'Notes',
+        editable: true
     }
 
     const wrapper = mount(UnifiedModal, {
       props: {
-        action
+        action,
+        schemaFields
       },
       global: {
         components: {

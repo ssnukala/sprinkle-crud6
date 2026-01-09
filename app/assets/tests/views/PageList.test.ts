@@ -35,7 +35,8 @@ vi.mock('../../composables/useCRUD6Schema', () => ({
 
 vi.mock('../../composables/useCRUD6Breadcrumbs', () => ({
   useCRUD6Breadcrumbs: () => ({
-    updateBreadcrumb: vi.fn()
+    updateBreadcrumb: vi.fn(),
+    setListBreadcrumb: vi.fn(() => Promise.resolve())
   })
 }))
 

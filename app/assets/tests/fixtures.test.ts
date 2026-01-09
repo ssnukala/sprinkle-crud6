@@ -18,7 +18,7 @@ import {
   filterFields,
   getAvailableModels,
   getModelApiPaths
-} from '../fixtures'
+} from './fixtures'
 
 describe('Fixtures Loader (Unified Data)', () => {
   describe('loadSchemaFixture', () => {

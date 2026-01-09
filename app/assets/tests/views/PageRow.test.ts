@@ -36,21 +36,32 @@ vi.mock('../../composables/useCRUD6Schema', () => ({
 
 vi.mock('../../composables/useCRUD6Api', () => ({
   useCRUD6Api: () => ({
-    getRow: vi.fn(() => Promise.resolve({
+    fetchRow: vi.fn(() => Promise.resolve({
+      id: 1,
+      name: 'Test Product',
+      price: 99.99
+    })),
+    fetchRows: vi.fn(() => Promise.resolve({
       id: 1,
       name: 'Test Product',
       price: 99.99
     })),
     apiLoading: { value: false },
+    apiError: { value: null },
     createRow: vi.fn(),
     updateRow: vi.fn(),
-    deleteRow: vi.fn()
+    deleteRow: vi.fn(),
+    formData: { value: {} },
+    resetForm: vi.fn(),
+    recordBreadcrumb: { value: null }
   })
 }))
 
 vi.mock('../../composables/useCRUD6Breadcrumbs', () => ({
   useCRUD6Breadcrumbs: () => ({
-    updateBreadcrumb: vi.fn()
+    updateBreadcrumb: vi.fn(),
+    setDetailBreadcrumbs: vi.fn(),
+    updateBreadcrumbs: vi.fn()
   })
 }))
 

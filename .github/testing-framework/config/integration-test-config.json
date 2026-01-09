@@ -41,7 +41,44 @@
     "php_version": "8.1",
     "node_version": "20",
     "mysql_version": "8.0",
-    "userfrosting_version": "^6.0-beta"
+    "userfrosting_version": "^6.0-beta",
+    "comment": "Environment versions for testing"
+  },
+  "frontend": {
+    "enabled": true,
+    "comment": "Enable Vitest frontend testing",
+    "test_command": "npm test",
+    "test_data": {
+      "source": "integration_framework",
+      "comment": "Uses same data as integration tests for consistency",
+      "schemas_path": "examples/schema",
+      "models_config": ".github/config/integration-test-models.json",
+      "description": "Frontend tests use centralized schemas and test data from integration testing framework"
+    },
+    "coverage": {
+      "enabled": true,
+      "command": "npm run test:coverage",
+      "upload_artifacts": true,
+      "comment": "Generate and upload coverage reports"
+    },
+    "additional_test_commands": [],
+    "comment_additional": "Optional array of additional test commands to run (e.g., linting, type checking)"
+  },
+  "phpunit": {
+    "enabled": true,
+    "comment": "Enable PHPUnit backend testing",
+    "test_command": "vendor/bin/phpunit",
+    "coverage": {
+      "enabled": true,
+      "command": "vendor/bin/phpunit --coverage-text",
+      "comment": "Generate coverage reports"
+    },
+    "testsuites": {
+      "all": "vendor/bin/phpunit",
+      "integration": "vendor/bin/phpunit --testsuite Integration",
+      "controller": "vendor/bin/phpunit --testsuite Controller",
+      "comment": "Predefined test suites"
+    }
   },
   "vite": {
     "optimize_deps": ["limax", "lodash.deburr"],

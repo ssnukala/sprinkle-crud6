@@ -104,6 +104,9 @@ describe('Form.vue', () => {
           CRUD6AutoLookup: mockComponent('AutoLookup'),
           GoogleAddress: mockComponent('GoogleAddress'),
           CRUD6ToggleSwitch: mockComponent('ToggleSwitch')
+        },
+        mocks: {
+          $t: (key: string) => key
         }
       }
     })
@@ -148,6 +151,9 @@ describe('Form.vue', () => {
           CRUD6AutoLookup: mockComponent('AutoLookup'),
           GoogleAddress: mockComponent('GoogleAddress'),
           CRUD6ToggleSwitch: mockComponent('ToggleSwitch')
+        },
+        mocks: {
+          $t: (key: string) => key
         }
       }
     })
@@ -187,6 +193,9 @@ describe('Form.vue', () => {
           CRUD6AutoLookup: mockComponent('AutoLookup'),
           GoogleAddress: mockComponent('GoogleAddress'),
           CRUD6ToggleSwitch: mockComponent('ToggleSwitch')
+        },
+        mocks: {
+          $t: (key: string) => key
         }
       }
     })
@@ -233,6 +242,9 @@ describe('Form.vue', () => {
           CRUD6AutoLookup: mockComponent('AutoLookup'),
           GoogleAddress: mockComponent('GoogleAddress'),
           CRUD6ToggleSwitch: mockComponent('ToggleSwitch')
+        },
+        mocks: {
+          $t: (key: string) => key
         }
       }
     })
@@ -279,6 +291,9 @@ describe('Form.vue', () => {
           CRUD6AutoLookup: mockComponent('AutoLookup'),
           GoogleAddress: mockComponent('GoogleAddress'),
           CRUD6ToggleSwitch: mockComponent('ToggleSwitch')
+        },
+        mocks: {
+          $t: (key: string) => key
         }
       }
     })

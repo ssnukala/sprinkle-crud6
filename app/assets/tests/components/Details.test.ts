@@ -205,6 +205,6 @@ describe('Details.vue', () => {
     })
 
     const cardBox = wrapper.findComponent(UFCardBox)
-    expect(cardBox.props('title')).toBe('Order_items')
+    expect(cardBox.props('title')).toBe('Order Items')
   })
 })

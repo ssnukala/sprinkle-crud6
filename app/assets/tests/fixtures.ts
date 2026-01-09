@@ -105,35 +105,61 @@ export function getModelConfig(model: string): any {
 
 /**
  * Get editable fields from schema
+ * Fields with show_in containing "form" are editable
  * 
  * @param schema - Schema object
  * @returns Array of editable field names
  */
 export function getEditableFields(schema: any): string[] {
   const fields = schema.fields || {}
-  return Object.keys(fields).filter(key => fields[key].editable !== false)
+  return Object.keys(fields).filter(key => {
+    const field = fields[key]
+    // Check readonly flag first
+    if (field.readonly === true) return false
+    // Check if 'form' is in show_in array
+    if (field.show_in && Array.isArray(field.show_in)) {
+      return field.show_in.includes('form')
+    }
+    return false
+  })
 }
 
 /**
  * Get viewable fields from schema
+ * Fields with show_in containing "detail" are viewable
  * 
  * @param schema - Schema object
  * @returns Array of viewable field names
  */
 export function getViewableFields(schema: any): string[] {
   const fields = schema.fields || {}
-  return Object.keys(fields).filter(key => fields[key].viewable !== false)
+  return Object.keys(fields).filter(key => {
+    const field = fields[key]
+    // Check if 'detail' is in show_in array
+    if (field.show_in && Array.isArray(field.show_in)) {
+      return field.show_in.includes('detail')
+    }
+    return false
+  })
 }
 
 /**
  * Get listable fields from schema
+ * Fields with show_in containing "list" are listable
  * 
  * @param schema - Schema object
  * @returns Array of listable field names
  */
 export function getListableFields(schema: any): string[] {
   const fields = schema.fields || {}
-  return Object.keys(fields).filter(key => fields[key].listable === true)
+  return Object.keys(fields).filter(key => {
+    const field = fields[key]
+    // Check if 'list' is in show_in array
+    if (field.show_in && Array.isArray(field.show_in)) {
+      return field.show_in.includes('list')
+    }
+    return false
+  })
 }
 
 /**

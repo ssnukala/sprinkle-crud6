@@ -2,6 +2,7 @@
  * UnifiedModal Component Tests
  * 
  * Tests for the UnifiedModal component - flexible modal for CRUD operations
+ * Uses dynamic schema-based data from centralized test fixtures
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -9,6 +10,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import UnifiedModal from '../../components/CRUD6/UnifiedModal.vue'
 import type { ActionConfig } from '../../composables/useCRUD6Actions'
+import { loadSchemaFixture, loadSingleRecordFixture } from '../fixtures'
 
 // Mock UIkit
 vi.mock('uikit', () => ({
@@ -24,10 +26,16 @@ vi.mock('uikit', () => ({
 const CRUD6Form = {
   name: 'CRUD6Form',
   template: '<div class="mock-crud6-form"><slot /></div>',
-  props: ['crud6', 'model', 'schema']
+  props: ['crud6', 'model', 'schema'],
+  emits: ['success']
 }
 
 describe('UnifiedModal.vue', () => {
+  // Load dynamic schema and data
+  const usersSchema = loadSchemaFixture('users')
+  const productsSchema = loadSchemaFixture('products')
+  const userRecord = loadSingleRecordFixture('users')
+  
   beforeEach(() => {
     setActivePinia(createPinia())
   })
@@ -84,15 +92,16 @@ describe('UnifiedModal.vue', () => {
 
   it('emits confirmed event on confirmation', async () => {
     const action: ActionConfig = {
-      key: 'delete',
-      label: 'Delete',
+      key: 'delete_user',
+      label: 'Delete User',
       type: 'delete',
-      confirm: 'Delete?'
+      confirm: 'Delete this user?'
     }
 
     const wrapper = mount(UnifiedModal, {
       props: {
-        action
+        action,
+        record: userRecord
       },
       global: {
         components: {
@@ -104,13 +113,15 @@ describe('UnifiedModal.vue', () => {
       }
     })
 
-    // Find and click confirm button (usually labeled "Yes" or "Confirm")
-    const buttons = wrapper.findAll('button')
-    if (buttons.length > 0) {
-      // Typically the primary button is the confirm button
-      await buttons[0].trigger('click')
-      expect(wrapper.emitted()).toHaveProperty('confirmed')
-    }
+    await wrapper.vm.$nextTick()
+    
+    // Find confirm button using data-test attribute
+    // For delete type with 'yes_no' buttons, confirm button has action='confirm'
+    const confirmButton = wrapper.find('[data-test="btn-confirm-delete_user"]')
+    expect(confirmButton.exists()).toBe(true)
+    
+    await confirmButton.trigger('click')
+    expect(wrapper.emitted()).toHaveProperty('confirmed')
   })
 
   it('emits cancelled event on cancellation', async () => {
@@ -146,61 +157,45 @@ describe('UnifiedModal.vue', () => {
 
   it('renders with record data for interpolation', () => {
     const action: ActionConfig = {
-      key: 'delete',
+      key: 'delete_user',
       label: 'Delete User',
       type: 'delete',
       confirm: 'Delete user {{user_name}}?'
     }
 
-    const record = {
-      id: 1,
-      user_name: 'testuser',
-      email: 'test@example.com'
-    }
-
+    // Use dynamic user data from schema
     const wrapper = mount(UnifiedModal, {
       props: {
         action,
-        record
+        record: userRecord
       },
       global: {
         components: {
           CRUD6Form
         },
         mocks: {
-          $t: (key: string, params?: any) => {
-            if (params && params.user_name) {
-              return key.replace('{{user_name}}', params.user_name)
-            }
-            return key
-          }
+          $t: (key: string) => key
         }
       }
     })
 
-    expect(wrapper.exists()).toBe(true)
+    // Should interpolate user_name from userRecord
+    expect(wrapper.html()).toContain(`Delete user ${userRecord.user_name}?`)
   })
 
-  it('renders form type with CRUD6Form component', () => {
+  it('renders form type with CRUD6Form component', async () => {
     const action: ActionConfig = {
-      key: 'edit',
-      label: 'Edit Record',
+      key: 'edit_product',
+      label: 'Edit Product',
       type: 'form'
     }
 
-    const schema = {
-      model: 'products',
-      title: 'Products',
-      fields: {
-        name: { type: 'string', label: 'Name' }
-      }
-    }
-
+    // Use dynamic products schema
     const wrapper = mount(UnifiedModal, {
       props: {
         action,
         model: 'products',
-        schema
+        schema: productsSchema
       },
       global: {
         components: {
@@ -212,130 +207,127 @@ describe('UnifiedModal.vue', () => {
       }
     })
 
-    expect(wrapper.findComponent(CRUD6Form).exists()).toBe(true)
-  })
-
-  it('renders input fields when configured', () => {
-    const action: ActionConfig = {
-      key: 'custom',
-      label: 'Custom Action',
-      type: 'action',
-      confirm: 'Enter value',
-      modal_config: {
-        type: 'input',
-        fields: ['reason']
-      }
-    }
-
-    const schemaFields = {
-      reason: {
-        type: 'text',
-        label: 'Reason',
-        editable: true
-      }
-    }
-
-    const wrapper = mount(UnifiedModal, {
-      props: {
-        action,
-        schemaFields
-      },
-      global: {
-        components: {
-          CRUD6Form
-        },
-        mocks: {
-          $t: (key: string) => key
-        }
-      }
-    })
-
-    expect(wrapper.find('input[name="reason"]').exists()).toBe(true)
-  })
-
-  it('handles multiple input fields', () => {
-    const action: ActionConfig = {
-      key: 'transfer',
-      label: 'Transfer',
-      type: 'action',
-      confirm: 'Transfer details',
-      modal_config: {
-        type: 'input',
-        fields: ['amount', 'notes']
-      }
-    }
-
-    const schemaFields = {
-      amount: {
-        type: 'number',
-        label: 'Amount',
-        editable: true
-      },
-      notes: {
-        type: 'text',
-        label: 'Notes',
-        editable: true
-      }
-    }
-
-    const wrapper = mount(UnifiedModal, {
-      props: {
-        action,
-        schemaFields
-      },
-      global: {
-        components: {
-          CRUD6Form
-        },
-        mocks: {
-          $t: (key: string) => key
-        }
-      }
-    })
-
-    expect(wrapper.find('input[name="amount"]').exists()).toBe(true)
-    expect(wrapper.find('input[name="notes"]').exists()).toBe(true)
-  })
-
-  it('passes schema to CRUD6Form for edit mode', () => {
-    const action: ActionConfig = {
-      key: 'edit',
-      label: 'Edit',
-      type: 'form'
-    }
-
-    const schema = {
-      model: 'products',
-      title: 'Products',
-      fields: {
-        name: { type: 'string', label: 'Name', editable: true }
-      }
-    }
-
-    const record = {
-      id: 1,
-      name: 'Test Product'
-    }
-
-    const wrapper = mount(UnifiedModal, {
-      props: {
-        action,
-        model: 'products',
-        schema,
-        record
-      },
-      global: {
-        components: {
-          CRUD6Form
-        },
-        mocks: {
-          $t: (key: string) => key
-        }
-      }
-    })
-
+    await wrapper.vm.$nextTick()
+    
+    // Form type should render CRUD6Form component
     const formComponent = wrapper.findComponent(CRUD6Form)
     expect(formComponent.exists()).toBe(true)
-    expect(formComponent.props('schema')).toEqual(schema)
+    expect(formComponent.props('model')).toBe('products')
+    expect(formComponent.props('schema')).toBeDefined()
+  })
+  })
+
+  it('renders input fields when configured', async () => {
+    // Use actual field from users schema
+    const action: ActionConfig = {
+      key: 'update_email',
+      label: 'Update Email',
+      type: 'action',
+      confirm: 'Enter new email address',
+      modal_config: {
+        type: 'input',
+        fields: ['email']
+      }
+    }
+
+    // Pass users schema fields
+    const wrapper = mount(UnifiedModal, {
+      props: {
+        action,
+        schemaFields: usersSchema.fields,
+        model: 'users'
+      },
+      global: {
+        components: {
+          CRUD6Form
+        },
+        mocks: {
+          $t: (key: string) => key
+        }
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    
+    // Should render input field for email from schema
+    const emailInput = wrapper.find('input[name="email"]')
+    expect(emailInput.exists()).toBe(true)
+  })
+
+  it('handles multiple input fields', async () => {
+    // Use actual fields from users schema
+    const action: ActionConfig = {
+      key: 'update_name',
+      label: 'Update Name',
+      type: 'action',
+      confirm: 'Enter your name',
+      modal_config: {
+        type: 'input',
+        fields: ['first_name', 'last_name']
+      }
+    }
+
+    // Pass users schema fields
+    const wrapper = mount(UnifiedModal, {
+      props: {
+        action,
+        schemaFields: usersSchema.fields,
+        model: 'users'
+      },
+      global: {
+        components: {
+          CRUD6Form
+        },
+        mocks: {
+          $t: (key: string) => key
+        }
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    
+    // Should render both input fields from schema
+    expect(wrapper.find('input[name="first_name"]').exists()).toBe(true)
+    expect(wrapper.find('input[name="last_name"]').exists()).toBe(true)
+  })
+
+  it('passes schema to CRUD6Form for edit mode', async () => {
+    const action: ActionConfig = {
+      key: 'edit_product',
+      label: 'Edit Product',
+      type: 'form'
+    }
+
+    // Use dynamic product data (would come from loadSingleRecordFixture if products had test data)
+    const productRecord = {
+      id: 1,
+      name: 'Test Product',
+      sku: 'TEST-001'
+    }
+
+    const wrapper = mount(UnifiedModal, {
+      props: {
+        action,
+        model: 'products',
+        schema: productsSchema,
+        record: productRecord
+      },
+      global: {
+        components: {
+          CRUD6Form
+        },
+        mocks: {
+          $t: (key: string) => key
+        }
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    
+    const formComponent = wrapper.findComponent(CRUD6Form)
+    expect(formComponent.exists()).toBe(true)
+    expect(formComponent.props('schema')).toBeDefined()
+    expect(formComponent.props('schema')).toEqual(productsSchema)
+    expect(formComponent.props('crud6')).toEqual(productRecord)
   })
 })

@@ -327,18 +327,13 @@ export function useCRUD6Schema(modelName?: string) {
             force,
             context: context || 'full',
             includeRelated,
-            hasLocalCache: !!(currentModel.value === model && schema.value),
             currentModel: currentModel.value,
             timestamp: new Date().toISOString(),
             caller: new Error().stack?.split('\n')[2]?.trim()
         })
         
-        // Check if already loaded in this instance and not forcing
-        if (!force && currentModel.value === model && schema.value) {
-            debugLog('[useCRUD6Schema] ✅ Using LOCAL cached schema - model:', model, 'context:', context || 'full')
-            return schema.value
-        }
-
+        // Always delegate to the store - it has proper context-aware caching
+        // The local instance should not cache as it doesn't track context
         debugLog('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full', 'includeRelated:', includeRelated)
         loading.value = true
         error.value = null

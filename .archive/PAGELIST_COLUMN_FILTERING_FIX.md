@@ -17,7 +17,9 @@
 
 ## Root Cause Analysis
 
-### The Bug
+### Two Separate Bugs
+
+#### Bug #1: Backend Filter (Fixed in commit b6a1f31)
 In `app/src/ServicesProvider/SchemaFilter.php` at line 248, the `getListContextData()` method had incorrect fallback logic:
 
 ```php
@@ -27,20 +29,38 @@ $showInList = isset($field['show_in'])
     : ($field['listable'] ?? true);  // <-- BUG: defaults to TRUE
 ```
 
-### Why This Was Wrong
+**Why This Was Wrong:**
 1. When a field has `show_in` array defined, it correctly checks if 'list' is in the array
 2. When a field does NOT have `show_in`, it falls back to the `listable` flag
 3. If neither `show_in` nor `listable` exist, it defaults to **TRUE**
 4. This "permissive by default" approach violates security best practices
 
-### Security Impact
-- Sensitive fields like `password` could be exposed in list views if schema was incomplete
-- Fields without explicit `show_in` configuration would leak into list views
-- Violates "secure by default" principle - fields should opt-in, not opt-out
+#### Bug #2: Frontend Caching (Fixed in commit df0812e)
+In `app/assets/composables/useCRUD6Schema.ts` at lines 337-340, the `loadSchema()` function had a local cache check that ignored the context parameter:
+
+```typescript
+// BEFORE (buggy code):
+// Check if already loaded in this instance and not forcing
+if (!force && currentModel.value === model && schema.value) {
+    debugLog('[useCRUD6Schema] ✅ Using LOCAL cached schema - model:', model, 'context:', context || 'full')
+    return schema.value  // <-- BUG: returns cached schema regardless of context
+}
+```
+
+**Why This Was Wrong:**
+1. When a schema was loaded without context (full schema), it was cached locally
+2. Subsequent requests with a different context (e.g., 'list,form') would return the cached full schema
+3. The local cache didn't track which context was cached, only which model
+4. This meant the frontend would show all fields even when requesting filtered contexts
+
+**Combined Impact:**
+- Even though the backend API correctly returned filtered schemas after fix #1, the frontend still showed all columns due to stale cached data
+- Users had to clear browser cache to see the fix take effect
+- The composable's local cache bypassed the store's proper context-aware caching
 
 ## The Fix
 
-### Code Change
+### Backend Fix (commit b6a1f31)
 Changed line 248 in `SchemaFilter.php`:
 
 ```php
@@ -48,6 +68,26 @@ Changed line 248 in `SchemaFilter.php`:
 $showInList = isset($field['show_in']) 
     ? in_array('list', $field['show_in']) 
     : ($field['listable'] ?? false);  // <-- FIX: defaults to FALSE
+```
+
+### Frontend Fix (commit df0812e)
+Removed lines 337-340 in `useCRUD6Schema.ts` - the local cache check:
+
+```typescript
+// AFTER (fixed code):
+async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
+    // ... logging code ...
+    
+    // Always delegate to the store - it has proper context-aware caching
+    // The local instance should not cache as it doesn't track context
+    debugLog('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full', 'includeRelated:', includeRelated)
+    loading.value = true
+    error.value = null
+    
+    // Delegate to global store with context and includeRelated parameters
+    const schemaData = await schemaStore.loadSchema(model, force, context, includeRelated)
+    // ... rest of function ...
+}
 ```
 
 ### Logic Flow (After Fix)
@@ -101,25 +141,31 @@ Test schema mirrors the users.json structure to ensure real-world accuracy.
 - ✗ Timestamps - `show_in: ["detail"]` or empty
 
 ## Related Files Modified
-1. `app/src/ServicesProvider/SchemaFilter.php` - Fixed fallback logic (1 line change)
-2. `app/tests/ServicesProvider/SchemaFilteringTest.php` - Added comprehensive test
+1. `app/src/ServicesProvider/SchemaFilter.php` - Fixed fallback logic (1 line change, commit b6a1f31)
+2. `app/tests/ServicesProvider/SchemaFilteringTest.php` - Added comprehensive test (commit b6a1f31)
+3. `app/assets/composables/useCRUD6Schema.ts` - Removed context-unaware local cache (8 lines removed, commit df0812e)
 
 ## Validation Steps
-1. ✓ Syntax validation passed for all PHP files
-2. ✓ New test added to verify the fix
-3. ⏳ Manual testing required: Visit `/crud6/users` page
-4. ⏳ Verify only 7 columns appear (not 10)
-5. ⏳ Verify password field is NOT visible in table
+1. ✅ Syntax validation passed for all PHP and TypeScript files
+2. ✅ New test added to verify backend filtering
+3. ✅ Frontend caching fixed to respect context
+4. ⏳ Manual testing required: Visit `/crud6/users` page
+5. ⏳ Verify only 6 columns appear (not 10)
+6. ⏳ Verify password field is NOT visible in table
+7. ⏳ **IMPORTANT**: Clear browser cache or hard refresh (Ctrl+Shift+R) to see the fix
 
 ## Notes for Manual Testing
 To test this fix in a live UserFrosting 6 installation with sprinkle-c6admin:
 
 1. Install/update sprinkle-crud6 to this branch
-2. Clear any schema caches
+2. **Clear browser cache or do hard refresh (Ctrl+Shift+R)** - critical due to frontend cache fix
 3. Navigate to `/crud6/users` 
-4. Count the columns - should be 7, not 10
-5. Verify password column is NOT present
+4. Count the columns - should be 6 (username, first_name, last_name, email, flag_verified, flag_enabled), not 10
+5. Verify password, locale, group_id, and role_ids columns are NOT present
 6. Test other models to ensure the fix applies universally
+
+## Why Browser Cache Clear Is Needed
+The frontend fix (commit df0812e) addresses a caching bug where the composable would return a previously cached full schema even when requesting a filtered context. Users who visited the page before the fix will have the full schema cached in their browser. After updating to this fix, they must clear their browser cache or do a hard refresh to fetch the properly filtered schema.
 
 ## References
 - Schema definition: `examples/schema/users.json`

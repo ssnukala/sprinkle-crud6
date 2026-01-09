@@ -105,7 +105,7 @@ export function getModelConfig(model: string): any {
 
 /**
  * Get editable fields from schema
- * Handles both old-style (editable: true/false) and new-style (show_in: ["form"])
+ * Fields with show_in containing "form" are editable
  * 
  * @param schema - Schema object
  * @returns Array of editable field names
@@ -116,18 +116,17 @@ export function getEditableFields(schema: any): string[] {
     const field = fields[key]
     // Check readonly flag first
     if (field.readonly === true) return false
-    // New style: check if 'form' is in show_in array
+    // Check if 'form' is in show_in array
     if (field.show_in && Array.isArray(field.show_in)) {
       return field.show_in.includes('form')
     }
-    // Old style: check editable flag (default is true if not specified)
-    return field.editable !== false
+    return false
   })
 }
 
 /**
  * Get viewable fields from schema
- * Handles both old-style (viewable: true/false) and new-style (show_in: ["detail"])
+ * Fields with show_in containing "detail" are viewable
  * 
  * @param schema - Schema object
  * @returns Array of viewable field names
@@ -136,18 +135,17 @@ export function getViewableFields(schema: any): string[] {
   const fields = schema.fields || {}
   return Object.keys(fields).filter(key => {
     const field = fields[key]
-    // New style: check if 'detail' is in show_in array
+    // Check if 'detail' is in show_in array
     if (field.show_in && Array.isArray(field.show_in)) {
       return field.show_in.includes('detail')
     }
-    // Old style: check viewable flag (default is true if not specified)
-    return field.viewable !== false
+    return false
   })
 }
 
 /**
  * Get listable fields from schema
- * Handles both old-style (listable: true) and new-style (show_in: ["list"])
+ * Fields with show_in containing "list" are listable
  * 
  * @param schema - Schema object
  * @returns Array of listable field names
@@ -156,12 +154,11 @@ export function getListableFields(schema: any): string[] {
   const fields = schema.fields || {}
   return Object.keys(fields).filter(key => {
     const field = fields[key]
-    // New style: check if 'list' is in show_in array
+    // Check if 'list' is in show_in array
     if (field.show_in && Array.isArray(field.show_in)) {
       return field.show_in.includes('list')
     }
-    // Old style: check listable flag
-    return field.listable === true
+    return false
   })
 }
 

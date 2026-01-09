@@ -40,28 +40,29 @@ getListableFields(schema)            // Filters fields based on show_in: ["list"
 ```
 
 ### Pattern Support
-Field helpers support both old and new schema patterns:
-- **Old Pattern**: `editable: true`, `viewable: true`, `listable: true`
-- **New Pattern**: `show_in: ["form"]`, `show_in: ["detail"]`, `show_in: ["list"]`
-
-This ensures backward compatibility while supporting modern multi-context schemas.
+Field helpers use the modern schema pattern with `show_in` arrays:
+- `show_in: ["form"]` - Field is editable in forms
+- `show_in: ["detail"]` - Field is viewable in detail views
+- `show_in: ["list"]` - Field appears in list/table views
+- `show_in: ["form", "detail", "list"]` - Field appears in all contexts
 
 ## Changes Made
 
 ### 1. fixtures.test.ts & fixtures.ts ✅
-**Issue**: Import path error and schema field helpers not handling new `show_in` array pattern
+**Issue**: Import path error and schema field helpers not handling `show_in` array pattern
 
 **Fix**:
 - Changed import from `../fixtures` to `./fixtures`
-- Updated `getEditableFields()`, `getViewableFields()`, and `getListableFields()` to support both:
-  - **Old pattern**: `editable: true`, `viewable: true`, `listable: true`
-  - **New pattern**: `show_in: ["form"]`, `show_in: ["detail"]`, `show_in: ["list"]`
+- Updated `getEditableFields()`, `getViewableFields()`, and `getListableFields()` to use `show_in` arrays:
+  - `show_in: ["form"]` for editable fields
+  - `show_in: ["detail"]` for viewable fields
+  - `show_in: ["list"]` for listable fields
 - Updated test expectations to match actual users.json schema (id is NOT in list view)
 - Tests use `loadSchemaFixture('users')` instead of hardcoded schemas
 
-**Why**: The modern CRUD6 schema uses `show_in` arrays to indicate field visibility across contexts, while maintaining backward compatibility with boolean flags. This follows the reusable testing framework requirement.
+**Why**: The CRUD6 schema uses `show_in` arrays to indicate field visibility across contexts. This follows the reusable testing framework requirement.
 
-### 2. Form.test.ts
+### 2. Form.test.ts ✅
 **Issue**: Missing `$t` i18n function mock causing render failures
 
 **Fix**: Added `mocks: { $t: (key: string) => key }` to all 5 test cases
@@ -139,11 +140,6 @@ The requirement specified: "use the schema to generate the mock data so this sta
 - Uses `.github/config/integration-test-models.json` for test records
 - Matches production test environment setup
 
-### 5. Backward Compatibility
-- Supports both old-style boolean flags and new-style `show_in` arrays
-- Existing tests continue working
-- New tests benefit from enhanced schema features
-
 ## Example: Dynamic Schema Usage
 
 ### Before (Hardcoded)
@@ -176,9 +172,8 @@ All test fixes maintain consistency with the reusable testing framework:
 - Tests use `loadDataFixture()` to load from `.github/config/integration-test-models.json`
 
 ✅ **Schema Pattern Support**:
-- Field helpers support both old and new schema patterns
-- Backward compatible with existing test data
-- Forward compatible with new `show_in` array pattern
+- Field helpers use the modern `show_in` array pattern
+- Consistent with production schema structure
 
 ✅ **Test Organization**:
 - Unit tests validate component rendering and basic behavior

@@ -245,7 +245,7 @@ class SchemaFilter
             // Check show_in array for 'list' context
             $showInList = isset($field['show_in']) 
                 ? in_array('list', $field['show_in']) 
-                : ($field['listable'] ?? true);
+                : ($field['listable'] ?? false);
             
             if ($showInList) {
                 $data['fields'][$fieldKey] = [

@@ -153,7 +153,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
         const cacheKey = getCacheKey(model, context)
         
-        debugLog('[useCRUD6SchemaStore] ===== LOAD SCHEMA CALLED =====', {
+        debugLog('[LIST SCHEMA] [Store] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
@@ -167,8 +167,15 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         
         // Return cached schema if available and not forcing reload
         if (!force && hasSchema(model, context)) {
-            debugLog('[useCRUD6SchemaStore] ✅ Using cached schema - cacheKey:', cacheKey, '(NO API CALL)')
-            return schemas.value[cacheKey] || null
+            const cachedSchema = schemas.value[cacheKey]
+            debugLog('[LIST SCHEMA] [Store] ✅ Using cached schema (NO API CALL)', {
+                cacheKey,
+                hasContexts: !!cachedSchema?.contexts,
+                hasListContext: !!cachedSchema?.contexts?.list,
+                listFieldCount: cachedSchema?.contexts?.list?.fields ? Object.keys(cachedSchema.contexts.list.fields).length : 0,
+                directFieldCount: cachedSchema?.fields ? Object.keys(cachedSchema.fields).length : 0,
+            })
+            return cachedSchema || null
         }
 
         // Return existing promise if already loading
@@ -321,12 +328,13 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     requestedContext: context
                 })
                 
-                // Extract base schema (without contexts)
+                // Extract base schema (keeping contexts for reference)
                 const baseSchema = { ...response.data }
+                const originalContexts = response.data.contexts
                 delete baseSchema.contexts
                 
                 // Cache each context separately for future single-context requests
-                for (const [ctxName, ctxData] of Object.entries(response.data.contexts)) {
+                for (const [ctxName, ctxData] of Object.entries(originalContexts)) {
                     const ctxCacheKey = getCacheKey(model, ctxName)
                     const ctxSchema = { ...baseSchema, ...ctxData }
                     schemas.value[ctxCacheKey] = ctxSchema as CRUD6Schema
@@ -376,17 +384,21 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
                     mergedContextDataKeys: Object.keys(mergedContextData)
                 })
                 
-                // Build final schema with fields at root level
-                // IMPORTANT: Set fields AFTER spreading mergedContextData to ensure fields at root take precedence
+                // Build final schema with:
+                // 1. Merged fields at root (for backward compatibility and when contexts aren't checked)
+                // 2. PRESERVE original contexts structure (so components can access individual context data)
                 schemaData = {
                     ...baseSchema,
                     ...mergedContextData,
-                    fields: mergedFields  // This MUST come after mergedContextData to overwrite any nested fields
+                    fields: mergedFields,  // Merged fields at root for backward compatibility
+                    contexts: originalContexts  // CRITICAL: Preserve contexts so PageList can use contexts.list.fields
                 } as CRUD6Schema
                 
-                debugLog('[useCRUD6SchemaStore] ✅ Reconstructed schema with fields at root', {
+                debugLog('[useCRUD6SchemaStore] ✅ Reconstructed schema with fields at root AND contexts preserved', {
                     model: schemaData.model,
-                    fieldCount: Object.keys(mergedFields).length,
+                    mergedFieldCount: Object.keys(mergedFields).length,
+                    hasContexts: !!schemaData.contexts,
+                    contextKeys: schemaData.contexts ? Object.keys(schemaData.contexts) : [],
                     contexts: requestedContexts
                 })
             } else if (response.data.schema) {

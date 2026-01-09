@@ -43,12 +43,33 @@ const modelLabel = computed(() => {
 
 // Schema fields for table display
 const schemaFields = computed(() => {
+  debugLog('[LIST SCHEMA] ===== Computing schemaFields =====', {
+    hasSchema: !!schema.value,
+    hasContexts: !!schema.value?.contexts,
+    hasListContext: !!schema.value?.contexts?.list,
+    hasListFields: !!schema.value?.contexts?.list?.fields,
+    hasDirectFields: !!schema.value?.fields,
+  })
+  
   // If schema has contexts (multi-context response), use the list context
   if (schema.value?.contexts?.list?.fields) {
-    return Object.entries(schema.value.contexts.list.fields)
+    const listFields = Object.entries(schema.value.contexts.list.fields)
+    debugLog('[LIST SCHEMA] ✅ Using contexts.list.fields', {
+      fieldCount: listFields.length,
+      fieldKeys: listFields.map(([key]) => key),
+      fullFields: Object.fromEntries(listFields),
+    })
+    return listFields
   }
+  
   // Otherwise use the fields directly (single-context or legacy response)
-  return Object.entries(schema.value?.fields || {})
+  const directFields = Object.entries(schema.value?.fields || {})
+  debugLog('[LIST SCHEMA] ⚠️ Using direct fields (no list context)', {
+    fieldCount: directFields.length,
+    fieldKeys: directFields.map(([key]) => key),
+    reason: 'contexts.list.fields not available',
+  })
+  return directFields
 })
 
 // Schema fields for modals - merge fields from all contexts to ensure
@@ -174,16 +195,37 @@ function renderFieldTemplate(template: string, row: any): string {
 
 // Load schema
 onMounted(async () => {
+  debugLog('[LIST SCHEMA] ===== PageList onMounted =====', {
+    model: model.value,
+    hasLoadSchema: !!loadSchema,
+  })
+  
   if (model.value && loadSchema) {
     // Set initial page title and breadcrumbs
     const initialTitle = schema.value?.title || model.value.charAt(0).toUpperCase() + model.value.slice(1)
     page.title = initialTitle
     await setListBreadcrumb(initialTitle)
     
+    debugLog('[LIST SCHEMA] 📤 Requesting schema with contexts', {
+      model: model.value,
+      contexts: 'list,form',
+      timestamp: new Date().toISOString(),
+    })
+    
     // Request schema with 'list' and 'form' contexts
     const schemaPromise = loadSchema(model.value, false, 'list,form')
     if (schemaPromise && typeof schemaPromise.then === 'function') {
       schemaPromise.then(async () => {
+        debugLog('[LIST SCHEMA] ✅ Schema loaded successfully', {
+          model: model.value,
+          hasSchema: !!schema.value,
+          hasContexts: !!schema.value?.contexts,
+          hasListContext: !!schema.value?.contexts?.list,
+          listFieldCount: schema.value?.contexts?.list?.fields ? Object.keys(schema.value.contexts.list.fields).length : 0,
+          directFieldCount: schema.value?.fields ? Object.keys(schema.value.fields).length : 0,
+          schemaKeys: schema.value ? Object.keys(schema.value) : [],
+        })
+        
         // Update page title and description using schema
         if (schema.value) {
           const schemaTitle = schema.value.title || model.value

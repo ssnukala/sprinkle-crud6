@@ -26,7 +26,7 @@ declare(strict_types=1);
  *     ->addStringField('email', required: true, listable: true)
  *     ->addStringField('first_name', listable: true)
  *     ->addStringField('last_name', listable: true)
- *     ->addPermissions(['read' => 'uri_users', 'create' => 'create_user'])
+ *     ->addPermissions(['read' => 'uri_crud6', 'create' => 'create_user'])
  *     ->build();
  * ```
  * 

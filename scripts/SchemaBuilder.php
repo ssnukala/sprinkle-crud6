@@ -517,7 +517,7 @@ class SchemaBuilder
         int $minLength = 8
     ): self {
         $field = [
-            'type' => 'string',
+            'type' => 'password',
             'label' => strtoupper("CRUD6.{$this->schema['model']}.{$name}"),
             'required' => $required,
             'sortable' => false,

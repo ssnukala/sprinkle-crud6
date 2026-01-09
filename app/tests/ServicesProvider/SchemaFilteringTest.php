@@ -594,6 +594,111 @@ class SchemaFilteringTest extends TestCase
     }
 
     /**
+     * Test list context filtering with show_in array
+     * 
+     * Fields with show_in array should only be included in list context
+     * if 'list' is in the array. Fields without 'list' in show_in should be excluded.
+     * This is the fix for the bug where password field was showing in users table.
+     */
+    public function testListContextFilteringWithShowIn(): void
+    {
+        // Create schema similar to users.json with show_in arrays
+        $schema = [
+            'model' => 'users',
+            'title' => 'Users',
+            'table' => 'users',
+            'fields' => [
+                'id' => [
+                    'type' => 'integer',
+                    'label' => 'ID',
+                    'show_in' => ['detail'],  // NOT in list
+                ],
+                'user_name' => [
+                    'type' => 'string',
+                    'label' => 'Username',
+                    'show_in' => ['list', 'form', 'detail'],  // IN list
+                ],
+                'first_name' => [
+                    'type' => 'string',
+                    'label' => 'First Name',
+                    'show_in' => ['list', 'form', 'detail'],  // IN list
+                ],
+                'email' => [
+                    'type' => 'string',
+                    'label' => 'Email',
+                    'show_in' => ['list', 'form', 'detail'],  // IN list
+                ],
+                'locale' => [
+                    'type' => 'string',
+                    'label' => 'Locale',
+                    'show_in' => ['form', 'detail'],  // NOT in list
+                ],
+                'group_id' => [
+                    'type' => 'integer',
+                    'label' => 'Group',
+                    'show_in' => ['form', 'detail'],  // NOT in list
+                ],
+                'password' => [
+                    'type' => 'password',
+                    'label' => 'Password',
+                    'show_in' => ['create', 'edit'],  // NOT in list
+                ],
+                'flag_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Enabled',
+                    'show_in' => ['list', 'form', 'detail'],  // IN list
+                ],
+                'no_show_in_field' => [
+                    'type' => 'string',
+                    'label' => 'No Show In',
+                    // No show_in attribute - should NOT be in list (secure by default)
+                ],
+                'explicit_listable' => [
+                    'type' => 'string',
+                    'label' => 'Explicit Listable',
+                    'listable' => true,  // Explicit listable flag
+                    // No show_in attribute but has listable: true
+                ],
+            ],
+        ];
+
+        // Load SchemaFilter and test the filtering
+        $filterFile = dirname(__DIR__, 2) . '/src/ServicesProvider/SchemaFilter.php';
+        $this->assertFileExists($filterFile, 'SchemaFilter.php should exist');
+        
+        require_once $filterFile;
+        
+        $schemaFilter = $this->createSchemaFilter();
+        
+        // Use reflection to access the protected method
+        $reflection = new \ReflectionClass($schemaFilter);
+        $method = $reflection->getMethod('getListContextData');
+        $method->setAccessible(true);
+        
+        // Test list context filtering
+        $listData = $method->invoke($schemaFilter, $schema);
+        
+        // Fields that SHOULD be included (have 'list' in show_in)
+        $expectedFields = ['user_name', 'first_name', 'email', 'flag_enabled'];
+        foreach ($expectedFields as $field) {
+            $this->assertArrayHasKey($field, $listData['fields'], "{$field} should be included in list context");
+        }
+        
+        // Fields that should NOT be included (don't have 'list' in show_in)
+        $excludedFields = ['id', 'locale', 'group_id', 'password', 'no_show_in_field'];
+        foreach ($excludedFields as $field) {
+            $this->assertArrayNotHasKey($field, $listData['fields'], "{$field} should NOT be included in list context");
+        }
+        
+        // Field with explicit listable flag should be included
+        $this->assertArrayHasKey('explicit_listable', $listData['fields'], 'explicit_listable should be included (has listable: true)');
+        
+        // Verify the fix: password field should definitely NOT be in list
+        $this->assertArrayNotHasKey('password', $listData['fields'], 
+            'CRITICAL: password field must NOT be included in list context (security issue)');
+    }
+
+    /**
      * Test that title_field attribute is included in detail context
      * 
      * The title_field attribute controls which field is displayed in breadcrumbs

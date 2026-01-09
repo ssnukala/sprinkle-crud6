@@ -636,7 +636,7 @@ class SchemaBuilder
         return self::create('users', 'users')
             ->setTitleField('user_name')
             ->addPermissions([
-                'read' => 'uri_users',
+                'read' => 'uri_crud6',
                 'create' => 'create_user',
                 'update' => 'update_user_field',
                 'delete' => 'delete_user',
@@ -663,7 +663,7 @@ class SchemaBuilder
         return self::create('groups', 'groups')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_group',
+                'read' => 'uri_crud6',
                 'create' => 'create_group',
                 'update' => 'update_group_field',
                 'delete' => 'delete_group',
@@ -688,7 +688,7 @@ class SchemaBuilder
         return self::create('products', 'products')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_products',
+                'read' => 'uri_crud6',
                 'create' => 'create_product',
                 'update' => 'update_product_field',
                 'delete' => 'delete_product',

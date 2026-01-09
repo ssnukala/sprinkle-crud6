@@ -153,7 +153,7 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
     async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
         const cacheKey = getCacheKey(model, context)
         
-        debugLog('[useCRUD6SchemaStore] ===== LOAD SCHEMA CALLED =====', {
+        debugLog('[LIST SCHEMA] [Store] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
@@ -167,8 +167,15 @@ export const useCRUD6SchemaStore = defineStore('crud6-schemas', () => {
         
         // Return cached schema if available and not forcing reload
         if (!force && hasSchema(model, context)) {
-            debugLog('[useCRUD6SchemaStore] ✅ Using cached schema - cacheKey:', cacheKey, '(NO API CALL)')
-            return schemas.value[cacheKey] || null
+            const cachedSchema = schemas.value[cacheKey]
+            debugLog('[LIST SCHEMA] [Store] ✅ Using cached schema (NO API CALL)', {
+                cacheKey,
+                hasContexts: !!cachedSchema?.contexts,
+                hasListContext: !!cachedSchema?.contexts?.list,
+                listFieldCount: cachedSchema?.contexts?.list?.fields ? Object.keys(cachedSchema.contexts.list.fields).length : 0,
+                directFieldCount: cachedSchema?.fields ? Object.keys(cachedSchema.fields).length : 0,
+            })
+            return cachedSchema || null
         }
 
         // Return existing promise if already loading

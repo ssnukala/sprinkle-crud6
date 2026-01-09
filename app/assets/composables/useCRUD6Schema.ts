@@ -322,7 +322,7 @@ export function useCRUD6Schema(modelName?: string) {
      * @param includeRelated Whether to include related model schemas (default: false)
      */
     async function loadSchema(model: string, force: boolean = false, context?: string, includeRelated: boolean = false): Promise<CRUD6Schema | null> {
-        debugLog('[useCRUD6Schema] ===== LOAD SCHEMA CALLED =====', {
+        debugLog('[LIST SCHEMA] [useCRUD6Schema] ===== LOAD SCHEMA CALLED =====', {
             model,
             force,
             context: context || 'full',
@@ -334,7 +334,12 @@ export function useCRUD6Schema(modelName?: string) {
         
         // Always delegate to the store - it has proper context-aware caching
         // The local instance should not cache as it doesn't track context
-        debugLog('[useCRUD6Schema] Delegating to STORE - model:', model, 'force:', force, 'context:', context || 'full', 'includeRelated:', includeRelated)
+        debugLog('[LIST SCHEMA] [useCRUD6Schema] Delegating to STORE', {
+            model,
+            force,
+            context: context || 'full',
+            includeRelated,
+        })
         loading.value = true
         error.value = null
 
@@ -345,7 +350,15 @@ export function useCRUD6Schema(modelName?: string) {
             if (schemaData) {
                 schema.value = schemaData
                 currentModel.value = model
-                debugLog('[useCRUD6Schema] ✅ Schema loaded and set - model:', model, 'context:', context || 'full', 'fieldCount:', Object.keys(schemaData.fields || {}).length)
+                debugLog('[LIST SCHEMA] [useCRUD6Schema] ✅ Schema loaded and set', {
+                    model,
+                    context: context || 'full',
+                    hasContexts: !!schemaData.contexts,
+                    hasListContext: !!schemaData.contexts?.list,
+                    listFieldCount: schemaData.contexts?.list?.fields ? Object.keys(schemaData.contexts.list.fields).length : 0,
+                    directFieldCount: Object.keys(schemaData.fields || {}).length,
+                    schemaKeys: Object.keys(schemaData),
+                })
                 return schemaData
             } else {
                 // Get error from store with context
@@ -353,11 +366,19 @@ export function useCRUD6Schema(modelName?: string) {
                 if (storeError) {
                     error.value = storeError
                 }
-                debugError('[useCRUD6Schema] ❌ Schema load failed - model:', model, 'context:', context || 'full', 'error:', storeError)
+                debugError('[LIST SCHEMA] [useCRUD6Schema] ❌ Schema load failed', {
+                    model,
+                    context: context || 'full',
+                    error: storeError,
+                })
                 return null
             }
         } catch (err: any) {
-            debugError('[useCRUD6Schema] ❌ Schema load exception - model:', model, 'context:', context || 'full', 'error:', err)
+            debugError('[LIST SCHEMA] [useCRUD6Schema] ❌ Schema load exception', {
+                model,
+                context: context || 'full',
+                error: err,
+            })
             error.value = err.response?.data || { 
                 title: 'Schema Load Error',
                 description: 'Failed to load schema for model: ' + model

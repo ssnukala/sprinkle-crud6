@@ -275,6 +275,7 @@ describe('UnifiedModal.vue', () => {
         type: 'text',
         label: 'Notes',
         editable: true
+      }
     }
 
     const wrapper = mount(UnifiedModal, {

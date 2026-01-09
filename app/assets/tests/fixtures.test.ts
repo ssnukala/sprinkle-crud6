@@ -149,9 +149,12 @@ describe('Fixtures Loader (Unified Data)', () => {
       const schema = loadSchemaFixture('users')
       const listableFields = getListableFields(schema)
       
-      expect(listableFields).toContain('id')
+      // id is NOT listable in users schema - only appears in detail view
+      expect(listableFields).not.toContain('id')
       expect(listableFields).toContain('user_name')
       expect(listableFields).toContain('email')
+      expect(listableFields).toContain('first_name')
+      expect(listableFields).toContain('last_name')
     })
   })
 
@@ -205,7 +208,8 @@ describe('Fixtures Loader (Unified Data)', () => {
       // Filter first record to show only listable fields
       const listViewRecord = filterFields(data[0], listableFields)
       
-      expect(listViewRecord).toHaveProperty('id')
+      // id is NOT in list view for users schema - only in detail
+      expect(listViewRecord).not.toHaveProperty('id')
       expect(listViewRecord).toHaveProperty('user_name')
       expect(listViewRecord).toHaveProperty('email')
     })

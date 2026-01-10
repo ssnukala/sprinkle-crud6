@@ -218,7 +218,8 @@ class FrontendComponentDataTest extends CRUD6TestCase
         $this->assertArrayHasKey('id', $responseBody['data'], 'Form needs ID to redirect');
 
         // Verify user was created
-        $this->assertDatabaseHas('users', ['user_name' => 'form_test_user']);
+        $createdUser = User::where('user_name', 'form_test_user')->first();
+        $this->assertNotNull($createdUser, 'User should be created in database');
 
         // Test 3: Form submits update request
         $userId = $responseBody['data']['id'];
@@ -234,11 +235,10 @@ class FrontendComponentDataTest extends CRUD6TestCase
         $this->assertResponseStatus(200, $response);
         
         // Verify update was applied
-        $this->assertDatabaseHas('users', [
-            'id' => $userId,
-            'first_name' => 'Updated',
-            'last_name' => 'Name'
-        ]);
+        $updatedUser = User::where('id', $userId)->first();
+        $this->assertNotNull($updatedUser, 'User should exist after update');
+        $this->assertEquals('Updated', $updatedUser->first_name);
+        $this->assertEquals('Name', $updatedUser->last_name);
     }
 
     /**

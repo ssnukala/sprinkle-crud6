@@ -79,7 +79,7 @@ class UpdateFieldActionTest extends CRUD6TestCase
         ]);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
     }
 

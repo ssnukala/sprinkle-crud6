@@ -90,7 +90,7 @@ class EditActionTest extends CRUD6TestCase
         $request = $this->createJsonRequest('GET', '/api/crud6/users/' . $testUser->id);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
     }
 
@@ -206,7 +206,7 @@ class EditActionTest extends CRUD6TestCase
         ]);
         $response = $this->handleRequestWithTracking($request);
 
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
     }
 

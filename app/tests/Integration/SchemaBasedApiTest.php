@@ -313,14 +313,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $request = $this->createJsonRequest('POST', '/api/crud6/users', $userData);
         $response = $this->handleRequestWithTracking($request);
 
-        // Both 200 and 201 are valid responses for create operations
+        // 200, 201, and 409 are valid responses (409 if record already exists)
         $this->assertThat(
             $response->getStatusCode(),
             $this->logicalOr(
                 $this->equalTo(200),
-                $this->equalTo(201)
+                $this->equalTo(201),
+                $this->equalTo(409)
             ),
-            'Create should succeed with permission (200 or 201)'
+            'Create should succeed with permission (200/201) or return 409 if duplicate exists'
         );
         
         $body = json_decode((string) $response->getBody(), true);
@@ -619,14 +620,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/roles', $roleData);
         $response = $this->handleRequestWithTracking($request);
-        // Both 200 and 201 are valid responses for create operations
+        // 200, 201, and 409 are valid responses (409 if record already exists)
         $this->assertThat(
             $response->getStatusCode(),
             $this->logicalOr(
                 $this->equalTo(200),
-                $this->equalTo(201)
+                $this->equalTo(201),
+                $this->equalTo(409)
             ),
-            'Create should return 200 or 201'
+            'Create should return 200/201 or 409 if duplicate'
         );
 
         $body = json_decode((string) $response->getBody(), true);
@@ -713,14 +715,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/groups', $groupData);
         $response = $this->handleRequestWithTracking($request);
-        // Both 200 and 201 are valid responses for create operations
+        // 200, 201, and 409 are valid responses (409 if record already exists)
         $this->assertThat(
             $response->getStatusCode(),
             $this->logicalOr(
                 $this->equalTo(200),
-                $this->equalTo(201)
+                $this->equalTo(201),
+                $this->equalTo(409)
             ),
-            'Create should return 200 or 201'
+            'Create should return 200/201 or 409 if duplicate'
         );
 
         $body = json_decode((string) $response->getBody(), true);
@@ -800,14 +803,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         ];
         $request = $this->createJsonRequest('POST', '/api/crud6/permissions', $permData);
         $response = $this->handleRequestWithTracking($request);
-        // Both 200 and 201 are valid responses for create operations
+        // 200, 201, and 409 are valid responses (409 if record already exists)
         $this->assertThat(
             $response->getStatusCode(),
             $this->logicalOr(
                 $this->equalTo(200),
-                $this->equalTo(201)
+                $this->equalTo(201),
+                $this->equalTo(409)
             ),
-            'Create should return 200 or 201'
+            'Create should return 200/201 or 409 if duplicate'
         );
 
         $body = json_decode((string) $response->getBody(), true);

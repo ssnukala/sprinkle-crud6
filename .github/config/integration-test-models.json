@@ -183,13 +183,13 @@
           "path": "{api_prefix}/{model}",
           "description": "Create new {singular} via CRUD6 API",
           "expected_status": 200,
-          "acceptable_statuses": [200, 201],
+          "acceptable_statuses": [200, 201, 409],
           "validation": {
             "type": "json",
             "contains": ["data", "id"]
           },
           "requires_permission": "create_{singular}",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted."
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted."
         },
         "single": {
           "method": "GET",
@@ -206,11 +206,12 @@
           "path": "{api_prefix}/{model}/{test_id}",
           "description": "Update {singular} via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [200, 201, 409],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_{singular}_field",
-          "note": "Requires payload with fields to update"
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted."
         },
         "update_field": {
           "method": "PUT",

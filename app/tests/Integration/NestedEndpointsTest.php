@@ -244,13 +244,21 @@ class NestedEndpointsTest extends CRUD6TestCase
         $data = json_decode($body, true);
         $this->assertIsArray($data);
         
+        // Debug: Log the actual data structure
+        error_log("testRolePermissionsNestedEndpoint - Full response: " . json_encode($data, JSON_PRETTY_PRINT));
+        
         // Check if it's a Sprunje response format
         if (isset($data['rows'])) {
             $this->assertArrayHasKey('rows', $data);
             $this->assertArrayHasKey('count', $data);
+            
+            error_log("testRolePermissionsNestedEndpoint - Rows count: " . count($data['rows']) . ", expected: 3");
+            
             $this->assertCount(3, $data['rows'], 'Should return 3 permissions');
         } else {
             // Or a simple array response
+            error_log("testRolePermissionsNestedEndpoint - Simple array count: " . count($data) . ", expected: 3");
+            
             $this->assertCount(3, $data, 'Should return 3 permissions');
         }
     }

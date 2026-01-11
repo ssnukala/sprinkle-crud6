@@ -134,10 +134,18 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
         $data = json_decode($body, true);
         $this->assertIsArray($data);
         
+        // Debug: Log the actual data structure received
+        error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Full response data: " . json_encode($data, JSON_PRETTY_PRINT));
+        error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Expected user IDs: " . json_encode(array_map(fn($u) => $u->id, $users)));
+        
         // Check if it's a Sprunje response format
         if (isset($data['rows'])) {
             $this->assertArrayHasKey('rows', $data);
             $this->assertArrayHasKey('count', $data);
+            
+            // Debug: Log actual vs expected count
+            error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Sprunje format: rows count = " . count($data['rows']) . ", expected = 3");
+            
             $this->assertCount(3, $data['rows'], 'Should return 3 users');
             
             // Verify users are returned correctly
@@ -147,6 +155,8 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
             }
         } else {
             // Or a simple array response
+            error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Simple array format: count = " . count($data) . ", expected = 3");
+            
             $this->assertCount(3, $data, 'Should return 3 users');
         }
         

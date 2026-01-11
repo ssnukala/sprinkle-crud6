@@ -129,6 +129,8 @@ class SprunjeAction extends Base
             ]);
 
             // Log the result of detail config search for debugging
+            // Also check for relationship config if detail config not found
+            $relationshipConfig = null;
             if ($relation !== 'NONE') {
                 if ($detailConfig !== null) {
                     $this->debugLog("CRUD6 [SprunjeAction] Detail config found", [
@@ -137,21 +139,27 @@ class SprunjeAction extends Base
                         'detail_config' => $detailConfig,
                     ]);
                 } else {
-                    $this->debugLog("CRUD6 [SprunjeAction] No detail config found", [
+                    // No detail config found, check for relationship config
+                    $relationshipConfig = $this->findRelationshipConfig($crudSchema, $relation);
+                    
+                    $this->debugLog("CRUD6 [SprunjeAction] No detail config found, checking relationships", [
                         'relation' => $relation,
                         'model' => $crudSchema['model'],
                         'details_count' => isset($crudSchema['details']) ? count($crudSchema['details']) : 0,
                         'available_details' => isset($crudSchema['details']) ? array_column($crudSchema['details'], 'model') : [],
+                        'has_relationship_config' => $relationshipConfig !== null,
+                        'relationship_type' => $relationshipConfig['type'] ?? null,
                     ]);
                 }
             }
 
-            if ($relation !== 'NONE' && $detailConfig !== null) {
-                // Handle dynamic relation based on schema detail configuration
-                $this->debugLog("CRUD6 [SprunjeAction] Handling detail relation", [
+            if ($relation !== 'NONE' && ($detailConfig !== null || $relationshipConfig !== null)) {
+                // Handle dynamic relation based on schema detail or relationship configuration
+                $this->debugLog("CRUD6 [SprunjeAction] Handling relation", [
                     'model' => $crudSchema['model'],
                     'relation' => $relation,
-                    'detail_config' => $detailConfig,
+                    'has_detail_config' => $detailConfig !== null,
+                    'has_relationship_config' => $relationshipConfig !== null,
                 ]);
 
                 // Load the related model's schema to get its configuration
@@ -162,14 +170,17 @@ class SprunjeAction extends Base
                     'related_table' => $relatedSchema['table'] ?? null,
                 ]);
 
-                // Get the foreign key from detail config
+                // Get the foreign key from detail config (if present)
                 $foreignKey = $detailConfig['foreign_key'] ?? 'id';
 
                 // Get query parameters
                 $params = $request->getQueryParams();
 
-                // Check if there's a matching relationship definition (for many-to-many)
-                $relationshipConfig = $this->findRelationshipConfig($crudSchema, $relation);
+                // If relationshipConfig wasn't found yet (i.e., we had detailConfig), check for it now
+                // This allows both detail and relationship configs to coexist (e.g., simple foreign key + pivot table)
+                if ($relationshipConfig === null) {
+                    $relationshipConfig = $this->findRelationshipConfig($crudSchema, $relation);
+                }
 
                 $this->debugLog("CRUD6 [SprunjeAction] Setting up relation sprunje", [
                     'relation' => $relation,

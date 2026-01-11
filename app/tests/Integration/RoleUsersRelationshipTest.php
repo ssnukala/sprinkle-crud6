@@ -136,7 +136,7 @@ class RoleUsersRelationshipTest extends CRUD6TestCase
         
         // Debug: Log the actual data structure received
         error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Full response data: " . json_encode($data, JSON_PRETTY_PRINT));
-        error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Expected user IDs: " . json_encode(array_map(fn($u) => $u->id, $users)));
+        error_log("testRoleUsersNestedEndpointHandlesAmbiguousColumn - Expected user IDs: " . json_encode(array_map(fn($u) => $u->id, $users->all())));
         
         // Check if it's a Sprunje response format
         if (isset($data['rows'])) {

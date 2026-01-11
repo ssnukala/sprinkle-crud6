@@ -86,8 +86,6 @@ class CustomActionController extends Base
         ]);
 
         try {
-            // Validate access permission for custom action
-            $this->validateAccess($crudSchema, 'edit');
             // Find the action configuration in the schema
             $actionConfig = $this->findActionConfig($crudSchema, $actionKey);
             
@@ -109,7 +107,8 @@ class CustomActionController extends Base
             if (isset($actionConfig['permission'])) {
                 $this->validateActionPermission($actionConfig['permission']);
             } else {
-                // If no specific permission, check update permission
+                // If no specific permission, check update permission from schema
+                // This is schema-driven: uses $schema['permissions']['update']
                 $this->validateAccess($crudSchema, 'update');
             }
             

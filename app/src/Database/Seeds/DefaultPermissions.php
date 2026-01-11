@@ -83,23 +83,7 @@ class DefaultPermissions implements SeedInterface
             ]),
         ];
         
-        // Add model-specific permissions for common models (users, groups, roles, permissions)
-        $models = ['users', 'groups', 'roles', 'permissions'];
-        $actions = ['read', 'create', 'edit', 'delete'];
-        
-        foreach ($models as $model) {
-            foreach ($actions as $action) {
-                $slug = "crud6.{$model}.{$action}";
-                $permissions[$slug] = new Permission([
-                    'slug'        => $slug,
-                    'name'        => ucfirst($action) . ' ' . $model,
-                    'conditions'  => 'always()',
-                    'description' => ucfirst($action) . ' ' . $model . ' via CRUD6.',
-                ]);
-            }
-        }
-        
-        // Dynamically load permissions from schema files
+        // Dynamically load permissions from schema files (all model-specific permissions come from schemas)
         $schemaPermissions = $this->loadPermissionsFromSchemas();
         foreach ($schemaPermissions as $slug => $permission) {
             // Don't overwrite existing permissions

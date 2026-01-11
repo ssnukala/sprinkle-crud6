@@ -360,6 +360,14 @@ class CRUD6GroupsIntegrationTest extends CRUD6TestCase
         $body = json_decode((string) $response->getBody(), true);
         $this->assertIsArray($body, 'Response should be an array');
         $this->assertArrayHasKey('rows', $body, 'Response should contain rows');
+        
+        // Debug: Log the actual data returned
+        error_log("testGroupUsersApiReturnsUsers - Full response: " . json_encode($body, JSON_PRETTY_PRINT));
+        error_log("testGroupUsersApiReturnsUsers - Rows count: " . count($body['rows']) . ", expected: 3");
+        if (isset($body['rows']) && count($body['rows']) > 0) {
+            error_log("testGroupUsersApiReturnsUsers - First row: " . json_encode($body['rows'][0], JSON_PRETTY_PRINT));
+        }
+        
         $this->assertCount(3, $body['rows'], 'Should return 3 users from the group');
     }
 

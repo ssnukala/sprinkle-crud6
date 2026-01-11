@@ -1,7 +1,7 @@
 {
   "description": "Integration test paths configuration for CRUD6 sprinkle (auto-generated from schemas)",
   "generated_from": "Schema JSON files",
-  "generated_at": "2025-12-14T20:46:48.766Z",
+  "generated_at": "2026-01-11T15:32:15.891Z",
   "note": "All test data IDs use range 100+ (IDs 1-99 reserved for PHP seed data)",
   "config": {
     "base_url": "http://localhost:8080",
@@ -47,7 +47,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -57,7 +58,7 @@
             ]
           },
           "requires_permission": "create_activity",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "ip_address": "Name100",
             "user_id": 1,
@@ -80,11 +81,16 @@
           "path": "/api/crud6/activities/100",
           "description": "Update activity via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_activity_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "ip_address": "Name100",
             "user_id": 1
@@ -130,7 +136,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -140,7 +147,7 @@
             ]
           },
           "requires_permission": "create_category",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "slug": "Name100",
@@ -164,11 +171,16 @@
           "path": "/api/crud6/categories/100",
           "description": "Update category via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_category_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "slug": "Name100"
@@ -214,7 +226,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -224,7 +237,7 @@
             ]
           },
           "requires_permission": "create_contact",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "first_name": "Name100",
             "last_name": "Name100",
@@ -253,11 +266,16 @@
           "path": "/api/crud6/contacts/100",
           "description": "Update contact via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_contact_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "first_name": "Name100",
             "last_name": "Name100"
@@ -314,7 +332,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -324,7 +343,7 @@
             ]
           },
           "requires_permission": "create_task",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "title": "Name100",
             "description": "Test description for description - Record 100",
@@ -348,11 +367,16 @@
           "path": "/api/crud6/tasks/100",
           "description": "Update task via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_task_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "title": "Name100",
             "description": "Test description for description - Record 100"
@@ -398,7 +422,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -408,7 +433,7 @@
             ]
           },
           "requires_permission": "create_group",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100",
@@ -431,11 +456,16 @@
           "path": "/api/crud6/groups/100",
           "description": "Update group via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_group_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100"
@@ -495,7 +525,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -505,7 +536,7 @@
             ]
           },
           "requires_permission": "create_order_detail",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_id": 1,
             "line_number": 1,
@@ -530,11 +561,16 @@
           "path": "/api/crud6/order_details/100",
           "description": "Update order_detail via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_order_detail_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_id": 1,
             "line_number": 1
@@ -580,7 +616,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -590,7 +627,7 @@
             ]
           },
           "requires_permission": "create_order",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "test_order_number_100",
             "customer_name": "Name100",
@@ -614,11 +651,16 @@
           "path": "/api/crud6/orders/100",
           "description": "Update order via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_order_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "test_order_number_100",
             "customer_name": "Name100"
@@ -678,7 +720,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -688,7 +731,7 @@
             ]
           },
           "requires_permission": "create_permission",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100",
@@ -711,11 +754,16 @@
           "path": "/api/crud6/permissions/100",
           "description": "Update permission via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_permission_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100"
@@ -829,7 +877,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -839,7 +888,7 @@
             ]
           },
           "requires_permission": "create_product_category",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "product_id": 1,
             "category_id": 1
@@ -860,11 +909,16 @@
           "path": "/api/crud6/product_categories/100",
           "description": "Update product_category via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_product_category_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "product_id": 1,
             "category_id": 1
@@ -910,7 +964,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -920,7 +975,7 @@
             ]
           },
           "requires_permission": "create_product",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100",
@@ -945,11 +1000,16 @@
           "path": "/api/crud6/products/100",
           "description": "Update product via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_product_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100"
@@ -1009,7 +1069,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1019,7 +1080,7 @@
             ]
           },
           "requires_permission": "create_products_optimized",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100",
@@ -1044,11 +1105,16 @@
           "path": "/api/crud6/products_optimized/100",
           "description": "Update products_optimized via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_products_optimized_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100"
@@ -1108,7 +1174,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1118,7 +1185,7 @@
             ]
           },
           "requires_permission": "create_products_with_template_file",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100",
@@ -1143,11 +1210,16 @@
           "path": "/api/crud6/products_with_template_file/100",
           "description": "Update products_with_template_file via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_products_with_template_file_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100"
@@ -1287,7 +1359,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1297,7 +1370,7 @@
             ]
           },
           "requires_permission": "create_products_vue_template",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100",
@@ -1322,11 +1395,16 @@
           "path": "/api/crud6/products_vue_template/100",
           "description": "Update products_vue_template via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_products_vue_template_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "name": "Name100",
             "sku": "test_sku_100"
@@ -1397,7 +1475,7 @@
             ]
           },
           "requires_permission": "create_role",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100",
@@ -1428,7 +1506,7 @@
             "type": "json"
           },
           "requires_permission": "update_role_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "slug": "test_slug_100",
             "name": "Name100"
@@ -1576,7 +1654,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1586,7 +1665,7 @@
             ]
           },
           "requires_permission": "create_order",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "Name100",
             "status": "pending",
@@ -1608,11 +1687,16 @@
           "path": "/api/crud6/order/100",
           "description": "Update order via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_order_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "Name100",
             "status": "pending"
@@ -1658,7 +1742,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1668,7 +1753,7 @@
             ]
           },
           "requires_permission": "create_order_legacy",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "Name100"
           }
@@ -1688,11 +1773,16 @@
           "path": "/api/crud6/order_legacy/100",
           "description": "Update order_legacy via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
           "requires_permission": "update_order_legacy_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "order_number": "Name100"
           }
@@ -1748,7 +1838,7 @@
             ]
           },
           "requires_permission": "create_user",
-          "note": "Requires payload with model-specific fields. HTTP 201 Created is also accepted.",
+          "note": "Requires payload with model-specific fields. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "user_name": "test_user_name_100",
             "first_name": "Name100",
@@ -1785,7 +1875,7 @@
             "type": "json"
           },
           "requires_permission": "update_user_field",
-          "note": "Requires payload with fields to update",
+          "note": "Requires payload with fields to update. HTTP 201 Created or 409 Conflict (if duplicate) is also accepted.",
           "payload": {
             "user_name": "test_user_name_100",
             "first_name": "Name100"

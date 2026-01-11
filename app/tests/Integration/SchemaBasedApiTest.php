@@ -178,17 +178,9 @@ class SchemaBasedApiTest extends CRUD6TestCase
         }
         $userPermissions = array_unique($userPermissions);
         
-        // Act as this user WITH permissions from role (WithTestUser trait requires inline permissions)
-        // The actAsUser method creates permission records on-the-fly when passed inline,
-        // which is the pattern used throughout UserFrosting's testing framework
-        $this->actAsUser($userNoPerms, permissions: $rolePermissions);
-        
-        // Check if permission check works
-        $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
-
         // Log all debug info to UserFrosting log using DebugLoggerInterface (standard UF6 pattern)
         $logger = $this->ci->get(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface::class);
-        $logger->debug('SECURITY TEST #3 DEBUG INFO', [
+        $logger->debug('SECURITY TEST #3 DEBUG INFO - BEFORE actAsUser', [
             'schema_read_permission' => $readPermission,
             'crud6_admin_role_id' => $crud6AdminRole->id,
             'crud6_admin_permissions_count' => count($rolePermissions),
@@ -196,7 +188,20 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'user_roles_after_sync' => $userRoles,
             'user_effective_permissions_count' => count($userPermissions),
             'user_effective_permissions' => $userPermissions,
-            'checkAccess_result' => $hasPermission,
+            'rolePermissions_passed_to_actAsUser' => $rolePermissions,
+        ]);
+        
+        // Act as this user WITH permissions from role (WithTestUser trait requires inline permissions)
+        // The actAsUser method creates permission records on-the-fly when passed inline,
+        // which is the pattern used throughout UserFrosting's testing framework
+        $this->actAsUser($userNoPerms, permissions: $rolePermissions);
+        
+        // Check if permission check works AFTER actAsUser
+        $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
+
+        $logger->debug('SECURITY TEST #3 DEBUG INFO - AFTER actAsUser', [
+            'checkAccess_result_for' => $readPermission,
+            'checkAccess_returns' => $hasPermission,
         ]);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');

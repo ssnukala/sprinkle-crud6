@@ -154,13 +154,20 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $usersSchema = $this->ci->get(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService::class)->getSchema('users');
         $readPermission = $usersSchema['permissions']['read'] ?? 'uri_crud6';
         
+        // Build permissions array exactly like other tests (lines 558, 770, 826, etc.)
+        // Start with uri_crud6, then add all schema permissions
+        $permissions = ['uri_crud6'];
+        if (isset($usersSchema['permissions'])) {
+            $permissions = array_merge($permissions, array_values($usersSchema['permissions']));
+        }
+        
         // Get the crud6-admin role which already has all CRUD6 permissions attached by DefaultPermissions seed
         $crud6AdminRole = Role::where('slug', 'crud6-admin')->firstOrFail();
         
-        // Collect all permissions attached to this role
+        // Collect all permissions attached to this role (for validation/logging)
         $rolePermissions = $crud6AdminRole->permissions()->pluck('slug')->toArray();
         
-        // Assign crud6-admin role to user (this gives user all CRUD6 permissions via role)
+        // Assign crud6-admin role to user (validates that role has correct permissions)
         $userNoPerms->roles()->sync([$crud6AdminRole->id]);
         
         // Refresh user and eager-load roles with their permissions
@@ -188,13 +195,13 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'user_roles_after_sync' => $userRoles,
             'user_effective_permissions_count' => count($userPermissions),
             'user_effective_permissions' => $userPermissions,
-            'rolePermissions_passed_to_actAsUser' => $rolePermissions,
+            'permissions_passed_to_actAsUser' => $permissions,
+            'permissions_format' => 'array_merge([uri_crud6], array_values(schema[permissions]))',
         ]);
         
-        // Act as this user WITH permissions from role (WithTestUser trait requires inline permissions)
-        // The actAsUser method creates permission records on-the-fly when passed inline,
-        // which is the pattern used throughout UserFrosting's testing framework
-        $this->actAsUser($userNoPerms, permissions: $rolePermissions);
+        // Act as this user WITH permissions - use exact same pattern as other tests (lines 558, 770, 826, etc.)
+        // The actAsUser method creates permission records on-the-fly when passed inline
+        $this->actAsUser($userNoPerms, permissions: $permissions);
         
         // Check if permission check works AFTER actAsUser
         $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);

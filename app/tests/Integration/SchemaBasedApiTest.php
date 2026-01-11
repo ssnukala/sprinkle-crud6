@@ -151,6 +151,13 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
         // Test 3: Authenticated with permission should succeed
         echo "\n  [3] Testing authenticated request with permission returns 200...\n";
+        
+        // Load users schema to check what permission is required for 'read' action
+        $usersSchema = $this->ci->get(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService::class)->getSchema('users');
+        $readPermission = $usersSchema['permissions']['read'] ?? 'uri_crud6';
+        
+        echo "    Schema-defined READ permission: {$readPermission}\n";
+        
         // Grant all CRUD6 legacy permissions
         $crud6Permissions = [
             'crud6_',
@@ -160,10 +167,27 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'uri_crud6_list',
             'view_crud6_field',
         ];
+        
+        echo "    Granting permissions: " . implode(', ', $crud6Permissions) . "\n";
         $this->actAsUser($userNoPerms, permissions: $crud6Permissions);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);
+        
+        echo "    Response status: " . $response->getStatusCode() . "\n";
+        
+        if ($response->getStatusCode() !== 200) {
+            // Extract error details for debugging
+            $body = (string) $response->getBody();
+            $decoded = json_decode($body, true);
+            echo "    Response body: " . $body . "\n";
+            if (isset($decoded['title'])) {
+                echo "    Error title: " . $decoded['title'] . "\n";
+            }
+            if (isset($decoded['description'])) {
+                echo "    Error description: " . $decoded['description'] . "\n";
+            }
+        }
         
         $this->assertResponseStatus(200, $response,
             'Request with proper authentication and permission should succeed');

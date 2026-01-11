@@ -229,7 +229,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         }
         
         $this->assertResponseStatus(200, $response,
-            'Request with proper authentication and permission should succeed');
+            "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role '{$testRole->slug}') should successfully access GET /api/crud6/users endpoint");
         echo "    ✓ Authenticated and authorized requests succeed\n";
 
         // Test 4: POST request follows same security pattern

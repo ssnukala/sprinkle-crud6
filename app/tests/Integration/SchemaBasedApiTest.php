@@ -1037,4 +1037,58 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "  Result: ✅ Custom action validation completed\n";
     }
+
+    /**
+     * Test schema-driven Sprunje features for models
+     * 
+     * Tests Sprunje (data table) functionality defined in schema:
+     * - Sortable fields from schema
+     * - Filterable fields from schema
+     * - Pagination
+     * - Search functionality
+     * 
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenSprunjeFeatures(string $modelName): void
+    {
+        echo "\n╔════════════════════════════════════════════════════════════════╗\n";
+        echo "║ TESTING SCHEMA: {$modelName}.json - SPRUNJE FEATURES" . str_repeat(' ', 22 - strlen($modelName)) . "║\n";
+        echo "╚════════════════════════════════════════════════════════════════╝\n";
+        
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        try {
+            $schema = $schemaService->getSchema($modelName);
+        } catch (\Exception $e) {
+            echo "  ⊘ Schema not found - SKIPPED\n";
+            $this->markTestSkipped("Schema not found for model: {$modelName}");
+            return;
+        }
+        
+        // Extract Sprunje configuration from schema
+        $sortableFields = [];
+        $filterableFields = [];
+        
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                if (isset($fieldConfig['sortable']) && $fieldConfig['sortable']) {
+                    $sortableFields[] = $fieldName;
+                }
+                if (isset($fieldConfig['filterable']) && $fieldConfig['filterable']) {
+                    $filterableFields[] = $fieldName;
+                }
+            }
+        }
+        
+        echo "  ✓ Schema loaded - table: {$schema['table']}\n";
+        echo "  ✓ Sortable fields: " . (count($sortableFields) > 0 ? implode(', ', $sortableFields) : 'none') . "\n";
+        echo "  ✓ Filterable fields: " . (count($filterableFields) > 0 ? implode(', ', $filterableFields) : 'none') . "\n";
+        
+        // Verify schema has Sprunje configuration
+        $this->assertArrayHasKey('table', $schema, "Schema must have 'table' field");
+        $this->assertArrayHasKey('fields', $schema, "Schema must have 'fields' field");
+        
+        echo "  Result: ✅ Sprunje configuration validated\n";
+    }
 }

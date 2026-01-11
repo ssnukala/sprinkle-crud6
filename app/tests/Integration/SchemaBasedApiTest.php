@@ -711,15 +711,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $this->assertEquals($modelName, $responseData['model'], "[Schema: {$modelName}] Schema response model should match request");
         echo "    ✓ Schema endpoint successful\n";
         
-        // Test 2: Config endpoint (GET /api/crud6/{model}/config)
-        echo "\n  [2] Testing config endpoint (GET /api/crud6/{$modelName}/config)...\n";
-        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/config");
+        // Test 2: Config endpoint (GET /api/crud6/config) - Note: This is a global config endpoint, not model-specific
+        echo "\n  [2] Testing config endpoint (GET /api/crud6/config)...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/config");
         $response = $this->handleRequestWithTracking($request);
         
         $this->assertResponseStatus(200, $response, "[Schema: {$modelName}] Config endpoint should return 200");
         $responseData = (array) json_decode((string) $response->getBody(), true);
-        $this->assertArrayHasKey('model', $responseData, "[Schema: {$modelName}] Config response should contain 'model' key");
-        echo "    ✓ Config endpoint successful\n";
+        $this->assertArrayHasKey('debug_mode', $responseData, "[Schema: {$modelName}] Config response should contain 'debug_mode' key");
+        echo "    ✓ Config endpoint successful (debug_mode: " . ($responseData['debug_mode'] ? 'true' : 'false') . ")\n";
         
         // Test 3: List endpoint validates listable fields
         echo "\n  [3] Testing listable fields configuration...\n";
@@ -838,8 +838,11 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
-        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        $permissions = ['uri_crud6'];
+        if (isset($schema['permissions'])) {
+            $permissions = array_merge($permissions, array_values($schema['permissions']));
+        }
+        $this->actAsUser($user, permissions: $permissions);
         
         // Reset API tracking for this test
         $this->resetApiTracking();
@@ -891,8 +894,11 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
-        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        $permissions = ['uri_crud6'];
+        if (isset($schema['permissions'])) {
+            $permissions = array_merge($permissions, array_values($schema['permissions']));
+        }
+        $this->actAsUser($user, permissions: $permissions);
         
         // Get model class from schema
         $modelClass = $this->getModelClass($schema);

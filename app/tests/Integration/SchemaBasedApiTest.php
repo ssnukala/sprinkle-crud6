@@ -184,8 +184,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Check if permission check works
         $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
 
-        // Log all debug info to UserFrosting log
-        $logger = $this->ci->get(\Psr\Log\LoggerInterface::class);
+        // Log all debug info to UserFrosting log using DebugLoggerInterface (standard UF6 pattern)
+        $logger = $this->ci->get(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface::class);
         $logger->debug('SECURITY TEST #3 DEBUG INFO', [
             'schema_read_permission' => $readPermission,
             'crud6_admin_role_id' => $crud6AdminRole->id,

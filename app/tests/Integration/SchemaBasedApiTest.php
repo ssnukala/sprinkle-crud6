@@ -161,79 +161,21 @@ class SchemaBasedApiTest extends CRUD6TestCase
             $permissions = array_merge($permissions, array_values($usersSchema['permissions']));
         }
         
-        // Get the crud6-admin role which already has all CRUD6 permissions attached by DefaultPermissions seed
-        $crud6AdminRole = Role::where('slug', 'crud6-admin')->firstOrFail();
+        // Create a FRESH user (just like working tests at lines 772, etc.) - do NOT reuse $userNoPerms
+        // The WithTestUser trait's actAsUser() expects a clean user without pre-existing roles/permissions
+        /** @var User */
+        $userWithPerms = User::factory()->create();
         
-        // Collect all permissions attached to this role (for validation/logging)
-        $rolePermissions = $crud6AdminRole->permissions()->pluck('slug')->toArray();
+        // Act as this user WITH permissions - exact same pattern as ALL other tests
+        $this->actAsUser($userWithPerms, permissions: $permissions);
         
-        // Assign crud6-admin role to user (validates that role has correct permissions)
-        $userNoPerms->roles()->sync([$crud6AdminRole->id]);
-        
-        // Refresh user and eager-load roles with their permissions
-        $userNoPerms = User::with(['roles.permissions'])->find($userNoPerms->id);
-        
-        // Collect all roles the user has
-        $userRoles = $userNoPerms->roles->pluck('slug')->toArray();
-        
-        // Collect all permissions the user has through roles
-        $userPermissions = [];
-        foreach ($userNoPerms->roles as $role) {
-            foreach ($role->permissions as $permission) {
-                $userPermissions[] = $permission->slug;
-            }
-        }
-        $userPermissions = array_unique($userPermissions);
-        
-        // Log all debug info to UserFrosting log using DebugLoggerInterface (standard UF6 pattern)
-        $logger = $this->ci->get(\UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface::class);
-        $logger->debug('SECURITY TEST #3 DEBUG INFO - BEFORE actAsUser', [
-            'schema_read_permission' => $readPermission,
-            'crud6_admin_role_id' => $crud6AdminRole->id,
-            'crud6_admin_permissions_count' => count($rolePermissions),
-            'crud6_admin_permissions' => $rolePermissions,
-            'user_roles_after_sync' => $userRoles,
-            'user_effective_permissions_count' => count($userPermissions),
-            'user_effective_permissions' => $userPermissions,
-            'permissions_passed_to_actAsUser' => $permissions,
-            'permissions_format' => 'array_merge([uri_crud6], array_values(schema[permissions]))',
-        ]);
-        
-        // Act as this user WITH permissions - use exact same pattern as other tests (lines 558, 770, 826, etc.)
-        // The actAsUser method creates permission records on-the-fly when passed inline
-        $this->actAsUser($userNoPerms, permissions: $permissions);
-        
-        // Check if permission check works AFTER actAsUser
-        $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
-
-        $logger->debug('SECURITY TEST #3 DEBUG INFO - AFTER actAsUser', [
-            'checkAccess_result_for' => $readPermission,
-            'checkAccess_returns' => $hasPermission,
-        ]);
-
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);
-        
-        $logger->debug('SECURITY TEST #3 RESPONSE', [
-            'status_code' => $response->getStatusCode(),
-            'response_body' => (string) $response->getBody(),
-        ]);
-        
-        // Build comprehensive debug info to include in assertion message
-        $debugInfo = "\n\n=== SECURITY TEST #3 DEBUG INFO (see userfrosting.log for details) ===\n";
-        $debugInfo .= "Schema-defined READ permission: {$readPermission}\n";
-        $debugInfo .= "crud6-admin role ID: {$crud6AdminRole->id}\n";
-        $debugInfo .= "crud6-admin permissions (" . count($rolePermissions) . "): " . implode(', ', $rolePermissions) . "\n";
-        $debugInfo .= "User roles after sync: " . implode(', ', $userRoles) . "\n";
-        $debugInfo .= "User effective permissions (" . count($userPermissions) . "): " . implode(', ', $userPermissions) . "\n";
-        $debugInfo .= "checkAccess('{$readPermission}'): " . ($hasPermission ? 'TRUE' : 'FALSE') . "\n";
-        $debugInfo .= "Response status: " . $response->getStatusCode() . "\n";
-        $debugInfo .= "===================================\n\n";
         
         $this->assertSame(
             200,
             $response->getStatusCode(),
-            $debugInfo . "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role 'crud6-admin') should successfully access GET /api/crud6/users endpoint"
+            "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions should successfully access GET /api/crud6/users endpoint"
         );
 
         // Test 4: POST request follows same security pattern

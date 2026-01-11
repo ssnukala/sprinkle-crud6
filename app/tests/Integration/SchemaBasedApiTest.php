@@ -178,8 +178,10 @@ class SchemaBasedApiTest extends CRUD6TestCase
         }
         $userPermissions = array_unique($userPermissions);
         
-        // Act as this user (without inline permissions - they come from the role now)
-        $this->actAsUser($userNoPerms);
+        // Act as this user WITH permissions from role (WithTestUser trait requires inline permissions)
+        // The actAsUser method creates permission records on-the-fly when passed inline,
+        // which is the pattern used throughout UserFrosting's testing framework
+        $this->actAsUser($userNoPerms, permissions: $rolePermissions);
         
         // Check if permission check works
         $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);

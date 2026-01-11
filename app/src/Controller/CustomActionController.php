@@ -86,8 +86,6 @@ class CustomActionController extends Base
         ]);
 
         try {
-            // Validate access permission for custom action
-            $this->validateAccess($crudSchema, 'edit');
             // Find the action configuration in the schema
             $actionConfig = $this->findActionConfig($crudSchema, $actionKey);
             

@@ -99,6 +99,86 @@ class DefaultPermissions implements SeedInterface
             }
         }
         
+        // Dynamically load permissions from schema files
+        $schemaPermissions = $this->loadPermissionsFromSchemas();
+        foreach ($schemaPermissions as $slug => $permission) {
+            // Don't overwrite existing permissions
+            if (!isset($permissions[$slug])) {
+                $permissions[$slug] = $permission;
+            }
+        }
+        
+        return $permissions;
+    }
+    
+    /**
+     * Load permissions from all schema files in app/schema/crud6/ directory.
+     * 
+     * Scans all JSON schema files and extracts permission definitions from
+     * the "permissions" section of each schema. This ensures that any permission
+     * referenced in a schema is available in the database for tests and runtime use.
+     * 
+     * @return Permission[] Array of Permission objects keyed by slug
+     */
+    protected function loadPermissionsFromSchemas(): array
+    {
+        $permissions = [];
+        
+        // Path to schema directory
+        $schemaDir = __DIR__ . '/../../../schema/crud6';
+        
+        // Check if directory exists
+        if (!is_dir($schemaDir)) {
+            return $permissions;
+        }
+        
+        // Get all JSON files in the schema directory
+        $schemaFiles = glob($schemaDir . '/*.json');
+        
+        if ($schemaFiles === false) {
+            return $permissions;
+        }
+        
+        foreach ($schemaFiles as $schemaFile) {
+            try {
+                // Load and decode schema file
+                $schemaContent = file_get_contents($schemaFile);
+                if ($schemaContent === false) {
+                    continue;
+                }
+                
+                $schema = json_decode($schemaContent, true);
+                if (!is_array($schema) || !isset($schema['permissions']) || !is_array($schema['permissions'])) {
+                    continue;
+                }
+                
+                $modelName = $schema['model'] ?? basename($schemaFile, '.json');
+                
+                // Extract each permission from the schema's permissions section
+                foreach ($schema['permissions'] as $action => $permissionSlug) {
+                    // Skip if permission already exists in our collection
+                    if (isset($permissions[$permissionSlug])) {
+                        continue;
+                    }
+                    
+                    // Create a descriptive name based on action and model
+                    $actionName = ucfirst($action);
+                    $modelDisplayName = ucfirst($modelName);
+                    
+                    // Create permission object
+                    $permissions[$permissionSlug] = new Permission([
+                        'slug'        => $permissionSlug,
+                        'name'        => "{$actionName} {$modelDisplayName}",
+                        'conditions'  => 'always()',
+                        'description' => "{$actionName} {$modelDisplayName} via CRUD6.",
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Skip files that can't be parsed
+                continue;
+            }
+        }
+        
         return $permissions;
     }
 

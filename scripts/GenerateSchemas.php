@@ -268,7 +268,7 @@ PHP;
         return SchemaBuilder::create('roles', 'roles')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_roles',
+                'read' => 'uri_crud6',
                 'create' => 'create_role',
                 'update' => 'update_role_field',
                 'delete' => 'delete_role',
@@ -295,7 +295,7 @@ PHP;
         return SchemaBuilder::create('permissions', 'permissions')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_permissions',
+                'read' => 'uri_crud6',
                 'create' => 'create_permission',
                 'update' => 'update_permission_field',
                 'delete' => 'delete_permission',
@@ -323,7 +323,7 @@ PHP;
         return SchemaBuilder::create('activities', 'activities')
             ->setTitleField('type')
             ->addPermissions([
-                'read' => 'uri_activities',
+                'read' => 'uri_crud6',
                 'create' => 'create_activity',
                 'update' => 'update_activity_field',
                 'delete' => 'delete_activity',

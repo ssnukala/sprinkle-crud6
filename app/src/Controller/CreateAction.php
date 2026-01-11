@@ -16,6 +16,7 @@ use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
+use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
 use UserFrosting\Sprinkle\Core\Log\DebugLoggerInterface;
@@ -122,6 +123,31 @@ class CreateAction extends Base
             // Let ForbiddenException bubble up to framework's error handler
             // which provides the proper translated permission error message
             throw $e;
+        } catch (ValidationException $e) {
+            // Validation errors - let them bubble up to framework's error handler
+            // which will format them properly for the client
+            throw $e;
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Unique constraint violation - return user-friendly error
+            $this->logger->debug("CRUD6 [CreateAction] Unique constraint violation", [
+                'model' => $crudSchema['model'],
+                'error' => $e->getMessage(),
+            ]);
+            return $this->jsonResponse($response, 'A record with this value already exists', 409);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Database query exception - log and return appropriate error
+            $this->logger->error("CRUD6 [CreateAction] Database error", [
+                'model' => $crudSchema['model'],
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage(),
+            ]);
+            
+            // Check for constraint violations
+            if (strpos($e->getMessage(), 'NOT NULL constraint') !== false) {
+                return $this->jsonResponse($response, 'Required field is missing', 400);
+            }
+            
+            return $this->jsonResponse($response, 'Database error occurred', 500);
         } catch (NotFoundException $e) {
             // Resource not found - return 404
             return $this->jsonResponse($response, $e->getMessage(), 404);
@@ -180,11 +206,18 @@ class CreateAction extends Base
         // Begin transaction - DB will be rolled back if an exception occurs
         $record = $this->db->transaction(function () use ($crudModel, $schema, $data, $currentUser) {
             // Prepare insert data
+            $this->debugLog("CRUD6 [CreateAction] Data before prepareInsertData", [
+                'model' => $schema['model'],
+                'data_keys' => array_keys($data),
+                'data' => $data,
+            ]);
+            
             $insertData = $this->prepareInsertData($schema, $data);
             
             $this->debugLog("CRUD6 [CreateAction] Insert data prepared", [
                 'model' => $schema['model'],
                 'insert_data' => $insertData,
+                'insert_data_keys' => array_keys($insertData),
                 'table' => $crudModel->getTable(),
             ]);
             

@@ -26,7 +26,7 @@ declare(strict_types=1);
  *     ->addStringField('email', required: true, listable: true)
  *     ->addStringField('first_name', listable: true)
  *     ->addStringField('last_name', listable: true)
- *     ->addPermissions(['read' => 'uri_users', 'create' => 'create_user'])
+ *     ->addPermissions(['read' => 'uri_crud6', 'create' => 'create_user'])
  *     ->build();
  * ```
  * 
@@ -58,6 +58,7 @@ class SchemaBuilder
             'default_sort' => ['id' => 'asc'],
             'permissions' => [],
             'fields' => [],
+            'actions' => [],
         ];
     }
 
@@ -124,6 +125,66 @@ class SchemaBuilder
     public function addPermissions(array $permissions): self
     {
         $this->schema['permissions'] = array_merge($this->schema['permissions'], $permissions);
+        return $this;
+    }
+
+    /**
+     * Add an action to the schema.
+     * 
+     * Actions define custom operations that can be performed on records,
+     * such as toggling boolean fields, calling APIs, or updating specific fields.
+     * 
+     * @param array $action Action configuration array with keys:
+     *                      - key: Unique action identifier
+     *                      - label: Translation key for action label
+     *                      - icon: Icon name
+     *                      - type: Action type (field_update, api_call, etc.)
+     *                      - field: Target field name (for field_update type)
+     *                      - toggle: Boolean indicating if this is a toggle action
+     *                      - permission: Required permission slug
+     *                      - style: Button style (primary, secondary, warning, etc.)
+     *                      - Other type-specific options
+     * 
+     * @return self
+     */
+    public function addAction(array $action): self
+    {
+        $this->schema['actions'][] = $action;
+        return $this;
+    }
+
+    /**
+     * Add a toggle action for a boolean field.
+     * 
+     * This is a convenience method for adding field_update actions that toggle boolean values.
+     * 
+     * @param string      $fieldName  The boolean field to toggle
+     * @param string      $permission Required permission slug
+     * @param string      $label      Translation key for action label
+     * @param string      $icon       Icon name (default: 'toggle-on')
+     * @param string      $style      Button style (default: 'primary')
+     * @param string|null $key        Custom action key (default: "toggle_{$fieldName}")
+     * 
+     * @return self
+     */
+    public function addToggleAction(
+        string $fieldName,
+        string $permission,
+        string $label,
+        string $icon = 'toggle-on',
+        string $style = 'primary',
+        ?string $key = null
+    ): self {
+        $this->schema['actions'][] = [
+            'key' => $key ?? "toggle_{$fieldName}",
+            'label' => $label,
+            'icon' => $icon,
+            'type' => 'field_update',
+            'field' => $fieldName,
+            'toggle' => true,
+            'permission' => $permission,
+            'style' => $style,
+        ];
         return $this;
     }
 
@@ -287,7 +348,8 @@ class SchemaBuilder
         bool $sortable = false,
         bool $filterable = false,
         bool $listable = false,
-        ?bool $default = null
+        ?bool $default = null,
+        ?string $ui = null
     ): self {
         $field = [
             'type' => 'boolean',
@@ -300,6 +362,10 @@ class SchemaBuilder
 
         if ($default !== null) {
             $field['default'] = $default;
+        }
+
+        if ($ui !== null) {
+            $field['ui'] = $ui;
         }
 
         if ($required) {
@@ -451,7 +517,7 @@ class SchemaBuilder
         int $minLength = 8
     ): self {
         $field = [
-            'type' => 'string',
+            'type' => 'password',
             'label' => strtoupper("CRUD6.{$this->schema['model']}.{$name}"),
             'required' => $required,
             'sortable' => false,
@@ -636,7 +702,7 @@ class SchemaBuilder
         return self::create('users', 'users')
             ->setTitleField('user_name')
             ->addPermissions([
-                'read' => 'uri_users',
+                'read' => 'uri_crud6',
                 'create' => 'create_user',
                 'update' => 'update_user_field',
                 'delete' => 'delete_user',
@@ -647,9 +713,12 @@ class SchemaBuilder
             ->addStringField('last_name', sortable: true, filterable: true, listable: true)
             ->addEmailField('email', required: true, sortable: true, filterable: true, listable: true, unique: true)
             ->addPasswordField('password', required: true)
-            ->addBooleanField('flag_enabled', listable: true, default: true)
+            ->addBooleanField('flag_enabled', sortable: true, listable: true, default: true, ui: 'toggle')
+            ->addBooleanField('flag_verified', sortable: true, listable: true, default: true, ui: 'toggle')
             ->addDateTimeField('created_at', readonly: true, listable: false)
             ->addDateTimeField('updated_at', readonly: true, listable: false)
+            ->addToggleAction('flag_enabled', 'update_user_field', 'CRUD6.USER.TOGGLE_ENABLED', 'toggle-on', 'primary', 'toggle_enabled')
+            ->addToggleAction('flag_verified', 'update_user_field', 'CRUD6.USER.TOGGLE_VERIFIED', 'check-circle', 'secondary', 'toggle_verified')
             ->build();
     }
 
@@ -663,7 +732,7 @@ class SchemaBuilder
         return self::create('groups', 'groups')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_group',
+                'read' => 'uri_crud6',
                 'create' => 'create_group',
                 'update' => 'update_group_field',
                 'delete' => 'delete_group',
@@ -688,7 +757,7 @@ class SchemaBuilder
         return self::create('products', 'products')
             ->setTitleField('name')
             ->addPermissions([
-                'read' => 'uri_products',
+                'read' => 'uri_crud6',
                 'create' => 'create_product',
                 'update' => 'update_product_field',
                 'delete' => 'delete_product',

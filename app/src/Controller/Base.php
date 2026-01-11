@@ -172,10 +172,16 @@ abstract class Base
         $modelName = $schema['model'] ?? 'unknown';
 
         if (!$this->authenticator->checkAccess($permission)) {
-            // Provide detailed error message for debugging permission issues
-            throw new ForbiddenException(
-                "Access denied for action '{$action}' on model '{$modelName}' (requires permission: '{$permission}')"
-            );
+            // Throw ForbiddenException without custom message to let framework
+            // use the standard "We've sensed a great disturbance in the Force." message
+            // The detailed permission info is logged for debugging
+            $this->logger->debug("Access denied for CRUD6 operation", [
+                'action' => $action,
+                'model' => $modelName,
+                'required_permission' => $permission,
+            ]);
+            
+            throw new ForbiddenException();
         }
     }
 

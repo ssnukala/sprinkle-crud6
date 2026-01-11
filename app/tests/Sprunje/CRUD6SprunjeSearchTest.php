@@ -28,6 +28,9 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
 {
     use RefreshDatabase;
 
+    /** @var string The schema name being tested */
+    protected string $schemaName = 'groups';
+
     /** @var array The groups schema loaded from JSON */
     protected array $schema;
 
@@ -47,6 +50,8 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
     {
         parent::setUp();
 
+        echo "\n[SPRUNJE SEARCH TEST] Using schema: {$this->schemaName}.json\n";
+
         // Set database up.
         $this->refreshDatabase();
         $this->seedDatabase();
@@ -54,13 +59,16 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         // Load schema from SchemaService - this is schema-driven, not hardcoded
         /** @var SchemaService */
         $schemaService = $this->ci->get(SchemaService::class);
-        $this->schema = $schemaService->getSchema('groups');
+        $this->schema = $schemaService->getSchema($this->schemaName);
         
         // Extract configuration from schema - completely dynamic
         $this->tableName = $this->schema['table'];
         $this->sortableFields = $this->extractSortableFields($this->schema);
         $this->filterableFields = $this->extractFilterableFields($this->schema);
         $this->listableFields = $this->extractListableFields($this->schema);
+        
+        echo "  Schema table: {$this->tableName}\n";
+        echo "  Filterable fields: " . implode(', ', $this->filterableFields) . "\n";
         
         // Create test data
         $this->createData();
@@ -188,7 +196,11 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $data = $sprunje->getArray();
 
         // With only 'name' as filterable (per schema), only Alpha Group should match
-        $this->assertEquals(1, $data['count_filtered'], 'Should find 1 group matching "Alpha" in name field');
+        $this->assertEquals(
+            1,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should find 1 group matching \"Alpha\" in name field"
+        );
         $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
         
         // Verify the correct group is returned
@@ -218,7 +230,11 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $sprunje->setOptions(['search' => 'Group']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(3, $data['count_filtered'], 'Should find 3 groups with "Group" in name');
+        $this->assertEquals(
+            3,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should find 3 groups with \"Group\" in name"
+        );
         $this->assertCount(3, $data['rows']); // @phpstan-ignore-line
     }
 
@@ -242,7 +258,11 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $sprunje->setOptions(['search' => 'NonExistentTerm']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(0, $data['count_filtered'], 'Should find 0 groups');
+        $this->assertEquals(
+            0,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should find 0 groups"
+        );
         $this->assertCount(0, $data['rows']); // @phpstan-ignore-line
     }
 
@@ -266,7 +286,11 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $sprunje->setOptions(['search' => 'alpha']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(1, $data['count_filtered'], 'Should find groups regardless of case');
+        $this->assertEquals(
+            1,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should find groups regardless of case"
+        );
         $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
     }
 
@@ -295,14 +319,22 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $sprunje->setOptions(['search' => 'beta-group']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(0, $data['count_filtered'], 'Should not find groups by slug when slug is not filterable in schema');
+        $this->assertEquals(
+            0,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should not find groups by slug when slug is not filterable in schema"
+        );
         $this->assertCount(0, $data['rows']); // @phpstan-ignore-line
         
         // Now search for "Beta" which is in name, and name IS filterable in schema
         $sprunje->setOptions(['search' => 'Beta']);
         $data = $sprunje->getArray();
 
-        $this->assertEquals(1, $data['count_filtered'], 'Should find group by name which is filterable in schema');
+        $this->assertEquals(
+            1,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should find group by name which is filterable in schema"
+        );
         $this->assertCount(1, $data['rows']); // @phpstan-ignore-line
     }
 
@@ -330,7 +362,11 @@ class CRUD6SprunjeSearchTest extends CRUD6TestCase
         $data = $sprunje->getArray();
 
         // Should return all groups since search has no fields to search
-        $this->assertEquals(3, $data['count_filtered'], 'Should return all groups when no fields are filterable');
+        $this->assertEquals(
+            3,
+            $data['count_filtered'],
+            "[Schema: {$this->schemaName}] Should return all groups when no fields are filterable"
+        );
         $this->assertCount(3, $data['rows']); // @phpstan-ignore-line
     }
 }

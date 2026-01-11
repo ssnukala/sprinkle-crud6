@@ -15,6 +15,7 @@ use UserFrosting\Sprinkle\Account\Authenticate\Hasher;
 use UserFrosting\Sprinkle\Account\Authorize\AuthorizationManager;
 use UserFrosting\Sprinkle\Account\Exceptions\ForbiddenException;
 use UserFrosting\Sprinkle\Core\Exceptions\NotFoundException;
+use UserFrosting\Sprinkle\Core\Exceptions\ValidationException;
 use UserFrosting\Config\Config;
 use UserFrosting\Sprinkle\Account\Database\Models\Interfaces\UserInterface;
 use UserFrosting\Sprinkle\Account\Log\UserActivityLogger;
@@ -129,6 +130,32 @@ class EditAction extends Base
         } catch (ForbiddenException $e) {
             // Let ForbiddenException bubble up to framework's error handler
             throw $e;
+        } catch (ValidationException $e) {
+            // Validation errors - let them bubble up to framework's error handler
+            throw $e;
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Unique constraint violation - return user-friendly error
+            $this->logger->debug("CRUD6 [EditAction] Unique constraint violation", [
+                'model' => $crudSchema['model'],
+                'method' => $method,
+                'error' => $e->getMessage(),
+            ]);
+            return $this->jsonResponse($response, 'A record with this value already exists', 409);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Database query exception - log and return appropriate error
+            $this->logger->error("CRUD6 [EditAction] Database error", [
+                'model' => $crudSchema['model'],
+                'method' => $method,
+                'error_code' => $e->getCode(),
+                'error_message' => $e->getMessage(),
+            ]);
+            
+            // Check for constraint violations
+            if (strpos($e->getMessage(), 'NOT NULL constraint') !== false) {
+                return $this->jsonResponse($response, 'Required field is missing', 400);
+            }
+            
+            return $this->jsonResponse($response, 'Database error occurred', 500);
         } catch (NotFoundException $e) {
             // Resource not found - return 404
             return $this->jsonResponse($response, $e->getMessage(), 404);

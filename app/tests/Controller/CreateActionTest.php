@@ -179,8 +179,8 @@ class CreateActionTest extends CRUD6TestCase
         ]);
         $response = $this->handleRequestWithTracking($request);
 
-        // Should return validation error
-        $this->assertResponseStatus(400, $response);
+        // Should return 409 Conflict for unique constraint violation
+        $this->assertResponseStatus(409, $response);
     }
 
     /**

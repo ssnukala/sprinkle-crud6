@@ -151,7 +151,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
         // Test 3: Authenticated with permission should succeed
         echo "\n  [3] Testing authenticated request with permission returns 200...\n";
-        $this->actAsUser($userNoPerms, permissions: ['uri_crud6']);
+        // Grant both generic uri_crud6 AND the specific read permission from users schema
+        $this->actAsUser($userNoPerms, permissions: ['uri_crud6', 'uri_users']);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);

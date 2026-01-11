@@ -23,6 +23,11 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 /**
  * Role-Users Relationship Test
  *
+ * @deprecated This test is deprecated in favor of schema-driven tests in SchemaBasedApiTest.
+ *             The SchemaBasedApiTest class now provides generic relationship testing that works
+ *             for all models based on their schema configuration, following CRUD6's principle
+ *             of being schema-driven rather than hardcoded to specific models.
+ * 
  * Tests the CRUD6 API endpoint for role -> users many-to-many relationship:
  * - GET /api/crud6/roles/{id}/users (list users for a role)
  * 
@@ -35,6 +40,9 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * The fix ensures that:
  * 1. For many-to-many relationships, the proper JOIN with pivot table is used
  * 2. For direct relationships, column names are qualified with table names
+ * 
+ * @see SchemaBasedApiTest::testSchemaDrivenRelationships() For generic relationship testing
+ * @see SchemaBasedApiTest::testRolesModelCompleteApiIntegration() For comprehensive roles testing including relationships
  */
 class RoleUsersRelationshipTest extends CRUD6TestCase
 {

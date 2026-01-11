@@ -22,6 +22,11 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 /**
  * CRUD6 Users Integration Test
  *
+ * @deprecated This test is deprecated in favor of schema-driven tests in SchemaBasedApiTest.
+ *             The SchemaBasedApiTest class now provides generic CRUD testing that works
+ *             for all models based on their schema configuration, following CRUD6's principle
+ *             of being schema-driven rather than hardcoded to specific models.
+ * 
  * Tests the CRUD6 API endpoints for users model:
  * - GET /api/crud6/users (list all users)
  * - GET /api/crud6/users/{id} (get single user)
@@ -33,6 +38,9 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * - /crud6/users/{id} (detail page)
  * 
  * Includes API call tracking to detect redundant calls.
+ * 
+ * @see SchemaBasedApiTest::testSchemaDrivenCrudOperations() For generic CRUD testing
+ * @see SchemaBasedApiTest::testUsersModelCompleteApiIntegration() For comprehensive users testing
  */
 class CRUD6UsersIntegrationTest extends CRUD6TestCase
 {

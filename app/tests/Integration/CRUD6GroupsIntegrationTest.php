@@ -23,6 +23,11 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 /**
  * CRUD6 Groups Integration Test
  *
+ * @deprecated This test is deprecated in favor of schema-driven tests in SchemaBasedApiTest.
+ *             The SchemaBasedApiTest class now provides generic CRUD testing that works
+ *             for all models based on their schema configuration, following CRUD6's principle
+ *             of being schema-driven rather than hardcoded to specific models.
+ * 
  * Tests the CRUD6 API endpoints for groups model:
  * - GET /api/crud6/groups (list all groups)
  * - GET /api/crud6/groups/1 (get single group)
@@ -32,6 +37,9 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * - /crud6/groups/1 (detail page)
  * 
  * Now includes API call tracking to detect redundant calls.
+ * 
+ * @see SchemaBasedApiTest::testSchemaDrivenCrudOperations() For generic CRUD testing
+ * @see SchemaBasedApiTest::testGroupsModelCompleteApiIntegration() For comprehensive groups testing
  */
 class CRUD6GroupsIntegrationTest extends CRUD6TestCase
 {

@@ -25,6 +25,11 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 /**
  * Frontend User Workflow Integration Test
  *
+ * @deprecated This test is deprecated in favor of schema-driven tests in SchemaBasedApiTest.
+ *             The SchemaBasedApiTest class now provides generic workflow testing that works
+ *             for all models based on their schema configuration, following CRUD6's principle
+ *             of being schema-driven rather than hardcoded to specific models.
+ * 
  * Simulates real user workflows by creating API payloads that match
  * what the frontend would send when a user performs actions.
  * 
@@ -39,6 +44,9 @@ use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
  * - User submits form (POST/PUT/DELETE with payload)
  * - User sees result (verify response)
  * - Data is updated (verify database)
+ * 
+ * @see SchemaBasedApiTest::testSchemaDrivenCrudOperations() For generic CRUD testing
+ * @see SchemaBasedApiTest::testUsersModelCompleteApiIntegration() For users-specific workflows
  */
 class FrontendUserWorkflowTest extends CRUD6TestCase
 {

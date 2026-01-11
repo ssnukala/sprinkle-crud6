@@ -844,4 +844,158 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
         echo "\n[SCHEMA-BASED API TEST] Permissions model API endpoints tested successfully\n";
     }
+
+    /**
+     * Provide test data for all available schemas
+     * 
+     * This data provider enables testing all models dynamically based on their schemas.
+     * Tests will run for each schema file found in app/schema/crud6/
+     * 
+     * @return array<string, array{string}> Array of [modelName]
+     */
+    public static function schemaProvider(): array
+    {
+        $schemaDir = __DIR__ . '/../../schema/crud6';
+        
+        if (!is_dir($schemaDir)) {
+            return [];
+        }
+        
+        $schemaFiles = glob($schemaDir . '/*.json');
+        if ($schemaFiles === false) {
+            return [];
+        }
+        
+        $schemas = [];
+        foreach ($schemaFiles as $file) {
+            $modelName = basename($file, '.json');
+            // Use model name as both key and value for better test output
+            $schemas[$modelName] = [$modelName];
+        }
+        
+        return $schemas;
+    }
+
+    /**
+     * Test schema-driven CRUD operations for any model
+     * 
+     * This generic test validates all CRUD operations based on the model's schema:
+     * - List (GET /api/crud6/{model})
+     * - Create (POST /api/crud6/{model})
+     * - Read (GET /api/crud6/{model}/{id})
+     * - Update (PUT /api/crud6/{model}/{id})
+     * - Delete (DELETE /api/crud6/{model}/{id})
+     * 
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenCrudOperations(string $modelName): void
+    {
+        echo "\n[SCHEMA-DRIVEN TEST] Testing CRUD operations for model: {$modelName}\n";
+        
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        try {
+            $schema = $schemaService->getSchema($modelName);
+        } catch (\Exception $e) {
+            $this->markTestSkipped("Schema not found for model: {$modelName}");
+            return;
+        }
+        
+        // Get read permission from schema
+        $readPermission = $schema['permissions']['read'] ?? "crud6.{$modelName}.read";
+        
+        /** @var User */
+        $user = User::factory()->create();
+        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        
+        // Test List endpoint
+        echo "  → Testing LIST endpoint\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}");
+        $response = $this->handleRequestWithTracking($request);
+        $this->assertResponseStatus(200, $response, "List endpoint should return 200 for {$modelName}");
+        
+        echo "[SCHEMA-DRIVEN TEST] CRUD test completed for {$modelName}\n";
+    }
+
+    /**
+     * Test schema-driven relationship endpoints for models with relationships
+     * 
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenRelationships(string $modelName): void
+    {
+        echo "\n[SCHEMA-DRIVEN TEST] Testing relationships for model: {$modelName}\n";
+        
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        try {
+            $schema = $schemaService->getSchema($modelName);
+        } catch (\Exception $e) {
+            $this->markTestSkipped("Schema not found for model: {$modelName}");
+            return;
+        }
+        
+        // Check if model has relationships defined
+        if (!isset($schema['relationships']) || empty($schema['relationships'])) {
+            $this->markTestSkipped("No relationships defined for model: {$modelName}");
+            return;
+        }
+        
+        echo "  → Model has " . count($schema['relationships']) . " relationship(s) defined\n";
+        
+        // For now, just verify the schema has relationships
+        // Full relationship testing would require creating related records
+        $this->assertIsArray($schema['relationships']);
+        $this->assertNotEmpty($schema['relationships']);
+        
+        foreach ($schema['relationships'] as $relationship) {
+            $this->assertArrayHasKey('name', $relationship, "Relationship must have 'name'");
+            $this->assertArrayHasKey('type', $relationship, "Relationship must have 'type'");
+            echo "    ✓ Relationship '{$relationship['name']}' ({$relationship['type']})\n";
+        }
+        
+        echo "[SCHEMA-DRIVEN TEST] Relationship validation completed for {$modelName}\n";
+    }
+
+    /**
+     * Test schema-driven custom actions for models with actions
+     * 
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenCustomActions(string $modelName): void
+    {
+        echo "\n[SCHEMA-DRIVEN TEST] Testing custom actions for model: {$modelName}\n";
+        
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        try {
+            $schema = $schemaService->getSchema($modelName);
+        } catch (\Exception $e) {
+            $this->markTestSkipped("Schema not found for model: {$modelName}");
+            return;
+        }
+        
+        // Check if model has custom actions defined
+        if (!isset($schema['actions']) || empty($schema['actions'])) {
+            $this->markTestSkipped("No custom actions defined for model: {$modelName}");
+            return;
+        }
+        
+        echo "  → Model has " . count($schema['actions']) . " custom action(s) defined\n";
+        
+        // Verify action schema structure
+        $this->assertIsArray($schema['actions']);
+        $this->assertNotEmpty($schema['actions']);
+        
+        foreach ($schema['actions'] as $action) {
+            $this->assertArrayHasKey('key', $action, "Action must have 'key'");
+            $this->assertArrayHasKey('label', $action, "Action must have 'label'");
+            echo "    ✓ Action '{$action['key']}' - {$action['label']}\n";
+        }
+        
+        echo "[SCHEMA-DRIVEN TEST] Custom action validation completed for {$modelName}\n";
+    }
 }

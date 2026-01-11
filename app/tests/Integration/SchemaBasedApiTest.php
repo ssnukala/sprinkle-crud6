@@ -259,6 +259,115 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         return $modelMap[$modelName] ?? User::class; // Default to User for unknown models
     }
+    
+    /**
+     * Prepare factory data for a model, handling required foreign keys
+     * 
+     * @param string $modelName Model name
+     * @param array $schema Schema configuration
+     * @return array Factory data with required foreign keys
+     */
+    protected function prepareFactoryDataForModel(string $modelName, array $schema): array
+    {
+        $factoryData = [];
+        
+        // Handle model-specific required foreign keys
+        if ($modelName === 'activities') {
+            // Activities require user_id
+            $testUser = User::factory()->create();
+            $factoryData['user_id'] = $testUser->id;
+        }
+        
+        // Scan schema fields for other required foreign keys
+        if (isset($schema['fields'])) {
+            foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                // Check if field is required and ends with _id (foreign key pattern)
+                if (isset($fieldConfig['required']) && 
+                    $fieldConfig['required'] === true && 
+                    str_ends_with($fieldName, '_id') &&
+                    !isset($factoryData[$fieldName])) {
+                    
+                    // Try to auto-create related record
+                    $relatedModel = $this->guessRelatedModel($fieldName);
+                    if ($relatedModel && class_exists($relatedModel)) {
+                        try {
+                            $relatedRecord = $relatedModel::factory()->create();
+                            $factoryData[$fieldName] = $relatedRecord->id;
+                        } catch (\Exception $e) {
+                            // Skip if factory doesn't exist or fails
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $factoryData;
+    }
+    
+    /**
+     * Guess related model from foreign key name
+     * 
+     * @param string $foreignKey Foreign key field name (e.g., 'user_id')
+     * @return string|null Model class name or null
+     */
+    protected function guessRelatedModel(string $foreignKey): ?string
+    {
+        $relationMap = [
+            'user_id' => User::class,
+            'role_id' => Role::class,
+            'group_id' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
+            'permission_id' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
+        ];
+        
+        return $relationMap[$foreignKey] ?? null;
+    }
+    
+    /**
+     * Assert response status with detailed error information for 500 errors
+     * 
+     * @param int $expected Expected status code
+     * @param \Psr\Http\Message\ResponseInterface $response Response object
+     * @param string $message Assertion message
+     */
+    protected function assertResponseStatus(int $expected, $response, string $message = ''): void
+    {
+        $actual = $response->getStatusCode();
+        
+        if ($actual === 500) {
+            // Get response body for error details
+            $body = (string) $response->getBody();
+            $errorData = json_decode($body, true);
+            
+            $errorMsg = $message . "\n";
+            $errorMsg .= "  ❌ 500 Internal Server Error\n";
+            
+            if ($errorData && isset($errorData['message'])) {
+                $errorMsg .= "  Error: " . $errorData['message'] . "\n";
+            }
+            
+            if ($errorData && isset($errorData['exception'])) {
+                $errorMsg .= "  Exception: " . $errorData['exception'] . "\n";
+            }
+            
+            if ($errorData && isset($errorData['file'])) {
+                $errorMsg .= "  File: " . $errorData['file'];
+                if (isset($errorData['line'])) {
+                    $errorMsg .= " (line " . $errorData['line'] . ")";
+                }
+                $errorMsg .= "\n";
+            }
+            
+            // Show partial body if no structured error
+            if (!$errorData) {
+                $bodyPreview = substr($body, 0, 500);
+                $errorMsg .= "  Response body: " . $bodyPreview . "\n";
+            }
+            
+            $this->assertSame($expected, $actual, $errorMsg);
+        } else {
+            $this->assertSame($expected, $actual, $message);
+        }
+    }
 
     /**
      * Test schema-driven CRUD operations for any model
@@ -618,8 +727,9 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Get model class from schema
         $modelClass = $this->getModelClass($schema);
         
-        // Create a test record
-        $record = $modelClass::factory()->create();
+        // Create a test record with required foreign keys
+        $factoryData = $this->prepareFactoryDataForModel($modelName, $schema);
+        $record = $modelClass::factory()->create($factoryData);
         echo "  ✓ Created test {$modelName} record (id: {$record->id})\n";
         
         $relationshipCount = 0;
@@ -720,8 +830,9 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Get model class from schema
         $modelClass = $this->getModelClass($schema);
         
-        // Create test data
-        $modelClass::factory()->count(3)->create();
+        // Create test data with required foreign keys
+        $factoryData = $this->prepareFactoryDataForModel($modelName, $schema);
+        $modelClass::factory()->count(3)->create($factoryData);
         
         // Test 1: PageList component - list endpoint
         echo "\n  [1] Testing PageList component data (list endpoint)...\n";

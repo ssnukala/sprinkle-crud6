@@ -305,21 +305,83 @@ class SchemaBasedApiTest extends CRUD6TestCase
     }
     
     /**
-     * Guess related model from foreign key name
+     * Guess related model from foreign key name (schema-driven approach)
+     * 
+     * This method attempts to dynamically determine the model class for a foreign key
+     * by using CRUD6's schema-driven architecture instead of hardcoding mappings.
+     * 
+     * Process:
+     * 1. Extract model name from foreign key (user_id → users)
+     * 2. Try to load schema for that model using SchemaService
+     * 3. Use getModelClass() to get the actual model class from schema
+     * 4. Fallback to common UserFrosting models if schema not found
      * 
      * @param string $foreignKey Foreign key field name (e.g., 'user_id')
      * @return string|null Model class name or null
      */
     protected function guessRelatedModel(string $foreignKey): ?string
     {
-        $relationMap = [
-            'user_id' => User::class,
-            'role_id' => Role::class,
-            'group_id' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
-            'permission_id' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
+        // Extract model name from foreign key (e.g., user_id → users)
+        if (!str_ends_with($foreignKey, '_id')) {
+            return null;
+        }
+        
+        $singularName = substr($foreignKey, 0, -3); // Remove '_id'
+        
+        // Try plural form first (most common: user_id → users)
+        $pluralName = $this->pluralize($singularName);
+        
+        // Try to load schema dynamically using SchemaService
+        try {
+            $schemaService = $this->ci->get(SchemaService::class);
+            
+            // Try plural form
+            $schema = $schemaService->getSchema($pluralName);
+            if ($schema) {
+                return $this->getModelClass($schema);
+            }
+            
+            // Try singular form
+            $schema = $schemaService->getSchema($singularName);
+            if ($schema) {
+                return $this->getModelClass($schema);
+            }
+        } catch (\Exception $e) {
+            // Schema not found, will fall through to fallback
+        }
+        
+        // Fallback to common UserFrosting models for account sprinkle
+        // This handles cases where schemas might not exist in test environment
+        $fallbackMap = [
+            'user' => User::class,
+            'users' => User::class,
+            'role' => Role::class,
+            'roles' => Role::class,
+            'group' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
+            'groups' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
+            'permission' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
+            'permissions' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
         ];
         
-        return $relationMap[$foreignKey] ?? null;
+        return $fallbackMap[$pluralName] ?? $fallbackMap[$singularName] ?? null;
+    }
+    
+    /**
+     * Simple pluralization helper
+     * 
+     * @param string $word Singular word
+     * @return string Plural form
+     */
+    protected function pluralize(string $word): string
+    {
+        // Handle common patterns
+        if (str_ends_with($word, 'y')) {
+            return substr($word, 0, -1) . 'ies';
+        }
+        if (str_ends_with($word, 's')) {
+            return $word . 'es';
+        }
+        return $word . 's';
     }
     
     /**

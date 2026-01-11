@@ -78,7 +78,7 @@ class UpdateFieldAction extends Base
             parent::__invoke($crudSchema, $crudModel, $request, $response);
             
             // Validate access permission for update operation
-            $this->validateAccess($crudSchema, 'edit');
+            $this->validateAccess($crudSchema, 'update');
             
             // Get the field name from the route
             $fieldName = $this->getParameter($request, 'field');
@@ -104,20 +104,27 @@ class UpdateFieldAction extends Base
 
             $fieldConfig = $crudSchema['fields'][$fieldName];
 
+            // Check if the field is readonly
+            if (isset($fieldConfig['readonly']) && $fieldConfig['readonly'] === true) {
+                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update readonly field", [
+                    'model' => $crudSchema['model'],
+                    'record_id' => $recordId,
+                    'field' => $fieldName,
+                ]);
+                throw new \RuntimeException("Field '{$fieldName}' is readonly and cannot be updated");
+            }
+
             // Check if the field is not editable
             if (isset($fieldConfig['editable']) && $fieldConfig['editable'] === false) {
-                $this->logger->warning("Line:105 CRUD6 [UpdateFieldAction] Attempt to update non-editable field", [
+                $this->logger->warning("CRUD6 [UpdateFieldAction] Attempt to update non-editable field", [
                     'model' => $crudSchema['model'],
                     'record_id' => $recordId,
                     'field' => $fieldName,
                 ]);
                 throw new \RuntimeException("Field '{$fieldName}' is not editable and cannot be updated");
             }
-
-            // Access control check
-            $this->validateAccess($crudSchema, 'update');
             
-            $this->debugLog("CRUD6 [UpdateFieldAction] Access validated", [
+            $this->debugLog("CRUD6 [UpdateFieldAction] Field validations passed", [
                 'model' => $crudSchema['model'],
                 'field' => $fieldName,
             ]);

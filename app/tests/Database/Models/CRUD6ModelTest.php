@@ -121,7 +121,7 @@ class CRUD6ModelTest extends TestCase
 
         $this->assertEquals('deleted_at', $model->getDeletedAtColumn());
         // Model with soft_delete=true USES SoftDeletes trait, so it reports as soft-deletable
-        $this->assertTrue(method_exists($model, 'bootSoftDeletes'), 'Model should have SoftDeletes trait')
+        $this->assertTrue(method_exists($model, 'bootSoftDeletes'), 'Model should have SoftDeletes trait');
     }
 
     /**

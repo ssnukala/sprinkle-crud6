@@ -266,6 +266,23 @@ trait TracksApiCalls
     }
 
     /**
+     * Reset API tracking - clears all tracked calls and starts fresh.
+     * 
+     * This is useful when you want to track calls for a specific portion of a test
+     * without including setup calls.
+     * 
+     * @return void
+     */
+    protected function resetApiTracking(): void
+    {
+        if ($this->apiCallTracker !== null) {
+            $this->apiCallTracker->stopTracking();
+        }
+        $this->apiCallTracker = new ApiCallTracker();
+        $this->apiCallTracker->startTracking();
+    }
+
+    /**
      * Cleanup after tests - stop tracking if still active.
      * 
      * @return void

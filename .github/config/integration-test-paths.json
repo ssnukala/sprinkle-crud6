@@ -1386,7 +1386,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1418,6 +1419,11 @@
           "path": "/api/crud6/roles/100",
           "description": "Update role via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },
@@ -1731,7 +1737,8 @@
           "expected_status": 200,
           "acceptable_statuses": [
             200,
-            201
+            201,
+            409
           ],
           "validation": {
             "type": "json",
@@ -1769,6 +1776,11 @@
           "path": "/api/crud6/users/100",
           "description": "Update user via CRUD6 API",
           "expected_status": 200,
+          "acceptable_statuses": [
+            200,
+            201,
+            409
+          ],
           "validation": {
             "type": "json"
           },

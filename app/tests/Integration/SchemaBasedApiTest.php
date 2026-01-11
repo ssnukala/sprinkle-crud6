@@ -165,9 +165,29 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "    ✓ Found 'crud6-admin' role (id: {$crud6AdminRole->id}) with " . $crud6AdminRole->permissions()->count() . " permissions\n";
         
+        // Show all permissions attached to this role
+        $rolePermissions = $crud6AdminRole->permissions()->pluck('slug')->toArray();
+        echo "    Role permissions: " . implode(', ', $rolePermissions) . "\n";
+        
         // Assign crud6-admin role to user (this gives user all CRUD6 permissions via role)
         $userNoPerms->roles()->sync([$crud6AdminRole->id]);
-        echo "    ✓ User assigned to 'crud6-admin' role\n";
+        
+        // Refresh user to load relationships
+        $userNoPerms = $userNoPerms->fresh();
+        
+        // Debug: show all roles the user has
+        $userRoles = $userNoPerms->roles()->pluck('slug')->toArray();
+        echo "    ✓ User roles after assignment: " . implode(', ', $userRoles) . "\n";
+        
+        // Debug: show all permissions the user has through roles
+        $userPermissions = [];
+        foreach ($userNoPerms->roles as $role) {
+            foreach ($role->permissions as $permission) {
+                $userPermissions[] = $permission->slug;
+            }
+        }
+        $userPermissions = array_unique($userPermissions);
+        echo "    ✓ User effective permissions (via roles): " . implode(', ', $userPermissions) . "\n";
         
         // Act as this user (without inline permissions - they come from the role now)
         $this->actAsUser($userNoPerms);

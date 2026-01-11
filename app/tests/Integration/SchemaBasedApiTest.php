@@ -150,24 +150,15 @@ class SchemaBasedApiTest extends CRUD6TestCase
         echo "    ✓ Permission checks correctly enforce authorization\n";
 
         // Test 3: Authenticated with permission should succeed
-        echo "\n  [3] Testing authenticated request with permission returns 200...\n";
-        
         // Load users schema to check what permission is required for 'read' action
         $usersSchema = $this->ci->get(\UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService::class)->getSchema('users');
         $readPermission = $usersSchema['permissions']['read'] ?? 'uri_crud6';
         
-        echo "    Schema-defined READ permission: {$readPermission}\n";
-        
-        echo "    Using existing 'crud6-admin' role from seeds...\n";
-        
         // Get the crud6-admin role which already has all CRUD6 permissions attached by DefaultPermissions seed
         $crud6AdminRole = Role::where('slug', 'crud6-admin')->firstOrFail();
         
-        echo "    ✓ Found 'crud6-admin' role (id: {$crud6AdminRole->id}) with " . $crud6AdminRole->permissions()->count() . " permissions\n";
-        
-        // Show all permissions attached to this role
+        // Collect all permissions attached to this role
         $rolePermissions = $crud6AdminRole->permissions()->pluck('slug')->toArray();
-        echo "    Role permissions: " . implode(', ', $rolePermissions) . "\n";
         
         // Assign crud6-admin role to user (this gives user all CRUD6 permissions via role)
         $userNoPerms->roles()->sync([$crud6AdminRole->id]);
@@ -175,11 +166,10 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Refresh user to load relationships
         $userNoPerms = $userNoPerms->fresh();
         
-        // Debug: show all roles the user has
+        // Collect all roles the user has
         $userRoles = $userNoPerms->roles()->pluck('slug')->toArray();
-        echo "    ✓ User roles after assignment: " . implode(', ', $userRoles) . "\n";
         
-        // Debug: show all permissions the user has through roles
+        // Collect all permissions the user has through roles
         $userPermissions = [];
         foreach ($userNoPerms->roles as $role) {
             foreach ($role->permissions as $permission) {
@@ -187,36 +177,50 @@ class SchemaBasedApiTest extends CRUD6TestCase
             }
         }
         $userPermissions = array_unique($userPermissions);
-        echo "    ✓ User effective permissions (via roles): " . implode(', ', $userPermissions) . "\n";
         
         // Act as this user (without inline permissions - they come from the role now)
         $this->actAsUser($userNoPerms);
         
-        // Verify permission check works
+        // Check if permission check works
         $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
-        echo "    ✓ checkAccess('{$readPermission}') = " . ($hasPermission ? 'true' : 'false') . "\n";
+
+        // Log all debug info to UserFrosting log
+        $logger = $this->ci->get(\Psr\Log\LoggerInterface::class);
+        $logger->debug('SECURITY TEST #3 DEBUG INFO', [
+            'schema_read_permission' => $readPermission,
+            'crud6_admin_role_id' => $crud6AdminRole->id,
+            'crud6_admin_permissions_count' => count($rolePermissions),
+            'crud6_admin_permissions' => $rolePermissions,
+            'user_roles_after_sync' => $userRoles,
+            'user_effective_permissions_count' => count($userPermissions),
+            'user_effective_permissions' => $userPermissions,
+            'checkAccess_result' => $hasPermission,
+        ]);
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);
         
-        echo "    Response status: " . $response->getStatusCode() . "\n";
+        $logger->debug('SECURITY TEST #3 RESPONSE', [
+            'status_code' => $response->getStatusCode(),
+            'response_body' => (string) $response->getBody(),
+        ]);
         
-        if ($response->getStatusCode() !== 200) {
-            // Extract error details for debugging
-            $body = (string) $response->getBody();
-            $decoded = json_decode($body, true);
-            echo "    Response body: " . $body . "\n";
-            if (isset($decoded['title'])) {
-                echo "    Error title: " . $decoded['title'] . "\n";
-            }
-            if (isset($decoded['description'])) {
-                echo "    Error description: " . $decoded['description'] . "\n";
-            }
-        }
+        // Build comprehensive debug info to include in assertion message
+        $debugInfo = "\n\n=== SECURITY TEST #3 DEBUG INFO (see userfrosting.log for details) ===\n";
+        $debugInfo .= "Schema-defined READ permission: {$readPermission}\n";
+        $debugInfo .= "crud6-admin role ID: {$crud6AdminRole->id}\n";
+        $debugInfo .= "crud6-admin permissions (" . count($rolePermissions) . "): " . implode(', ', $rolePermissions) . "\n";
+        $debugInfo .= "User roles after sync: " . implode(', ', $userRoles) . "\n";
+        $debugInfo .= "User effective permissions (" . count($userPermissions) . "): " . implode(', ', $userPermissions) . "\n";
+        $debugInfo .= "checkAccess('{$readPermission}'): " . ($hasPermission ? 'TRUE' : 'FALSE') . "\n";
+        $debugInfo .= "Response status: " . $response->getStatusCode() . "\n";
+        $debugInfo .= "===================================\n\n";
         
-        $this->assertResponseStatus(200, $response,
-            "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role 'crud6-admin') should successfully access GET /api/crud6/users endpoint");
-        echo "    ✓ Authenticated and authorized requests succeed\n";
+        $this->assertSame(
+            200,
+            $response->getStatusCode(),
+            $debugInfo . "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role 'crud6-admin') should successfully access GET /api/crud6/users endpoint"
+        );
 
         // Test 4: POST request follows same security pattern
         echo "\n  [4] Testing POST request security (create endpoint)...\n";

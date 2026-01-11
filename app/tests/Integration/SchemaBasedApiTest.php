@@ -163,11 +163,11 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Assign crud6-admin role to user (this gives user all CRUD6 permissions via role)
         $userNoPerms->roles()->sync([$crud6AdminRole->id]);
         
-        // Refresh user to load relationships
-        $userNoPerms = $userNoPerms->fresh();
+        // Refresh user and eager-load roles with their permissions
+        $userNoPerms = User::with(['roles.permissions'])->find($userNoPerms->id);
         
         // Collect all roles the user has
-        $userRoles = $userNoPerms->roles()->pluck('slug')->toArray();
+        $userRoles = $userNoPerms->roles->pluck('slug')->toArray();
         
         // Collect all permissions the user has through roles
         $userPermissions = [];

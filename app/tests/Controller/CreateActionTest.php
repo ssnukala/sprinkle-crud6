@@ -126,10 +126,9 @@ class CreateActionTest extends CRUD6TestCase
         $this->assertArrayHasKey('data', $body);
         
         // Verify user was created in database
-        $this->assertDatabaseHas('users', [
-            'user_name' => 'newuser',
-            'email' => 'newuser@example.com',
-        ]);
+        $createdUser = User::where('user_name', 'newuser')->first();
+        $this->assertNotNull($createdUser, 'User should be created in database');
+        $this->assertEquals('newuser@example.com', $createdUser->email);
     }
 
     /**

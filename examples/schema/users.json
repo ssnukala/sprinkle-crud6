@@ -10,8 +10,7 @@
         "read": "uri_crud6",
         "create": "create_user",
         "update": "update_user_field",
-        "delete": "delete_user",
-        "custom_action": "update_user_field"
+        "delete": "delete_user"
     },
     "default_sort": {
         "user_name": "asc"

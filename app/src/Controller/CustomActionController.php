@@ -107,9 +107,9 @@ class CustomActionController extends Base
             if (isset($actionConfig['permission'])) {
                 $this->validateActionPermission($actionConfig['permission']);
             } else {
-                // If no specific permission, check custom_action permission from schema
-                // Falls back to crud6.{model}.custom_action if not defined in schema
-                $this->validateAccess($crudSchema, 'custom_action');
+                // If no specific permission, check update permission from schema
+                // This is schema-driven: uses $schema['permissions']['update']
+                $this->validateAccess($crudSchema, 'update');
             }
             
             $this->debugLog("CRUD6 [CustomActionController] Permission validated", [

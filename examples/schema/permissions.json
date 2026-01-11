@@ -10,8 +10,7 @@
         "read": "uri_crud6",
         "create": "create_permission",
         "update": "update_permission",
-        "delete": "delete_permission",
-        "custom_action": "update_permission"
+        "delete": "delete_permission"
     },
     "default_sort": {
         "slug": "asc"

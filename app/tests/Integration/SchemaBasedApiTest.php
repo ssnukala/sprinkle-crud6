@@ -207,13 +207,18 @@ class SchemaBasedApiTest extends CRUD6TestCase
     {
         // Define the standard test schema set
         // These schemas comprehensively test all CRUD6 components
+        // 
+        // NOTE: Only test schemas for tables that exist in UserFrosting base installation.
+        // UserFrosting Account sprinkle provides: users, roles, groups, permissions
+        // 
+        // Schemas like 'products' and 'activities' are examples but don't have
+        // corresponding tables in the base installation, so they're excluded from tests.
+        // Tests will skip if table doesn't exist, but it's cleaner to exclude them upfront.
         $testSchemas = [
-            'users',       // Full feature set including custom actions
-            'roles',       // Many-to-many relationships
-            'groups',      // Simple CRUD operations
-            'permissions', // Complex nested relationships
-            'activities',  // Activity logging
-            'products',    // E-commerce scenarios with decimal fields
+            'users',       // Full feature set including custom actions and relationships
+            'roles',       // Many-to-many relationships with users
+            'groups',      // Simple CRUD operations with user relationships
+            'permissions', // Complex nested relationships with roles
         ];
         
         return array_map(fn($schema) => [$schema], $testSchemas);

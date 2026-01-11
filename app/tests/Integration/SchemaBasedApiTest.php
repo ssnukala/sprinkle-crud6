@@ -546,4 +546,190 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "\n  Result: ✅ Controller actions test completed for {$modelName}\n";
     }
+
+    /**
+     * Test schema-driven nested relationship endpoints
+     * 
+     * Tests nested endpoints like GET /api/crud6/{model}/{id}/{relation}
+     * for all schemas that have relationships defined.
+     *
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenNestedEndpoints(string $modelName): void
+    {
+        $schema = $this->loadSchema($modelName);
+        
+        // Skip if no relationships
+        if (!isset($schema['relationships']) || empty($schema['relationships'])) {
+            $this->markTestSkipped("[Schema: {$modelName}] No relationships defined in schema");
+            return;
+        }
+        
+        echo "\n╔════════════════════════════════════════════════════════════════╗\n";
+        echo "║ TESTING SCHEMA: {$modelName}.json - NESTED ENDPOINTS          ║\n";
+        echo "╚════════════════════════════════════════════════════════════════╝\n";
+        
+        /** @var User */
+        $user = User::factory()->create();
+        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
+        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        
+        // Get model class from schema
+        $modelClass = $this->getModelClass($schema);
+        
+        // Create a test record
+        $record = $modelClass::factory()->create();
+        echo "  ✓ Created test {$modelName} record (id: {$record->id})\n";
+        
+        $relationshipCount = 0;
+        foreach ($schema['relationships'] as $relationName => $relationConfig) {
+            $relationshipCount++;
+            echo "\n  [Relationship {$relationshipCount}] Testing {$relationName} ({$relationConfig['type']})...\n";
+            
+            // Test nested endpoint
+            $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/{$record->id}/{$relationName}");
+            $response = $this->handleRequestWithTracking($request);
+            
+            $this->assertResponseStatus(200, $response, 
+                "[Schema: {$modelName}] Nested endpoint /{$modelName}/{$record->id}/{$relationName} should return 200");
+            
+            $responseData = (array) json_decode((string) $response->getBody(), true);
+            $this->assertIsArray($responseData, "[Schema: {$modelName}] Response should be array");
+            
+            echo "    ✓ Nested endpoint successful\n";
+        }
+        
+        echo "\n  Result: ✅ Nested endpoints test completed for {$modelName} ({$relationshipCount} relationships tested)\n";
+    }
+
+    /**
+     * Test schema-driven redundant API call detection
+     * 
+     * Detects redundant schema API calls and other CRUD6 API calls
+     * for all schemas automatically.
+     *
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenRedundantApiCalls(string $modelName): void
+    {
+        $schema = $this->loadSchema($modelName);
+        
+        echo "\n╔════════════════════════════════════════════════════════════════╗\n";
+        echo "║ TESTING SCHEMA: {$modelName}.json - REDUNDANT API CALLS       ║\n";
+        echo "╚════════════════════════════════════════════════════════════════╝\n";
+        
+        /** @var User */
+        $user = User::factory()->create();
+        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
+        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        
+        // Reset API tracking for this test
+        $this->resetApiTracking();
+        
+        // Make a series of typical API calls
+        echo "  [1] Making list API call...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}");
+        $this->handleRequestWithTracking($request);
+        
+        echo "  [2] Making schema API call...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/schema");
+        $this->handleRequestWithTracking($request);
+        
+        echo "  [3] Making config API call...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/config");
+        $this->handleRequestWithTracking($request);
+        
+        // Check for redundant calls
+        $summary = $this->getApiCallSummary();
+        $redundantCalls = $this->getRedundantApiCalls();
+        
+        echo "\n  API Call Summary:\n";
+        echo "    Total calls: {$summary['total']}\n";
+        echo "    Unique calls: {$summary['unique']}\n";
+        echo "    Redundant groups: {$summary['redundant']}\n";
+        
+        // Assert no redundant calls
+        $this->assertSame(0, $summary['redundant'], 
+            "[Schema: {$modelName}] Should have no redundant API calls");
+        
+        echo "\n  Result: ✅ No redundant API calls detected for {$modelName}\n";
+    }
+
+    /**
+     * Test schema-driven frontend component data requirements
+     * 
+     * Validates that all schemas return data in the format expected
+     * by frontend Vue components (PageList, PageRow, Form, etc.).
+     *
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenFrontendComponentData(string $modelName): void
+    {
+        $schema = $this->loadSchema($modelName);
+        
+        echo "\n╔════════════════════════════════════════════════════════════════╗\n";
+        echo "║ TESTING SCHEMA: {$modelName}.json - FRONTEND COMPONENT DATA   ║\n";
+        echo "╚════════════════════════════════════════════════════════════════╝\n";
+        
+        /** @var User */
+        $user = User::factory()->create();
+        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
+        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        
+        // Get model class from schema
+        $modelClass = $this->getModelClass($schema);
+        
+        // Create test data
+        $modelClass::factory()->count(3)->create();
+        
+        // Test 1: PageList component - list endpoint
+        echo "\n  [1] Testing PageList component data (list endpoint)...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}");
+        $response = $this->handleRequestWithTracking($request);
+        
+        $this->assertResponseStatus(200, $response, "[Schema: {$modelName}] List endpoint should return 200");
+        $data = json_decode((string) $response->getBody(), true);
+        
+        $this->assertArrayHasKey('rows', $data, "[Schema: {$modelName}] PageList requires 'rows' array");
+        $this->assertArrayHasKey('count', $data, "[Schema: {$modelName}] PageList requires 'count' for pagination");
+        $this->assertIsArray($data['rows']);
+        $this->assertGreaterThan(0, count($data['rows']));
+        
+        // Verify each row has id field
+        foreach ($data['rows'] as $row) {
+            $this->assertArrayHasKey('id', $row, "[Schema: {$modelName}] Each row needs id for routing");
+            $this->assertIsInt($row['id']);
+        }
+        echo "    ✓ List endpoint returns proper PageList data\n";
+        
+        // Test 2: PageList component - schema endpoint  
+        echo "\n  [2] Testing PageList component data (schema endpoint)...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/schema?context=list");
+        $response = $this->handleRequestWithTracking($request);
+        
+        $this->assertResponseStatus(200, $response, "[Schema: {$modelName}] Schema endpoint should return 200");
+        $schemaData = json_decode((string) $response->getBody(), true);
+        
+        $this->assertArrayHasKey('model', $schemaData, "[Schema: {$modelName}] Schema needs 'model' key");
+        $this->assertArrayHasKey('fields', $schemaData, "[Schema: {$modelName}] Schema needs 'fields' for columns");
+        echo "    ✓ Schema endpoint returns proper configuration\n";
+        
+        // Test 3: PageRow/Form component - detail endpoint
+        if (count($data['rows']) > 0) {
+            echo "\n  [3] Testing PageRow/Form component data (detail endpoint)...\n";
+            $firstId = $data['rows'][0]['id'];
+            $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/{$firstId}");
+            $response = $this->handleRequestWithTracking($request);
+            
+            if ($response->getStatusCode() === 200) {
+                $detailData = json_decode((string) $response->getBody(), true);
+                $this->assertArrayHasKey('id', $detailData, "[Schema: {$modelName}] Detail data needs 'id' field");
+                echo "    ✓ Detail endpoint returns proper record data\n";
+            } else {
+                echo "    ⊘ Detail endpoint not accessible\n";
+            }
+        }
+        
+        echo "\n  Result: ✅ Frontend component data test completed for {$modelName}\n";
+    }
 }

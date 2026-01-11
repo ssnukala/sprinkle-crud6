@@ -220,6 +220,47 @@ class SchemaBasedApiTest extends CRUD6TestCase
     }
 
     /**
+     * Load schema for a given model name
+     * 
+     * Helper method to load schema using SchemaService
+     * 
+     * @param string $modelName Model name to load schema for
+     * @return array Schema array
+     * @throws \Exception if schema not found
+     */
+    protected function loadSchema(string $modelName): array
+    {
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        return $schemaService->getSchema($modelName);
+    }
+
+    /**
+     * Get model class from schema
+     * 
+     * Helper method to get the Eloquent model class from schema configuration
+     * 
+     * @param array $schema Schema array
+     * @return string Fully qualified model class name
+     */
+    protected function getModelClass(array $schema): string
+    {
+        // Map model names to their classes
+        $modelMap = [
+            'users' => User::class,
+            'roles' => Role::class,
+            'groups' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
+            'permissions' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
+            'activities' => \UserFrosting\Sprinkle\Account\Database\Models\Activity::class,
+        ];
+        
+        $modelName = $schema['model'] ?? 'unknown';
+        
+        return $modelMap[$modelName] ?? User::class; // Default to User for unknown models
+    }
+
+    /**
      * Test schema-driven CRUD operations for any model
      * 
      * This generic test validates all CRUD operations based on the model's schema:

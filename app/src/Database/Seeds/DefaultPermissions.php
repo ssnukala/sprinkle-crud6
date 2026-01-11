@@ -85,7 +85,7 @@ class DefaultPermissions implements SeedInterface
         
         // Add model-specific permissions for common models (users, groups, roles, permissions)
         $models = ['users', 'groups', 'roles', 'permissions'];
-        $actions = ['read', 'create', 'edit', 'delete'];
+        $actions = ['read', 'create', 'edit', 'delete', 'custom_action'];
         
         foreach ($models as $model) {
             foreach ($actions as $action) {

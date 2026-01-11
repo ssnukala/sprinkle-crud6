@@ -10,7 +10,8 @@
         "read": "uri_crud6",
         "create": "create_role",
         "update": "update_role_field",
-        "delete": "delete_role"
+        "delete": "delete_role",
+        "custom_action": "update_role_field"
     },
     "default_sort": {
         "name": "asc"

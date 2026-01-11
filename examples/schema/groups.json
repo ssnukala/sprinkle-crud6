@@ -10,7 +10,8 @@
         "read": "uri_crud6",
         "create": "create_group",
         "update": "update_group_field",
-        "delete": "delete_group"
+        "delete": "delete_group",
+        "custom_action": "update_group_field"
     },
     "default_sort": {
         "name": "asc"

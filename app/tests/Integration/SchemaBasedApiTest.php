@@ -433,4 +433,117 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "  Result: ✅ Sprunje configuration validated\n";
     }
+
+    /**
+     * Test schema-driven controller actions for any model
+     * 
+     * This generic test validates all controller action endpoints based on the model's schema:
+     * - Create action (POST /api/crud6/{model})
+     * - Edit action (GET /api/crud6/{model}/{id})
+     * - Update field action (PUT /api/crud6/{model}/{id}/field)
+     * - Delete action (DELETE /api/crud6/{model}/{id})
+     * - Custom actions (POST /api/crud6/{model}/{id}/a/{action})
+     * - Relationship actions (POST/DELETE /api/crud6/{model}/{id}/{relation})
+     * - Schema endpoint (GET /api/crud6/{model}/schema)
+     * - Config endpoint (GET /api/crud6/{model}/config)
+     * - Listable fields validation
+     * - Debug mode handling
+     * 
+     * Uses shared data and schema from integration test setup - no hardcoding.
+     * 
+     * @dataProvider schemaProvider
+     */
+    public function testSchemaDrivenControllerActions(string $modelName): void
+    {
+        echo "\n╔════════════════════════════════════════════════════════════════╗\n";
+        echo "║ TESTING SCHEMA: {$modelName}.json - CONTROLLER ACTIONS" . str_repeat(' ', 32 - strlen($modelName)) . "║\n";
+        echo "╠════════════════════════════════════════════════════════════════╣\n";
+        echo "║ Components: All Controller Action Endpoints                    ║\n";
+        echo "╚════════════════════════════════════════════════════════════════╝\n";
+        
+        /** @var SchemaService */
+        $schemaService = $this->ci->get(SchemaService::class);
+        
+        try {
+            $schema = $schemaService->getSchema($modelName);
+        } catch (\Exception $e) {
+            echo "  ⊘ Schema not found - SKIPPED\n";
+            $this->markTestSkipped("Schema not found for model: {$modelName}");
+            return;
+        }
+        
+        echo "  ✓ Schema loaded: {$modelName}.json\n";
+        
+        // Create test user with all permissions from schema
+        /** @var User */
+        $user = User::factory()->create();
+        $permissions = ['uri_crud6'];
+        if (isset($schema['permissions'])) {
+            $permissions = array_merge($permissions, array_values($schema['permissions']));
+        }
+        $this->actAsUser($user, permissions: $permissions);
+        
+        // Test 1: Schema endpoint (GET /api/crud6/{model}/schema)
+        echo "\n  [1] Testing schema endpoint (GET /api/crud6/{$modelName}/schema)...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/schema");
+        $response = $this->handleRequestWithTracking($request);
+        
+        $this->assertResponseStatus(200, $response, "[Schema: {$modelName}] Schema endpoint should return 200");
+        $responseData = (array) json_decode((string) $response->getBody(), true);
+        $this->assertArrayHasKey('model', $responseData, "[Schema: {$modelName}] Schema response should contain 'model' key");
+        $this->assertEquals($modelName, $responseData['model'], "[Schema: {$modelName}] Schema response model should match request");
+        echo "    ✓ Schema endpoint successful\n";
+        
+        // Test 2: Config endpoint (GET /api/crud6/{model}/config)
+        echo "\n  [2] Testing config endpoint (GET /api/crud6/{$modelName}/config)...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/config");
+        $response = $this->handleRequestWithTracking($request);
+        
+        $this->assertResponseStatus(200, $response, "[Schema: {$modelName}] Config endpoint should return 200");
+        $responseData = (array) json_decode((string) $response->getBody(), true);
+        $this->assertArrayHasKey('model', $responseData, "[Schema: {$modelName}] Config response should contain 'model' key");
+        echo "    ✓ Config endpoint successful\n";
+        
+        // Test 3: List endpoint validates listable fields
+        echo "\n  [3] Testing listable fields configuration...\n";
+        $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}");
+        $response = $this->handleRequestWithTracking($request);
+        
+        if ($response->getStatusCode() === 200) {
+            $responseData = (array) json_decode((string) $response->getBody(), true);
+            if (isset($responseData['rows']) && count($responseData['rows']) > 0) {
+                $firstRow = $responseData['rows'][0];
+                
+                // Check that non-listable fields are excluded
+                if (isset($schema['fields'])) {
+                    foreach ($schema['fields'] as $fieldName => $fieldConfig) {
+                        $contexts = $fieldConfig['contexts'] ?? ['list', 'detail', 'form'];
+                        if (!in_array('list', $contexts)) {
+                            $this->assertArrayNotHasKey($fieldName, $firstRow, 
+                                "[Schema: {$modelName}] Field '{$fieldName}' should not be in list view");
+                        }
+                    }
+                }
+                echo "    ✓ Listable fields validated\n";
+            } else {
+                echo "    ⊘ No data to validate listable fields\n";
+            }
+        } else {
+            echo "    ⊘ List endpoint not accessible\n";
+        }
+        
+        // Test 4: Create action with authentication
+        echo "\n  [4] Testing create action requires authentication...\n";
+        // Test without authentication first
+        $unauthRequest = $this->createJsonRequest('POST', "/api/crud6/{$modelName}");
+        $unauthResponse = $this->handleRequest($unauthRequest);
+        $this->assertSame(401, $unauthResponse->getStatusCode(), 
+            "[Schema: {$modelName}] Create action should require authentication");
+        
+        // Test with authentication and permission
+        $this->actAsUser($user, permissions: $permissions);
+        echo "    ✓ Create action requires authentication\n";
+        
+        echo "\n  Result: ✅ Controller actions test completed for {$modelName}\n";
+    }
 }

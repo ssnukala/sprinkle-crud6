@@ -158,7 +158,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "    Schema-defined READ permission: {$readPermission}\n";
         
-        // Grant all CRUD6 legacy permissions
+        // Define all CRUD6 legacy permissions
         $crud6Permissions = [
             'crud6_',
             'delete_crud6_field',
@@ -168,8 +168,47 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'view_crud6_field',
         ];
         
-        echo "    Granting permissions: " . implode(', ', $crud6Permissions) . "\n";
-        $this->actAsUser($userNoPerms, permissions: $crud6Permissions);
+        echo "    Creating CRUD6 permissions in database...\n";
+        
+        // Create permissions in database (they should already exist from seeds, but ensure they're there)
+        $permissionModels = [];
+        foreach ($crud6Permissions as $permSlug) {
+            $perm = \UserFrosting\Sprinkle\Account\Database\Models\Permission::firstOrCreate(
+                ['slug' => $permSlug],
+                [
+                    'name' => ucwords(str_replace('_', ' ', $permSlug)),
+                    'conditions' => 'always()',
+                ]
+            );
+            $permissionModels[] = $perm;
+            echo "      ✓ Permission '{$permSlug}' exists in database (id: {$perm->id})\n";
+        }
+        
+        // Create a test role with all CRUD6 permissions
+        $testRole = Role::firstOrCreate(
+            ['slug' => 'test-crud6-full-access'],
+            [
+                'name' => 'Test CRUD6 Full Access',
+                'description' => 'Test role with all CRUD6 permissions',
+            ]
+        );
+        
+        // Attach all permissions to the role
+        $permissionIds = array_map(fn($p) => $p->id, $permissionModels);
+        $testRole->permissions()->syncWithoutDetaching($permissionIds);
+        
+        echo "    ✓ Created test role '{$testRole->slug}' with " . count($permissionIds) . " permissions\n";
+        
+        // Assign role to user
+        $userNoPerms->roles()->sync([$testRole->id]);
+        echo "    ✓ User assigned to role with permissions\n";
+        
+        // Act as this user (without inline permissions - they come from the role now)
+        $this->actAsUser($userNoPerms);
+        
+        // Verify permission check works
+        $hasPermission = $this->ci->get(\UserFrosting\Sprinkle\Account\Authenticate\Authenticator::class)->checkAccess($readPermission);
+        echo "    ✓ checkAccess('{$readPermission}') = " . ($hasPermission ? 'true' : 'false') . "\n";
 
         $request = $this->createJsonRequest('GET', '/api/crud6/users');
         $response = $this->handleRequestWithTracking($request);

@@ -100,19 +100,19 @@ class DefaultSeedsTest extends CRUD6TestCase
         }
         
         // Verify permissions are synced with crud6-admin role
-        // crud6-admin should have:
-        // - 6 legacy permissions
-        // - 16 model-specific (crud6.*) permissions
-        // - 19 schema-defined permissions (with uri_crud6 deduplicated)
-        // = 40 total (41 - 1 duplicate)
+        // After removing hardcoded model permissions (commit 19c4c89):
+        // - 6 legacy CRUD6 permissions (crud6_, delete_crud6_field, etc.)
+        // - 18 schema-defined permissions from examples/schema/ (users, roles, groups, permissions schemas)
+        // = 24 total
         $role = Role::where('slug', 'crud6-admin')->first();
         $this->assertNotNull($role);
-        $this->assertCount(40, $role->permissions);
+        $this->assertCount(24, $role->permissions, 
+            'crud6-admin should have 6 legacy + 18 schema-defined permissions = 24 total');
         
         // Verify site-admin role also has CRUD6 permissions (if it exists)
         $siteAdminRole = Role::where('slug', 'site-admin')->first();
         if ($siteAdminRole !== null) {
-            $this->assertGreaterThanOrEqual(40, $siteAdminRole->permissions->count());
+            $this->assertGreaterThanOrEqual(24, $siteAdminRole->permissions->count());
         }
     }
 

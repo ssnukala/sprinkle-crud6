@@ -158,50 +158,16 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "    Schema-defined READ permission: {$readPermission}\n";
         
-        // Define all CRUD6 legacy permissions
-        $crud6Permissions = [
-            'crud6_',
-            'delete_crud6_field',
-            'update_crud6_field',
-            'uri_crud6',
-            'uri_crud6_list',
-            'view_crud6_field',
-        ];
+        echo "    Using existing 'crud6-admin' role from seeds...\n";
         
-        echo "    Creating CRUD6 permissions in database...\n";
+        // Get the crud6-admin role which already has all CRUD6 permissions attached by DefaultPermissions seed
+        $crud6AdminRole = Role::where('slug', 'crud6-admin')->firstOrFail();
         
-        // Create permissions in database (they should already exist from seeds, but ensure they're there)
-        $permissionModels = [];
-        foreach ($crud6Permissions as $permSlug) {
-            $perm = \UserFrosting\Sprinkle\Account\Database\Models\Permission::firstOrCreate(
-                ['slug' => $permSlug],
-                [
-                    'name' => ucwords(str_replace('_', ' ', $permSlug)),
-                    'conditions' => 'always()',
-                ]
-            );
-            $permissionModels[] = $perm;
-            echo "      ✓ Permission '{$permSlug}' exists in database (id: {$perm->id})\n";
-        }
+        echo "    ✓ Found 'crud6-admin' role (id: {$crud6AdminRole->id}) with " . $crud6AdminRole->permissions()->count() . " permissions\n";
         
-        // Create a test role with all CRUD6 permissions
-        $testRole = Role::firstOrCreate(
-            ['slug' => 'test-crud6-full-access'],
-            [
-                'name' => 'Test CRUD6 Full Access',
-                'description' => 'Test role with all CRUD6 permissions',
-            ]
-        );
-        
-        // Attach all permissions to the role
-        $permissionIds = array_map(fn($p) => $p->id, $permissionModels);
-        $testRole->permissions()->syncWithoutDetaching($permissionIds);
-        
-        echo "    ✓ Created test role '{$testRole->slug}' with " . count($permissionIds) . " permissions\n";
-        
-        // Assign role to user
-        $userNoPerms->roles()->sync([$testRole->id]);
-        echo "    ✓ User assigned to role with permissions\n";
+        // Assign crud6-admin role to user (this gives user all CRUD6 permissions via role)
+        $userNoPerms->roles()->sync([$crud6AdminRole->id]);
+        echo "    ✓ User assigned to 'crud6-admin' role\n";
         
         // Act as this user (without inline permissions - they come from the role now)
         $this->actAsUser($userNoPerms);
@@ -229,7 +195,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
         }
         
         $this->assertResponseStatus(200, $response,
-            "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role '{$testRole->slug}') should successfully access GET /api/crud6/users endpoint");
+            "[Schema: users] Security Test #3: Authenticated user with all CRUD6 permissions (via role 'crud6-admin') should successfully access GET /api/crud6/users endpoint");
         echo "    ✓ Authenticated and authorized requests succeed\n";
 
         // Test 4: POST request follows same security pattern

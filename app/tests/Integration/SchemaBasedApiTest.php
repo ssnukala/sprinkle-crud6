@@ -788,8 +788,11 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         /** @var User */
         $user = User::factory()->create();
-        $readPermission = $schema['permissions']['read'] ?? "uri_{$modelName}";
-        $this->actAsUser($user, permissions: [$readPermission, 'uri_crud6']);
+        $permissions = ['uri_crud6'];
+        if (isset($schema['permissions'])) {
+            $permissions = array_merge($permissions, array_values($schema['permissions']));
+        }
+        $this->actAsUser($user, permissions: $permissions);
         
         // Get model class from schema
         $modelClass = $this->getModelClass($schema);

@@ -123,7 +123,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
         $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
     }
 
@@ -185,7 +185,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
         $response = $this->handleRequestWithTracking($request);
 
         // Assert response status & body
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
     }
 
@@ -453,7 +453,7 @@ class CRUD6UsersIntegrationTest extends CRUD6TestCase
         $response = $this->handleRequestWithTracking($request);
 
         // Should require permission
-        $this->assertJsonResponse("We've sensed a great disturbance in the Force.", $response, 'title');
+        $this->assertJsonResponse("Access Denied", $response, 'title');
         $this->assertResponseStatus(403, $response);
         
         // Verify database was NOT updated

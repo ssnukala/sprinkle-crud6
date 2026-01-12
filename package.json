@@ -1,6 +1,6 @@
 {
   "name": "@ssnukala/sprinkle-crud6",
-  "version": "0.6.1.6.1",
+  "version": "0.6.1.8",
   "type": "module",
   "description": "CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer",
   "funding": "https://opencollective.com/userfrosting",
@@ -17,13 +17,13 @@
     "Admin panel",
     "Sprinkle"
   ],
-  "homepage": "https://github.com/userfrosting/sprinkle-crud6#readme",
+  "homepage": "https://github.com/ssnukala/sprinkle-crud6#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/userfrosting/sprinkle-crud6.git"
+    "url": "git+https://github.com/ssnukala/sprinkle-crud6.git"
   },
   "bugs": {
-    "url": "https://github.com/userfrosting/UserFrosting/issues"
+    "url": "https://github.com/ssnukala/sprinkle-crud6/issues"
   },
   "exports": {
     ".": "./app/assets/index.ts",

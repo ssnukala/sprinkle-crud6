@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **PHP Version**: Updated minimum PHP version requirement from 8.1 to 8.4
+  - Updated `composer.json` to require `php: ^8.4`
+  - Updated all workflow templates and testing configurations
+  - Updated all documentation to reflect PHP 8.4 requirement
+  - Aligns with UserFrosting 6 updated requirements
+- **Documentation Organization**: Restructured documentation for cleaner repository
+  - Moved `FRONTEND_INTEGRATION_TESTING.md` to `docs/`
+  - Moved `FRONTEND_TESTING.md` to `docs/`
+  - Moved `INTEGRATION_TESTING_QUICK_START.md` to `docs/`
+  - Moved `READY_FOR_TESTING.md` to `.archive/` (historical document)
+  - Root now contains only essential files: `README.md` and `CHANGELOG.md`
+  - Updated all internal documentation references
+- **Package Configuration**: Prepared for release
+  - Updated `package.json` version to 0.6.1.8
+  - Fixed repository URLs in `package.json` to point to correct GitHub repository
+  - Verified all dependencies are current
+  - Confirmed archive exclusions are appropriate
+
+### Migration Notes
+- Update your PHP environment to 8.4 or later
+- Update composer dependencies: `composer update`
+- No code changes required - this is a configuration update only
+- All APIs and components remain backward compatible
+
+## [0.6.1.8] - 2026-01-12
+
 ### Fixed
 - **Vite Module Loading**: Added dependency optimization for CommonJS modules
   - Configured `optimizeDeps.include` in `vite.config.ts` to pre-bundle `limax` and `lodash.deburr`

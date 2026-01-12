@@ -38,7 +38,7 @@
     "comment": "Framework branch/version to use. Usually 'main' for latest stable"
   },
   "testing": {
-    "php_version": "8.1",
+    "php_version": "8.4",
     "node_version": "20",
     "mysql_version": "8.0",
     "userfrosting_version": "^6.0-beta",

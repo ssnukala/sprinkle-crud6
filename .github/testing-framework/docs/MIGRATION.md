@@ -558,7 +558,7 @@ If you encounter issues during migration:
 chmod +x .github/scripts/*.php
 
 # Check PHP version
-php --version  # Should be 8.1+
+php --version  # Should be 8.4+
 ```
 
 ### Configuration Not Found

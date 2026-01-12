@@ -39,7 +39,7 @@ The workflow automatically:
 
 ```bash
 # Required
-PHP 8.1+
+PHP 8.4+
 Node.js 20+
 MySQL 8.0+
 Composer

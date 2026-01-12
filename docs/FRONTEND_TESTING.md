@@ -26,7 +26,7 @@ Integration tests for API endpoints that components depend on:
 
 **Use PHPUnit when:** Testing backend API layer or complex data flows
 
-> **Note:** For complex components with many dependencies, PHPUnit integration tests are preferred over complex Vitest mocks. See [FRONTEND_INTEGRATION_TESTING.md](FRONTEND_INTEGRATION_TESTING.md) for details.
+> **Note:** For complex components with many dependencies, PHPUnit integration tests are preferred over complex Vitest mocks. See [FRONTEND_INTEGRATION_TESTING.md](./FRONTEND_INTEGRATION_TESTING.md) for details.
 
 ## Testing Stack
 
@@ -407,7 +407,7 @@ Coverage reports are generated in `./_meta/_coverage/` directory.
 - [Vue Test Utils Guide](https://test-utils.vuejs.org/guide/)
 - [UserFrosting 6 Theme Pink Cupcake Tests](https://github.com/userfrosting/theme-pink-cupcake/tree/6.0/src/tests)
 - [Testing Vue 3 Components](https://vuejs.org/guide/scaling-up/testing.html)
-- **[Frontend Integration Testing with PHPUnit](FRONTEND_INTEGRATION_TESTING.md)** - Testing components with real backend data
+- **[Frontend Integration Testing with PHPUnit](./FRONTEND_INTEGRATION_TESTING.md)** - Testing components with real backend data
 
 ## Integration Testing Alternative
 
@@ -447,7 +447,7 @@ public function testFormComponentSubmission(): void
 - ✅ Documents API contracts
 - ✅ Faster to write for complex scenarios
 
-**See:** [FRONTEND_INTEGRATION_TESTING.md](FRONTEND_INTEGRATION_TESTING.md) for complete guide
+**See:** [FRONTEND_INTEGRATION_TESTING.md](./FRONTEND_INTEGRATION_TESTING.md) for complete guide
 
 ### Test Coverage Strategy
 

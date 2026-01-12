@@ -311,7 +311,7 @@ class MySprunje extends Sprunje
 ## Working Effectively
 
 ### Bootstrap and Setup
-- Install PHP 8.1 or later: `php --version` (required: PHP 8.1+)
+- Install PHP 8.4 or later: `php --version` (required: PHP 8.4+)
 - Install Composer: `composer --version` (required for dependency management)
 - Bootstrap dependencies: `composer install` -- takes 3-5 minutes depending on network. NEVER CANCEL. Set timeout to 15+ minutes.
   - **CRITICAL**: In CI environments, composer may require GitHub token. Use: `export COMPOSER_AUTH='{"github-oauth":{"github.com":"your_token"}}'` before running composer commands
@@ -525,7 +525,7 @@ vendor/bin/phpunit app/tests/Database/Models/CRUD6ModelTest.php
 - **GitHub token required in CI**: Set `COMPOSER_AUTH` environment variable or use `--ignore-platform-reqs` 
 - **"Class not found" errors**: Indicates missing dependencies - run `composer install` successfully first
 - **UserFrosting integration**: This sprinkle requires a UserFrosting 6 application - cannot run standalone
-- **PHP version**: Requires PHP 8.1 or later
+- **PHP version**: Requires PHP 8.4 or later
 - **Beta dependencies**: Project uses UserFrosting 6 beta packages
 - **Vendor tools missing**: If `vendor/bin/` doesn't exist, use basic validation only (syntax check, JSON validation)
 

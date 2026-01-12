@@ -1316,7 +1316,7 @@ Create a single `integration-test-config.json` file (~50 lines):
     }
   },
   "testing": {
-    "php_version": "8.1",
+    "php_version": "8.4",
     "node_version": "20"
   }
 }

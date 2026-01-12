@@ -5,7 +5,7 @@ Complete guide for installing the UserFrosting 6 integration testing framework i
 ## Prerequisites
 
 - UserFrosting 6.0.4 beta or later
-- PHP 8.1 or later
+- PHP 8.4 or later
 - Node.js 20 or later (for screenshot tests)
 - Git (recommended)
 

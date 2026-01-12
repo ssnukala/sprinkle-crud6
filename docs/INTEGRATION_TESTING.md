@@ -4,7 +4,7 @@ This guide provides step-by-step instructions for testing the sprinkle-crud6 pac
 
 ## Prerequisites
 
-- PHP 8.1 or higher
+- PHP 8.4 or higher
 - Composer
 - Node.js 18+ and npm
 - MySQL/MariaDB or SQLite database

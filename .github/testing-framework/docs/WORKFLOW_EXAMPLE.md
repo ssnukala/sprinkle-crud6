@@ -42,7 +42,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.1"
+          php-version: "8.4"
           extensions: mbstring, xml, gd, pdo_mysql
       
       - name: Setup Node.js
@@ -208,7 +208,7 @@ jobs:
     
     strategy:
       matrix:
-        php: ['8.1', '8.2', '8.3']
+        php: ['8.4', '8.2', '8.3']
     
     services:
       mysql:

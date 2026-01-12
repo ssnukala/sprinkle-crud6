@@ -27,6 +27,29 @@ use UserFrosting\Testing\TestCase;
  * 
  * Follows UserFrosting 6 testing patterns from sprinkle-admin and sprinkle-account.
  * 
+ * ## Test Schema Configuration
+ * 
+ * Tests can specify custom schema directories for testing by:
+ * 1. Setting TEST_SCHEMA_DIRS environment variable (comma-separated paths)
+ * 2. Overriding getTestSchemaDirs() method in test class
+ * 3. Default: Uses examples/schema directory if not configured
+ * 
+ * Example in phpunit.xml:
+ * ```xml
+ * <env name="TEST_SCHEMA_DIRS" value="examples/schema,app/schema/crud6"/>
+ * ```
+ * 
+ * Example in test class:
+ * ```php
+ * protected function getTestSchemaDirs(): array
+ * {
+ *     return [
+ *         __DIR__ . '/../../schema/custom',
+ *         __DIR__ . '/../../../examples/schema',
+ *     ];
+ * }
+ * ```
+ * 
  * @see \UserFrosting\Sprinkle\Admin\Tests\AdminTestCase
  * @see \UserFrosting\Sprinkle\Account\Tests\AccountTestCase
  */
@@ -38,6 +61,71 @@ class CRUD6TestCase extends TestCase
      * @var string Main sprinkle class for CRUD6 tests
      */
     protected string $mainSprinkle = CRUD6::class;
+
+    /**
+     * Get directories to search for test schemas.
+     * 
+     * Returns an array of absolute paths to directories containing schema JSON files
+     * that should be used for testing. This allows other sprinkles using CRUD6 to
+     * specify their own schema locations for testing.
+     * 
+     * Priority order:
+     * 1. TEST_SCHEMA_DIRS environment variable (comma-separated paths)
+     * 2. Override this method in subclass
+     * 3. Default: examples/schema directory
+     * 
+     * Paths can be:
+     * - Absolute paths: /full/path/to/schemas
+     * - Relative to project root: examples/schema
+     * - Relative to test file: __DIR__ . '/../../schemas'
+     * 
+     * @return array<string> Array of directory paths to search for schemas
+     */
+    protected function getTestSchemaDirs(): array
+    {
+        // Check for environment variable first
+        $envDirs = getenv('TEST_SCHEMA_DIRS');
+        if ($envDirs !== false && $envDirs !== '') {
+            $dirs = array_map('trim', explode(',', $envDirs));
+            return $this->normalizeTestSchemaDirs($dirs);
+        }
+        
+        // Default to examples/schema directory
+        $defaultDir = dirname(__DIR__, 2) . '/examples/schema';
+        return [$defaultDir];
+    }
+
+    /**
+     * Normalize test schema directory paths.
+     * 
+     * Converts relative paths to absolute paths and validates directories exist.
+     * 
+     * @param array<string> $dirs Array of directory paths
+     * 
+     * @return array<string> Array of normalized absolute paths
+     */
+    protected function normalizeTestSchemaDirs(array $dirs): array
+    {
+        $projectRoot = dirname(__DIR__, 2);
+        $normalized = [];
+        
+        foreach ($dirs as $dir) {
+            // If path is not absolute, make it relative to project root
+            if (!str_starts_with($dir, '/')) {
+                $dir = $projectRoot . '/' . ltrim($dir, '/');
+            }
+            
+            // Normalize path (resolve .. and . segments)
+            $dir = realpath($dir);
+            
+            // Only include if directory exists
+            if ($dir !== false && is_dir($dir)) {
+                $normalized[] = $dir;
+            }
+        }
+        
+        return $normalized;
+    }
 
     /**
      * Get the name of the test.

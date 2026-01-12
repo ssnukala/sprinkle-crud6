@@ -208,46 +208,72 @@ class SchemaBasedApiTest extends CRUD6TestCase
     /**
      * Provide test data for CRUD6 test schemas
      * 
-     * This data provider dynamically discovers available schemas from the schema directory,
-     * making tests completely schema-driven. Any schema file placed in the schema directory
+     * This data provider dynamically discovers available schemas from configured schema directories,
+     * making tests completely schema-driven. Any schema file placed in the configured directories
      * will automatically be included in testing.
+     * 
+     * **Multi-Sprinkle Support:**
+     * Supports multiple sprinkles using CRUD6 by searching multiple schema directories.
+     * Configure via TEST_SCHEMA_DIRS environment variable (comma-separated paths) or
+     * override getTestSchemaDirs() in test class.
      * 
      * Filters to only test schemas that:
      * 1. Have corresponding database tables (users, roles, groups, permissions from UserFrosting Account sprinkle)
      * 2. Are configured in the test environment
      * 
      * To test additional models, ensure:
-     * - Schema file exists in examples/schema/ or app/schema/crud6/
+     * - Schema file exists in one of the configured schema directories
      * - Database table exists (via migrations or UserFrosting core)
      * - Table is populated with test data (via seeds)
+     * 
+     * Example configuration in phpunit.xml:
+     * ```xml
+     * <env name="TEST_SCHEMA_DIRS" value="examples/schema,vendor/mysprinkle/schema,app/schema/crud6"/>
+     * ```
      * 
      * @return array<string, array{string}> Array of [modelName]
      */
     public static function schemaProvider(): array
     {
-        // Dynamically discover available schemas from examples/schema directory
-        // This makes the test suite completely schema-driven
-        $schemaDir = __DIR__ . '/../../../examples/schema';
+        // Get configured schema directories from test case
+        // We need to create a temporary instance to access the method
+        $testCase = new static('schemaProvider');
+        $schemaDirs = $testCase->getTestSchemaDirs();
         
-        if (!is_dir($schemaDir)) {
-            // Fallback to known UserFrosting Account models if examples not available
+        // Collect all available schemas from all directories
+        $availableSchemas = [];
+        $foundDirs = [];
+        
+        foreach ($schemaDirs as $schemaDir) {
+            if (!is_dir($schemaDir)) {
+                continue;
+            }
+            
+            $foundDirs[] = $schemaDir;
+            $schemaFiles = glob($schemaDir . '/*.json');
+            
+            if ($schemaFiles === false) {
+                continue;
+            }
+            
+            foreach ($schemaFiles as $file) {
+                $schemaName = basename($file, '.json');
+                // Store schema name (deduplicate if same schema exists in multiple directories)
+                $availableSchemas[$schemaName] = true;
+            }
+        }
+        
+        // If no schemas found in configured directories, fall back to known UserFrosting models
+        if (empty($availableSchemas)) {
             $testSchemas = ['users', 'roles', 'groups', 'permissions'];
             return array_map(fn($schema) => [$schema], $testSchemas);
         }
-        
-        $schemaFiles = glob($schemaDir . '/*.json');
-        if ($schemaFiles === false) {
-            $testSchemas = ['users', 'roles', 'groups', 'permissions'];
-            return array_map(fn($schema) => [$schema], $testSchemas);
-        }
-        
-        $availableSchemas = array_map(fn($file) => basename($file, '.json'), $schemaFiles);
         
         // Filter to only test schemas with tables that exist in base UserFrosting installation
         // Additional models can be added by ensuring their tables exist via migrations
         $knownTables = ['users', 'roles', 'groups', 'permissions', 'activities'];
         
-        $testSchemas = array_filter($availableSchemas, function($schema) use ($knownTables) {
+        $testSchemas = array_filter(array_keys($availableSchemas), function($schema) use ($knownTables) {
             // Filter out variant schemas (products-1column, products-optimized, etc.)
             // These are layout examples, not separate models
             if (preg_match('/^[a-z_]+\-[a-z0-9]+/', $schema)) {

@@ -3,6 +3,18 @@
 -- Generated from JSON schemas
 -- ═══════════════════════════════════════════════════════════════
 --
+-- ⚠️ THIS FILE IS GENERATED - DO NOT EDIT MANUALLY
+--
+-- This DDL is automatically generated from JSON schema files in
+-- examples/schema/ directory. To update this file, regenerate it using:
+--   php scripts/generate-schema-ddl.php
+--
+-- The DDL is schema-driven, meaning:
+-- - Table structure comes from schema field definitions
+-- - Indexes come from schema index definitions
+-- - Relationships define foreign keys and pivot tables
+-- - All tables are treated generically based on their schemas
+--
 -- This file creates all tables needed for CRUD6 test schemas.
 -- Run this BEFORE seeding data with INSERT statements.
 --

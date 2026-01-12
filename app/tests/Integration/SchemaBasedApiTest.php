@@ -206,38 +206,60 @@ class SchemaBasedApiTest extends CRUD6TestCase
 
 
     /**
-     * Provide test data for standard CRUD6 test schemas
+     * Provide test data for CRUD6 test schemas
      * 
-     * This data provider defines a specific set of schemas that comprehensively test
-     * all CRUD6 sprinkle functionality. Each schema tests different aspects:
+     * This data provider dynamically discovers available schemas from the schema directory,
+     * making tests completely schema-driven. Any schema file placed in the schema directory
+     * will automatically be included in testing.
      * 
-     * - users: CRUD + custom actions + relationships + soft deletes
-     * - roles: Many-to-many relationships + pivot data
-     * - groups: Simple CRUD + basic relationships
-     * - permissions: Complex nested relationships
-     * - activities: Activity logging + timestamps
-     * - products: Decimal fields + categories
+     * Filters to only test schemas that:
+     * 1. Have corresponding database tables (users, roles, groups, permissions from UserFrosting Account sprinkle)
+     * 2. Are configured in the test environment
+     * 
+     * To test additional models, ensure:
+     * - Schema file exists in examples/schema/ or app/schema/crud6/
+     * - Database table exists (via migrations or UserFrosting core)
+     * - Table is populated with test data (via seeds)
      * 
      * @return array<string, array{string}> Array of [modelName]
-     * @see .archive/COMPREHENSIVE_SCHEMA_TEST_PLAN.md for detailed test coverage
      */
     public static function schemaProvider(): array
     {
-        // Define the standard test schema set
-        // These schemas comprehensively test all CRUD6 components
-        // 
-        // NOTE: Only test schemas for tables that exist in UserFrosting base installation.
-        // UserFrosting Account sprinkle provides: users, roles, groups, permissions
-        // 
-        // Schemas like 'products' and 'activities' are examples but don't have
-        // corresponding tables in the base installation, so they're excluded from tests.
-        // Tests will skip if table doesn't exist, but it's cleaner to exclude them upfront.
-        $testSchemas = [
-            'users',       // Full feature set including custom actions and relationships
-            'roles',       // Many-to-many relationships with users
-            'groups',      // Simple CRUD operations with user relationships
-            'permissions', // Complex nested relationships with roles
-        ];
+        // Dynamically discover available schemas from examples/schema directory
+        // This makes the test suite completely schema-driven
+        $schemaDir = __DIR__ . '/../../../examples/schema';
+        
+        if (!is_dir($schemaDir)) {
+            // Fallback to known UserFrosting Account models if examples not available
+            $testSchemas = ['users', 'roles', 'groups', 'permissions'];
+            return array_map(fn($schema) => [$schema], $testSchemas);
+        }
+        
+        $schemaFiles = glob($schemaDir . '/*.json');
+        if ($schemaFiles === false) {
+            $testSchemas = ['users', 'roles', 'groups', 'permissions'];
+            return array_map(fn($schema) => [$schema], $testSchemas);
+        }
+        
+        $availableSchemas = array_map(fn($file) => basename($file, '.json'), $schemaFiles);
+        
+        // Filter to only test schemas with tables that exist in base UserFrosting installation
+        // Additional models can be added by ensuring their tables exist via migrations
+        $knownTables = ['users', 'roles', 'groups', 'permissions', 'activities'];
+        
+        $testSchemas = array_filter($availableSchemas, function($schema) use ($knownTables) {
+            // Filter out variant schemas (products-1column, products-optimized, etc.)
+            // These are layout examples, not separate models
+            if (preg_match('/^[a-z_]+\-[a-z0-9]+/', $schema)) {
+                return false;
+            }
+            
+            // Only include schemas for tables that exist
+            return in_array($schema, $knownTables);
+        });
+        
+        // Sort for consistent test order
+        sort($testSchemas);
         
         return array_map(fn($schema) => [$schema], $testSchemas);
     }
@@ -262,15 +284,24 @@ class SchemaBasedApiTest extends CRUD6TestCase
     /**
      * Get model class from schema
      * 
-     * Helper method to get the Eloquent model class from schema configuration
+     * Returns the appropriate Eloquent model class for a schema. Uses UserFrosting's
+     * Account sprinkle models when available (users, roles, groups, permissions, activities)
+     * since these have factories for testing. For all other models, uses the generic
+     * CRUD6Model which can be dynamically configured for any table.
+     * 
+     * This approach is schema-driven: the model class is determined by the model name
+     * in the schema, not by hardcoded application logic.
      * 
      * @param array $schema Schema array
      * @return string Fully qualified model class name
      */
     protected function getModelClass(array $schema): string
     {
-        // Map model names to their classes
-        $modelMap = [
+        $modelName = $schema['model'] ?? 'unknown';
+        
+        // Use UserFrosting Account models when available - these have factories for testing
+        // This is necessary because factories are needed for creating test data
+        $userFrostingModels = [
             'users' => User::class,
             'roles' => Role::class,
             'groups' => \UserFrosting\Sprinkle\Account\Database\Models\Group::class,
@@ -278,9 +309,9 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'activities' => \UserFrosting\Sprinkle\Account\Database\Models\Activity::class,
         ];
         
-        $modelName = $schema['model'] ?? 'unknown';
-        
-        return $modelMap[$modelName] ?? User::class; // Default to User for unknown models
+        // Return UserFrosting model if available, otherwise use generic CRUD6Model
+        // CRUD6Model can be dynamically configured for any table via schema
+        return $userFrostingModels[$modelName] ?? \UserFrosting\Sprinkle\CRUD6\Database\Models\CRUD6Model::class;
     }
     
     /**
@@ -337,7 +368,7 @@ class SchemaBasedApiTest extends CRUD6TestCase
      * 1. Extract model name from foreign key (user_id → users)
      * 2. Try to load schema for that model using SchemaService
      * 3. Use getModelClass() to get the actual model class from schema
-     * 4. Fallback to common UserFrosting models if schema not found
+     * 4. Fallback to known UserFrosting models only if schema lookup fails
      * 
      * @param string $foreignKey Foreign key field name (e.g., 'user_id')
      * @return string|null Model class name or null
@@ -354,28 +385,36 @@ class SchemaBasedApiTest extends CRUD6TestCase
         // Try plural form first (most common: user_id → users)
         $pluralName = $this->pluralize($singularName);
         
-        // Try to load schema dynamically using SchemaService
+        // Try to load schema dynamically using SchemaService - this is schema-driven!
         try {
             $schemaService = $this->ci->get(SchemaService::class);
             
             // Try plural form
-            $schema = $schemaService->getSchema($pluralName);
-            if ($schema) {
-                return $this->getModelClass($schema);
+            try {
+                $schema = $schemaService->getSchema($pluralName);
+                if ($schema) {
+                    return $this->getModelClass($schema);
+                }
+            } catch (\Exception $e) {
+                // Schema not found, continue
             }
             
             // Try singular form
-            $schema = $schemaService->getSchema($singularName);
-            if ($schema) {
-                return $this->getModelClass($schema);
+            try {
+                $schema = $schemaService->getSchema($singularName);
+                if ($schema) {
+                    return $this->getModelClass($schema);
+                }
+            } catch (\Exception $e) {
+                // Schema not found, continue
             }
         } catch (\Exception $e) {
-            // Schema not found, will fall through to fallback
+            // Schema service not available or failed
         }
         
-        // Fallback to common UserFrosting models for account sprinkle
-        // This handles cases where schemas might not exist in test environment
-        $fallbackMap = [
+        // Fallback: Only use for known UserFrosting Account models when schema lookup fails
+        // This ensures tests work even without all schemas being present
+        $knownUserFrostingModels = [
             'user' => User::class,
             'users' => User::class,
             'role' => Role::class,
@@ -386,7 +425,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
             'permissions' => \UserFrosting\Sprinkle\Account\Database\Models\Permission::class,
         ];
         
-        return $fallbackMap[$pluralName] ?? $fallbackMap[$singularName] ?? null;
+        // Return known model if found, otherwise null (no fallback to arbitrary models)
+        return $knownUserFrostingModels[$pluralName] ?? $knownUserFrostingModels[$singularName] ?? null;
     }
     
     /**

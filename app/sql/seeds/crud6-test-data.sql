@@ -3,6 +3,17 @@
 -- Generated from JSON schemas
 -- ═══════════════════════════════════════════════════════════════
 --
+-- ⚠️ THIS FILE IS GENERATED - DO NOT EDIT MANUALLY
+-- 
+-- This seed data is automatically generated from JSON schema files in
+-- examples/schema/ directory. To update this file, regenerate it using:
+--   php scripts/generate-test-data.php
+-- 
+-- The seed data is schema-driven, meaning:
+-- - Data structure comes from schema field definitions
+-- - Relationships come from schema relationship definitions
+-- - All models are treated generically based on their schemas
+--
 -- EXECUTION ORDER IN INTEGRATION TESTS:
 -- 1. Migrations run (php bakery migrate)
 -- 2. Admin user created (php bakery create:admin-user) → user_id = 1, group_id = 1

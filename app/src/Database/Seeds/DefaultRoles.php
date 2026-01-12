@@ -16,7 +16,14 @@ use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\Core\Seeder\SeedInterface;
 
 /**
- * Seeder for the default roles.
+ * Seeder for the default CRUD6 sprinkle roles.
+ * 
+ * This seeder creates roles specific to the CRUD6 sprinkle itself, not for user-defined
+ * models. User-defined model roles should be created via the application or dynamically
+ * based on schema permissions.
+ * 
+ * The 'crud6-admin' role is a sprinkle-level role that provides administrative access
+ * to CRUD6 functionality across all models.
  */
 class DefaultRoles implements SeedInterface
 {

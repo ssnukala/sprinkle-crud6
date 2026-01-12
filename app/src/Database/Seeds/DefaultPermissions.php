@@ -19,6 +19,13 @@ use UserFrosting\Sprinkle\Core\Seeder\SeedInterface;
 
 /**
  * Seeder for the default permissions.
+ * 
+ * This seeder creates both generic CRUD6 permissions and model-specific permissions.
+ * Model-specific permissions are automatically loaded from JSON schema files via the
+ * loadPermissionsFromSchemas() method, making this seeder schema-driven.
+ * 
+ * Generic permissions (create_crud6, delete_crud6, etc.) are kept for backward
+ * compatibility and as fallbacks.
  */
 class DefaultPermissions implements SeedInterface
 {

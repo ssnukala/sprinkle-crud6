@@ -18,10 +18,27 @@ use UserFrosting\Support\Message\UserMessage;
 /**
  * Schema Validation Exception.
  * 
- * Thrown when a schema fails structural validation.
+ * Thrown when a schema fails structural validation. This exception is raised by
+ * SchemaValidator when a schema is missing required fields or has invalid structure.
+ * 
+ * Common validation failures include:
+ * - Missing required fields (model, table, fields)
+ * - Model name mismatch between schema and request
+ * - Empty or invalid fields array
+ * - Invalid permission configuration
+ * 
  * Extends UserFrosting's UserFacingException for consistency with framework patterns.
  * 
+ * @example
+ * ```php
+ * // Thrown when required field is missing
+ * throw new SchemaValidationException(
+ *     "Schema for model '{$model}' is missing required field: {$field}"
+ * );
+ * ```
+ * 
  * @see \UserFrosting\Sprinkle\Core\Exceptions\UserFacingException
+ * @see \UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaValidator
  */
 class SchemaValidationException extends UserFacingException
 {

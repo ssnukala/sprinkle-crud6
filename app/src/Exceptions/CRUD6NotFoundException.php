@@ -19,11 +19,22 @@ use UserFrosting\Support\Message\UserMessage;
  * CRUD6 Not Found Exception.
  * 
  * Thrown when a CRUD6 resource (record, model instance, etc.) cannot be found.
- * Used by controllers and middleware when attempting to access non-existent records.
+ * This exception is used by controllers and middleware when attempting to access
+ * non-existent records or when required route parameters are missing.
+ * 
+ * This exception extends UserFrosting's NotFoundException, which typically results
+ * in a 404 HTTP response to the client.
  * 
  * Follows UserFrosting 6 exception pattern from sprinkle-core.
  * 
+ * @example
+ * ```php
+ * // Thrown when record doesn't exist
+ * throw new CRUD6NotFoundException("No record found with ID '{$id}' in table '{$table}'");
+ * ```
+ * 
  * @see \UserFrosting\Sprinkle\Core\Exceptions\NotFoundException
+ * @see \UserFrosting\Sprinkle\CRUD6\Middlewares\CRUD6Injector
  */
 final class CRUD6NotFoundException extends NotFoundException
 {

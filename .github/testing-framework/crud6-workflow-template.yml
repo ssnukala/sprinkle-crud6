@@ -81,10 +81,10 @@ jobs:
       # ========================================================================
       # Setup PHP and Node.js
       # ========================================================================
-      - name: Setup PHP 8.1
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.1"
+          php-version: "8.4"
           extensions: mbstring, xml, gd, pdo_mysql
           coverage: none
       

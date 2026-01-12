@@ -309,7 +309,7 @@ The framework generates a workflow that:
     "npm_package": "@myvendor/my-awesome-sprinkle"
   },
   "testing": {
-    "php_version": "8.1",
+    "php_version": "8.4",
     "node_version": "20"
   },
   "frontend": {

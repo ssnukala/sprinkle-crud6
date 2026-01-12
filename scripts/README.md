@@ -74,7 +74,7 @@ These scripts are **standalone** (no namespace, no autoloader dependency) becaus
 1. **CI Environment**: Test classes in `app/tests/` are not autoloaded by Composer
 2. **Independence**: Scripts can run before composer dependencies are installed
 3. **Simplicity**: No complex dependency management needed
-4. **Portability**: Can be run in any environment with PHP 8.1+
+4. **Portability**: Can be run in any environment with PHP 8.4+
 
 ### Why in scripts/ folder?
 

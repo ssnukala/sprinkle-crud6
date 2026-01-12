@@ -19,7 +19,7 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.4",
         "userfrosting/framework": "^6.0",
         "userfrosting/sprinkle-core": "^6.0",
         "userfrosting/sprinkle-account": "^6.0",

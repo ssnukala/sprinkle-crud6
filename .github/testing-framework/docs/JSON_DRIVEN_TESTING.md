@@ -167,7 +167,7 @@ This SQL file is loaded AFTER schema-driven SQL generation.
 ```json
 {
   "testing": {
-    "php_version": "8.1",
+    "php_version": "8.4",
     "node_version": "20",
     "mysql_version": "8.0",
     "userfrosting_version": "^6.0-beta"

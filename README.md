@@ -1451,6 +1451,32 @@ This framework is production-tested and used by:
 
 **Want to use it?** See the [JSON-Driven Testing Guide](.github/testing-framework/docs/JSON_DRIVEN_TESTING.md) for complete documentation.
 
+### 🔧 Testing Multiple Sprinkles
+
+When you have multiple sprinkles using CRUD6, each with their own schemas, you can configure the testing framework to test schemas from all sprinkles simultaneously:
+
+**Configure in phpunit.xml:**
+```xml
+<env name="TEST_SCHEMA_DIRS" value="examples/schema,vendor/mysprinkle/schema,app/schema/crud6"/>
+```
+
+**Or override in your test class:**
+```php
+class MyAppTestCase extends CRUD6TestCase
+{
+    protected function getTestSchemaDirs(): array
+    {
+        return [
+            __DIR__ . '/../../vendor/sprinkle-inventory/schema',
+            __DIR__ . '/../../vendor/sprinkle-crm/schema',
+            __DIR__ . '/../../../examples/schema',
+        ];
+    }
+}
+```
+
+The testing framework will automatically discover and test schemas from all configured directories. See [Multi-Sprinkle Testing Documentation](docs/TESTING_MULTI_SPRINKLE.md) for detailed examples and configuration options.
+
 ## Contributing
 
 1. Fork the repository

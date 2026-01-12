@@ -21,6 +21,10 @@
         <env name="SMTP_HOST" value="localhost"/>
         <env name="SMTP_USER" value=""/>
         <env name="SMTP_PASSWORD" value=""/>
+        
+        <!-- Test Schema Directories (comma-separated paths for multiple sprinkles) -->
+        <!-- Defaults to examples/schema if not set -->
+        <!-- <env name="TEST_SCHEMA_DIRS" value="examples/schema,app/schema/crud6,vendor/mysprinkle/schema"/> -->
     </php>
     <testsuites>
         <testsuite name="CRUD6">

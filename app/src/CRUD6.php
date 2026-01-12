@@ -31,12 +31,67 @@ use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
  * CRUD6 Sprinkle - Generic API CRUD Layer for UserFrosting 6
  *
  * Provides dynamic CRUD operations on any database table using JSON schema definitions.
- * Features:
- * - JSON-based schema definitions for flexible table configuration
- * - RESTful API endpoints for CRUD operations (/api/crud6/{model})
- * - Dynamic routing for any model with automatic validation
- * - Sortable and filterable data queries
- * - Frontend-agnostic design for Vue.js integration
+ * This is the main sprinkle class that registers all CRUD6 components with UserFrosting 6.
+ * 
+ * ## Key Features
+ * 
+ * - **JSON-Based Schema Definitions**: Define models declaratively with simple JSON files
+ * - **RESTful API Endpoints**: Complete REST API for all CRUD operations (`/api/crud6/{model}`)
+ * - **Dynamic Routing**: Automatic route generation for any model with validation
+ * - **Sortable & Filterable Queries**: Built-in support for data tables with Sprunje
+ * - **Frontend-Agnostic**: Works with any frontend (includes Vue.js components)
+ * - **Permission-Based Access Control**: Schema-driven permissions with UserFrosting's authorization
+ * - **Relationship Management**: Support for one-to-many and many-to-many relationships
+ * - **Soft Delete Support**: Optional soft delete functionality per model
+ * - **Multi-Database Support**: Connect to multiple databases with URL syntax
+ * - **Field Type System**: Extensible field type registry for custom data types
+ * 
+ * ## Installation
+ * 
+ * Add to your sprinkles configuration in your app's main sprinkle class:
+ * ```php
+ * use UserFrosting\Sprinkle\CRUD6\CRUD6;
+ * 
+ * public function getSprinkles(): array
+ * {
+ *     return [
+ *         Core::class,
+ *         Account::class,
+ *         Admin::class,
+ *         CRUD6::class, // Add this line
+ *     ];
+ * }
+ * ```
+ * 
+ * ## Usage Example
+ * 
+ * 1. Create a schema file at `app/schema/crud6/products.json`:
+ * ```json
+ * {
+ *   "model": "products",
+ *   "table": "products",
+ *   "title": "Products",
+ *   "permissions": {
+ *     "read": "uri_products",
+ *     "create": "create_product"
+ *   },
+ *   "fields": {
+ *     "id": {"type": "integer", "auto_increment": true},
+ *     "name": {"type": "string", "required": true},
+ *     "price": {"type": "decimal"}
+ *   }
+ * }
+ * ```
+ * 
+ * 2. Access via API:
+ * - GET `/api/crud6/products` - List all products
+ * - POST `/api/crud6/products` - Create new product
+ * - GET `/api/crud6/products/5` - Get product #5
+ * - PUT `/api/crud6/products/5` - Update product #5
+ * - DELETE `/api/crud6/products/5` - Delete product #5
+ * 
+ * @see https://github.com/ssnukala/sprinkle-crud6 Project repository
+ * @see https://learn.userfrosting.com/ UserFrosting documentation
  */
 class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe, BakeryRecipe
 {

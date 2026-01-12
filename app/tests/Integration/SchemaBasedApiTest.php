@@ -749,6 +749,17 @@ class SchemaBasedApiTest extends CRUD6TestCase
         
         echo "  ✓ Schema loaded: {$modelName}.json\n";
         
+        // Test 1: Create action WITHOUT authentication (MUST be tested FIRST, before actAsUser)
+        echo "\n  [1] Testing create action requires authentication...\n";
+        // Test without authentication first - expect 401 (Unauthorized) or 400 (Bad Request if validation runs first)
+        $unauthRequest = $this->createJsonRequest('POST', "/api/crud6/{$modelName}");
+        $unauthResponse = $this->handleRequest($unauthRequest);
+        $statusCode = $unauthResponse->getStatusCode();
+        $this->assertContains($statusCode, [400, 401], 
+            "[Schema: {$modelName}] Create action should require authentication (401) or fail validation (400)");
+        echo "    ✓ Create action requires authentication\n";
+        
+        // NOW set up authentication for remaining tests
         // Create test user with all permissions from schema
         /** @var User */
         $user = User::factory()->create();
@@ -758,8 +769,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
         }
         $this->actAsUser($user, permissions: $permissions);
         
-        // Test 1: Schema endpoint (GET /api/crud6/{model}/schema)
-        echo "\n  [1] Testing schema endpoint (GET /api/crud6/{$modelName}/schema)...\n";
+        // Test 2: Schema endpoint (GET /api/crud6/{model}/schema)
+        echo "\n  [2] Testing schema endpoint (GET /api/crud6/{$modelName}/schema)...\n";
         $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}/schema");
         $response = $this->handleRequestWithTracking($request);
         
@@ -769,8 +780,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $this->assertEquals($modelName, $responseData['model'], "[Schema: {$modelName}] Schema response model should match request");
         echo "    ✓ Schema endpoint successful\n";
         
-        // Test 2: Config endpoint (GET /api/crud6/config) - Note: This is a global config endpoint, not model-specific
-        echo "\n  [2] Testing config endpoint (GET /api/crud6/config)...\n";
+        // Test 3: Config endpoint (GET /api/crud6/config) - Note: This is a global config endpoint, not model-specific
+        echo "\n  [3] Testing config endpoint (GET /api/crud6/config)...\n";
         $request = $this->createJsonRequest('GET', "/api/crud6/config");
         $response = $this->handleRequestWithTracking($request);
         
@@ -779,8 +790,8 @@ class SchemaBasedApiTest extends CRUD6TestCase
         $this->assertArrayHasKey('debug_mode', $responseData, "[Schema: {$modelName}] Config response should contain 'debug_mode' key");
         echo "    ✓ Config endpoint successful (debug_mode: " . ($responseData['debug_mode'] ? 'true' : 'false') . ")\n";
         
-        // Test 3: List endpoint validates listable fields
-        echo "\n  [3] Testing listable fields configuration...\n";
+        // Test 4: List endpoint validates listable fields
+        echo "\n  [4] Testing listable fields configuration...\n";
         $request = $this->createJsonRequest('GET', "/api/crud6/{$modelName}");
         $response = $this->handleRequestWithTracking($request);
         
@@ -806,19 +817,6 @@ class SchemaBasedApiTest extends CRUD6TestCase
         } else {
             echo "    ⊘ List endpoint not accessible\n";
         }
-        
-        // Test 4: Create action with authentication
-        echo "\n  [4] Testing create action requires authentication...\n";
-        // Test without authentication first - expect 401 (Unauthorized) or 400 (Bad Request if validation runs first)
-        $unauthRequest = $this->createJsonRequest('POST', "/api/crud6/{$modelName}");
-        $unauthResponse = $this->handleRequest($unauthRequest);
-        $statusCode = $unauthResponse->getStatusCode();
-        $this->assertContains($statusCode, [400, 401], 
-            "[Schema: {$modelName}] Create action should require authentication (401) or fail validation (400)");
-        
-        // Test with authentication and permission
-        $this->actAsUser($user, permissions: $permissions);
-        echo "    ✓ Create action requires authentication\n";
         
         echo "\n  Result: ✅ Controller actions test completed for {$modelName}\n";
     }

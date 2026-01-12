@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Testing;
 
-use PHPUnit\Framework\TestCase;
 use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 
 /**
@@ -24,19 +23,19 @@ use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
  * - Multiple directories can be specified
  * - Path normalization works correctly
  * - Relative paths are resolved to absolute paths
+ * 
+ * Note: This test extends CRUD6TestCase instead of TestCase to access
+ * the protected methods being tested.
  */
-class ConfigurableSchemaPathTest extends TestCase
+class ConfigurableSchemaPathTest extends CRUD6TestCase
 {
     /**
      * Test default schema directory is used when not configured
      */
     public function testDefaultSchemaDirectory(): void
     {
-        // Create test case instance
-        $testCase = new CRUD6TestCase('test');
-        
         // Get schema directories (should default to examples/schema)
-        $dirs = $testCase->getTestSchemaDirs();
+        $dirs = $this->getTestSchemaDirs();
         
         $this->assertIsArray($dirs);
         $this->assertCount(1, $dirs);
@@ -52,11 +51,8 @@ class ConfigurableSchemaPathTest extends TestCase
         $testPaths = 'examples/schema,app/schema/crud6';
         putenv("TEST_SCHEMA_DIRS={$testPaths}");
         
-        // Create test case instance
-        $testCase = new CRUD6TestCase('test');
-        
         // Get schema directories
-        $dirs = $testCase->getTestSchemaDirs();
+        $dirs = $this->getTestSchemaDirs();
         
         // Clean up environment
         putenv('TEST_SCHEMA_DIRS');
@@ -71,10 +67,8 @@ class ConfigurableSchemaPathTest extends TestCase
      */
     public function testPathNormalizationAbsolute(): void
     {
-        $testCase = new CRUD6TestCase('test');
-        
         // Test with absolute path
-        $dirs = $testCase->normalizeTestSchemaDirs([
+        $dirs = $this->normalizeTestSchemaDirs([
             __DIR__ . '/../../../examples/schema',
         ]);
         
@@ -91,10 +85,8 @@ class ConfigurableSchemaPathTest extends TestCase
      */
     public function testNonExistentDirectoriesFiltered(): void
     {
-        $testCase = new CRUD6TestCase('test');
-        
         // Mix of existing and non-existing paths
-        $dirs = $testCase->normalizeTestSchemaDirs([
+        $dirs = $this->normalizeTestSchemaDirs([
             __DIR__ . '/../../../examples/schema',
             '/nonexistent/path/to/schemas',
             '/another/fake/path',
@@ -158,10 +150,8 @@ class ConfigurableSchemaPathTest extends TestCase
      */
     public function testRelativePathResolution(): void
     {
-        $testCase = new CRUD6TestCase('test');
-        
         // Test with relative paths (relative to project root)
-        $dirs = $testCase->normalizeTestSchemaDirs([
+        $dirs = $this->normalizeTestSchemaDirs([
             'examples/schema',
         ]);
         
@@ -180,8 +170,7 @@ class ConfigurableSchemaPathTest extends TestCase
         // Set empty environment variable
         putenv('TEST_SCHEMA_DIRS=');
         
-        $testCase = new CRUD6TestCase('test');
-        $dirs = $testCase->getTestSchemaDirs();
+        $dirs = $this->getTestSchemaDirs();
         
         // Clean up environment
         putenv('TEST_SCHEMA_DIRS');
@@ -200,8 +189,7 @@ class ConfigurableSchemaPathTest extends TestCase
         // Set environment variable with spaces around commas
         putenv('TEST_SCHEMA_DIRS=examples/schema , app/schema/crud6 , vendor/test/schema');
         
-        $testCase = new CRUD6TestCase('test');
-        $dirs = $testCase->getTestSchemaDirs();
+        $dirs = $this->getTestSchemaDirs();
         
         // Clean up environment
         putenv('TEST_SCHEMA_DIRS');

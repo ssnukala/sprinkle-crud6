@@ -237,11 +237,12 @@ async function fetch() {
                 
                 // Use pre-computed breadcrumb from API response
                 // Access it directly from the fetched row data to avoid timing issues
-                // The breadcrumb is attached as _breadcrumb property by fetchRow
-                let recordName = (fetchedRow as any)._breadcrumb
+                // Check both 'breadcrumb' (flat response) and '_breadcrumb' (nested response from useCRUD6Api)
+                let recordName = (fetchedRow as any).breadcrumb || (fetchedRow as any)._breadcrumb
                 
                 debugLog('[PageRow.fetch] ===== BREADCRUMB RESOLUTION =====', {
-                    step1_fetchedRow_breadcrumb: (fetchedRow as any)._breadcrumb ?? 'NULL',
+                    step1_fetchedRow_breadcrumb: (fetchedRow as any).breadcrumb ?? 'NULL',
+                    step1b_fetchedRow__breadcrumb: (fetchedRow as any)._breadcrumb ?? 'NULL',
                     step2_recordBreadcrumb_value: recordBreadcrumb.value ?? 'NULL',
                     step3_recordId: recordId.value,
                 })

@@ -643,6 +643,89 @@ This approach provides flexibility to either:
 - Organize schemas in connection-specific folders
 - Override connection via URL parameter
 
+## Schema-Driven Philosophy
+
+**CRUD6 is completely schema-driven.** This means:
+
+1. **No Hardcoded Models**: All models, fields, relationships, and permissions are defined in JSON schema files
+2. **Dynamic Discovery**: The system automatically discovers and loads schemas from the `app/schema/crud6/` or `examples/schema/` directory
+3. **Generic Operations**: Controllers, services, and tests work generically with any schema
+4. **Extensible**: Add new models by simply creating a new schema file - no code changes needed
+
+### Adding a New Model
+
+To add a new model to your application:
+
+1. **Create the schema file** in `app/schema/crud6/{model}.json`:
+   ```json
+   {
+     "model": "products",
+     "table": "products",
+     "title": "Products",
+     "fields": {
+       "id": { "type": "integer", "label": "ID" },
+       "name": { "type": "string", "label": "Product Name", "required": true },
+       "price": { "type": "decimal", "label": "Price" }
+     }
+   }
+   ```
+
+2. **Create the database table** (via migration or direct SQL):
+   ```php
+   // In your migration file
+   $schema->create('products', function (Blueprint $table) {
+       $table->id();
+       $table->string('name');
+       $table->decimal('price', 10, 2);
+       $table->timestamps();
+   });
+   ```
+
+3. **That's it!** The following are automatically available:
+   - ✅ RESTful API endpoints (`/api/crud6/products`)
+   - ✅ Vue.js components for CRUD operations
+   - ✅ Permissions (if defined in schema)
+   - ✅ Validation (based on field definitions)
+   - ✅ Relationships (if defined in schema)
+   - ✅ Integration tests (via schema discovery)
+
+### No Code Changes Required
+
+When you add a new schema file:
+- ❌ **DO NOT** modify controllers - they work generically
+- ❌ **DO NOT** modify routes - they handle `{model}` parameter
+- ❌ **DO NOT** update test files - tests auto-discover schemas
+- ❌ **DO NOT** hardcode model names anywhere
+- ✅ **DO** place schema in the correct directory
+- ✅ **DO** ensure database table exists
+- ✅ **DO** define permissions in the schema
+
+### Example: Testing a New Model
+
+Tests automatically discover and test new models:
+
+```php
+// SchemaBasedApiTest.php discovers schemas automatically
+public static function schemaProvider(): array
+{
+    $schemaDir = __DIR__ . '/../../../examples/schema';
+    $schemaFiles = glob($schemaDir . '/*.json');
+    // Returns ALL schemas found - no hardcoding!
+}
+```
+
+Add `orders.json` schema → Tests automatically include it!
+
+### Schema-Driven Components
+
+These components are already schema-driven:
+
+- **Controllers**: Work with any model via `CRUD6Model` and schema configuration
+- **Permissions**: Loaded dynamically from all schema files (see `DefaultPermissions.php`)
+- **Tests**: Auto-discover schemas from directory (see `SchemaBasedApiTest.php`)
+- **Frontend**: Uses schema to render forms, lists, and modals dynamically
+- **Sprunje**: Dynamically configured from schema fields for sorting/filtering
+
 ## Usage
 
 ### API Endpoints

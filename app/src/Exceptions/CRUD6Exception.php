@@ -20,11 +20,22 @@ use UserFrosting\Support\Message\UserMessage;
  * 
  * Base exception for CRUD6-related errors. Used for general CRUD6 operations
  * that fail due to invalid input, configuration issues, or operational errors.
- * The description is expected to be set by the controller or service throwing the exception.
+ * 
+ * This exception is user-facing, meaning the message will be displayed to end users
+ * in a user-friendly format. The description is expected to be set by the controller
+ * or service throwing the exception.
  * 
  * Follows UserFrosting 6 exception pattern from sprinkle-core.
  * 
+ * @example
+ * ```php
+ * throw new CRUD6Exception("Invalid model configuration for 'users' model");
+ * ```
+ * 
  * @see \UserFrosting\Sprinkle\Core\Exceptions\UserFacingException
+ * @see \UserFrosting\Sprinkle\CRUD6\Exceptions\CRUD6NotFoundException
+ * @see \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaNotFoundException
+ * @see \UserFrosting\Sprinkle\CRUD6\Exceptions\SchemaValidationException
  */
 final class CRUD6Exception extends UserFacingException
 {

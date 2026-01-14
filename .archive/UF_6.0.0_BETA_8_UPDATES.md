@@ -35,12 +35,15 @@ This aligns with UserFrosting's requirement and ensures Node.js 18 or later is u
 - Added comment explaining that `limax` and `lodash.deburr` are external dependencies specific to CRUD6
 - These are NOT part of the UserFrosting monorepo and should remain in optimizeDeps
 - UserFrosting removed monorepo packages from optimizeDeps, but CRUD6's dependencies are external
+- `lodash.deburr` is a transitive dependency of `limax` but is explicitly included to resolve a Vite CommonJS module loading error (documented in v0.6.1.8)
 
 ```typescript
 optimizeDeps: {
     // Pre-bundle limax and its dependencies for optimal performance
     // This improves Vite cold-start time and ensures consistent behavior
     // Note: These are external dependencies specific to CRUD6, not UF monorepo packages
+    // lodash.deburr is explicitly included to resolve Vite CommonJS module loading error
+    // See CHANGELOG.md v0.6.1.8 for details
     include: ['limax', 'lodash.deburr']
 },
 ```
@@ -90,6 +93,8 @@ The `optimizeDeps.include` configuration in CRUD6's `vite.config.ts` is **differ
 - **CRUD6**: Keeps external packages specific to CRUD6 functionality (limax, lodash.deburr)
 
 This is **intentional and correct** - each sprinkle may have its own external dependencies that need optimization.
+
+**Note on lodash.deburr**: While `lodash.deburr` is a transitive dependency of `limax`, it is explicitly included in `optimizeDeps` to resolve a specific Vite CommonJS module loading error. This was fixed in v0.6.1.8 and documented in the CHANGELOG. Removing it would cause the error: "The requested module '.../lodash.deburr/index.js' does not provide an export named 'default'". See CHANGELOG.md v0.6.1.8 for more details.
 
 ### Version Requirements
 

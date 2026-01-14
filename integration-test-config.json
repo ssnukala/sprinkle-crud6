@@ -23,7 +23,7 @@
   },
   "testing": {
     "php_version": "8.4",
-    "node_version": "20",
+    "node_version": "22",
     "mysql_version": "8.0",
     "userfrosting_version": "^6.0-beta"
   },

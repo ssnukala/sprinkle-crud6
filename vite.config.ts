@@ -11,6 +11,7 @@ export default defineConfig({
     optimizeDeps: {
         // Pre-bundle limax and its dependencies for optimal performance
         // This improves Vite cold-start time and ensures consistent behavior
+        // Note: These are external dependencies specific to CRUD6, not UF monorepo packages
         include: ['limax', 'lodash.deburr']
     },
     test: {

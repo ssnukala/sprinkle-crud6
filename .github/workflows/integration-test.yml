@@ -381,6 +381,7 @@ jobs:
       - name: Install Playwright
         run: |
           cd userfrosting
+          npm install playwright
           npx playwright install chromium
 
       - name: Capture screenshots

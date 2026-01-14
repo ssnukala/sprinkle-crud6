@@ -2,10 +2,10 @@
 # Combines PHP (UserFrosting/CRUD6 Sprinkle) + Node.js (Theme Development)
 
 # Multi-stage build: Get Node.js from official image
-FROM node:20-bookworm-slim AS node-stage
+FROM node:22-bookworm-slim AS node-stage
 
 # Main PHP image with Node.js copied from node-stage
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -65,7 +65,7 @@ RUN echo "memory_limit=512M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "max_execution_time=300" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "upload_max_filesize=100M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "error_reporting=E_ALL" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "error_reporting=E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "display_errors=On" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "log_errors=On" >> /usr/local/etc/php/conf.d/custom.ini
 

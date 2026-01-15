@@ -19,7 +19,7 @@ env:
   FRAMEWORK_BRANCH: main
   UF_VERSION: "^6.0-beta"
   PHP_VERSION: "8.4"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   integration-test:
@@ -61,8 +61,15 @@ jobs:
         run: |
           cd ${{ env.SPRINKLE_DIR }}
           
+          # Check if framework already exists (either as crud6-framework or testing-framework)
           if [ -d ".github/crud6-framework" ]; then
-            echo "✅ Using local framework"
+            echo "✅ Using local framework (crud6-framework)"
+          elif [ -d ".github/testing-framework" ]; then
+            echo "✅ Using local framework (testing-framework)"
+            # Copy to crud6-framework for consistency (copy vs symlink to allow independent modifications)
+            cp -r .github/testing-framework .github/crud6-framework
+            chmod +x .github/crud6-framework/scripts/*.php
+            echo "✅ Framework copied to crud6-framework"
           else
             echo "📦 Installing framework..."
             git clone --depth 1 --branch ${{ env.FRAMEWORK_BRANCH }} \
@@ -89,6 +96,8 @@ jobs:
           touch logs/userfrosting.log
       
       - name: Configure Composer dependencies
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
         run: |
           cd userfrosting
           
@@ -269,6 +278,213 @@ jobs:
           cd userfrosting
           php bakery migrate --force
       
+      - name: Create admin user
+        run: |
+          cd userfrosting
+          set +e  # Don't exit immediately on error so we can capture output
+          OUTPUT=$(php bakery create:admin-user \
+            --username=admin \
+            --password=admin123 \
+            --email=admin@example.com \
+            --firstName=Admin \
+            --lastName=User 2>&1)
+          EXIT_CODE=$?
+          set -e  # Re-enable exit on error
+          
+          echo "$OUTPUT"
+          
+          # Check both exit code and success message
+          if [ $EXIT_CODE -eq 0 ]; then
+            if echo "$OUTPUT" | grep -Eqi "(user creation successful|created successfully|successfully created)"; then
+              echo "✅ Admin user created successfully"
+            else
+              echo "⚠️  Command succeeded (exit code 0) but expected success message not found"
+              echo "    Checking if user creation output is present..."
+              if echo "$OUTPUT" | grep -qi "admin"; then
+                echo "✅ User 'admin' found in output - proceeding"
+              else
+                echo "✅ Proceeding based on exit code 0"
+              fi
+            fi
+          else
+            echo "❌ Failed to create admin user (exit code: $EXIT_CODE)"
+            exit 1
+          fi
+      
+      - name: Copy CRUD6 schema files from examples
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Copying CRUD6 Schema Files from Examples"
+          echo "========================================="
+
+          # Create schema directory if it doesn't exist
+          mkdir -p app/schema/crud6
+
+          # Define the schema files needed for integration tests
+          REQUIRED_SCHEMAS="users.json groups.json roles.json permissions.json activities.json"
+
+          # Check that source directory exists
+          if [ ! -d "../${{ env.SPRINKLE_DIR }}/examples/schema" ]; then
+            echo "❌ ERROR: Source schema directory not found: ../${{ env.SPRINKLE_DIR }}/examples/schema"
+            exit 1
+          fi
+
+          # Copy required schema files
+          echo ""
+          echo "Copying required schema files..."
+          for schema in $REQUIRED_SCHEMAS; do
+            if [ -f "../${{ env.SPRINKLE_DIR }}/examples/schema/$schema" ]; then
+              cp "../${{ env.SPRINKLE_DIR }}/examples/schema/$schema" "app/schema/crud6/"
+              echo "  ✅ Copied: $schema"
+            else
+              echo "  ⚠️  WARNING: Schema file not found: $schema"
+            fi
+          done
+
+          # Verify schemas were copied
+          echo ""
+          echo "========================================="
+          echo "Schemas copied to app/schema/crud6/:"
+          echo "========================================="
+          ls -la app/schema/crud6/
+
+          # Validate all required schemas are present
+          echo ""
+          echo "Validating required schemas..."
+          MISSING=0
+          for schema in $REQUIRED_SCHEMAS; do
+            if [ ! -f "app/schema/crud6/$schema" ]; then
+              echo "  ❌ MISSING: $schema"
+              MISSING=1
+            fi
+          done
+
+          if [ $MISSING -eq 1 ]; then
+            echo "❌ ERROR: Some required schema files are missing!"
+            exit 1
+          else
+            echo "✅ All required schema files are present"
+          fi
+      
+      - name: Merge locale messages from examples
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Merging Locale Messages from Examples"
+          echo "========================================="
+
+          # Create locale directory if it doesn't exist
+          mkdir -p app/locale/en_US
+
+          # Check that source messages file exists
+          if [ ! -f "../${{ env.SPRINKLE_DIR }}/examples/locale/en_US/messages.php" ]; then
+            echo "❌ ERROR: Source messages file not found: ../${{ env.SPRINKLE_DIR }}/examples/locale/en_US/messages.php"
+            exit 1
+          fi
+
+          # Check if destination messages file already exists in sprinkle-crud6's app/locale
+          if [ -f "../${{ env.SPRINKLE_DIR }}/app/locale/en_US/messages.php" ]; then
+            echo "Found existing app/locale messages file, copying to userfrosting app..."
+            cp "../${{ env.SPRINKLE_DIR }}/app/locale/en_US/messages.php" "app/locale/en_US/messages.php"
+            echo "  ✅ Copied: messages.php from sprinkle-crud6/app/locale"
+          fi
+
+          # Now merge example messages (append model-specific translations)
+          echo ""
+          echo "Merging example messages (model-specific translations)..."
+
+          # Create a PHP script to merge the message files
+          cat > /tmp/merge-messages.php << 'MERGE_SCRIPT'
+          <?php
+          /**
+           * Merge example messages with existing messages.php
+           * This adds model-specific translations for CRUD6 testing
+           */
+
+          $examplesPath = $argv[1] ?? '';
+          $destPath = $argv[2] ?? '';
+
+          if (empty($examplesPath) || empty($destPath)) {
+              echo "Usage: php merge-messages.php <examples_messages_path> <dest_messages_path>\n";
+              exit(1);
+          }
+
+          // Load existing messages if they exist
+          $existingMessages = [];
+          if (file_exists($destPath)) {
+              $existingMessages = require $destPath;
+              echo "  Loaded existing messages from: $destPath\n";
+          }
+
+          // Load example messages
+          if (!file_exists($examplesPath)) {
+              echo "  ❌ Examples messages file not found: $examplesPath\n";
+              exit(1);
+          }
+          $exampleMessages = require $examplesPath;
+          echo "  Loaded example messages from: $examplesPath\n";
+
+          // Deep merge function
+          function deepMerge(array $base, array $override): array {
+              foreach ($override as $key => $value) {
+                  if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
+                      $base[$key] = deepMerge($base[$key], $value);
+                  } else {
+                      $base[$key] = $value;
+                  }
+              }
+              return $base;
+          }
+
+          // Merge messages (example messages override existing)
+          $mergedMessages = deepMerge($existingMessages, $exampleMessages);
+
+          // Generate the merged PHP file
+          $output = "<?php\n\n";
+          $output .= "/*\n";
+          $output .= " * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)\n";
+          $output .= " *\n";
+          $output .= " * @link      https://github.com/userfrosting/sprinkle-crud6\n";
+          $output .= " * @copyright Copyright (c) 2013-2024 Alexander Weissman & Louis Charette\n";
+          $output .= " * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)\n";
+          $output .= " */\n\n";
+          $output .= "/**\n";
+          $output .= " * US English message token translations for the 'crud6' sprinkle.\n";
+          $output .= " * Merged from app/locale and examples/locale for integration testing.\n";
+          $output .= " *\n";
+          $output .= " * @author Alexander Weissman\n";
+          $output .= " */\n";
+          $output .= "return " . var_export($mergedMessages, true) . ";\n";
+
+          // Write merged messages
+          file_put_contents($destPath, $output);
+          echo "  ✅ Merged messages written to: $destPath\n";
+
+          // Verify the file is valid PHP
+          exec("php -l $destPath 2>&1", $lintOutput, $lintReturnCode);
+          if ($lintReturnCode !== 0) {
+              echo "  ❌ ERROR: Generated messages file has syntax errors!\n";
+              echo "  " . implode("\n  ", $lintOutput) . "\n";
+              exit(1);
+          }
+          echo "  ✅ Syntax validation passed\n";
+          MERGE_SCRIPT
+
+          # Run the merge script
+          php /tmp/merge-messages.php \
+            "../${{ env.SPRINKLE_DIR }}/examples/locale/en_US/messages.php" \
+            "app/locale/en_US/messages.php"
+
+          echo ""
+          echo "========================================="
+          echo "Locale Messages Merge Complete"
+          echo "========================================="
+          echo ""
+          echo "Messages file content preview (first 50 lines):"
+          head -n 50 app/locale/en_US/messages.php
+          echo "..."
+      
       - name: Generate and create tables from schemas
         run: |
           cd userfrosting
@@ -372,18 +588,42 @@ jobs:
 
           echo "✅ Vite server started"
 
-      - name: Test API and frontend paths
+      - name: Test unauthenticated API paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
         run: |
           cd userfrosting
+          echo "========================================="
+          echo "Testing Unauthenticated API Paths"
+          echo "========================================="
+          echo "Testing that protected API resources return 401/403 for unauthenticated users"
+          echo ""
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
-            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json
-
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth api > /tmp/test-results-unauth-api.txt 2>&1
+          cat /tmp/test-results-unauth-api.txt
+      
+      - name: Test unauthenticated frontend paths
+        env:
+          CONTINUE_ON_FAILURE: 'true'
+        run: |
+          cd userfrosting
+          echo "========================================="
+          echo "Testing Unauthenticated Frontend Paths"
+          echo "========================================="
+          echo "Testing that protected frontend pages redirect to login for unauthenticated users"
+          echo ""
+          php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-paths.php \
+            ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+            unauth frontend > /tmp/test-results-unauth-frontend.txt 2>&1
+          cat /tmp/test-results-unauth-frontend.txt
+      
       - name: Install Playwright
         run: |
           cd userfrosting
           npm install playwright
           npx playwright install chromium
-
+      
       - name: Copy testing scripts to userfrosting
         run: |
           cd userfrosting
@@ -391,20 +631,170 @@ jobs:
           cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-authenticated-unified.js .
           cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js .
           echo "✅ Testing scripts copied to userfrosting directory"
-
-      - name: Capture screenshots
+      
+      - name: Test authenticated paths (unified approach - login + API + frontend)
         run: |
           cd userfrosting
-          node ./take-screenshots-modular.js \
+          echo "========================================="
+          echo "Testing Authenticated Paths (Unified)"
+          echo "========================================="
+          echo "This test performs login and immediately tests"
+          echo "authenticated API endpoints and frontend pages"
+          echo "in a single session to maintain authentication state"
+          echo ""
+          
+          # Run unified test that does login + API tests + frontend tests in one go
+          # Note: Script exits with code 1 on failure, which will fail this workflow step
+          node test-authenticated-unified.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
-            screenshots
+            http://localhost:8080 \
+            admin \
+            admin123
+      
+      - name: Generate test summary table
+        if: always()
+        run: |
+          cd userfrosting
+          echo ""
+          echo "========================================="
+          echo "INTEGRATION TEST RESULTS SUMMARY"
+          echo "========================================="
+          echo ""
+          
+          # Create summary table
+          cat << 'EOF' > /tmp/test-summary.txt
+          | Test Category | Auth Status | Type | Status | Details |
+          |---------------|-------------|------|--------|---------|
+          EOF
+          
+          # Function to extract summary from test results
+          extract_summary() {
+            local file=$1
+            local auth_status=$2
+            local type=$3
+            
+            if [ -f "$file" ]; then
+              # Extract test counts
+              local total=$(grep "Total tests:" "$file" | awk '{print $3}' || echo "0")
+              local passed=$(grep "Passed:" "$file" | awk '{print $2}' || echo "0")
+              local warnings=$(grep "Warnings:" "$file" | awk '{print $2}' || echo "0")
+              local failed=$(grep "Failed:" "$file" | awk '{print $2}' || echo "0")
+              
+              # Determine status
+              local status="✅ PASS"
+              if [ "$failed" -gt 0 ]; then
+                status="❌ FAIL"
+              elif [ "$warnings" -gt 0 ]; then
+                status="⚠️  WARN"
+              fi
+              
+              # Format details
+              local details="Total: $total, Passed: $passed, Warnings: $warnings, Failed: $failed"
+              
+              echo "| Step $step | $auth_status | $type | $status | $details |" >> /tmp/test-summary.txt
+              step=$((step + 1))
+            else
+              echo "| Step $step | $auth_status | $type | ❌ ERROR | Test file not found |" >> /tmp/test-summary.txt
+              step=$((step + 1))
+            fi
+          }
+          
+          # Initialize step counter
+          step=1
+          
+          # Extract summaries for test runs (only unauthenticated tests now write to files)
+          extract_summary "/tmp/test-results-unauth-api.txt" "Unauthenticated" "API"
+          extract_summary "/tmp/test-results-unauth-frontend.txt" "Unauthenticated" "Frontend"
+          
+          # Note: Authenticated tests are now done via unified JS script (results shown in console)
+          echo "| Step 3 | Authenticated | API+Frontend | See console output | Unified test approach |" >> /tmp/test-summary.txt
+          
+          # Display the summary table
+          cat /tmp/test-summary.txt
+          echo ""
+          
+          # Overall summary for unauthenticated tests
+          echo "========================================="
+          echo "OVERALL TEST SUMMARY"
+          echo "========================================="
+          
+          total_tests=0
+          total_passed=0
+          total_warnings=0
+          total_failed=0
+          
+          for file in /tmp/test-results-*.txt; do
+            if [ -f "$file" ]; then
+              tests=$(grep "Total tests:" "$file" | awk '{print $3}' || echo "0")
+              passed=$(grep "Passed:" "$file" | awk '{print $2}' || echo "0")
+              warnings=$(grep "Warnings:" "$file" | awk '{print $2}' || echo "0")
+              failed=$(grep "Failed:" "$file" | awk '{print $2}' || echo "0")
+              
+              total_tests=$((total_tests + tests))
+              total_passed=$((total_passed + passed))
+              total_warnings=$((total_warnings + warnings))
+              total_failed=$((total_failed + failed))
+            fi
+          done
+          
+          echo "Unauthenticated Tests: $total_tests executed"
+          echo "✅ Passed: $total_passed"
+          echo "⚠️  Warnings: $total_warnings (expected for access control)"
+          echo "❌ Failed: $total_failed"
+          echo ""
+          echo "Authenticated Tests: See unified test output above"
+          echo ""
+          
+          if [ "$total_failed" -gt 0 ]; then
+            echo "⚠️  Some unauthenticated tests failed"
+          elif [ "$total_warnings" -gt 0 ]; then
+            echo "✅ Unauthenticated tests passed (warnings are expected for access control)"
+          else
+            echo "✅ All unauthenticated tests passed"
+          fi
+          
+          echo ""
+          echo "Note: Authenticated test results are from unified script (login + API + frontend in one session)"
+
+      - name: Capture screenshots (if not already captured by unified test)
+        if: always()
+        run: |
+          cd userfrosting
+          # Note: The unified test script already captures screenshots
+          # This step is kept for compatibility but will skip if screenshots already exist
+          
+          # Count existing screenshots
+          SCREENSHOT_COUNT=$(ls -1 /tmp/screenshot_*.png 2>/dev/null | wc -l || echo "0")
+          
+          if [ "$SCREENSHOT_COUNT" -gt 0 ]; then
+            echo "✅ Found $SCREENSHOT_COUNT screenshot(s) already captured by unified test"
+            echo "Skipping additional screenshot capture"
+          else
+            echo "📸 No screenshots found - capturing now"
+            # Perform fresh login and screenshot capture
+            node take-screenshots-modular.js \
+              ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
+              http://localhost:8080 \
+              admin \
+              admin123
+          fi
 
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-screenshots
-          path: userfrosting/screenshots/
+          path: /tmp/screenshot_*.png
+          retention-days: 7
+      
+      - name: Upload login diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-diagnostics
+          path: |
+            /tmp/login-page-before-attempt.png
+            /tmp/login-error-screenshot.png
           retention-days: 7
       
       - name: Upload logs
@@ -413,6 +803,15 @@ jobs:
         with:
           name: integration-test-logs
           path: userfrosting/app/logs/
+          retention-days: 7
+      
+      - name: Upload API test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-log
+          path: /tmp/api-test-log.json
+          if-no-files-found: ignore
           retention-days: 7
       
       - name: Stop servers

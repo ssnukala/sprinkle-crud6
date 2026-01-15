@@ -19,7 +19,7 @@ env:
   FRAMEWORK_BRANCH: main
   UF_VERSION: "^6.0-beta"
   PHP_VERSION: "8.4"
-  NODE_VERSION: "22"
+  NODE_VERSION: "20"
 
 jobs:
   integration-test:
@@ -381,12 +381,21 @@ jobs:
       - name: Install Playwright
         run: |
           cd userfrosting
+          npm install playwright
           npx playwright install chromium
+
+      - name: Copy testing scripts to userfrosting
+        run: |
+          cd userfrosting
+          # Copy scripts to userfrosting so they can access node_modules
+          cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-authenticated-unified.js .
+          cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js .
+          echo "✅ Testing scripts copied to userfrosting directory"
 
       - name: Capture screenshots
         run: |
           cd userfrosting
-          node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \
+          node ./take-screenshots-modular.js \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             screenshots
 

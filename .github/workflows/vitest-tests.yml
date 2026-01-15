@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: ['22']
+        node-version: ['20']
     
     name: Vitest Tests (Node ${{ matrix.node-version }})
     

@@ -369,12 +369,21 @@ ${generateCustomSteps(customSteps, 'after_tests')}
       - name: Install Playwright
         run: |
           cd userfrosting
+          npm install playwright
           npx playwright install chromium
+
+      - name: Copy testing scripts to userfrosting
+        run: |
+          cd userfrosting
+          # Copy scripts to userfrosting so they can access node_modules
+          cp ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-authenticated-unified.js .
+          cp ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js .
+          echo "✅ Testing scripts copied to userfrosting directory"
 ${generateCustomSteps(customSteps, 'before_screenshots')}
       - name: Capture screenshots
         run: |
           cd userfrosting
-          node ../\${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js \\
+          node ./take-screenshots-modular.js \\
             ../\${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \\
             screenshots
 ${generateCustomSteps(customSteps, 'after_screenshots')}

@@ -9,8 +9,10 @@ import ViteYaml from '@modyfi/vite-plugin-yaml'
 export default defineConfig({
     plugins: [vue(), ViteYaml()],
     optimizeDeps: {
-        // Pre-bundle limax and its dependencies for optimal performance
-        // This improves Vite cold-start time and ensures consistent behavior
+        // CRUD6-specific: Pre-bundle limax and its dependencies
+        // UserFrosting 6.0.0-beta.8 removed limax from main app's optimizeDeps,
+        // but CRUD6 still needs it because useCRUD6Api.ts uses limax for slug generation.
+        // This is correct and required - see .archive/VITE_COMMONJS_MODULE_FIX.md
         include: ['limax', 'lodash.deburr']
     },
     test: {

@@ -3,13 +3,7 @@ CRUD Sprinkle for UserFrosting 6 - Generic API CRUD Layer
 
 A powerful and flexible CRUD (Create, Read, Update, Delete) API system for UserFrosting 6 that allows you to dynamically perform CRUD operations on any database table using JSON schema definitions. Designed for headless/API-first architecture with Vue.js frontend integration.
 
-**Compatible with UserFrosting 6.0.4 beta and later (tested with 6.0.0-beta.8).**
-
-## Requirements
-
-- **PHP**: 8.4 or later
-- **Node.js**: 18 or later (22 recommended)
-- **UserFrosting**: 6.0.4 beta or later
+**Compatible with UserFrosting 6.0.4 beta and later.**
 
 ## Features
 

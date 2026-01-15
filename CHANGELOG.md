@@ -8,13 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **UserFrosting 6.0.0-beta.8 Compatibility**: Updated configurations to align with UserFrosting 6.0.0-beta.8
-  - Added Node.js engine specification (>= 18) in `package.json`
-  - Updated Docker configuration to PHP 8.4 and Node.js 22
-  - Suppressed PHP deprecation warnings in Docker (E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED)
-  - Updated GitHub Actions workflows to use Node.js 22
-  - Clarified `vite.config.ts` optimizeDeps comment (CRUD6's external dependencies are separate from UF monorepo)
-  - See `.archive/UF_6.0.0_BETA_8_UPDATES.md` for detailed migration guide
 - **PHP Version**: Updated minimum PHP version requirement from 8.1 to 8.4
   - Updated `composer.json` to require `php: ^8.4`
   - Updated all workflow templates and testing configurations
@@ -34,11 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Confirmed archive exclusions are appropriate
 
 ### Migration Notes
-- Update your Node.js environment to 22 (or at least 18)
 - Update your PHP environment to 8.4 or later
 - Update composer dependencies: `composer update`
-- Update npm dependencies: `npm install`
-- Rebuild Docker containers if using Docker: `docker-compose build`
 - No code changes required - this is a configuration update only
 - All APIs and components remain backward compatible
 

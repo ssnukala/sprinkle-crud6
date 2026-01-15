@@ -25,9 +25,6 @@
   "bugs": {
     "url": "https://github.com/ssnukala/sprinkle-crud6/issues"
   },
-  "engines": {
-    "node": ">= 18"
-  },
   "exports": {
     ".": "./app/assets/index.ts",
     "./composables": "./app/assets/composables/index.ts",

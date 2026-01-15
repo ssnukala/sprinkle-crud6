@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **UserFrosting 6.0.0-beta.8 Compatibility**: Aligned with beta.8 release
+  - Added Node.js engine specification (`>= 18`) in `package.json`
+  - Confirmed compatibility with Node 18+ (currently using Node 20 in CI)
+  - Verified `vite.config.ts` optimizeDeps configuration is correct for CRUD6
+    - CRUD6 requires `limax` and `lodash.deburr` in optimizeDeps (used in useCRUD6Api.ts)
+    - This is different from main UserFrosting app which only needs `uikit`
+  - Updated README to indicate testing with beta.8
+  - No breaking changes to integration test workflows (avoiding issues from reverted PR #366)
 - **PHP Version**: Updated minimum PHP version requirement from 8.1 to 8.4
   - Updated `composer.json` to require `php: ^8.4`
   - Updated all workflow templates and testing configurations

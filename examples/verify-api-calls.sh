@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+# @link      https://github.com/ssnukala/sprinkle-crud6
+# @copyright Copyright (c) 2026 Srinivas Nukala
+# @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+
 # Quick verification script to identify source of redundant API calls
 # Run this in your browser's DevTools Console when on a CRUD6 page
 

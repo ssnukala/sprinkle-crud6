@@ -1,124 +1,125 @@
 {
-  "model": "order",
-  "title": "Order Management",
-  "singular_title": "Order",
-  "description": "Manage customer orders with smartlookup fields",
-  "table": "orders",
-  "primary_key": "id",
-  "timestamps": true,
-  "soft_delete": true,
-  "render_mode": "master-detail",
-  "permissions": {
-    "read": "view_orders",
-    "create": "create_order",
-    "update": "update_order",
-    "delete": "delete_order"
-  },
-  "default_sort": {
-    "id": "desc"
-  },
-  "detail_editable": {
-    "model": "order_lines",
-    "foreign_key": "order_id",
-    "fields": [
-      "product_id",
-      "quantity",
-      "unit_price",
-      "line_total"
-    ],
-    "title": "Order Lines",
-    "allow_add": true,
-    "allow_edit": true,
-    "allow_delete": true
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "Order ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "order",
+    "title": "Order Management",
+    "singular_title": "Order",
+    "description": "Manage customer orders with smartlookup fields",
+    "table": "orders",
+    "primary_key": "id",
+    "timestamps": true,
+    "soft_delete": true,
+    "render_mode": "master-detail",
+    "permissions": {
+        "read": "view_orders",
+        "create": "create_order",
+        "update": "update_order",
+        "delete": "delete_order"
     },
-    "customer_id": {
-      "type": "smartlookup",
-      "label": "Customer",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "lookup": {
-        "model": "customers",
-        "id": "id",
-        "desc": "name"
-      },
-      "placeholder": "Search for a customer...",
-      "description": "Type to search for customers by name"
+    "default_sort": {
+        "id": "desc"
     },
-    "order_number": {
-      "type": "string",
-      "label": "Order Number",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "validation": {
-        "length": {
-          "max": 50
+    "detail_editable": {
+        "model": "order_lines",
+        "foreign_key": "order_id",
+        "fields": [
+            "product_id",
+            "quantity",
+            "unit_price",
+            "line_total"
+        ],
+        "title": "Order Lines",
+        "allow_add": true,
+        "allow_edit": true,
+        "allow_delete": true
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "Order ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": true
+        },
+        "customer_id": {
+            "type": "smartlookup",
+            "label": "Customer",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "lookup": {
+                "model": "customers",
+                "id": "id",
+                "desc": "name"
+            },
+            "placeholder": "Search for a customer...",
+            "description": "Type to search for customers by name"
+        },
+        "order_number": {
+            "type": "string",
+            "label": "Order Number",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "validation": {
+                "length": {
+                    "max": 50
+                }
+            }
+        },
+        "order_date": {
+            "type": "date",
+            "label": "Order Date",
+            "required": true,
+            "sortable": true,
+            "filterable": true
+        },
+        "status": {
+            "type": "string",
+            "label": "Status",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "default": "pending",
+            "validation": {
+                "length": {
+                    "max": 20
+                }
+            }
+        },
+        "total_amount": {
+            "type": "decimal",
+            "label": "Total Amount",
+            "sortable": true,
+            "filterable": true,
+            "editable": false
+        },
+        "notes": {
+            "type": "text",
+            "label": "Notes",
+            "sortable": false,
+            "filterable": false
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false
+        },
+        "deleted_at": {
+            "type": "datetime",
+            "label": "Deleted At",
+            "editable": false,
+            "sortable": false,
+            "filterable": false
         }
-      }
-    },
-    "order_date": {
-      "type": "date",
-      "label": "Order Date",
-      "required": true,
-      "sortable": true,
-      "filterable": true
-    },
-    "status": {
-      "type": "string",
-      "label": "Status",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "default": "pending",
-      "validation": {
-        "length": {
-          "max": 20
-        }
-      }
-    },
-    "total_amount": {
-      "type": "decimal",
-      "label": "Total Amount",
-      "sortable": true,
-      "filterable": true,
-      "editable": false
-    },
-    "notes": {
-      "type": "text",
-      "label": "Notes",
-      "sortable": false,
-      "filterable": false
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false
-    },
-    "deleted_at": {
-      "type": "datetime",
-      "label": "Deleted At",
-      "editable": false,
-      "sortable": false,
-      "filterable": false
     }
-  }
 }

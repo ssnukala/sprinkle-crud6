@@ -1,139 +1,140 @@
 {
-  "model": "order_details",
-  "title": "Order Detail Management",
-  "singular_title": "Order Detail",
-  "description": "Manage order line items",
-  "table": "order_details",
-  "permissions": {
-    "read": "view_orders",
-    "create": "create_order",
-    "update": "edit_order",
-    "delete": "delete_order"
-  },
-  "default_sort": {
-    "line_number": "asc"
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "order_details",
+    "title": "Order Detail Management",
+    "singular_title": "Order Detail",
+    "description": "Manage order line items",
+    "table": "order_details",
+    "permissions": {
+        "read": "view_orders",
+        "create": "create_order",
+        "update": "edit_order",
+        "delete": "delete_order"
     },
-    "order_id": {
-      "type": "integer",
-      "label": "Order ID",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": false,
-      "validation": {
-        "required": true
-      }
+    "default_sort": {
+        "line_number": "asc"
     },
-    "line_number": {
-      "type": "integer",
-      "label": "Line #",
-      "required": true,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "numeric": true
-      }
-    },
-    "sku": {
-      "type": "string",
-      "label": "SKU",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true
-      }
-    },
-    "product_name": {
-      "type": "string",
-      "label": "Product Name",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "length": {
-          "min": 2,
-          "max": 255
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "order_id": {
+            "type": "integer",
+            "label": "Order ID",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": false,
+            "validation": {
+                "required": true
+            }
+        },
+        "line_number": {
+            "type": "integer",
+            "label": "Line #",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "numeric": true
+            }
+        },
+        "sku": {
+            "type": "string",
+            "label": "SKU",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true
+            }
+        },
+        "product_name": {
+            "type": "string",
+            "label": "Product Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 2,
+                    "max": 255
+                }
+            }
+        },
+        "quantity": {
+            "type": "integer",
+            "label": "Quantity",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "numeric": true,
+                "min": 1
+            }
+        },
+        "unit_price": {
+            "type": "decimal",
+            "label": "Unit Price",
+            "required": true,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "numeric": true,
+                "min": 0
+            }
+        },
+        "line_total": {
+            "type": "decimal",
+            "label": "Line Total",
+            "required": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "editable": false,
+            "validation": {
+                "numeric": true,
+                "min": 0
+            }
+        },
+        "notes": {
+            "type": "text",
+            "label": "Notes",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": false
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": false
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": false
         }
-      }
-    },
-    "quantity": {
-      "type": "integer",
-      "label": "Quantity",
-      "required": true,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "numeric": true,
-        "min": 1
-      }
-    },
-    "unit_price": {
-      "type": "decimal",
-      "label": "Unit Price",
-      "required": true,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "numeric": true,
-        "min": 0
-      }
-    },
-    "line_total": {
-      "type": "decimal",
-      "label": "Line Total",
-      "required": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "editable": false,
-      "validation": {
-        "numeric": true,
-        "min": 0
-      }
-    },
-    "notes": {
-      "type": "text",
-      "label": "Notes",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": false
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": false
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": false
     }
-  }
 }

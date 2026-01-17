@@ -1,4 +1,12 @@
 <script setup lang="ts">
+/*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
 import { computed, onMounted, ref } from 'vue'
 import { useCRUD6SchemaStore } from '@ssnukala/sprinkle-crud6/stores'
 import type { DetailConfig } from '@ssnukala/sprinkle-crud6/composables'

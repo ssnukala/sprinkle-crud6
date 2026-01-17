@@ -1,86 +1,92 @@
 {
-  "model": "categories",
-  "title": "Category Management",
-  "singular_title": "Category",
-  "description": "Manage product categories",
-  "table": "categories",
-  "title_field": "name",
-  "permissions": {
-    "read": "view_categories",
-    "create": "create_category",
-    "update": "edit_category",
-    "delete": "delete_category"
-  },
-  "default_sort": {
-    "name": "asc"
-  },
-  "detail": {
-    "model": "products",
-    "foreign_key": "category_id",
-    "list_fields": ["name", "sku", "price", "is_active"],
-    "title": "Products in this Category"
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "categories",
+    "title": "Category Management",
+    "singular_title": "Category",
+    "description": "Manage product categories",
+    "table": "categories",
+    "title_field": "name",
+    "permissions": {
+        "read": "view_categories",
+        "create": "create_category",
+        "update": "edit_category",
+        "delete": "delete_category"
     },
-    "name": {
-      "type": "string",
-      "label": "Category Name",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "length": {
-          "min": 2,
-          "max": 100
+    "default_sort": {
+        "name": "asc"
+    },
+    "detail": {
+        "model": "products",
+        "foreign_key": "category_id",
+        "list_fields": [
+            "name",
+            "sku",
+            "price",
+            "is_active"
+        ],
+        "title": "Products in this Category"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "name": {
+            "type": "string",
+            "label": "Category Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 2,
+                    "max": 100
+                }
+            }
+        },
+        "slug": {
+            "type": "string",
+            "label": "Slug",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "slug": true
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": true,
+            "field_template": "<div class='uk-text-meta'><strong>ID:</strong> {{id}} | <strong>Slug:</strong> {{slug}}<br/><strong>Status:</strong> {{is_active}}<br/>{{description}}</div>"
+        },
+        "icon": {
+            "type": "string",
+            "label": "Icon",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": false
+        },
+        "is_active": {
+            "type": "boolean",
+            "label": "Active",
+            "default": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true
         }
-      }
-    },
-    "slug": {
-      "type": "string",
-      "label": "Slug",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "slug": true
-      }
-    },
-    "description": {
-      "type": "text",
-      "label": "Description",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": true,
-      "field_template": "<div class='uk-text-meta'><strong>ID:</strong> {{id}} | <strong>Slug:</strong> {{slug}}<br/><strong>Status:</strong> {{is_active}}<br/>{{description}}</div>"
-    },
-    "icon": {
-      "type": "string",
-      "label": "Icon",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": false
-    },
-    "is_active": {
-      "type": "boolean",
-      "label": "Active",
-      "default": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true
     }
-  }
 }

@@ -1,3 +1,11 @@
+/*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
 import { ref, computed } from 'vue'
 import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'

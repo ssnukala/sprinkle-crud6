@@ -5,9 +5,9 @@ declare(strict_types=1);
 /*
  * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/userfrosting/sprinkle-crud6
- * @copyright Copyright (c) 2025 Srinivas Nukala
- * @license   https://github.com/userfrosting/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
 namespace UserFrosting\Sprinkle\CRUD6\Database\Seeds;

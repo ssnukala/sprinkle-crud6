@@ -1,105 +1,106 @@
 {
-  "model": "tasks",
-  "title": "Task Management",
-  "singular_title": "Task",
-  "description": "Manage project tasks with custom field templates",
-  "table": "tasks",
-  "permissions": {
-    "read": "view_tasks",
-    "create": "create_task",
-    "update": "edit_task",
-    "delete": "delete_task"
-  },
-  "default_sort": {
-    "created_at": "desc"
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "tasks",
+    "title": "Task Management",
+    "singular_title": "Task",
+    "description": "Manage project tasks with custom field templates",
+    "table": "tasks",
+    "permissions": {
+        "read": "view_tasks",
+        "create": "create_task",
+        "update": "edit_task",
+        "delete": "delete_task"
     },
-    "title": {
-      "type": "string",
-      "label": "Task Title",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "length": {
-          "min": 3,
-          "max": 255
+    "default_sort": {
+        "created_at": "desc"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "title": {
+            "type": "string",
+            "label": "Task Title",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 3,
+                    "max": 255
+                }
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Task Details",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": true,
+            "field_template": "<div class='uk-card uk-card-small uk-card-default uk-card-body'><div class='uk-grid-small uk-flex-middle' uk-grid><div class='uk-width-auto'><span class='uk-badge uk-badge-{{status}}'>{{status}}</span></div><div class='uk-width-expand'><div class='uk-text-bold'>Task #{{id}}: {{title}}</div><div class='uk-text-meta uk-text-small'>Assigned to: {{assigned_to}} | Priority: {{priority}}</div><p class='uk-margin-small-top uk-text-small'>{{description}}</p></div><div class='uk-width-auto uk-text-nowrap'><span class='uk-text-meta'>Due: {{due_date}}</span></div></div></div>"
+        },
+        "status": {
+            "type": "string",
+            "label": "Status",
+            "default": "pending",
+            "sortable": true,
+            "filterable": true,
+            "listable": false,
+            "filter_type": "equals"
+        },
+        "priority": {
+            "type": "string",
+            "label": "Priority",
+            "default": "medium",
+            "sortable": true,
+            "filterable": true,
+            "listable": false,
+            "filter_type": "equals"
+        },
+        "assigned_to": {
+            "type": "string",
+            "label": "Assigned To",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "listable": false
+        },
+        "due_date": {
+            "type": "date",
+            "label": "Due Date",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "listable": false,
+            "filter_type": "between",
+            "date_format": "Y-m-d"
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
         }
-      }
-    },
-    "description": {
-      "type": "text",
-      "label": "Task Details",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": true,
-      "field_template": "<div class='uk-card uk-card-small uk-card-default uk-card-body'><div class='uk-grid-small uk-flex-middle' uk-grid><div class='uk-width-auto'><span class='uk-badge uk-badge-{{status}}'>{{status}}</span></div><div class='uk-width-expand'><div class='uk-text-bold'>Task #{{id}}: {{title}}</div><div class='uk-text-meta uk-text-small'>Assigned to: {{assigned_to}} | Priority: {{priority}}</div><p class='uk-margin-small-top uk-text-small'>{{description}}</p></div><div class='uk-width-auto uk-text-nowrap'><span class='uk-text-meta'>Due: {{due_date}}</span></div></div></div>"
-    },
-    "status": {
-      "type": "string",
-      "label": "Status",
-      "default": "pending",
-      "sortable": true,
-      "filterable": true,
-      "listable": false,
-      "filter_type": "equals"
-    },
-    "priority": {
-      "type": "string",
-      "label": "Priority",
-      "default": "medium",
-      "sortable": true,
-      "filterable": true,
-      "listable": false,
-      "filter_type": "equals"
-    },
-    "assigned_to": {
-      "type": "string",
-      "label": "Assigned To",
-      "required": false,
-      "sortable": true,
-      "filterable": true,
-      "listable": false
-    },
-    "due_date": {
-      "type": "date",
-      "label": "Due Date",
-      "required": false,
-      "sortable": true,
-      "filterable": true,
-      "listable": false,
-      "filter_type": "between",
-      "date_format": "Y-m-d"
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "date_format": "Y-m-d H:i:s"
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": false,
-      "date_format": "Y-m-d H:i:s"
     }
-  }
 }

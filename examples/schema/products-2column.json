@@ -1,139 +1,140 @@
 {
-  "model": "products",
-  "title": "Product Management (2-Column Layout - Default)",
-  "singular_title": "Product",
-  "description": "Manage your product catalog with 2-column form layout (default)",
-  "table": "products",
-  "form_layout": "2-column",
-  "permissions": {
-    "read": "view_products",
-    "create": "create_product",
-    "update": "edit_product",
-    "delete": "delete_product"
-  },
-  "default_sort": {
-    "name": "asc"
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "products",
+    "title": "Product Management (2-Column Layout - Default)",
+    "singular_title": "Product",
+    "description": "Manage your product catalog with 2-column form layout (default)",
+    "table": "products",
+    "form_layout": "2-column",
+    "permissions": {
+        "read": "view_products",
+        "create": "create_product",
+        "update": "edit_product",
+        "delete": "delete_product"
     },
-    "name": {
-      "type": "string",
-      "label": "Product Name",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "length": {
-          "min": 2,
-          "max": 255
+    "default_sort": {
+        "name": "asc"
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "name": {
+            "type": "string",
+            "label": "Product Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 2,
+                    "max": 255
+                }
+            }
+        },
+        "sku": {
+            "type": "string",
+            "label": "SKU",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "unique": true
+            }
+        },
+        "price": {
+            "type": "decimal",
+            "label": "Price",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "numeric": true,
+                "min": 0
+            }
+        },
+        "description": {
+            "type": "text",
+            "label": "Description",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": true,
+            "field_template": "<div class='uk-card uk-card-small uk-card-body uk-card-default'><div class='uk-grid-small' uk-grid><div class='uk-width-auto'><span class='uk-badge'>ID: {{id}}</span></div><div class='uk-width-auto'><span class='uk-badge'>SKU: {{sku}}</span></div><div class='uk-width-auto'><span class='uk-label uk-label-{{is_active}}'>Active: {{is_active}}</span></div></div><p class='uk-text-small uk-margin-small-top'>{{description}}</p></div>"
+        },
+        "category_id": {
+            "type": "integer",
+            "label": "Category",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "filter_type": "equals"
+        },
+        "tags": {
+            "type": "string",
+            "label": "Tags",
+            "required": false,
+            "sortable": false,
+            "filterable": true,
+            "listable": false,
+            "filter_type": "like"
+        },
+        "is_active": {
+            "type": "boolean",
+            "label": "Active",
+            "default": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true
+        },
+        "launch_date": {
+            "type": "date",
+            "label": "Launch Date",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "filter_type": "greater_than",
+            "date_format": "Y-m-d"
+        },
+        "metadata": {
+            "type": "json",
+            "label": "Metadata",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": false
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true,
+            "date_format": "Y-m-d H:i:s"
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": false,
+            "date_format": "Y-m-d H:i:s"
         }
-      }
-    },
-    "sku": {
-      "type": "string",
-      "label": "SKU",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "unique": true
-      }
-    },
-    "price": {
-      "type": "decimal",
-      "label": "Price",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "numeric": true,
-        "min": 0
-      }
-    },
-    "description": {
-      "type": "text",
-      "label": "Description",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": true,
-      "field_template": "<div class='uk-card uk-card-small uk-card-body uk-card-default'><div class='uk-grid-small' uk-grid><div class='uk-width-auto'><span class='uk-badge'>ID: {{id}}</span></div><div class='uk-width-auto'><span class='uk-badge'>SKU: {{sku}}</span></div><div class='uk-width-auto'><span class='uk-label uk-label-{{is_active}}'>Active: {{is_active}}</span></div></div><p class='uk-text-small uk-margin-small-top'>{{description}}</p></div>"
-    },
-    "category_id": {
-      "type": "integer",
-      "label": "Category",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "filter_type": "equals"
-    },
-    "tags": {
-      "type": "string",
-      "label": "Tags",
-      "required": false,
-      "sortable": false,
-      "filterable": true,
-      "listable": false,
-      "filter_type": "like"
-    },
-    "is_active": {
-      "type": "boolean",
-      "label": "Active",
-      "default": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true
-    },
-    "launch_date": {
-      "type": "date",
-      "label": "Launch Date",
-      "required": false,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "filter_type": "greater_than",
-      "date_format": "Y-m-d"
-    },
-    "metadata": {
-      "type": "json",
-      "label": "Metadata",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": false
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true,
-      "date_format": "Y-m-d H:i:s"
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": false,
-      "date_format": "Y-m-d H:i:s"
     }
-  }
 }

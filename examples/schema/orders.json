@@ -1,135 +1,143 @@
 {
-  "model": "orders",
-  "title": "Order Management",
-  "singular_title": "Order",
-  "description": "Manage customer orders",
-  "table": "orders",
-  "title_field": "order_number",
-  "permissions": {
-    "read": "view_orders",
-    "create": "create_order",
-    "update": "edit_order",
-    "delete": "delete_order"
-  },
-  "default_sort": {
-    "created_at": "desc"
-  },
-  "detail_editable": {
-    "model": "order_details",
-    "foreign_key": "order_id",
-    "fields": ["line_number", "sku", "product_name", "quantity", "unit_price", "notes"],
-    "title": "Order Items",
-    "allow_add": true,
-    "allow_edit": true,
-    "allow_delete": true
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "Order ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "orders",
+    "title": "Order Management",
+    "singular_title": "Order",
+    "description": "Manage customer orders",
+    "table": "orders",
+    "title_field": "order_number",
+    "permissions": {
+        "read": "view_orders",
+        "create": "create_order",
+        "update": "edit_order",
+        "delete": "delete_order"
     },
-    "order_number": {
-      "type": "string",
-      "label": "Order Number",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "unique": true
-      }
+    "default_sort": {
+        "created_at": "desc"
     },
-    "customer_name": {
-      "type": "string",
-      "label": "Customer Name",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true,
-        "length": {
-          "min": 2,
-          "max": 255
+    "detail_editable": {
+        "model": "order_details",
+        "foreign_key": "order_id",
+        "fields": [
+            "line_number",
+            "sku",
+            "product_name",
+            "quantity",
+            "unit_price",
+            "notes"
+        ],
+        "title": "Order Items",
+        "allow_add": true,
+        "allow_edit": true,
+        "allow_delete": true
+    },
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "Order ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "order_number": {
+            "type": "string",
+            "label": "Order Number",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "unique": true
+            }
+        },
+        "customer_name": {
+            "type": "string",
+            "label": "Customer Name",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true,
+                "length": {
+                    "min": 2,
+                    "max": 255
+                }
+            }
+        },
+        "customer_email": {
+            "type": "string",
+            "label": "Customer Email",
+            "required": false,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "email": true
+            }
+        },
+        "total_amount": {
+            "type": "decimal",
+            "label": "Total Amount",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "editable": false,
+            "validation": {
+                "numeric": true,
+                "min": 0
+            }
+        },
+        "payment_status": {
+            "type": "string",
+            "label": "Payment Status",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "default": "pending",
+            "validation": {
+                "required": true
+            }
+        },
+        "order_date": {
+            "type": "date",
+            "label": "Order Date",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "listable": true,
+            "validation": {
+                "required": true
+            }
+        },
+        "notes": {
+            "type": "text",
+            "label": "Order Notes",
+            "required": false,
+            "sortable": false,
+            "filterable": false,
+            "listable": false
+        },
+        "created_at": {
+            "type": "datetime",
+            "label": "Created At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": true
+        },
+        "updated_at": {
+            "type": "datetime",
+            "label": "Updated At",
+            "editable": false,
+            "sortable": true,
+            "filterable": false,
+            "listable": false
         }
-      }
-    },
-    "customer_email": {
-      "type": "string",
-      "label": "Customer Email",
-      "required": false,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "email": true
-      }
-    },
-    "total_amount": {
-      "type": "decimal",
-      "label": "Total Amount",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "editable": false,
-      "validation": {
-        "numeric": true,
-        "min": 0
-      }
-    },
-    "payment_status": {
-      "type": "string",
-      "label": "Payment Status",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "default": "pending",
-      "validation": {
-        "required": true
-      }
-    },
-    "order_date": {
-      "type": "date",
-      "label": "Order Date",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "listable": true,
-      "validation": {
-        "required": true
-      }
-    },
-    "notes": {
-      "type": "text",
-      "label": "Order Notes",
-      "required": false,
-      "sortable": false,
-      "filterable": false,
-      "listable": false
-    },
-    "created_at": {
-      "type": "datetime",
-      "label": "Created At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": true
-    },
-    "updated_at": {
-      "type": "datetime",
-      "label": "Updated At",
-      "editable": false,
-      "sortable": true,
-      "filterable": false,
-      "listable": false
     }
-  }
 }

@@ -1,6 +1,14 @@
 <?php
 
 /*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
+/*
  * Example locale file showing proper translation usage following UserFrosting 6 standards
  * 
  * This file demonstrates how to use specific field placeholders and WARNING_CANNOT_UNDONE

@@ -1,44 +1,45 @@
 {
-  "model": "order_legacy",
-  "title": "Order Management (Legacy Format)",
-  "singular_title": "Order",
-  "description": "Example showing legacy flat lookup attributes (still supported for backward compatibility)",
-  "table": "orders",
-  "primary_key": "id",
-  "timestamps": true,
-  "permissions": {
-    "read": "view_orders",
-    "create": "create_order",
-    "update": "update_order",
-    "delete": "delete_order"
-  },
-  "fields": {
-    "id": {
-      "type": "integer",
-      "label": "Order ID",
-      "auto_increment": true,
-      "editable": false,
-      "sortable": true,
-      "filterable": true
+    "_copyright": "UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)",
+    "model": "order_legacy",
+    "title": "Order Management (Legacy Format)",
+    "singular_title": "Order",
+    "description": "Example showing legacy flat lookup attributes (still supported for backward compatibility)",
+    "table": "orders",
+    "primary_key": "id",
+    "timestamps": true,
+    "permissions": {
+        "read": "view_orders",
+        "create": "create_order",
+        "update": "update_order",
+        "delete": "delete_order"
     },
-    "customer_id": {
-      "type": "smartlookup",
-      "label": "Customer",
-      "required": true,
-      "sortable": true,
-      "filterable": true,
-      "lookup_model": "customers",
-      "lookup_id": "id",
-      "lookup_desc": "name",
-      "placeholder": "Search for a customer...",
-      "description": "Legacy flat format: lookup_model, lookup_id, lookup_desc"
-    },
-    "order_number": {
-      "type": "string",
-      "label": "Order Number",
-      "required": true,
-      "sortable": true,
-      "filterable": true
+    "fields": {
+        "id": {
+            "type": "integer",
+            "label": "Order ID",
+            "auto_increment": true,
+            "editable": false,
+            "sortable": true,
+            "filterable": true
+        },
+        "customer_id": {
+            "type": "smartlookup",
+            "label": "Customer",
+            "required": true,
+            "sortable": true,
+            "filterable": true,
+            "lookup_model": "customers",
+            "lookup_id": "id",
+            "lookup_desc": "name",
+            "placeholder": "Search for a customer...",
+            "description": "Legacy flat format: lookup_model, lookup_id, lookup_desc"
+        },
+        "order_number": {
+            "type": "string",
+            "label": "Order Number",
+            "required": true,
+            "sortable": true,
+            "filterable": true
+        }
     }
-  }
 }

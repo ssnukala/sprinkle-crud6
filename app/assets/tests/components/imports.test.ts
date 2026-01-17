@@ -1,3 +1,11 @@
+/*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
 import { describe, expect, test } from 'vitest'
 
 // Test that all components can be imported from their new flattened structure

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+# @link      https://github.com/ssnukala/sprinkle-crud6
+# @copyright Copyright (c) 2026 Srinivas Nukala
+# @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+
 # Script to capture and display PHP error logs from UserFrosting application
 # This script looks for PHP error logs and displays them
 

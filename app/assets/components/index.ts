@@ -1,3 +1,11 @@
+/*
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
+ *
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
+ */
+
 // Export all CRUD6 components
 export { default as CRUD6UnifiedModal } from './CRUD6/UnifiedModal.vue'
 export { default as CRUD6Details } from './CRUD6/Details.vue'

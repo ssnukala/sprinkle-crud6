@@ -1,66 +1,52 @@
-# SQL Schema and Seed Data
+# SQL Schema and Seed Data Generation
 
-This directory contains auto-generated SQL files used for creating database tables and seeding test data for CRUD6 integration testing.
+CRUD6 integration tests dynamically generate SQL files for creating database tables and seeding test data at runtime. These files are **not stored in the repository** but are generated on-demand from JSON schema files.
 
-## Directory Structure
+## How It Works
 
-### `/migrations/` - DDL Files
-Contains CREATE TABLE statements for database schema creation:
+The testing framework uses these scripts to generate SQL dynamically:
 
-- **crud6-tables.sql** - Auto-generated DDL for all test models
-  - Creates 12 main tables from JSON schemas
-  - Creates 2 pivot tables for many-to-many relationships
-  - Includes indexes and constraints based on schema definitions
+- **`.github/testing-framework/scripts/generate-ddl-sql.js`** - Generates CREATE TABLE statements
+- **`.github/testing-framework/scripts/generate-seed-sql.js`** - Generates INSERT statements for test data
 
-### `/seeds/` - Seed Data Files
-Contains INSERT statements for populating test data:
+During integration tests, these scripts:
+1. Read JSON schemas from `examples/schema/`
+2. Generate SQL files in the test environment
+3. Execute the SQL to create tables and seed data
 
-- **crud6-test-data.sql** - Auto-generated seed data for all test models
-  - Seeds test data for 21 models
-  - Includes relationship data for pivot tables
-  - Uses `INSERT...ON DUPLICATE KEY UPDATE` for safe re-seeding
+## Manual SQL Generation
 
-## Usage
-
-### For Integration Testing
-
-These files are designed to run in this order during integration tests:
-
-1. **Run UserFrosting migrations**: `php bakery migrate`
-2. **Create admin user**: `php bakery create:admin-user`
-3. **Run DDL**: Execute `migrations/crud6-tables.sql`
-4. **Run seed data**: Execute `seeds/crud6-test-data.sql`
-5. **Begin testing**: Start unauthenticated and authenticated path tests
-
-### Example Commands
+If you need to generate SQL files manually for development or debugging:
 
 ```bash
-# MySQL
-mysql -u username -p database_name < examples/sql/migrations/crud6-tables.sql
-mysql -u username -p database_name < examples/sql/seeds/crud6-test-data.sql
+# Generate DDL (CREATE TABLE statements)
+node .github/testing-framework/scripts/generate-ddl-sql.js examples/schema tables.sql
 
-# PostgreSQL
-psql -U username -d database_name -f examples/sql/migrations/crud6-tables.sql
-psql -U username -d database_name -f examples/sql/seeds/crud6-test-data.sql
+# Generate seed data (INSERT statements)
+node .github/testing-framework/scripts/generate-seed-sql.js examples/schema seed-data.sql
+
+# Load into MySQL
+mysql -u username -p database_name < tables.sql
+mysql -u username -p database_name < seed-data.sql
+
+# Load into PostgreSQL
+psql -U username -d database_name -f tables.sql
+psql -U username -d database_name -f seed-data.sql
 ```
 
-## Important Notes
+## What Gets Generated
 
-### ⚠️ Auto-Generated Files
+### DDL (Data Definition Language)
+- Creates 12+ main tables from JSON schemas
+- Creates pivot tables for many-to-many relationships
+- Includes indexes and constraints based on schema definitions
+- Foreign keys for relationships
 
-**DO NOT EDIT THESE FILES MANUALLY**
-
-These SQL files are automatically generated from JSON schema files in `examples/schema/` directory.
-
-To update these files, regenerate them using:
-
-```bash
-# Regenerate DDL (CREATE TABLE statements)
-php scripts/generate-schema-ddl.php
-
-# Regenerate seed data (INSERT statements)
-php scripts/generate-test-data.php
-```
+### Seed Data
+- Test data for 21+ models
+- Relationship data for pivot tables
+- Uses `INSERT...ON DUPLICATE KEY UPDATE` for idempotent seeding
+- Proper ID handling (IDs 1-99 reserved for system data)
 
 ### Schema-Driven Generation
 

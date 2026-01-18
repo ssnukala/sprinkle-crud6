@@ -33,14 +33,13 @@ UserFrosting account sprinkle migrations for reference:
 
 See [Migrations/README.md](Migrations/README.md) for details.
 
-### `/sql/` - SQL Schema and Seed Data
-Auto-generated SQL files for testing and development:
-- **migrations/crud6-tables.sql** - CREATE TABLE statements for all test models (generated from JSON schemas)
-- **seeds/crud6-test-data.sql** - INSERT statements for test data seeding
+### `/sql/` - SQL Generation Guide
+Guide for generating SQL from schemas for manual testing:
+- Documentation on how to generate DDL and seed data SQL files
+- Scripts are run automatically during integration tests
+- SQL files are generated dynamically and not stored in the repository
 
-> **⚠️ Note:** These files are auto-generated and should not be edited manually. Regenerate using:
-> - `php scripts/generate-schema-ddl.php` (for migrations)
-> - `php scripts/generate-test-data.php` (for seed data)
+See [sql/README.md](sql/README.md) for SQL generation commands and usage.
 
 ### Vue Component Examples
 - `AutoLookupExamples.vue` - AutoLookup field examples

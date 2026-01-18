@@ -33,6 +33,14 @@ UserFrosting account sprinkle migrations for reference:
 
 See [Migrations/README.md](Migrations/README.md) for details.
 
+### `/sql/` - SQL Generation Guide
+Guide for generating SQL from schemas for manual testing:
+- Documentation on how to generate DDL and seed data SQL files
+- Scripts are run automatically during integration tests
+- SQL files are generated dynamically and not stored in the repository
+
+See [sql/README.md](sql/README.md) for SQL generation commands and usage.
+
 ### Vue Component Examples
 - `AutoLookupExamples.vue` - AutoLookup field examples
 - `OrderEntryPage.vue` - Order entry page example

@@ -62,13 +62,16 @@ class SchemaGenerator
         $columns = $tableMetadata['columns'];
         $primaryKey = $tableMetadata['primaryKey'][0] ?? 'id';
 
-        // Schema structure aligned with sprinkle-crud6 format
+        // Schema structure aligned with modern CRUD6 format
         $schema = [
+            '_copyright' => 'UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com) | @link https://github.com/ssnukala/sprinkle-crud6 | @copyright Copyright (c) 2026 Srinivas Nukala | @license https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)',
             'model' => $tableName,
             'title' => $this->generateTitle($tableName),
             'singular_title' => $this->generateSingularTitle($tableName),
             'description' => 'Manage ' . $tableName,
             'table' => $tableName,
+            'primary_key' => $primaryKey,
+            'title_field' => $this->detectTitleField($columns),
             'permissions' => $this->generatePermissions($tableName),
             'default_sort' => $this->generateDefaultSort($columns, $primaryKey),
         ];
@@ -76,7 +79,19 @@ class SchemaGenerator
         // Add detail section if there's a table that references this table via foreign key
         $detailRelation = $this->getDetailRelationship($tableName, $relationships);
         if ($detailRelation !== null) {
-            $schema['detail'] = $detailRelation;
+            $schema['details'] = [$detailRelation];
+        }
+
+        // Add relationships if they exist
+        $relationshipsDef = $this->generateRelationships($tableName, $relationships);
+        if (!empty($relationshipsDef)) {
+            $schema['relationships'] = $relationshipsDef;
+        }
+
+        // Add actions if they can be generated
+        $actions = $this->generateActions($tableName, $columns);
+        if (!empty($actions)) {
+            $schema['actions'] = $actions;
         }
 
         // Generate field definitions
@@ -114,13 +129,17 @@ class SchemaGenerator
 
         // Phase 2: Update detail sections with actual list_fields from related schemas
         foreach ($generatedSchemas as $tableName => $schema) {
-            if (isset($schema['detail']) && isset($schema['detail']['model'])) {
-                $detailModel = $schema['detail']['model'];
+            if (isset($schema['details']) && is_array($schema['details'])) {
+                foreach ($schema['details'] as $idx => $detail) {
+                    if (isset($detail['model'])) {
+                        $detailModel = $detail['model'];
 
-                // Look up the schema for the detail model
-                if (isset($generatedSchemas[$detailModel])) {
-                    $detailSchema = $generatedSchemas[$detailModel];
-                    $schema['detail']['list_fields'] = $this->extractListableFields($detailSchema);
+                        // Look up the schema for the detail model
+                        if (isset($generatedSchemas[$detailModel])) {
+                            $detailSchema = $generatedSchemas[$detailModel];
+                            $schema['details'][$idx]['list_fields'] = $this->extractListableFields($detailSchema);
+                        }
+                    }
                 }
             }
 
@@ -354,7 +373,7 @@ class SchemaGenerator
     }
 
     /**
-     * Generate field definition in the new format.
+     * Generate field definition in the modern CRUD6 format.
      *
      * @param array $column Column metadata
      * @param string $primaryKey Primary key column name
@@ -362,11 +381,14 @@ class SchemaGenerator
      */
     protected function generateFieldDefinition(array $column, string $primaryKey): array
     {
-        $fieldType = $this->mapDatabaseTypeToSchemaType($column['type']);
         $columnName = $column['name'];
+        
+        // Map database type with context for special fields (email, password)
+        $fieldType = $this->mapDatabaseTypeToSchemaTypeWithContext($column['type'], $columnName);
 
         // Check if this is a timestamp field
         $isTimestamp = in_array($columnName, ['created_at', 'updated_at', 'deleted_at']);
+        $isPrimaryKey = $columnName === $primaryKey;
 
         $field = [
             'type' => $fieldType,
@@ -378,9 +400,11 @@ class SchemaGenerator
             $field['auto_increment'] = true;
         }
 
-        // Add readonly flag for primary keys, auto-increment fields, and timestamps
-        if ($column['autoincrement'] || $columnName === $primaryKey || $isTimestamp) {
+        // Add readonly/editable flag
+        if ($column['autoincrement'] || $isPrimaryKey || $isTimestamp) {
             $field['readonly'] = true;
+        } elseif (!$column['autoincrement'] && !$isTimestamp) {
+            $field['editable'] = true;
         }
 
         // Add required flag (opposite of nullable, but not for timestamps or auto-increment fields)
@@ -388,12 +412,27 @@ class SchemaGenerator
             $field['required'] = true;
         }
 
+        // Add UI type for special fields (e.g., toggle for boolean)
+        if ($fieldType === 'boolean') {
+            $field['ui'] = 'toggle';
+            
+            // Add description for boolean flags
+            $description = $this->generateFieldDescription($columnName);
+            if ($description) {
+                $field['description'] = $description;
+            }
+        }
+
         // Add display flags
         $field['sortable'] = $this->isSortable($column, $fieldType);
         $field['filterable'] = $this->isFilterable($column, $fieldType);
         $field['searchable'] = $this->isSearchable($column, $fieldType);
-        // use the isListable method to determine listable flag and add the sensitive fields check to that method
-        $field['listable'] = $this->isListable($column, $fieldType);
+
+        // Add show_in array for modern CRUD6
+        $showIn = $this->determineShowIn($column, $fieldType, $isPrimaryKey, $isTimestamp);
+        if (!empty($showIn)) {
+            $field['show_in'] = $showIn;
+        }
 
         // Add validation rules as object (not array)
         $validationRules = $this->generateValidationObject($column);
@@ -401,7 +440,60 @@ class SchemaGenerator
             $field['validation'] = $validationRules;
         }
 
+        // Add default value if present
+        if ($column['default'] !== null && $column['default'] !== '') {
+            $field['default'] = $column['default'];
+        }
+
+        // Add date_format for date/datetime fields
+        if (in_array($fieldType, ['date', 'datetime'])) {
+            $field['date_format'] = $fieldType === 'date' ? 'Y-m-d' : 'Y-m-d H:i:s';
+        }
+
         return $field;
+    }
+
+    /**
+     * Map database column type to CRUD6 schema type with special types.
+     *
+     * @param string $dbType Database column type
+     * @param string $columnName Column name for context
+     * @return string Schema field type
+     */
+    protected function mapDatabaseTypeToSchemaTypeWithContext(string $dbType, string $columnName): string
+    {
+        // Check for special field types based on name
+        if ($columnName === 'email' || strpos($columnName, 'email') !== false) {
+            return 'email';
+        }
+
+        if ($columnName === 'password' || strpos($columnName, 'password') !== false) {
+            return 'password';
+        }
+
+        // Standard mapping
+        return $this->mapDatabaseTypeToSchemaType($dbType);
+    }
+
+    /**
+     * Generate field description for boolean flags.
+     *
+     * @param string $columnName Column name
+     * @return string|null Description
+     */
+    protected function generateFieldDescription(string $columnName): ?string
+    {
+        if (strpos($columnName, 'flag_') === 0) {
+            $name = str_replace('flag_', '', $columnName);
+            return ucfirst($name) . ' status';
+        }
+
+        if (strpos($columnName, 'is_') === 0) {
+            $name = str_replace('is_', '', $columnName);
+            return ucfirst($name) . ' indicator';
+        }
+
+        return null;
     }
 
     /**
@@ -569,5 +661,178 @@ class SchemaGenerator
     public function getSchemaDirectory(): string
     {
         return $this->schemaDirectory;
+    }
+
+    /**
+     * Detect the best field to use as the title field.
+     *
+     * @param array $columns Table columns
+     * @return string Field name to use as title
+     */
+    protected function detectTitleField(array $columns): string
+    {
+        // Priority order for title field candidates
+        $candidates = ['name', 'title', 'user_name', 'username', 'slug', 'email', 'label'];
+
+        foreach ($candidates as $candidate) {
+            if (isset($columns[$candidate])) {
+                return $candidate;
+            }
+        }
+
+        // Fall back to first string column
+        foreach ($columns as $column) {
+            if ($column['type'] === 'string' && !in_array($column['name'], ['created_at', 'updated_at', 'deleted_at'])) {
+                return $column['name'];
+            }
+        }
+
+        // Ultimate fallback - first column
+        $firstColumn = array_key_first($columns);
+        return $firstColumn ?? 'id';
+    }
+
+    /**
+     * Generate relationships configuration.
+     *
+     * @param string $tableName Table name
+     * @param array $relationships All relationships
+     * @return array Relationships configuration
+     */
+    protected function generateRelationships(string $tableName, array $relationships): array
+    {
+        $relationshipsDef = [];
+
+        if (!isset($relationships[$tableName]) || !isset($relationships[$tableName]['references'])) {
+            return $relationshipsDef;
+        }
+
+        // Process foreign key relationships
+        foreach ($relationships[$tableName]['references'] as $reference) {
+            $relatedTable = $reference['table'];
+            $foreignKey = $reference['localKey'];
+            $relatedKey = $reference['foreignKey'];
+
+            // Generate a sensible relationship name
+            $relationshipName = $relatedTable;
+
+            $relationshipsDef[] = [
+                'name' => $relationshipName,
+                'type' => 'belongs_to',
+                'related_model' => $relatedTable,
+                'foreign_key' => $foreignKey,
+                'owner_key' => $relatedKey,
+                'title' => strtoupper($relatedTable),
+            ];
+        }
+
+        return $relationshipsDef;
+    }
+
+    /**
+     * Generate action buttons configuration.
+     *
+     * @param string $tableName Table name
+     * @param array $columns Table columns
+     * @return array Actions configuration
+     */
+    protected function generateActions(string $tableName, array $columns): array
+    {
+        $actions = [];
+
+        // Check for boolean flag columns that could be toggled
+        foreach ($columns as $column) {
+            if ($column['type'] === 'boolean') {
+                $columnName = $column['name'];
+                
+                // Common toggle patterns
+                if (preg_match('/^(flag_|is_|has_)/', $columnName)) {
+                    $label = $this->generateLabel($columnName);
+                    $actionKey = 'toggle_' . str_replace(['flag_', 'is_', 'has_'], '', $columnName);
+
+                    $actions[] = [
+                        'key' => $actionKey,
+                        'label' => 'Toggle ' . $label,
+                        'icon' => 'toggle-on',
+                        'type' => 'field_update',
+                        'field' => $columnName,
+                        'toggle' => true,
+                        'scope' => ['detail'],
+                        'style' => 'primary',
+                        'permission' => 'update_' . rtrim($tableName, 's'),
+                    ];
+                }
+            }
+        }
+
+        // Check for status column
+        if (isset($columns['status'])) {
+            $singular = rtrim($tableName, 's');
+            
+            $actions[] = [
+                'key' => 'change_status',
+                'label' => 'Change Status',
+                'icon' => 'edit',
+                'type' => 'field_update',
+                'field' => 'status',
+                'scope' => ['detail'],
+                'style' => 'secondary',
+                'permission' => 'update_' . $singular,
+                'modal_config' => [
+                    'type' => 'input',
+                    'fields' => ['status'],
+                ],
+            ];
+        }
+
+        return $actions;
+    }
+
+    /**
+     * Determine which views a field should appear in.
+     *
+     * @param array $column Column metadata
+     * @param string $fieldType Field type
+     * @param bool $isPrimaryKey Whether this is the primary key
+     * @param bool $isTimestamp Whether this is a timestamp field
+     * @return array Array of view names
+     */
+    protected function determineShowIn(array $column, string $fieldType, bool $isPrimaryKey, bool $isTimestamp): array
+    {
+        $columnName = $column['name'];
+
+        // Primary key - only in detail
+        if ($isPrimaryKey || $column['autoincrement']) {
+            return ['detail'];
+        }
+
+        // Timestamps - only in detail
+        if ($isTimestamp) {
+            if ($columnName === 'deleted_at') {
+                return []; // Soft delete timestamp - hidden by default
+            }
+            return ['detail'];
+        }
+
+        // Password fields - only in create/edit forms
+        if ($columnName === 'password' || strpos($columnName, 'password') !== false) {
+            return ['create', 'edit'];
+        }
+
+        // Sensitive fields - not in list
+        $sensitiveFields = ['token', 'secret', 'api_key', 'private_key'];
+        foreach ($sensitiveFields as $sensitive) {
+            if (strpos($columnName, $sensitive) !== false) {
+                return ['form', 'detail'];
+            }
+        }
+
+        // Text/blob fields - not usually in list
+        if (in_array($fieldType, ['text', 'blob', 'json'])) {
+            return ['form', 'detail'];
+        }
+
+        // Most fields - show in list, form, and detail
+        return ['list', 'form', 'detail'];
     }
 }

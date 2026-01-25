@@ -66,6 +66,7 @@ trait WithDatabaseSeeds
      * This method follows the CI workflow pattern:
      * 1. Runs all seeds registered in sprinkles via SeedRepositoryInterface
      * 2. Creates an admin user (similar to `php bakery create:admin-user`)
+     * 3. Generates CRUD6 schemas from database tables using crud6:generate bakery command
      * 
      * This ensures that groups, roles, and permissions exist before any tests run,
      * and that an admin user is available for authenticated tests.
@@ -80,6 +81,7 @@ trait WithDatabaseSeeds
      *   - crud6.roles.read, crud6.roles.create, crud6.roles.edit, crud6.roles.delete
      *   - crud6.permissions.read, crud6.permissions.create, crud6.permissions.edit, crud6.permissions.delete
      * - Admin user: 'admin' with site-admin role (has all permissions)
+     * - CRUD6 Schemas: Generated from database tables (users, groups, roles, permissions, activities)
      */
     protected function seedDatabase(): void
     {
@@ -104,6 +106,10 @@ trait WithDatabaseSeeds
             // Step 2: Create admin user (similar to CI workflow's create:admin-user)
             // This will trigger UserCreatedEvent listeners that assign default groups/roles
             $this->createAdminUser();
+            
+            // Step 3: Generate CRUD6 schemas from database using bakery command
+            // This ensures integration tests use real generated schemas, not hardcoded ones
+            \UserFrosting\Sprinkle\CRUD6\Tests\Testing\GenerateSchemas::generateFromDatabase($this->ci);
             
         } catch (\Exception $e) {
             // Log errors to help debug seeding failures

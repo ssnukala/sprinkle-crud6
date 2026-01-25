@@ -13,9 +13,6 @@ declare(strict_types=1);
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Testing;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
-use UserFrosting\Sprinkle\CRUD6\Bakery\GenerateSchemaCommand;
 use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\DatabaseScanner;
 use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\SchemaGenerator;
 
@@ -80,41 +77,49 @@ class GenerateSchemas
         echo "📊 Scanning tables: " . implode(', ', $tables) . "\n\n";
 
         try {
-            // Get dependencies from container
+            // Get services from container
             $scanner = $container->get(DatabaseScanner::class);
             $generator = $container->get(SchemaGenerator::class);
 
-            // Create command instance
-            $command = new GenerateSchemaCommand($scanner, $generator, $container->get('config'));
+            // Scan database for tables metadata
+            echo "🔍 Scanning database structure...\n";
+            $tablesMetadata = [];
+            $allRelationships = [];
             
-            // Prepare command input
-            $input = new ArrayInput([
-                '--tables' => implode(',', $tables),
-                '--output-dir' => self::SCHEMA_DIR,
-                '--no-create' => false,
-                '--no-update' => false,
-                '--no-delete' => false,
-                '--no-list' => false,
-            ]);
-            
-            $output = new BufferedOutput();
-            
-            // Execute command
-            echo "🔧 Running crud6:generate command...\n\n";
-            $exitCode = $command->run($input, $output);
-            
-            // Display command output
-            $commandOutput = $output->fetch();
-            if (!empty($commandOutput)) {
-                echo $commandOutput;
+            foreach ($tables as $tableName) {
+                try {
+                    $metadata = $scanner->getTableMetadata($tableName);
+                    $tablesMetadata[$tableName] = $metadata;
+                    
+                    // Get relationships for this table
+                    $relationships = $scanner->detectRelationships($tableName);
+                    if (!empty($relationships)) {
+                        $allRelationships[$tableName] = $relationships;
+                    }
+                    
+                    echo "  ✓ Scanned: {$tableName}\n";
+                } catch (\Exception $e) {
+                    echo "  ⚠ Skipped {$tableName}: " . $e->getMessage() . "\n";
+                }
             }
             
-            if ($exitCode === 0) {
+            if (empty($tablesMetadata)) {
+                throw new \RuntimeException("No tables found to generate schemas for");
+            }
+            
+            // Generate schemas
+            echo "\n📝 Generating schema files...\n";
+            $generatedFiles = $generator->generateSchemas($tablesMetadata, $allRelationships);
+            
+            if (!empty($generatedFiles)) {
                 echo "\n✅ Schema generation completed successfully!\n";
-                echo "   Generated " . count($tables) . " schema files in: " . self::SCHEMA_DIR . "\n";
+                echo "   Generated " . count($generatedFiles) . " schema files:\n";
+                foreach ($generatedFiles as $file) {
+                    $basename = basename($file);
+                    echo "   - {$basename}\n";
+                }
             } else {
-                echo "\n❌ Schema generation failed with exit code: {$exitCode}\n";
-                throw new \RuntimeException("crud6:generate command failed");
+                echo "\n⚠ No schema files were generated\n";
             }
             
         } catch (\Exception $e) {

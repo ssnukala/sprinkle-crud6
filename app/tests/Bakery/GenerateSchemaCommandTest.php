@@ -3,24 +3,24 @@
 declare(strict_types=1);
 
 /*
- * LearnIntegrate Sprinkle
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/ssnukala/sprinkle-learntegrate
- * @copyright Copyright (c) 2024 Srinivas Nukala
- * @license   https://github.com/ssnukala/sprinkle-learntegrate/blob/main/LICENSE (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Bakery;
 
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 use UserFrosting\Sprinkle\CRUD6\Bakery\GenerateSchemaCommand;
-use UserFrosting\Sprinkle\LearnIntegrate\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 use UserFrosting\Testing\BakeryTester;
 
 /**
  * Test GenerateSchemaCommand bakery command.
  *
- * Tests the learntegrate:generate command that scans database tables
+ * Tests the crud6:generate command that scans database tables
  * and generates CRUD6 schema files in the <database>/<model>.json format.
  *
  * This is the key functionality of the sprinkle - scanning databases
@@ -28,7 +28,7 @@ use UserFrosting\Testing\BakeryTester;
  *
  * @author Srinivas Nukala
  */
-class GenerateSchemaCommandTest extends AdminTestCase
+class GenerateSchemaCommandTest extends CRUD6TestCase
 {
     use RefreshDatabase;
 

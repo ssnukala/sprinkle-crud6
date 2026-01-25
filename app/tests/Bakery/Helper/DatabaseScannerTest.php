@@ -3,17 +3,17 @@
 declare(strict_types=1);
 
 /*
- * LearnIntegrate Sprinkle
+ * UserFrosting CRUD6 Sprinkle (http://www.userfrosting.com)
  *
- * @link      https://github.com/ssnukala/sprinkle-learntegrate
- * @copyright Copyright (c) 2024 Srinivas Nukala
- * @license   https://github.com/ssnukala/sprinkle-learntegrate/blob/main/LICENSE (MIT License)
+ * @link      https://github.com/ssnukala/sprinkle-crud6
+ * @copyright Copyright (c) 2026 Srinivas Nukala
+ * @license   https://github.com/ssnukala/sprinkle-crud6/blob/master/LICENSE.md (MIT License)
  */
 
 namespace UserFrosting\Sprinkle\CRUD6\Tests\Bakery\Helper;
 
 use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\DatabaseScanner;
-use UserFrosting\Sprinkle\LearnIntegrate\Tests\AdminTestCase;
+use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
 
 /**
  * Test DatabaseScanner class with focus on implicit relationship detection.
@@ -23,7 +23,7 @@ use UserFrosting\Sprinkle\LearnIntegrate\Tests\AdminTestCase;
  *
  * @author Srinivas Nukala
  */
-class DatabaseScannerTest extends AdminTestCase
+class DatabaseScannerTest extends CRUD6TestCase
 {
     /**
      * Test that explicit foreign keys are detected correctly.

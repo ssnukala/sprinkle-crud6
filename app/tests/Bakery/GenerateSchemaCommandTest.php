@@ -125,20 +125,22 @@ class GenerateSchemaCommandTest extends CRUD6TestCase
         $this->assertArrayHasKey('price', $schema['fields']);
         $this->assertArrayHasKey('stock', $schema['fields']);
         
-        // Verify field structure (new format)
+        // Verify field structure (modern format with show_in)
         $nameField = $schema['fields']['name'];
         $this->assertArrayHasKey('type', $nameField);
         $this->assertArrayHasKey('label', $nameField);
         $this->assertArrayHasKey('sortable', $nameField);
         $this->assertArrayHasKey('filterable', $nameField);
         $this->assertArrayHasKey('searchable', $nameField);
-        $this->assertArrayHasKey('listable', $nameField);
         
-        // Verify old structure is NOT present
-        $this->assertArrayNotHasKey('name', $nameField);
-        $this->assertArrayNotHasKey('database_type', $nameField);
-        $this->assertArrayNotHasKey('display', $nameField);
-        $this->assertArrayNotHasKey('nullable', $nameField);
+        // Modern format uses show_in array instead of individual boolean flags
+        $this->assertArrayHasKey('show_in', $nameField);
+        $this->assertIsArray($nameField['show_in']);
+        
+        // Verify old individual flags are NOT present (replaced by show_in)
+        $this->assertArrayNotHasKey('listable', $nameField);
+        $this->assertArrayNotHasKey('editable', $nameField);
+        $this->assertArrayNotHasKey('creatable', $nameField);
         
         // Verify permissions structure
         $this->assertArrayHasKey('read', $schema['permissions']);
@@ -440,12 +442,25 @@ class GenerateSchemaCommandTest extends CRUD6TestCase
         $schemaContent = file_get_contents($schemaPath);
         $schema = json_decode($schemaContent, true);
         
-        // Verify detail section is present (for tables referenced by foreign keys)
-        // Note: The new format uses 'detail' instead of 'relationships'
-        $this->assertArrayHasKey('detail', $schema);
-        $this->assertArrayHasKey('model', $schema['detail']);
-        $this->assertArrayHasKey('foreign_key', $schema['detail']);
-        $this->assertEquals('test_orders', $schema['detail']['model']);
+        // Verify details section is present (for tables referenced by foreign keys)
+        // Note: Modern format uses 'details' (plural array) instead of 'detail' (singular object)
+        $this->assertArrayHasKey('details', $schema);
+        $this->assertIsArray($schema['details']);
+        $this->assertNotEmpty($schema['details']);
+        
+        // Find the test_orders detail
+        $ordersDetail = null;
+        foreach ($schema['details'] as $detail) {
+            if ($detail['model'] === 'test_orders') {
+                $ordersDetail = $detail;
+                break;
+            }
+        }
+        
+        $this->assertNotNull($ordersDetail, 'test_orders detail should be present');
+        $this->assertArrayHasKey('model', $ordersDetail);
+        $this->assertArrayHasKey('foreign_key', $ordersDetail);
+        $this->assertEquals('test_orders', $ordersDetail['model']);
         $this->assertEquals('product_id', $schema['detail']['foreign_key']);
         
         // Cleanup the test_orders table

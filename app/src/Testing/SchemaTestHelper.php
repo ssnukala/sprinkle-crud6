@@ -90,23 +90,23 @@ class SchemaTestHelper
      * 
      * Static schemas:
      * - 6 legacy CRUD6 permissions (crud6_*, delete_crud6_field, etc.)
-     * - 18 schema-defined permissions from 4 example schemas (users, roles, groups, permissions)
-     * - Total: 24
+     * - 20 schema-defined permissions from 5 example schemas (users, roles, groups, permissions, activities)
+     * - Total: 26
      * 
      * Auto-generated schemas:
-     * - May include additional tables (activities, etc.)
-     * - Permission count depends on tables scanned
-     * - Minimum: 24 (could be more)
+     * - May include additional tables or fields
+     * - Permission count depends on tables scanned and their structure
+     * - Minimum: 26 (could be more)
      * 
      * @return array{min: int, exact: int|null} Expected count range
      */
     public static function getExpectedPermissionCount(): array
     {
         if (self::isUsingGeneratedSchemas()) {
-            return ['min' => 24, 'exact' => null]; // At least 24, exact count varies
+            return ['min' => 26, 'exact' => null]; // At least 26, exact count varies
         }
         
-        return ['min' => 24, 'exact' => 24]; // Exactly 24 from static schemas
+        return ['min' => 26, 'exact' => 26]; // Exactly 26 from static schemas
     }
     
     /**

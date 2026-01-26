@@ -153,8 +153,9 @@ class SchemaGeneratorTest extends CRUD6TestCase
         $schema = json_decode($generator->generateSchema($tableMetadata), true);
 
         // Check field types are properly mapped
+        // Modern format auto-detects email from column name, so 'email' field type is 'email', not 'string'
         $this->assertEquals('integer', $schema['fields']['id']['type']);
-        $this->assertEquals('string', $schema['fields']['email']['type']);
+        $this->assertEquals('email', $schema['fields']['email']['type']); // Auto-detected as email type
         $this->assertEquals('boolean', $schema['fields']['active']['type']);
         $this->assertEquals('datetime', $schema['fields']['created_at']['type']);
 
@@ -318,14 +319,27 @@ class SchemaGeneratorTest extends CRUD6TestCase
         
         $usersSchema = json_decode(file_get_contents($usersSchemaPath), true);
         
-        // Verify the detail section exists
-        $this->assertArrayHasKey('detail', $usersSchema);
-        $this->assertEquals('posts', $usersSchema['detail']['model']);
-        $this->assertEquals('user_id', $usersSchema['detail']['foreign_key']);
+        // Verify the details section exists (plural array, not singular object)
+        $this->assertArrayHasKey('details', $usersSchema);
+        $this->assertIsArray($usersSchema['details']);
+        $this->assertNotEmpty($usersSchema['details']);
+        
+        // Find the posts detail
+        $postsDetail = null;
+        foreach ($usersSchema['details'] as $detail) {
+            if ($detail['model'] === 'posts') {
+                $postsDetail = $detail;
+                break;
+            }
+        }
+        
+        $this->assertNotNull($postsDetail, 'posts detail should be present');
+        $this->assertEquals('posts', $postsDetail['model']);
+        $this->assertEquals('user_id', $postsDetail['foreign_key']);
         
         // The key test: list_fields should NOT contain hardcoded fields like 'email' or 'status'
         // that don't exist in the posts table
-        $listFields = $usersSchema['detail']['list_fields'];
+        $listFields = $postsDetail['list_fields'];
         
         // Should NOT contain 'email' or 'status' (which are in users but not in posts)
         $this->assertNotContains('email', $listFields, 'list_fields should not contain fields from users table');
@@ -341,7 +355,10 @@ class SchemaGeneratorTest extends CRUD6TestCase
         
         foreach ($listFields as $fieldName) {
             $this->assertArrayHasKey($fieldName, $postsSchema['fields'], "Field $fieldName should exist in posts schema");
-            $this->assertTrue($postsSchema['fields'][$fieldName]['listable'], "Field $fieldName should be listable");
+            // Modern format uses show_in array instead of listable boolean
+            $field = $postsSchema['fields'][$fieldName];
+            $this->assertArrayHasKey('show_in', $field, "Field $fieldName should have show_in property");
+            $this->assertContains('list', $field['show_in'], "Field $fieldName should be listable (have 'list' in show_in)");
         }
 
         // Cleanup
@@ -492,22 +509,33 @@ class SchemaGeneratorTest extends CRUD6TestCase
         
         $permissionRolesSchema = json_decode(file_get_contents($permissionRolesSchemaPath), true);
         
-        // Junction table should NOT have a detail section (nothing references it)
-        $this->assertArrayNotHasKey('detail', $permissionRolesSchema, 
-            'Junction table should not have detail section since nothing references it');
+        // Junction table should NOT have a details section (nothing references it)
+        // Modern format uses 'details' (plural) instead of 'detail' (singular)
+        $this->assertArrayNotHasKey('details', $permissionRolesSchema, 
+            'Junction table should not have details section since nothing references it');
         
         // Verify it has the expected fields
         $this->assertArrayHasKey('permission_id', $permissionRolesSchema['fields']);
         $this->assertArrayHasKey('role_id', $permissionRolesSchema['fields']);
         
-        // Now verify that permissions and roles tables DO have detail sections
+        // Now verify that permissions and roles tables DO have details sections
         // pointing to permission_roles (since it references them)
         $permissionsSchemaPath = $schemaDir . '/permissions.json';
         $permissionsSchema = json_decode(file_get_contents($permissionsSchemaPath), true);
         
-        $this->assertArrayHasKey('detail', $permissionsSchema,
-            'Permissions table should have detail section since permission_roles references it');
-        $this->assertEquals('permission_roles', $permissionsSchema['detail']['model']);
+        $this->assertArrayHasKey('details', $permissionsSchema,
+            'Permissions table should have details section since permission_roles references it');
+        
+        // Find the permission_roles detail in the array
+        $permissionRolesDetail = null;
+        foreach ($permissionsSchema['details'] as $detail) {
+            if ($detail['model'] === 'permission_roles') {
+                $permissionRolesDetail = $detail;
+                break;
+            }
+        }
+        $this->assertNotNull($permissionRolesDetail, 'permission_roles detail should be present');
+        $this->assertEquals('permission_roles', $permissionRolesDetail['model']);
         
         $rolesSchemaPath = $schemaDir . '/roles.json';
         $rolesSchema = json_decode(file_get_contents($rolesSchemaPath), true);

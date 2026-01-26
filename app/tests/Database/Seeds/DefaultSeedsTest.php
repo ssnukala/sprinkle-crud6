@@ -105,13 +105,14 @@ class DefaultSeedsTest extends CRUD6TestCase
         // 
         // Static schemas (default):
         // - 6 legacy CRUD6 permissions (crud6_*, delete_crud6_field, etc.)
-        // - 18 schema-defined permissions from 4 example schemas (users, roles, groups, permissions)
-        // = 24 total
+        // - 20 schema-defined permissions from 5 example schemas (users, roles, groups, permissions, activities)
+        //   Each schema generates ~4 permissions (read, create, update, delete)
+        // = 26 total
         //
         // Auto-generated schemas (GENERATE_TEST_SCHEMAS=1):
         // - 6 legacy CRUD6 permissions
         // - Schema-defined permissions from all tables scanned (users, roles, groups, permissions, activities, etc.)
-        // = 24+ total (may include additional tables)
+        // = 26+ total (may include additional tables or fields)
         $role = Role::where('slug', 'crud6-admin')->first();
         $this->assertNotNull($role);
         
@@ -120,8 +121,8 @@ class DefaultSeedsTest extends CRUD6TestCase
             $this,
             $role->permissions,
             SchemaTestHelper::isUsingGeneratedSchemas()
-                ? 'Auto-generated schemas: crud6-admin should have at least 24 permissions'
-                : 'Static schemas: crud6-admin should have exactly 24 permissions (6 legacy + 18 from 4 schemas)'
+                ? 'Auto-generated schemas: crud6-admin should have at least 26 permissions'
+                : 'Static schemas: crud6-admin should have exactly 26 permissions (6 legacy + 20 from 5 schemas)'
         );
         
         // Verify site-admin role also has CRUD6 permissions (if it exists)

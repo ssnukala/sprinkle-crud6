@@ -84,19 +84,11 @@ class GenerateSchemas
             // Scan database for tables metadata
             echo "🔍 Scanning database structure...\n";
             $tablesMetadata = [];
-            $allRelationships = [];
             
             foreach ($tables as $tableName) {
                 try {
                     $metadata = $scanner->getTableMetadata($tableName);
                     $tablesMetadata[$tableName] = $metadata;
-                    
-                    // Get relationships for this table
-                    $relationships = $scanner->detectRelationships($tableName);
-                    if (!empty($relationships)) {
-                        $allRelationships[$tableName] = $relationships;
-                    }
-                    
                     echo "  ✓ Scanned: {$tableName}\n";
                 } catch (\Exception $e) {
                     echo "  ⚠ Skipped {$tableName}: " . $e->getMessage() . "\n";
@@ -106,6 +98,11 @@ class GenerateSchemas
             if (empty($tablesMetadata)) {
                 throw new \RuntimeException("No tables found to generate schemas for");
             }
+            
+            // Detect relationships across all tables
+            echo "\n🔗 Detecting relationships...\n";
+            $allRelationships = $scanner->detectRelationships($tablesMetadata, false, 0);
+            echo "  ✓ Relationships detected\n";
             
             // Generate schemas
             echo "\n📝 Generating schema files...\n";

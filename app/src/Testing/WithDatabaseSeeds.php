@@ -66,7 +66,11 @@ trait WithDatabaseSeeds
      * This method follows the CI workflow pattern:
      * 1. Runs all seeds registered in sprinkles via SeedRepositoryInterface
      * 2. Creates an admin user (similar to `php bakery create:admin-user`)
-     * 3. Generates CRUD6 schemas from database tables using crud6:generate bakery command
+     * 3. (Optional) Generates CRUD6 schemas from database - controlled by GENERATE_TEST_SCHEMAS env var
+     * 
+     * By default, tests use static hand-crafted schemas from examples/schema/ directory.
+     * To use auto-generated schemas instead, set environment variable:
+     *   GENERATE_TEST_SCHEMAS=1
      * 
      * This ensures that groups, roles, and permissions exist before any tests run,
      * and that an admin user is available for authenticated tests.
@@ -76,12 +80,9 @@ trait WithDatabaseSeeds
      * - Roles: site-admin (Account), crud6-admin (CRUD6)
      * - Permissions: All Account and CRUD6 permissions including:
      *   - uri_crud6, uri_crud6_list, create_crud6, delete_crud6, update_crud6_field, view_crud6_field
-     *   - crud6.users.read, crud6.users.create, crud6.users.edit, crud6.users.delete
-     *   - crud6.groups.read, crud6.groups.create, crud6.groups.edit, crud6.groups.delete
-     *   - crud6.roles.read, crud6.roles.create, crud6.roles.edit, crud6.roles.delete
-     *   - crud6.permissions.read, crud6.permissions.create, crud6.permissions.edit, crud6.permissions.delete
+     *   - Permissions from schemas (users, groups, roles, permissions)
      * - Admin user: 'admin' with site-admin role (has all permissions)
-     * - CRUD6 Schemas: Generated from database tables (users, groups, roles, permissions, activities)
+     * - CRUD6 Schemas: Static schemas from examples/schema/ (or auto-generated if GENERATE_TEST_SCHEMAS=1)
      */
     protected function seedDatabase(): void
     {
@@ -107,9 +108,15 @@ trait WithDatabaseSeeds
             // This will trigger UserCreatedEvent listeners that assign default groups/roles
             $this->createAdminUser();
             
-            // Step 3: Generate CRUD6 schemas from database using bakery command
-            // This ensures integration tests use real generated schemas, not hardcoded ones
-            \UserFrosting\Sprinkle\CRUD6\Tests\Testing\GenerateSchemas::generateFromDatabase($this->ci);
+            // Step 3 (Optional): Generate CRUD6 schemas from database
+            // By default, tests use static hand-crafted schemas from examples/schema/
+            // Set GENERATE_TEST_SCHEMAS=1 environment variable to use auto-generated schemas
+            // This allows:
+            // - Integration tests to use precise static schemas
+            // - Bakery tests to validate real schema generation
+            if (getenv('GENERATE_TEST_SCHEMAS') === '1') {
+                \UserFrosting\Sprinkle\CRUD6\Tests\Testing\GenerateSchemas::generateFromDatabase($this->ci);
+            }
             
         } catch (\Exception $e) {
             // Log errors to help debug seeding failures

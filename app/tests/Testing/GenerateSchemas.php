@@ -81,23 +81,15 @@ class GenerateSchemas
             $scanner = $container->get(DatabaseScanner::class);
             $generator = $container->get(SchemaGenerator::class);
 
-            // Scan database for tables metadata
+            // Scan database for all tables at once - this is the designed pattern
             echo "🔍 Scanning database structure...\n";
-            $tablesMetadata = [];
-            
-            foreach ($tables as $tableName) {
-                try {
-                    $metadata = $scanner->getTableMetadata($tableName);
-                    $tablesMetadata[$tableName] = $metadata;
-                    echo "  ✓ Scanned: {$tableName}\n";
-                } catch (\Exception $e) {
-                    echo "  ⚠ Skipped {$tableName}: " . $e->getMessage() . "\n";
-                }
-            }
+            $tablesMetadata = $scanner->scanDatabase($tables);
             
             if (empty($tablesMetadata)) {
                 throw new \RuntimeException("No tables found to generate schemas for");
             }
+            
+            echo "  ✓ Scanned " . count($tablesMetadata) . " tables: " . implode(', ', array_keys($tablesMetadata)) . "\n";
             
             // Detect relationships across all tables
             echo "\n🔗 Detecting relationships...\n";

@@ -540,9 +540,11 @@ class SchemaGeneratorTest extends CRUD6TestCase
         $rolesSchemaPath = $schemaDir . '/roles.json';
         $rolesSchema = json_decode(file_get_contents($rolesSchemaPath), true);
         
-        $this->assertArrayHasKey('detail', $rolesSchema,
-            'Roles table should have detail section since permission_roles references it');
-        $this->assertEquals('permission_roles', $rolesSchema['detail']['model']);
+        $this->assertArrayHasKey('details', $rolesSchema,
+            'Roles table should have details section since permission_roles references it');
+        $this->assertIsArray($rolesSchema['details'], 'details should be an array');
+        $this->assertNotEmpty($rolesSchema['details'], 'details array should not be empty');
+        $this->assertEquals('permission_roles', $rolesSchema['details'][0]['model']);
 
         // Cleanup
         if (is_dir($schemaDir)) {

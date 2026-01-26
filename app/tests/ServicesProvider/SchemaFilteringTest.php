@@ -180,10 +180,12 @@ class SchemaFilteringTest extends TestCase
                     'editable' => false,
                 ],
             ],
-            'detail' => [
-                'model' => 'related_items',
-                'foreign_key' => 'test_id',
-                'list_fields' => ['name', 'value'],
+            'details' => [
+                [
+                    'model' => 'related_items',
+                    'foreign_key' => 'test_id',
+                    'list_fields' => ['name', 'value'],
+                ],
             ],
         ];
     }
@@ -310,11 +312,12 @@ class SchemaFilteringTest extends TestCase
         $this->assertArrayHasKey('fields', $schema);
         $this->assertNotEmpty($schema['fields']);
         
-        // Should include detail configuration
-        $this->assertArrayHasKey('detail', $schema);
-        $this->assertIsArray($schema['detail']);
-        $this->assertArrayHasKey('model', $schema['detail']);
-        $this->assertArrayHasKey('foreign_key', $schema['detail']);
+        // Should include details configuration (modern format - plural array)
+        $this->assertArrayHasKey('details', $schema);
+        $this->assertIsArray($schema['details']);
+        $this->assertNotEmpty($schema['details']);
+        $this->assertArrayHasKey('model', $schema['details'][0]);
+        $this->assertArrayHasKey('foreign_key', $schema['details'][0]);
     }
 
     /**

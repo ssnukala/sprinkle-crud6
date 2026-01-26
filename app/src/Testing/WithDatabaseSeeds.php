@@ -68,9 +68,36 @@ trait WithDatabaseSeeds
      * 2. Creates an admin user (similar to `php bakery create:admin-user`)
      * 3. (Optional) Generates CRUD6 schemas from database - controlled by GENERATE_TEST_SCHEMAS env var
      * 
-     * By default, tests use static hand-crafted schemas from examples/schema/ directory.
-     * To use auto-generated schemas instead, set environment variable:
+     * **Schema Testing Strategy (Hybrid Approach):**
+     * 
+     * By default, tests use **static hand-crafted schemas** from examples/schema/ directory.
+     * This provides precise, predictable test results with exact permission counts and field types.
+     * 
+     * To test with **auto-generated schemas** from the database, set:
      *   GENERATE_TEST_SCHEMAS=1
+     * 
+     * This enables validation of the real schema generation workflow (DatabaseScanner + SchemaGenerator).
+     * 
+     * **Important: Test Assertions Must Adapt**
+     * 
+     * Tests that verify schema structure or permission counts should use SchemaTestHelper
+     * to adjust expectations based on which schema type is in use:
+     * 
+     * ```php
+     * use UserFrosting\Sprinkle\CRUD6\Testing\SchemaTestHelper;
+     * 
+     * // Check permission count
+     * SchemaTestHelper::assertPermissionCount($this, $role->permissions);
+     * 
+     * // Or manually check schema type
+     * if (SchemaTestHelper::isUsingGeneratedSchemas()) {
+     *     // Auto-generated: May have different counts/types
+     *     $this->assertGreaterThanOrEqual(24, $permissions->count());
+     * } else {
+     *     // Static: Exact expected values
+     *     $this->assertCount(24, $permissions);
+     * }
+     * ```
      * 
      * This ensures that groups, roles, and permissions exist before any tests run,
      * and that an admin user is available for authenticated tests.
@@ -80,9 +107,11 @@ trait WithDatabaseSeeds
      * - Roles: site-admin (Account), crud6-admin (CRUD6)
      * - Permissions: All Account and CRUD6 permissions including:
      *   - uri_crud6, uri_crud6_list, create_crud6, delete_crud6, update_crud6_field, view_crud6_field
-     *   - Permissions from schemas (users, groups, roles, permissions)
+     *   - Permissions from schemas (varies based on schema type)
      * - Admin user: 'admin' with site-admin role (has all permissions)
-     * - CRUD6 Schemas: Static schemas from examples/schema/ (or auto-generated if GENERATE_TEST_SCHEMAS=1)
+     * - CRUD6 Schemas: Static (default) or auto-generated (if GENERATE_TEST_SCHEMAS=1)
+     * 
+     * @see SchemaTestHelper For adapting test assertions to schema type
      */
     protected function seedDatabase(): void
     {

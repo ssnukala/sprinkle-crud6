@@ -18,6 +18,7 @@ use UserFrosting\Sprinkle\Account\Database\Models\Role;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
 use UserFrosting\Sprinkle\CRUD6\Tests\CRUD6TestCase;
+use UserFrosting\Sprinkle\CRUD6\Testing\SchemaTestHelper;
 use UserFrosting\Sprinkle\Core\Testing\RefreshDatabase;
 
 /**
@@ -100,14 +101,28 @@ class DefaultSeedsTest extends CRUD6TestCase
         }
         
         // Verify permissions are synced with crud6-admin role
-        // After removing hardcoded model permissions (commit 19c4c89):
-        // - 6 legacy CRUD6 permissions (crud6_, delete_crud6_field, etc.)
-        // - 18 schema-defined permissions from examples/schema/ (users, roles, groups, permissions schemas)
+        // Permission count varies based on schema type:
+        // 
+        // Static schemas (default):
+        // - 6 legacy CRUD6 permissions (crud6_*, delete_crud6_field, etc.)
+        // - 18 schema-defined permissions from 4 example schemas (users, roles, groups, permissions)
         // = 24 total
+        //
+        // Auto-generated schemas (GENERATE_TEST_SCHEMAS=1):
+        // - 6 legacy CRUD6 permissions
+        // - Schema-defined permissions from all tables scanned (users, roles, groups, permissions, activities, etc.)
+        // = 24+ total (may include additional tables)
         $role = Role::where('slug', 'crud6-admin')->first();
         $this->assertNotNull($role);
-        $this->assertCount(24, $role->permissions, 
-            'crud6-admin should have 6 legacy + 18 schema-defined permissions = 24 total');
+        
+        // Use SchemaTestHelper to assert correct count based on schema type
+        SchemaTestHelper::assertPermissionCount(
+            $this,
+            $role->permissions,
+            SchemaTestHelper::isUsingGeneratedSchemas()
+                ? 'Auto-generated schemas: crud6-admin should have at least 24 permissions'
+                : 'Static schemas: crud6-admin should have exactly 24 permissions (6 legacy + 18 from 4 schemas)'
+        );
         
         // Verify site-admin role also has CRUD6 permissions (if it exists)
         $siteAdminRole = Role::where('slug', 'site-admin')->first();

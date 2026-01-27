@@ -333,7 +333,7 @@ class SchemaGenerator
     /**
      * Extract listable fields from a generated schema.
      *
-     * Returns field names that have 'listable' set to true in the schema.
+     * Returns field names that have 'list' in their show_in array (modern CRUD6 format).
      * Limits the number of fields to a reasonable amount for display.
      *
      * @param array $schema Generated schema array
@@ -349,9 +349,11 @@ class SchemaGenerator
         $listableFields = [];
 
         foreach ($schema['fields'] as $fieldName => $fieldDefinition) {
-            // Check if field is marked as listable
-            if (isset($fieldDefinition['listable']) && $fieldDefinition['listable'] === true) {
-                $listableFields[] = $fieldName;
+            // Check if field is marked as listable (modern format: 'list' in show_in array)
+            if (isset($fieldDefinition['show_in']) && is_array($fieldDefinition['show_in'])) {
+                if (in_array('list', $fieldDefinition['show_in'])) {
+                    $listableFields[] = $fieldName;
+                }
             }
         }
 

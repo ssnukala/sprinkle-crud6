@@ -24,13 +24,14 @@ use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaService;
  * Base Controller Test
  *
  * Tests the Base controller's editable fields and validation rules logic.
+ * Uses modern CRUD6 schema structure with readonly attribute (not editable).
  */
 class BaseControllerTest extends TestCase
 {
     /**
-     * Test getEditableFields with explicit editable attribute
+     * Test getEditableFields with readonly attribute
      */
-    public function testGetEditableFieldsWithExplicitEditable(): void
+    public function testGetEditableFieldsWithReadonlyAttribute(): void
     {
         $controller = $this->createBaseController();
         
@@ -43,15 +44,13 @@ class BaseControllerTest extends TestCase
                 ],
                 'name' => [
                     'type' => 'string',
-                    'editable' => true,
                 ],
                 'status' => [
                     'type' => 'string',
-                    'editable' => false,
+                    'readonly' => true,
                 ],
                 'description' => [
                     'type' => 'text',
-                    'editable' => true,
                 ],
             ]
         ];
@@ -154,7 +153,6 @@ class BaseControllerTest extends TestCase
                 ],
                 'name' => [
                     'type' => 'string',
-                    'editable' => true,
                     'validation' => [
                         'required' => true,
                         'length' => ['min' => 3, 'max' => 50]
@@ -167,7 +165,6 @@ class BaseControllerTest extends TestCase
                 ],
                 'description' => [
                     'type' => 'text',
-                    'editable' => true,
                 ],
             ]
         ];
@@ -202,18 +199,15 @@ class BaseControllerTest extends TestCase
             'fields' => [
                 'name' => [
                     'type' => 'string',
-                    'editable' => true,
                     'validation' => ['required' => true],
                 ],
                 'description' => [
                     'type' => 'text',
-                    'editable' => true,
                     // No validation rules
                 ],
                 'notes' => [
                     'type' => 'text',
-                    // No editable attribute, defaults to editable
-                    // No validation rules
+                    // No validation rules, defaults to editable (no readonly flag)
                 ],
             ]
         ];

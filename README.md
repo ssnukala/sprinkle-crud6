@@ -86,6 +86,126 @@ export default defineConfig({
 
 ## Configuration
 
+### Bakery Commands
+
+CRUD6 provides powerful CLI commands (bakery commands) to help you generate schema files from existing database tables automatically.
+
+#### Database Scanner: `crud6:scan`
+
+Scan your database and display its structure with detailed information about tables, columns, and relationships.
+
+```bash
+# Scan default database connection
+php bakery crud6:scan
+
+# Scan a specific database connection
+php bakery crud6:scan --database=secondary
+
+# Scan specific tables only
+php bakery crud6:scan --tables=users,groups,roles
+
+# Output as JSON
+php bakery crud6:scan --output=json
+
+# Detect implicit foreign key relationships
+php bakery crud6:scan --detect-implicit
+
+# Sample 50 rows for relationship validation
+php bakery crud6:scan --detect-implicit --sample-size=50
+```
+
+**Options:**
+- `--database` or `-d`: Database connection name (default: default connection)
+- `--tables` or `-t`: Comma-separated list of tables to scan
+- `--output` or `-o`: Output format (`table` or `json`)
+- `--detect-implicit` or `-i`: Detect implicit foreign key relationships based on naming conventions
+- `--sample-size` or `-s`: Number of rows to sample for relationship validation (default: 100, 0 to disable)
+
+#### Schema Generator: `crud6:generate`
+
+Automatically generate CRUD6 schema JSON files from existing database tables. This is the fastest way to get started with CRUD6 - just point it at your database and it will create schema files for all your tables.
+
+```bash
+# Generate schemas for all tables in default database
+php bakery crud6:generate
+
+# Generate for specific database connection
+php bakery crud6:generate --database=analytics
+
+# Generate schemas for specific tables only
+php bakery crud6:generate --tables=users,products,orders
+
+# Customize output directory
+php bakery crud6:generate --output-dir=app/schema/crud6/custom
+
+# Disable specific CRUD operations
+php bakery crud6:generate --no-delete --no-update
+
+# Detect implicit relationships with data sampling
+php bakery crud6:generate --detect-implicit --sample-size=100
+```
+
+**Options:**
+- `--database` or `-d`: Database connection name (default: default connection)
+- `--tables` or `-t`: Comma-separated list of tables to generate schemas for
+- `--output-dir` or `-r`: Directory to save generated schema files
+- `--no-create`: Disable CREATE operation in generated schemas
+- `--no-update`: Disable UPDATE operation in generated schemas
+- `--no-delete`: Disable DELETE operation in generated schemas
+- `--no-list`: Disable LIST operation in generated schemas
+- `--detect-implicit` or `-i`: Detect implicit foreign key relationships based on naming conventions
+- `--sample-size` or `-s`: Number of rows to sample for relationship validation (default: 100)
+
+**How it works:**
+1. Scans your database using Doctrine DBAL schema introspection
+2. Detects table structure (columns, types, constraints)
+3. Identifies relationships (explicit foreign keys and optionally implicit ones)
+4. Generates CRUD6-compatible JSON schema files
+5. Configures permissions, validation rules, and display options
+6. Detects detail relationships (one-to-many) automatically
+
+**Relationship Detection:**
+
+The generator can detect two types of relationships:
+
+1. **Explicit Relationships** (always detected): Foreign key constraints defined in the database
+2. **Implicit Relationships** (optional): Relationships inferred from column naming conventions like:
+   - `user_id` → references `users.id`
+   - `category_id` → references `categories.id`
+   - `userId` → references `users.id` (camelCase)
+
+When implicit detection is enabled with `--detect-implicit`, the generator samples actual data to validate the relationships have high integrity (default 80% confidence threshold).
+
+**Configuration:**
+
+You can configure bakery command defaults in your UserFrosting config file (`app/config/default.php`):
+
+```php
+return [
+    'crud6' => [
+        'schema_directory' => 'app/schema/crud6',
+        'exclude_tables' => ['migrations', 'sessions'], // Tables to skip
+        'crud_options' => [
+            'create' => true,
+            'read' => true,
+            'update' => true,
+            'delete' => true,
+            'list' => true,
+        ],
+        'relationship_detection' => [
+            'detect_implicit' => false,
+            'sample_size' => 100,
+            'confidence_threshold' => 0.8,
+            'naming_patterns' => [
+                '/^(.+)_id$/i',      // user_id, category_id
+                '/^(.+)Id$/i',       // userId, categoryId
+            ],
+            'table_prefixes' => ['tbl_', 'test_'],
+        ],
+    ],
+];
+```
+
 ### JSON Schema Format
 
 Create JSON schema files in `app/schema/crud6/` directory. Each file should be named after your model (e.g., `users.json`, `groups.json`).

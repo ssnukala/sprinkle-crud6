@@ -320,11 +320,6 @@ abstract class Base
         $timestampFields = ['created_at', 'updated_at', 'deleted_at'];
         
         foreach ($schema['fields'] ?? [] as $name => $field) {
-            // Check if field is explicitly marked as not editable
-            if (isset($field['editable']) && $field['editable'] === false) {
-                continue;
-            }
-
             // Check for readonly flag
             if (isset($field['readonly']) && $field['readonly'] === true) {
                 continue;
@@ -338,11 +333,9 @@ abstract class Base
                 continue;
             }
             
-            // Exclude timestamp fields unless explicitly marked as editable
+            // Exclude timestamp fields by default
             if (in_array($name, $timestampFields)) {
-                if (!isset($field['editable']) || $field['editable'] !== true) {
-                    continue;
-                }
+                continue;
             }
 
             // Field is editable by default

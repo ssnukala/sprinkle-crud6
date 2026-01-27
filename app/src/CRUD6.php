@@ -20,10 +20,12 @@ use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\MigrationRecipe;
 use UserFrosting\Sprinkle\Core\Sprinkle\Recipe\SeedRecipe;
 use UserFrosting\Sprinkle\SprinkleRecipe;
 use UserFrosting\Sprinkle\CRUD6\Routes\CRUD6Routes;
+use UserFrosting\Sprinkle\CRUD6\ServicesProvider\BakeryServicesProvider;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\CRUD6ModelService;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\FieldTypeServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\ServicesProvider\SchemaServiceProvider;
 use UserFrosting\Sprinkle\CRUD6\Bakery\GenerateSchemaCommand;
+use UserFrosting\Sprinkle\CRUD6\Bakery\ScanDatabaseCommand;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultPermissions;
 use UserFrosting\Sprinkle\CRUD6\Database\Seeds\DefaultRoles;
 
@@ -163,6 +165,7 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe, BakeryRecipe
             CRUD6ModelService::class,
             SchemaServiceProvider::class,
             FieldTypeServiceProvider::class,
+            BakeryServicesProvider::class,
         ];
     }
 
@@ -177,6 +180,7 @@ class CRUD6 implements SprinkleRecipe, MigrationRecipe, SeedRecipe, BakeryRecipe
     {
         return [
             GenerateSchemaCommand::class,
+            ScanDatabaseCommand::class,
         ];
     }
 }

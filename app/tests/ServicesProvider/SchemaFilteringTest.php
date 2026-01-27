@@ -108,7 +108,6 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => true,
                     'filterable' => false,
                     'listable' => true,
-                    'editable' => false,
                 ],
                 'name' => [
                     'type' => 'string',
@@ -117,7 +116,6 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => true,
                     'filterable' => true,
                     'listable' => true,
-                    'editable' => true,
                     'validation' => [
                         'required' => true,
                         'length' => ['min' => 2, 'max' => 255],
@@ -130,7 +128,6 @@ class SchemaFilteringTest extends TestCase
                     'sortable' => true,
                     'filterable' => true,
                     'listable' => true,
-                    'editable' => true,
                     'validation' => [
                         'required' => true,
                         'email' => true,
@@ -144,7 +141,6 @@ class SchemaFilteringTest extends TestCase
                     'filterable' => false,
                     'listable' => false,
                     'viewable' => true,
-                    'editable' => true,
                     'validation' => [
                         'length' => ['min' => 8],
                     ],
@@ -156,7 +152,6 @@ class SchemaFilteringTest extends TestCase
                     'filterable' => false,
                     'listable' => false,
                     'viewable' => false,
-                    'editable' => true,
                     'description' => 'Internal staff notes',
                 ],
                 'is_active' => [
@@ -167,7 +162,6 @@ class SchemaFilteringTest extends TestCase
                     'filterable' => true,
                     'listable' => true,
                     'viewable' => true,
-                    'editable' => true,
                 ],
                 'created_at' => [
                     'type' => 'datetime',
@@ -177,13 +171,14 @@ class SchemaFilteringTest extends TestCase
                     'filterable' => false,
                     'listable' => true,
                     'viewable' => true,
-                    'editable' => false,
                 ],
             ],
-            'detail' => [
-                'model' => 'related_items',
-                'foreign_key' => 'test_id',
-                'list_fields' => ['name', 'value'],
+            'details' => [
+                [
+                    'model' => 'related_items',
+                    'foreign_key' => 'test_id',
+                    'list_fields' => ['name', 'value'],
+                ],
             ],
         ];
     }
@@ -273,14 +268,14 @@ class SchemaFilteringTest extends TestCase
         $schema = $this->getSampleSchema();
         
         // Expected fields in form context: name, email, password, internal_notes, is_active
-        // Excluded fields: id, created_at (editable: false)
+        // Excluded fields: id, created_at (readonly: true)
         
         $expectedFormFields = ['name', 'email', 'password', 'internal_notes', 'is_active'];
         $excludedFormFields = ['id', 'created_at'];
         
         foreach ($expectedFormFields as $field) {
             $fieldConfig = $schema['fields'][$field];
-            $this->assertTrue($fieldConfig['editable'] ?? true, "{$field} should be editable");
+            $this->assertFalse($fieldConfig['readonly'] ?? false, "{$field} should not be readonly");
             
             // Form fields should have validation if present
             if (isset($fieldConfig['validation'])) {
@@ -290,7 +285,7 @@ class SchemaFilteringTest extends TestCase
         
         foreach ($excludedFormFields as $field) {
             $fieldConfig = $schema['fields'][$field];
-            $this->assertFalse($fieldConfig['editable'] ?? true, "{$field} should not be editable");
+            $this->assertTrue($fieldConfig['readonly'] ?? false, "{$field} should be readonly");
         }
     }
 
@@ -310,11 +305,12 @@ class SchemaFilteringTest extends TestCase
         $this->assertArrayHasKey('fields', $schema);
         $this->assertNotEmpty($schema['fields']);
         
-        // Should include detail configuration
-        $this->assertArrayHasKey('detail', $schema);
-        $this->assertIsArray($schema['detail']);
-        $this->assertArrayHasKey('model', $schema['detail']);
-        $this->assertArrayHasKey('foreign_key', $schema['detail']);
+        // Should include details configuration (modern format - plural array)
+        $this->assertArrayHasKey('details', $schema);
+        $this->assertIsArray($schema['details']);
+        $this->assertNotEmpty($schema['details']);
+        $this->assertArrayHasKey('model', $schema['details'][0]);
+        $this->assertArrayHasKey('foreign_key', $schema['details'][0]);
     }
 
     /**
@@ -542,8 +538,7 @@ class SchemaFilteringTest extends TestCase
                 'password' => [
                     'type' => 'string',
                     'label' => 'Password',
-                    'viewable' => true,  // Viewable but not editable
-                    'editable' => false,
+                    'viewable' => true,  // Viewable but not editable (has readonly)
                     'readonly' => true,
                 ],
                 'secret_token' => [
@@ -555,7 +550,6 @@ class SchemaFilteringTest extends TestCase
                     'type' => 'json',
                     'label' => 'Internal Flags',
                     'viewable' => false,  // Hidden from detail view
-                    'editable' => true,   // But can be edited in forms
                 ],
             ],
         ];
@@ -588,9 +582,8 @@ class SchemaFilteringTest extends TestCase
         $this->assertArrayNotHasKey('secret_token', $detailData['fields'], 'secret_token should be excluded (viewable: false)');
         $this->assertArrayNotHasKey('internal_flags', $detailData['fields'], 'internal_flags should be excluded (viewable: false)');
         
-        // Verify that readonly and editable flags are preserved for viewable fields
+        // Verify that readonly flag is preserved for viewable fields
         $this->assertTrue($detailData['fields']['password']['readonly'], 'password should be readonly');
-        $this->assertFalse($detailData['fields']['password']['editable'], 'password should not be editable');
     }
 
     /**

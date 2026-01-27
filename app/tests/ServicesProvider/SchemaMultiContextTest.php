@@ -60,7 +60,6 @@ class SchemaMultiContextTest extends TestCase
                     'sortable' => true,
                     'filterable' => false,
                     'listable' => true,
-                    'editable' => false,
                 ],
                 'name' => [
                     'type' => 'string',
@@ -69,7 +68,6 @@ class SchemaMultiContextTest extends TestCase
                     'sortable' => true,
                     'filterable' => true,
                     'listable' => true,
-                    'editable' => true,
                     'validation' => [
                         'required' => true,
                         'length' => ['min' => 2, 'max' => 255],
@@ -82,7 +80,6 @@ class SchemaMultiContextTest extends TestCase
                     'sortable' => true,
                     'filterable' => true,
                     'listable' => true,
-                    'editable' => true,
                     'validation' => [
                         'required' => true,
                         'email' => true,
@@ -95,7 +92,6 @@ class SchemaMultiContextTest extends TestCase
                     'sortable' => false,
                     'filterable' => false,
                     'listable' => false,
-                    'editable' => true,
                     'validation' => [
                         'length' => ['min' => 8],
                     ],
@@ -208,12 +204,12 @@ class SchemaMultiContextTest extends TestCase
         // Should have fields section
         $this->assertArrayHasKey('fields', $formContext);
         
-        // Should include editable fields: name, email, password
+        // Should include fields without readonly: name, email, password
         $this->assertArrayHasKey('name', $formContext['fields']);
         $this->assertArrayHasKey('email', $formContext['fields']);
         $this->assertArrayHasKey('password', $formContext['fields']);
         
-        // Should NOT include non-editable field: id
+        // Should NOT include readonly field: id
         $this->assertArrayNotHasKey('id', $formContext['fields']);
         
         // Form fields should include validation

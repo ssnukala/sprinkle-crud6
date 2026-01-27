@@ -134,12 +134,10 @@ class SchemaNormalizerTest extends TestCase
                 'name' => [
                     'type' => 'string',
                     'listable' => true,
-                    'editable' => true,
                     'viewable' => true,
                 ],
                 'password' => [
                     'type' => 'password',
-                    'editable' => true,
                 ],
             ]
         ];

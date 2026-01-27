@@ -461,7 +461,7 @@ class GenerateSchemaCommandTest extends CRUD6TestCase
         $this->assertArrayHasKey('model', $ordersDetail);
         $this->assertArrayHasKey('foreign_key', $ordersDetail);
         $this->assertEquals('test_orders', $ordersDetail['model']);
-        $this->assertEquals('product_id', $schema['detail']['foreign_key']);
+        $this->assertEquals('product_id', $ordersDetail['foreign_key']);
         
         // Cleanup the test_orders table
         $db->schema()->dropIfExists('test_orders');

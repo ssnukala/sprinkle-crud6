@@ -59,7 +59,7 @@ class SchemaMultiContextTest extends TestCase
                     'readonly' => true,
                     'sortable' => true,
                     'filterable' => false,
-                    'listable' => true,
+                    'show_in' => ['list', 'detail'],
                 ],
                 'name' => [
                     'type' => 'string',
@@ -67,7 +67,7 @@ class SchemaMultiContextTest extends TestCase
                     'required' => true,
                     'sortable' => true,
                     'filterable' => true,
-                    'listable' => true,
+                    'show_in' => ['list', 'form', 'detail', 'create', 'edit'],
                     'validation' => [
                         'required' => true,
                         'length' => ['min' => 2, 'max' => 255],
@@ -79,7 +79,7 @@ class SchemaMultiContextTest extends TestCase
                     'required' => true,
                     'sortable' => true,
                     'filterable' => true,
-                    'listable' => true,
+                    'show_in' => ['list', 'form', 'detail', 'create', 'edit'],
                     'validation' => [
                         'required' => true,
                         'email' => true,
@@ -91,7 +91,7 @@ class SchemaMultiContextTest extends TestCase
                     'required' => false,
                     'sortable' => false,
                     'filterable' => false,
-                    'listable' => false,
+                    'show_in' => ['form', 'create', 'edit'],
                     'validation' => [
                         'length' => ['min' => 8],
                     ],

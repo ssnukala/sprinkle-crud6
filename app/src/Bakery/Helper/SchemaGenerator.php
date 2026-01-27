@@ -802,9 +802,9 @@ class SchemaGenerator
     {
         $columnName = $column['name'];
 
-        // Primary key - only in detail
+        // Primary key - show in list and detail (commonly needed for data tables)
         if ($isPrimaryKey || $column['autoincrement']) {
-            return ['detail'];
+            return ['list', 'detail'];
         }
 
         // Timestamps - only in detail

@@ -400,11 +400,10 @@ class SchemaGenerator
             $field['auto_increment'] = true;
         }
 
-        // Add readonly/editable flag
+        // Add readonly flag for non-editable fields
+        // Note: Fields are editable by default, only mark readonly when needed
         if ($column['autoincrement'] || $isPrimaryKey || $isTimestamp) {
             $field['readonly'] = true;
-        } elseif (!$column['autoincrement'] && !$isTimestamp) {
-            $field['editable'] = true;
         }
 
         // Add required flag (opposite of nullable, but not for timestamps or auto-increment fields)

@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use UserFrosting\Config\Config;
+use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\CommandConfigTrait;
 use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\DatabaseScanner;
 use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\SchemaGenerator;
 
@@ -30,6 +31,7 @@ use UserFrosting\Sprinkle\CRUD6\Bakery\Helper\SchemaGenerator;
  */
 class GenerateSchemaCommand extends Command
 {
+    use CommandConfigTrait;
     /**
      * @var DatabaseScanner
      */
@@ -138,71 +140,17 @@ class GenerateSchemaCommand extends Command
         $io->title('CRUD6 Schema Generator');
 
         try {
-            // Get database connection option
-            $databaseConnection = $input->getOption('database');
-            if (!empty($databaseConnection)) {
-                $this->scanner->setConnection($databaseConnection);
-                $io->note(sprintf('Using database connection: %s', $databaseConnection));
-            } else {
-                $io->note('Using default database connection');
-            }
+            // Configure database connection
+            $databaseConnection = $this->configureDatabaseConnection($input, $io, $this->scanner);
 
-            // Get table filter
-            $tableFilter = [];
-            $tablesOption = $input->getOption('tables');
-            if (!empty($tablesOption)) {
-                $tableFilter = array_map('trim', explode(',', $tablesOption));
-            }
-
-            // Get exclude tables from config
-            $excludeTables = $this->config->get('crud6.exclude_tables', []);
-
-            // Scan database
-            $io->section('Scanning Database...');
-            $tablesMetadata = $this->scanner->scanDatabase($tableFilter);
-
-            // Apply exclusions
-            foreach ($excludeTables as $excludeTable) {
-                unset($tablesMetadata[$excludeTable]);
-            }
-
+            // Scan and filter tables
+            $tablesMetadata = $this->scanFilteredTables($input, $io, $this->scanner, $this->config);
             if (empty($tablesMetadata)) {
-                $io->warning('No tables found in the database.');
                 return Command::SUCCESS;
             }
 
-            $io->success(sprintf('Found %d table(s)', count($tablesMetadata)));
-
-            // Get relationship detection options from config and command line
-            $relationshipConfig = $this->config->get('crud6.relationship_detection', []);
-            $detectImplicit = $input->getOption('detect-implicit') ?: ($relationshipConfig['detect_implicit'] ?? false);
-            $sampleSize = (int) $input->getOption('sample-size');
-
-            // If sample size not provided via command line, use config
-            if ($sampleSize === 100) { // Default value
-                $sampleSize = $relationshipConfig['sample_size'] ?? 100;
-            }
-
-            // Configure scanner with config values
-            if (isset($relationshipConfig['naming_patterns'])) {
-                $this->scanner->setNamingPatterns($relationshipConfig['naming_patterns']);
-            }
-            if (isset($relationshipConfig['table_prefixes'])) {
-                $this->scanner->setTablePrefixes($relationshipConfig['table_prefixes']);
-            }
-            if (isset($relationshipConfig['confidence_threshold'])) {
-                $this->scanner->setConfidenceThreshold($relationshipConfig['confidence_threshold']);
-            }
-
-            if ($detectImplicit) {
-                $io->note(sprintf(
-                    'Detecting implicit relationships with sampling (sample size: %d)',
-                    $sampleSize
-                ));
-            }
-
-            // Detect relationships
-            $relationships = $this->scanner->detectRelationships($tablesMetadata, $detectImplicit, $sampleSize);
+            // Detect relationships using config + CLI options
+            $relationships = $this->detectConfiguredRelationships($input, $io, $this->scanner, $this->config, $tablesMetadata);
 
             // Handle CRUD options - merge config with command line options
             $configCrudOptions = $this->config->get('crud6.crud_options', []);

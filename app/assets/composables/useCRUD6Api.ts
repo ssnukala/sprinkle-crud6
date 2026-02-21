@@ -23,7 +23,7 @@ import { useAlertsStore } from '@userfrosting/sprinkle-core/stores'
 import { useCRUD6RegleAdapter } from './useCRUD6ValidationAdapter'
 import { useRoute } from 'vue-router'
 import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
-import { debugLog, debugWarn, debugError } from '../utils/debug'
+import { debugLog, debugWarn, debugError, sanitizeForLog } from '../utils/debug'
 
 /**
  * Vue composable for CRUD6 CRUD operations.
@@ -277,7 +277,7 @@ export function useCRUD6Api(modelName?: string) {
         debugLog('[useCRUD6Api] ===== CREATE ROW REQUEST START =====', {
             model,
             url,
-            data,
+            data: sanitizeForLog(data),
         })
 
         apiLoading.value = true
@@ -303,7 +303,7 @@ export function useCRUD6Api(modelName?: string) {
                 debugError('[useCRUD6Api] ===== CREATE ROW REQUEST FAILED =====', {
                     model,
                     url,
-                    requestData: data,
+                    requestData: sanitizeForLog(data),
                     error: err,
                     response: err.response,
                     responseData: err.response?.data,
@@ -329,7 +329,7 @@ export function useCRUD6Api(modelName?: string) {
             model,
             id,
             url,
-            data,
+            data: sanitizeForLog(data),
         })
 
         apiLoading.value = true
@@ -357,7 +357,7 @@ export function useCRUD6Api(modelName?: string) {
                     model,
                     id,
                     url,
-                    requestData: data,
+                    requestData: sanitizeForLog(data),
                     error: err,
                     response: err.response,
                     responseData: err.response?.data,
@@ -385,8 +385,8 @@ export function useCRUD6Api(modelName?: string) {
             model,
             id,
             field,
-            value,
             url,
+            data: sanitizeForLog({ [field]: value }),
         })
 
         apiLoading.value = true
@@ -416,9 +416,8 @@ export function useCRUD6Api(modelName?: string) {
                     model,
                     id,
                     field,
-                    value,
                     url,
-                    requestData: data,
+                    requestData: sanitizeForLog(data),
                     error: err,
                     response: err.response,
                     responseData: err.response?.data,

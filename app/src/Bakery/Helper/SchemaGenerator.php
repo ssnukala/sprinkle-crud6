@@ -170,7 +170,8 @@ class SchemaGenerator
             mkdir($this->schemaDirectory, 0755, true);
         }
 
-        $filePath = $this->schemaDirectory . '/' . $tableName . '.json';
+        // Sanitize table name to prevent directory traversal attacks
+        $filePath = $this->schemaDirectory . '/' . basename($tableName) . '.json';
         file_put_contents($filePath, $content);
 
         return $filePath;

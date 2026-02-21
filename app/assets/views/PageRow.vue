@@ -42,16 +42,9 @@ const {
     hasPermission
 } = useCRUD6Schema()
 
-// Pre-load schema before initializing useCRUD6Api to prevent duplicate API calls
-// This ensures the schema is loaded/loading before useCRUD6Api tries to load it for validation
-// Request all contexts needed by detail page in one consolidated API call
-// Include related schemas to eliminate separate requests for detail models
-if (model.value && loadSchema) {
-    debugLog('[PageRow] Pre-loading schema before useCRUD6Api initialization - model:', model.value)
-    loadSchema(model.value, false, 'list,detail,form', true).catch(err => {
-        debugError('[PageRow] Schema pre-load failed:', err)
-    })
-}
+// Schema loading is handled by the model watcher with immediate: true below.
+// The store's context-aware caching prevents duplicate API calls when
+// useCRUD6Api also requests the 'form' context for validation.
 
 const {
     fetchRows,
@@ -221,24 +214,45 @@ const modelTitle = computed(() => {
 })
 
 /**
+ * Track the current fetch to prevent race conditions.
+ * When a new fetch starts, previous in-flight fetches are ignored.
+ */
+let activeFetchId: string | null = null
+
+/**
  * Methods - Fetch record
  */
 async function fetch() {
     if (recordId.value && fetchRow) {
+        // Guard: skip if we're already fetching this exact record
+        if (activeFetchId === recordId.value) {
+            debugLog('[PageRow.fetch] Skipping duplicate fetch for:', recordId.value)
+            return
+        }
+
+        const thisFetchId = recordId.value
+        activeFetchId = thisFetchId
+
         debugLog('[PageRow.fetch] ===== STARTING FETCH =====', {
             recordId: recordId.value,
             model: model.value,
         })
-        
+
         const fetchPromise = fetchRow(recordId.value)
         if (fetchPromise && typeof fetchPromise.then === 'function') {
             fetchPromise.then(async (fetchedRow) => {
+                // Stale response guard: if a newer fetch started, discard this result
+                if (activeFetchId !== thisFetchId) {
+                    debugLog('[PageRow.fetch] Discarding stale fetch result for:', thisFetchId)
+                    return
+                }
+
                 debugLog('[PageRow.fetch] ===== FETCH COMPLETED =====', {
                     fetchedRowKeys: Object.keys(fetchedRow),
                     has_breadcrumb: '_breadcrumb' in fetchedRow ? 'YES' : 'NO',
                     _breadcrumb_value: (fetchedRow as any)._breadcrumb ?? 'NOT PRESENT',
                 })
-                
+
                 CRUD6Row.value = fetchedRow
                 record.value = fetchedRow
                 originalRecord.value = { ...fetchedRow }
@@ -282,8 +296,13 @@ async function fetch() {
                 debugLog('[PageRow.fetch] ===== PAGE TITLE SET =====', {
                     pageTitle: page.title,
                 })
-            }).catch((error) => {
-                debugError('[PageRow.fetch] ===== FETCH FAILED =====', error)
+            }).catch((fetchError) => {
+                debugError('[PageRow.fetch] ===== FETCH FAILED =====', fetchError)
+            }).finally(() => {
+                // Clear the active fetch guard so the same ID can be re-fetched (e.g., after update)
+                if (activeFetchId === thisFetchId) {
+                    activeFetchId = null
+                }
             })
         }
     }
@@ -354,19 +373,6 @@ onMounted(async () => {
         resetForm()
     }
 })
-
-/**
- * Watcher - Update page on id change
- */
-watch(
-    () => route.params.id,
-    () => {
-        if (!isCreateMode.value) {
-            fetch()
-        }
-    },
-    { immediate: false }
-)
 
 // Watch for schema changes to update initial record structure
 watch(

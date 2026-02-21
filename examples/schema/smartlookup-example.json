@@ -37,9 +37,10 @@
             "type": "integer",
             "label": "Order ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "sortable": true,
-            "filterable": true
+            "filterable": true,
+            "show_in": ["list", "detail"]
         },
         "customer_id": {
             "type": "smartlookup",
@@ -92,7 +93,8 @@
             "label": "Total Amount",
             "sortable": true,
             "filterable": true,
-            "editable": false
+            "readonly": true,
+            "show_in": ["list", "detail"]
         },
         "notes": {
             "type": "text",
@@ -103,21 +105,23 @@
         "created_at": {
             "type": "datetime",
             "label": "Created At",
-            "editable": false,
+            "readonly": true,
             "sortable": true,
-            "filterable": false
+            "filterable": false,
+            "show_in": ["detail"]
         },
         "updated_at": {
             "type": "datetime",
             "label": "Updated At",
-            "editable": false,
+            "readonly": true,
             "sortable": true,
-            "filterable": false
+            "filterable": false,
+            "show_in": ["detail"]
         },
         "deleted_at": {
             "type": "datetime",
             "label": "Deleted At",
-            "editable": false,
+            "readonly": true,
             "sortable": false,
             "filterable": false
         }

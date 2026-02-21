@@ -23,9 +23,9 @@
             "type": "integer",
             "label": "ID",
             "auto_increment": true,
-            "listable": true,
+            "readonly": true,
             "viewable": true,
-            "editable": false
+            "show_in": ["list", "detail"]
         },
         "first_name": {
             "type": "string",
@@ -33,7 +33,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "length": {
@@ -48,7 +48,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "length": {
@@ -63,7 +63,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "email": true,
@@ -79,7 +79,7 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "placeholder": "XXX-XXX-XXXX",
             "validation": {
                 "regex": {
@@ -94,7 +94,7 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "placeholder": "XXX-XXX-XXXX"
         },
         "website": {
@@ -103,7 +103,7 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "placeholder": "https://example.com"
         },
         "address": {
@@ -112,7 +112,7 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "validation": {
                 "length": {
                     "max": 200
@@ -125,7 +125,7 @@
             "required": false,
             "sortable": true,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "validation": {
                 "length": {
                     "max": 100
@@ -138,7 +138,7 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "validation": {
                 "length": {
                     "max": 2
@@ -151,7 +151,7 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "placeholder": "12345 or 12345-6789",
             "validation": {
                 "regex": {
@@ -166,9 +166,8 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": false,
-            "viewable": true,
-            "editable": true
+            "show_in": ["form", "detail"],
+            "viewable": true
         },
         "bio": {
             "type": "textarea-r5",
@@ -176,9 +175,8 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": false,
-            "viewable": true,
-            "editable": true
+            "show_in": ["form", "detail"],
+            "viewable": true
         },
         "company": {
             "type": "string",
@@ -186,7 +184,7 @@
             "required": false,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "length": {
                     "max": 100
@@ -199,7 +197,7 @@
             "required": false,
             "sortable": false,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "validation": {
                 "length": {
                     "max": 100
@@ -212,7 +210,7 @@
             "default": true,
             "sortable": true,
             "filterable": true,
-            "listable": true
+            "show_in": ["list", "form", "detail"]
         },
         "newsletter_opt_in": {
             "type": "boolean-yn",
@@ -220,18 +218,17 @@
             "default": false,
             "sortable": false,
             "filterable": false,
-            "listable": false,
-            "viewable": true,
-            "editable": true
+            "show_in": ["form", "detail"],
+            "viewable": true
         },
         "created_at": {
             "type": "datetime",
             "label": "Created At",
             "sortable": true,
             "filterable": false,
-            "listable": false,
+            "readonly": true,
             "viewable": true,
-            "editable": false,
+            "show_in": ["detail"],
             "date_format": "Y-m-d H:i:s"
         },
         "updated_at": {
@@ -239,9 +236,9 @@
             "label": "Updated At",
             "sortable": true,
             "filterable": false,
-            "listable": false,
+            "readonly": true,
             "viewable": true,
-            "editable": false,
+            "show_in": ["detail"],
             "date_format": "Y-m-d H:i:s"
         }
     }

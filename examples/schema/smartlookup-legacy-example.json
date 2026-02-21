@@ -18,9 +18,10 @@
             "type": "integer",
             "label": "Order ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "sortable": true,
-            "filterable": true
+            "filterable": true,
+            "show_in": ["list", "detail"]
         },
         "customer_id": {
             "type": "smartlookup",

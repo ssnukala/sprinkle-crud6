@@ -19,12 +19,12 @@ env:
   FRAMEWORK_BRANCH: main
   UF_VERSION: "^6.0-beta"
   PHP_VERSION: "8.4"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
         image: mysql:8.0
@@ -38,29 +38,29 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-    
+
     steps:
       - name: Checkout sprinkle
         uses: actions/checkout@v4
         with:
           path: ${{ env.SPRINKLE_DIR }}
-      
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
           extensions: mbstring, xml, gd, pdo_mysql
           coverage: none
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Install testing framework
         run: |
           cd ${{ env.SPRINKLE_DIR }}
-          
+
           # Check if framework already exists (either as crud6-framework or testing-framework)
           if [ -d ".github/crud6-framework" ]; then
             echo "✅ Using local framework (crud6-framework)"
@@ -79,46 +79,46 @@ jobs:
             chmod +x .github/crud6-framework/scripts/*.php
             echo "✅ Framework installed"
           fi
-          
+
           mkdir -p .github/config
           if [ -d "/tmp/crud6-repo/.github/config" ]; then
             cp /tmp/crud6-repo/.github/config/integration-test-*.json .github/config/ 2>/dev/null || true
           fi
-      
+
       - name: Create UserFrosting project
         run: |
           composer create-project userfrosting/userfrosting userfrosting "${{ env.UF_VERSION }}" \
             --no-scripts --no-install --ignore-platform-reqs
-          
+
           cd userfrosting/app
           mkdir -p storage/sessions storage/cache storage/logs logs cache sessions
           chmod -R 777 storage sessions logs cache
           touch logs/userfrosting.log
-      
+
       - name: Configure Composer dependencies
         env:
           COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
         run: |
           cd userfrosting
-          
+
           if [ -d "/tmp/crud6-repo" ]; then
             composer config repositories.crud6 path /tmp/crud6-repo
             composer require ssnukala/sprinkle-crud6:@dev --no-update
           fi
-          
+
           composer config repositories.local path ../${{ env.SPRINKLE_DIR }}
           composer require ${{ env.COMPOSER_PACKAGE }}:@dev --no-update
-          
+
           composer config minimum-stability beta
           composer config prefer-stable true
-          
+
           composer install --no-interaction --prefer-dist
-      
+
       - name: Configure NPM dependencies
         run: |
           cd userfrosting
           npm update
-          
+
           if [ -d "/tmp/crud6-repo" ]; then
             cd /tmp/crud6-repo
             npm pack
@@ -126,7 +126,7 @@ jobs:
             cd "$GITHUB_WORKSPACE/userfrosting"
             npm install ./ssnukala-sprinkle-crud6-*.tgz
           fi
-          
+
           cd "$GITHUB_WORKSPACE/${{ env.SPRINKLE_DIR }}"
           npm pack 2>/dev/null || true
           if ls *.tgz 1> /dev/null 2>&1; then
@@ -134,35 +134,35 @@ jobs:
             cd "$GITHUB_WORKSPACE/userfrosting"
             npm install ./*.tgz 2>/dev/null || echo "NPM package optional"
           fi
-      
+
       - name: Configure MyApp.php
         run: |
           cd userfrosting
-          
+
           sed -i '/use UserFrosting\\Sprinkle\\Core\\Core;/a use UserFrosting\\Sprinkle\\CRUD6\\CRUD6;' app/src/MyApp.php
           sed -i '/Admin::class,/a \            CRUD6::class,' app/src/MyApp.php
-          
+
           echo ""
           echo "✅ MyApp.php configured"
           echo "Updated app/src/MyApp.php:"
           cat app/src/MyApp.php
-      
+
       - name: Configure main.ts
         run: |
           cd userfrosting
-          
+
           sed -i "/import AdminSprinkle from '@userfrosting\\/sprinkle-admin'/a import CRUD6Sprinkle from '@ssnukala\\/sprinkle-crud6'" app/assets/main.ts
           sed -i "/app.use(AdminSprinkle)/a app.use(CRUD6Sprinkle)" app/assets/main.ts
-          
+
           echo ""
           echo "✅ main.ts configured"
           echo "Updated app/assets/main.ts:"
           cat app/assets/main.ts
-      
+
       - name: Configure routes (simple pattern)
         run: |
           cd userfrosting
-          
+
           # Simple array spread pattern
           sed -i "/import AdminRoutes from '@userfrosting\\/sprinkle-admin\\/routes'/a import CRUD6Routes from '@ssnukala/sprinkle-crud6/routes'" app/assets/router/index.ts
           sed -i "/\\.\\.\\.AccountRoutes,/a \\            ...CRUD6Routes," app/assets/router/index.ts
@@ -172,7 +172,6 @@ jobs:
           echo "Updated app/assets/router/index.ts:"
           cat app/assets/router/index.ts
 
-      
       - name: Verify NPM package installation
         run: |
           cd userfrosting
@@ -259,7 +258,6 @@ jobs:
           echo "Updated vite.config.ts:"
           cat vite.config.ts
 
-      
       - name: Setup environment
         run: |
           cd userfrosting
@@ -272,12 +270,12 @@ jobs:
           sed -i 's/DB_PASSWORD=.*/DB_PASSWORD="root"/' app/.env
           echo "BAKERY_CONFIRM_SENSITIVE_COMMAND=false" >> app/.env
           echo "TEST_SESSION_HANDLER=database" >> app/.env
-      
+
       - name: Run migrations
         run: |
           cd userfrosting
           php bakery migrate --force
-      
+
       - name: Create admin user
         run: |
           cd userfrosting
@@ -290,9 +288,9 @@ jobs:
             --lastName=User 2>&1)
           EXIT_CODE=$?
           set -e  # Re-enable exit on error
-          
+
           echo "$OUTPUT"
-          
+
           # Check both exit code and success message
           if [ $EXIT_CODE -eq 0 ]; then
             if echo "$OUTPUT" | grep -Eqi "(user creation successful|created successfully|successfully created)"; then
@@ -310,7 +308,7 @@ jobs:
             echo "❌ Failed to create admin user (exit code: $EXIT_CODE)"
             exit 1
           fi
-      
+
       - name: Copy CRUD6 schema files from examples
         run: |
           cd userfrosting
@@ -366,7 +364,7 @@ jobs:
           else
             echo "✅ All required schema files are present"
           fi
-      
+
       - name: Merge locale messages from examples
         run: |
           cd userfrosting
@@ -484,50 +482,50 @@ jobs:
           echo "Messages file content preview (first 50 lines):"
           head -n 50 app/locale/en_US/messages.php
           echo "..."
-      
+
       - name: Generate and create tables from schemas
         run: |
           cd userfrosting
-          
+
           SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
           if [ -z "${{ env.SCHEMA_PATH }}" ]; then
             SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
           fi
-          
+
           if [ ! -d "$SCHEMA_DIR" ]; then
             echo "❌ ERROR: Schema directory not found: $SCHEMA_DIR"
             exit 1
           fi
-          
+
           echo "✅ Using schemas from: $SCHEMA_DIR"
-          
+
           # Generate DDL (CREATE TABLE statements) from schemas
           node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-ddl-sql.js \
             "$SCHEMA_DIR" tables.sql
-          
+
           # Create tables from DDL
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
             tables.sql
-          
+
           echo "✅ Tables created from schemas"
-      
+
       - name: Generate and load SQL seed data
         run: |
           cd userfrosting
-          
+
           SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/${{ env.SCHEMA_PATH }}"
           if [ -z "${{ env.SCHEMA_PATH }}" ]; then
             SCHEMA_DIR="../${{ env.SPRINKLE_DIR }}/app/schema/crud6"
           fi
-          
+
           # Generate seed data
           node ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/generate-seed-sql.js \
             "$SCHEMA_DIR" seed-data.sql
-          
+
           # Load seed data
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/load-seed-sql.php \
             seed-data.sql
-          
+
           echo "✅ Schema-driven SQL loaded"
 
       - name: Run PHP seeds
@@ -535,13 +533,13 @@ jobs:
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/run-seeds.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-      
+
       - name: Validate seed data
         run: |
           cd userfrosting
           php ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/check-seeds-modular.php \
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-seeds.json
-      
+
       - name: Test seed idempotency
         run: |
           cd userfrosting
@@ -554,7 +552,7 @@ jobs:
           # UserFrosting 6 uses bakery bake to build assets via Vite
           # Note: Even though we bake, we still need vite dev server for proper asset serving
           php bakery bake || echo "⚠️ Build failed but continuing with tests"
-      
+
       - name: Start PHP development server
         run: |
           cd userfrosting
@@ -590,7 +588,7 @@ jobs:
 
       - name: Test unauthenticated API paths
         env:
-          CONTINUE_ON_FAILURE: 'true'
+          CONTINUE_ON_FAILURE: "true"
         run: |
           cd userfrosting
           echo "========================================="
@@ -602,10 +600,10 @@ jobs:
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             unauth api > /tmp/test-results-unauth-api.txt 2>&1
           cat /tmp/test-results-unauth-api.txt
-      
+
       - name: Test unauthenticated frontend paths
         env:
-          CONTINUE_ON_FAILURE: 'true'
+          CONTINUE_ON_FAILURE: "true"
         run: |
           cd userfrosting
           echo "========================================="
@@ -617,13 +615,13 @@ jobs:
             ../${{ env.SPRINKLE_DIR }}/.github/config/integration-test-paths.json \
             unauth frontend > /tmp/test-results-unauth-frontend.txt 2>&1
           cat /tmp/test-results-unauth-frontend.txt
-      
+
       - name: Install Playwright
         run: |
           cd userfrosting
           npm install playwright
           npx playwright install chromium
-      
+
       - name: Copy testing scripts to userfrosting
         run: |
           cd userfrosting
@@ -631,7 +629,7 @@ jobs:
           cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/test-authenticated-unified.js .
           cp ../${{ env.SPRINKLE_DIR }}/.github/crud6-framework/scripts/take-screenshots-modular.js .
           echo "✅ Testing scripts copied to userfrosting directory"
-      
+
       - name: Test authenticated paths (unified approach - login + API + frontend)
         run: |
           cd userfrosting
@@ -642,7 +640,7 @@ jobs:
           echo "authenticated API endpoints and frontend pages"
           echo "in a single session to maintain authentication state"
           echo ""
-          
+
           # Run unified test that does login + API tests + frontend tests in one go
           # Note: Script exits with code 1 on failure, which will fail this workflow step
           node test-authenticated-unified.js \
@@ -650,7 +648,7 @@ jobs:
             http://localhost:8080 \
             admin \
             admin123
-      
+
       - name: Generate test summary table
         if: always()
         run: |
@@ -660,13 +658,13 @@ jobs:
           echo "INTEGRATION TEST RESULTS SUMMARY"
           echo "========================================="
           echo ""
-          
+
           # Create summary table
           cat << 'EOF' > /tmp/test-summary.txt
           | Test Category | Auth Status | Type | Status | Details |
           |---------------|-------------|------|--------|---------|
           EOF
-          
+
           # Function to extract summary from test results
           extract_summary() {
             local file=$1
@@ -698,31 +696,31 @@ jobs:
               step=$((step + 1))
             fi
           }
-          
+
           # Initialize step counter
           step=1
-          
+
           # Extract summaries for test runs (only unauthenticated tests now write to files)
           extract_summary "/tmp/test-results-unauth-api.txt" "Unauthenticated" "API"
           extract_summary "/tmp/test-results-unauth-frontend.txt" "Unauthenticated" "Frontend"
-          
+
           # Note: Authenticated tests are now done via unified JS script (results shown in console)
           echo "| Step 3 | Authenticated | API+Frontend | See console output | Unified test approach |" >> /tmp/test-summary.txt
-          
+
           # Display the summary table
           cat /tmp/test-summary.txt
           echo ""
-          
+
           # Overall summary for unauthenticated tests
           echo "========================================="
           echo "OVERALL TEST SUMMARY"
           echo "========================================="
-          
+
           total_tests=0
           total_passed=0
           total_warnings=0
           total_failed=0
-          
+
           for file in /tmp/test-results-*.txt; do
             if [ -f "$file" ]; then
               tests=$(grep "Total tests:" "$file" | awk '{print $3}' || echo "0")
@@ -736,7 +734,7 @@ jobs:
               total_failed=$((total_failed + failed))
             fi
           done
-          
+
           echo "Unauthenticated Tests: $total_tests executed"
           echo "✅ Passed: $total_passed"
           echo "⚠️  Warnings: $total_warnings (expected for access control)"
@@ -744,7 +742,7 @@ jobs:
           echo ""
           echo "Authenticated Tests: See unified test output above"
           echo ""
-          
+
           if [ "$total_failed" -gt 0 ]; then
             echo "⚠️  Some unauthenticated tests failed"
           elif [ "$total_warnings" -gt 0 ]; then
@@ -752,7 +750,7 @@ jobs:
           else
             echo "✅ All unauthenticated tests passed"
           fi
-          
+
           echo ""
           echo "Note: Authenticated test results are from unified script (login + API + frontend in one session)"
 
@@ -762,10 +760,10 @@ jobs:
           cd userfrosting
           # Note: The unified test script already captures screenshots
           # This step is kept for compatibility but will skip if screenshots already exist
-          
+
           # Count existing screenshots
           SCREENSHOT_COUNT=$(ls -1 /tmp/screenshot_*.png 2>/dev/null | wc -l || echo "0")
-          
+
           if [ "$SCREENSHOT_COUNT" -gt 0 ]; then
             echo "✅ Found $SCREENSHOT_COUNT screenshot(s) already captured by unified test"
             echo "Skipping additional screenshot capture"
@@ -786,7 +784,7 @@ jobs:
           name: integration-test-screenshots
           path: /tmp/screenshot_*.png
           retention-days: 7
-      
+
       - name: Upload login diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -796,7 +794,7 @@ jobs:
             /tmp/login-page-before-attempt.png
             /tmp/login-error-screenshot.png
           retention-days: 7
-      
+
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -804,7 +802,7 @@ jobs:
           name: integration-test-logs
           path: userfrosting/app/logs/
           retention-days: 7
-      
+
       - name: Upload API test log
         if: always()
         uses: actions/upload-artifact@v4
@@ -813,7 +811,7 @@ jobs:
           path: /tmp/api-test-log.json
           if-no-files-found: ignore
           retention-days: 7
-      
+
       - name: Stop servers
         if: always()
         run: |

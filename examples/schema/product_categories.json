@@ -16,10 +16,10 @@
             "type": "integer",
             "label": "ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": true
+            "show_in": ["list", "detail"]
         },
         "product_id": {
             "type": "integer",
@@ -27,7 +27,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true
             }
@@ -38,7 +38,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true
             }
@@ -46,10 +46,10 @@
         "created_at": {
             "type": "datetime",
             "label": "Created At",
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": false
+            "show_in": ["detail"]
         }
     }
 }

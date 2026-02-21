@@ -8,6 +8,7 @@
 
 import { ref, computed } from 'vue'
 import { useCRUD6SchemaStore } from '../stores/useCRUD6SchemaStore'
+import { useAuthStore } from '@userfrosting/sprinkle-account/stores'
 import type { ApiErrorResponse } from '@userfrosting/sprinkle-core/interfaces'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 
@@ -446,13 +447,28 @@ export function useCRUD6Schema(modelName?: string) {
     })
 
     /**
-     * Check if user has permission for an action
+     * Check if user has permission for an action on the current model.
+     *
+     * Uses the schema's `permissions` object to resolve the permission slug,
+     * then delegates to UserFrosting's auth store `checkAccess()`.
+     * Falls back to a convention-based slug (`crud6.{model}.{action}`) if
+     * no explicit permission is defined in the schema.
      */
-    function hasPermission(_action: 'read' | 'create' | 'update' | 'delete'): boolean {
-        // This would typically check against the current user's permissions
-        // For now, we'll return true - this should be implemented based on 
-        // UserFrosting's authorization system
-        return true
+    function hasPermission(action: 'read' | 'create' | 'update' | 'delete'): boolean {
+        const authStore = useAuthStore()
+        const slug = schema.value?.permissions?.[action]
+            ?? `crud6.${schema.value?.model ?? currentModel.value ?? 'unknown'}.${action}`
+
+        const result = authStore.checkAccess(slug)
+
+        debugLog('[useCRUD6Schema] hasPermission check', {
+            action,
+            slug,
+            model: currentModel.value,
+            granted: result,
+        })
+
+        return result
     }
 
     // NOTE: Auto-load removed to prevent duplicate schema API calls.

@@ -95,6 +95,33 @@ export function debugError(message: string, ...args: any[]): void {
 }
 
 /**
+ * Sensitive field names that should be masked in debug logs.
+ * Values for these keys will be replaced with '[REDACTED]'.
+ */
+const SENSITIVE_FIELDS = ['password', 'password_confirm', 'passwordConfirm', 'secret', 'token', 'api_key', 'private_key'];
+
+/**
+ * Sanitize an object for logging by masking sensitive field values.
+ * Returns a shallow copy with sensitive values replaced by '[REDACTED]'.
+ */
+export function sanitizeForLog(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map(sanitizeForLog);
+
+    const sanitized: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+            sanitized[key] = '[REDACTED]';
+        } else if (value && typeof value === 'object') {
+            sanitized[key] = sanitizeForLog(value);
+        } else {
+            sanitized[key] = value;
+        }
+    }
+    return sanitized;
+}
+
+/**
  * Always log critical errors (bypasses debug mode)
  */
 export function logError(message: string, ...args: any[]): void {
@@ -109,4 +136,5 @@ export default {
     debugWarn,
     debugError,
     logError,
+    sanitizeForLog,
 };

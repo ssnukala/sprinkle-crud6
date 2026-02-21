@@ -145,6 +145,12 @@ class DatabaseScanner
      */
     public function setNamingPatterns(array $patterns): self
     {
+        // Validate each pattern to prevent ReDoS attacks from malicious regex
+        foreach ($patterns as $pattern) {
+            if (@preg_match($pattern, '') === false) {
+                throw new \InvalidArgumentException("Invalid regex pattern: {$pattern}");
+            }
+        }
         $this->namingPatterns = $patterns;
         return $this;
     }
@@ -686,9 +692,15 @@ class DatabaseScanner
         int $sampleSize
     ): array {
         try {
+            // Quote identifiers to prevent SQL injection from table/column names
+            $quotedTable = $this->connection->quoteIdentifier($tableName);
+            $quotedColumn = $this->connection->quoteIdentifier($columnName);
+            $quotedForeignTable = $this->connection->quoteIdentifier($foreignTable);
+            $quotedForeignKey = $this->connection->quoteIdentifier($foreignKey);
+
             // Get sample of non-null values from the potential foreign key column
             $stmt = $this->connection->prepare(
-                "SELECT DISTINCT {$columnName} FROM {$tableName} WHERE {$columnName} IS NOT NULL LIMIT {$sampleSize}"
+                "SELECT DISTINCT {$quotedColumn} FROM {$quotedTable} WHERE {$quotedColumn} IS NOT NULL LIMIT {$sampleSize}"
             );
             $result = $stmt->executeQuery();
             $sampleValues = $result->fetchFirstColumn();
@@ -701,7 +713,7 @@ class DatabaseScanner
             // Check how many of these values exist in the referenced table
             $placeholders = implode(',', array_fill(0, count($sampleValues), '?'));
             $stmt = $this->connection->prepare(
-                "SELECT COUNT(DISTINCT {$foreignKey}) as count FROM {$foreignTable} WHERE {$foreignKey} IN ({$placeholders})"
+                "SELECT COUNT(DISTINCT {$quotedForeignKey}) as count FROM {$quotedForeignTable} WHERE {$quotedForeignKey} IN ({$placeholders})"
             );
             $result = $stmt->executeQuery($sampleValues);
             $matchCount = $result->fetchOne();

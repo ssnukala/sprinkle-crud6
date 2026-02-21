@@ -14,6 +14,7 @@ import { useTranslator } from '@userfrosting/sprinkle-core/stores'
 import type { ActionConfig, ModalButtonConfig, ModalConfig, SchemaField } from '@ssnukala/sprinkle-crud6/composables'
 import { debugLog } from '../../utils/debug'
 import { getAutocompleteAttribute } from '../../utils/fieldTypes'
+import { sanitizeHtml } from '../../utils/sanitize'
 import CRUD6Form from './Form.vue'
 
 /**
@@ -673,7 +674,7 @@ function resetForm() {
                                     icon="triangle-exclamation" 
                                     class="uk-text-warning fa-4x" />
                             </p>
-                            <div v-html="promptMessage"></div>
+                            <div v-html="sanitizeHtml(promptMessage)"></div>
                             <div v-if="warningMessage" class="uk-text-meta">
                                 {{ warningMessage }}
                             </div>

@@ -31,10 +31,10 @@
             "type": "integer",
             "label": "ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": true
+            "show_in": ["list", "detail"]
         },
         "name": {
             "type": "string",
@@ -42,7 +42,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "length": {
@@ -57,7 +57,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "slug": true
@@ -69,7 +69,7 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "field_template": "<div class='uk-text-meta'><strong>ID:</strong> {{id}} | <strong>Slug:</strong> {{slug}}<br/><strong>Status:</strong> {{is_active}}<br/>{{description}}</div>"
         },
         "icon": {
@@ -78,7 +78,7 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": false
+            "show_in": ["form", "detail"]
         },
         "is_active": {
             "type": "boolean",
@@ -86,7 +86,7 @@
             "default": true,
             "sortable": true,
             "filterable": true,
-            "listable": true
+            "show_in": ["list", "form", "detail"]
         }
     }
 }

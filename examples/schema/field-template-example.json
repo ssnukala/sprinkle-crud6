@@ -19,10 +19,10 @@
             "type": "integer",
             "label": "ID",
             "auto_increment": true,
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": true
+            "show_in": ["list", "detail"]
         },
         "title": {
             "type": "string",
@@ -30,7 +30,7 @@
             "required": true,
             "sortable": true,
             "filterable": true,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "validation": {
                 "required": true,
                 "length": {
@@ -45,7 +45,7 @@
             "required": false,
             "sortable": false,
             "filterable": false,
-            "listable": true,
+            "show_in": ["list", "form", "detail"],
             "field_template": "<div class='uk-card uk-card-small uk-card-default uk-card-body'><div class='uk-grid-small uk-flex-middle' uk-grid><div class='uk-width-auto'><span class='uk-badge uk-badge-{{status}}'>{{status}}</span></div><div class='uk-width-expand'><div class='uk-text-bold'>Task #{{id}}: {{title}}</div><div class='uk-text-meta uk-text-small'>Assigned to: {{assigned_to}} | Priority: {{priority}}</div><p class='uk-margin-small-top uk-text-small'>{{description}}</p></div><div class='uk-width-auto uk-text-nowrap'><span class='uk-text-meta'>Due: {{due_date}}</span></div></div></div>"
         },
         "status": {
@@ -54,7 +54,7 @@
             "default": "pending",
             "sortable": true,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "filter_type": "equals"
         },
         "priority": {
@@ -63,7 +63,7 @@
             "default": "medium",
             "sortable": true,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "filter_type": "equals"
         },
         "assigned_to": {
@@ -72,7 +72,7 @@
             "required": false,
             "sortable": true,
             "filterable": true,
-            "listable": false
+            "show_in": ["form", "detail"]
         },
         "due_date": {
             "type": "date",
@@ -80,26 +80,26 @@
             "required": false,
             "sortable": true,
             "filterable": true,
-            "listable": false,
+            "show_in": ["form", "detail"],
             "filter_type": "between",
             "date_format": "Y-m-d"
         },
         "created_at": {
             "type": "datetime",
             "label": "Created At",
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": true,
+            "show_in": ["list", "detail"],
             "date_format": "Y-m-d H:i:s"
         },
         "updated_at": {
             "type": "datetime",
             "label": "Updated At",
-            "editable": false,
+            "readonly": true,
             "sortable": true,
             "filterable": false,
-            "listable": false,
+            "show_in": ["detail"],
             "date_format": "Y-m-d H:i:s"
         }
     }

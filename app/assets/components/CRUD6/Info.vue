@@ -255,6 +255,63 @@ const customActions = computed(() => {
         .filter(isActionVisible)
 })
 
+// Boolean fields shown as inline hero badges next to the title
+// Only fields with explicit display config get promoted to badges
+const heroBadgeFields = computed(() => {
+    if (!displayFields.value) return []
+    return Object.entries(displayFields.value).filter(([key, field]: [string, any]) =>
+        field.type === 'boolean' &&
+        field.display &&
+        crud6[key] !== null && crud6[key] !== undefined
+    )
+})
+
+// Display fields excluding hero badge fields (to avoid duplication in detail list)
+const nonBadgeDisplayFields = computed(() => {
+    if (!displayFields.value) return {}
+    const badgeKeys = new Set(heroBadgeFields.value.map(([k]) => k))
+    return Object.fromEntries(
+        Object.entries(displayFields.value).filter(([key]) => !badgeKeys.has(key))
+    )
+})
+
+// Whether schema defines sections for grouped detail layout
+const hasSections = computed(() => {
+    return finalSchema.value?.sections && Array.isArray(finalSchema.value.sections) && finalSchema.value.sections.length > 0
+})
+
+// Organized sections for detail display (resolves field refs, excludes hero badges)
+const detailSections = computed(() => {
+    if (!hasSections.value || !finalSchema.value?.sections) return []
+
+    const sectionedFieldKeys = new Set<string>()
+    const sections = finalSchema.value.sections.map((section: any) => {
+        const sectionFields: [string, any][] = []
+        for (const fieldKey of section.fields) {
+            if (nonBadgeDisplayFields.value[fieldKey] && crud6[fieldKey] !== null && crud6[fieldKey] !== undefined) {
+                sectionFields.push([fieldKey, nonBadgeDisplayFields.value[fieldKey]])
+                sectionedFieldKeys.add(fieldKey)
+            }
+        }
+        return { ...section, resolvedFields: sectionFields, showHeader: true }
+    }).filter((s: any) => s.resolvedFields.length > 0)
+
+    // Unsectioned fields go into implicit "Other" section
+    const unsectionedFields: [string, any][] = Object.entries(nonBadgeDisplayFields.value)
+        .filter(([key]) => !sectionedFieldKeys.has(key) && crud6[key] !== null && crud6[key] !== undefined)
+    if (unsectionedFields.length > 0) {
+        sections.push({
+            key: '_other',
+            title: 'CRUD6.SECTION.OTHER',
+            icon: null,
+            resolvedFields: unsectionedFields,
+            showHeader: sections.length > 0
+        })
+    }
+
+    return sections
+})
+
 // Schema loading is completely handled by parent PageRow component and passed as a prop
 // When schema prop is provided, we don't use the composable for loading at all to avoid redundant API calls
 // Modal components (EditModal, DeleteModal) include their own trigger buttons and use UIKit modals
@@ -264,54 +321,112 @@ const customActions = computed(() => {
     <UFCardBox>
         <!-- Dynamic content based on schema (provided by PageRow) -->
         <template v-if="finalSchema">
-            <!-- Icon display (if icon field exists and has value) -->
-            <div v-if="iconField && crud6.icon" class="uk-text-center">
-                <font-awesome-icon :icon="crud6.icon" class="fa-5x" />
+            <!-- Hero header with icon, title, status badges, and description -->
+            <div class="uk-flex uk-flex-middle uk-margin-bottom">
+                <!-- Circular icon container -->
+                <div v-if="iconField && crud6.icon" class="uk-margin-right">
+                    <div class="uk-border-circle uk-background-muted uk-flex uk-flex-center uk-flex-middle" style="width: 72px; height: 72px;">
+                        <font-awesome-icon :icon="crud6.icon" class="fa-2x uk-text-primary" />
+                    </div>
+                </div>
+                <div>
+                    <!-- Title -->
+                    <h3 class="uk-margin-remove-bottom">
+                        {{ crud6.breadcrumb || crud6.id }}
+                    </h3>
+                    <!-- Inline boolean status badges -->
+                    <div v-if="heroBadgeFields.length > 0" class="uk-margin-small-top">
+                        <span
+                            v-for="[key, field] in heroBadgeFields"
+                            :key="key"
+                            class="uk-label uk-margin-small-right"
+                            :class="crud6[key]
+                                ? `uk-label-${field.display?.true_style || 'success'}`
+                                : `uk-label-${field.display?.false_style || 'danger'}`">
+                            {{ crud6[key]
+                                ? $t(field.display?.true_label || 'YES')
+                                : $t(field.display?.false_label || 'NO') }}
+                        </span>
+                    </div>
+                    <!-- Description/subtitle -->
+                    <p v-if="crud6[finalSchema.description_field || 'description']" class="uk-text-meta uk-margin-remove-top">
+                        {{ crud6[finalSchema.description_field || 'description'] }}
+                    </p>
+                </div>
             </div>
-            
-            <!-- Title - use pre-computed breadcrumb from API (includes "Title (ID)" format) or fallback to ID -->
-            <h3 class="uk-text-center uk-margin-remove">
-                {{ crud6.breadcrumb || crud6.id }}
-            </h3>
-            
-            <!-- Description - use schema description field or fallback -->
-            <p v-if="crud6[finalSchema.description_field || 'description']" class="uk-text-meta">
-                {{ crud6[finalSchema.description_field || 'description'] }}
-            </p>
-            
+
             <hr />
-            
+
             <!-- Dynamic field display based on schema -->
-            <dl class="uk-description-list" v-if="hasViewFieldPermission">
-                <template v-for="[fieldKey, field] in Object.entries(displayFields)" :key="fieldKey">
-                    <dt v-if="crud6[fieldKey] !== null && crud6[fieldKey] !== undefined">
-                        <font-awesome-icon 
-                            v-if="field.icon" 
-                            :icon="field.icon" 
-                            class="uk-margin-small-right" />
-                        {{ field.label || fieldKey }}
-                    </dt>
-                    <dd v-if="crud6[fieldKey] !== null && crud6[fieldKey] !== undefined">
-                        <!-- Special handling for badge/count fields -->
-                        <span 
-                            v-if="field.type === 'badge' || field.type === 'count'" 
-                            class="uk-badge">
-                            {{ formatFieldValue(crud6[fieldKey], field) }}
-                        </span>
-                        <!-- Special handling for boolean fields -->
-                        <span 
-                            v-else-if="field.type === 'boolean' || field.type === 'boolean-tgl' || field.type === 'boolean-toggle' || field.type === 'boolean-yn'"
-                            :class="crud6[fieldKey] ? 'uk-text-success' : 'uk-text-danger'">
-                            {{ formatFieldValue(crud6[fieldKey], field) }}
-                        </span>
-                        <!-- Default display -->
-                        <span v-else>
-                            {{ formatFieldValue(crud6[fieldKey], field) }}
-                        </span>
-                    </dd>
+            <template v-if="hasViewFieldPermission">
+                <!-- SECTIONED detail display (when sections defined in schema) -->
+                <template v-if="hasSections">
+                    <div v-for="section in detailSections" :key="section.key" class="uk-margin-medium-bottom">
+                        <div v-if="section.showHeader" class="uk-flex uk-flex-middle uk-margin-small-bottom">
+                            <font-awesome-icon v-if="section.icon" :icon="section.icon" class="uk-margin-small-right uk-text-muted" />
+                            <h4 class="uk-margin-remove">{{ $t(section.title) }}</h4>
+                        </div>
+                        <hr v-if="section.showHeader" class="uk-margin-remove-top uk-margin-small-bottom" />
+                        <dl class="uk-description-list">
+                            <template v-for="[fieldKey, field] in section.resolvedFields" :key="fieldKey">
+                                <dt>
+                                    <font-awesome-icon v-if="field.icon" :icon="field.icon" class="uk-margin-small-right" />
+                                    {{ field.label || fieldKey }}
+                                </dt>
+                                <dd>
+                                    <span v-if="field.type === 'badge' || field.type === 'count'" class="uk-badge">
+                                        {{ formatFieldValue(crud6[fieldKey], field) }}
+                                    </span>
+                                    <span v-else-if="field.type === 'boolean'"
+                                        class="uk-label"
+                                        :class="crud6[fieldKey]
+                                            ? `uk-label-${field.display?.true_style || 'success'}`
+                                            : `uk-label-${field.display?.false_style || 'danger'}`">
+                                        {{ crud6[fieldKey]
+                                            ? $t(field.display?.true_label || 'YES')
+                                            : $t(field.display?.false_label || 'NO') }}
+                                    </span>
+                                    <span v-else>{{ formatFieldValue(crud6[fieldKey], field) }}</span>
+                                </dd>
+                            </template>
+                        </dl>
+                    </div>
                 </template>
-            </dl>
-            
+
+                <!-- FLAT detail display (backward compatible, no sections) -->
+                <dl v-else class="uk-description-list">
+                    <template v-for="[fieldKey, field] in Object.entries(nonBadgeDisplayFields)" :key="fieldKey">
+                        <dt v-if="crud6[fieldKey] !== null && crud6[fieldKey] !== undefined">
+                            <font-awesome-icon
+                                v-if="field.icon"
+                                :icon="field.icon"
+                                class="uk-margin-small-right" />
+                            {{ field.label || fieldKey }}
+                        </dt>
+                        <dd v-if="crud6[fieldKey] !== null && crud6[fieldKey] !== undefined">
+                            <span
+                                v-if="field.type === 'badge' || field.type === 'count'"
+                                class="uk-badge">
+                                {{ formatFieldValue(crud6[fieldKey], field) }}
+                            </span>
+                            <span
+                                v-else-if="field.type === 'boolean' || field.type === 'boolean-tgl' || field.type === 'boolean-toggle' || field.type === 'boolean-yn'"
+                                class="uk-label"
+                                :class="crud6[fieldKey]
+                                    ? `uk-label-${field.display?.true_style || 'success'}`
+                                    : `uk-label-${field.display?.false_style || 'danger'}`">
+                                {{ crud6[fieldKey]
+                                    ? $t(field.display?.true_label || 'YES')
+                                    : $t(field.display?.false_label || 'NO') }}
+                            </span>
+                            <span v-else>
+                                {{ formatFieldValue(crud6[fieldKey], field) }}
+                            </span>
+                        </dd>
+                    </template>
+                </dl>
+            </template>
+
             <hr />
             
             <!-- Action buttons with dynamic permissions -->

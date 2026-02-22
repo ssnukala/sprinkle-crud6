@@ -35,6 +35,11 @@ class SchemaNormalizer
         // Normalize ORM-style attributes first (before other normalizations)
         $schema = $this->normalizeORMAttributes($schema);
 
+        // Apply smart field defaults based on type and properties
+        // This fills in missing properties (sortable, filterable, show_in, etc.)
+        // User-specified values are NEVER overridden
+        $schema = $this->applyFieldDefaults($schema);
+
         // Normalize lookup attributes for smartlookup fields
         $schema = $this->normalizeLookupAttributes($schema);
 
@@ -43,6 +48,72 @@ class SchemaNormalizer
 
         // Normalize boolean field types with UI specification
         $schema = $this->normalizeBooleanTypes($schema);
+
+        // Normalize per-field span values
+        $schema = $this->normalizeSpanValues($schema);
+
+        // Normalize sections configuration
+        $schema = $this->normalizeSections($schema);
+
+        return $schema;
+    }
+
+    /**
+     * Normalize per-field span values.
+     *
+     * Validates that span values are one of the allowed values.
+     * Invalid span values are removed so the field uses default width.
+     *
+     * @param array $schema The schema array
+     *
+     * @return array The schema with normalized span values
+     */
+    public function normalizeSpanValues(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        $validSpans = ['full', 'half', 'third'];
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            if (isset($field['span']) && !in_array($field['span'], $validSpans, true)) {
+                unset($field['span']);
+            }
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Normalize sections configuration.
+     *
+     * Ensures each section has required keys and sensible defaults.
+     *
+     * @param array $schema The schema array
+     *
+     * @return array The schema with normalized sections
+     */
+    public function normalizeSections(array $schema): array
+    {
+        if (!isset($schema['sections']) || !is_array($schema['sections'])) {
+            return $schema;
+        }
+
+        foreach ($schema['sections'] as $index => &$section) {
+            if (!isset($section['key'])) {
+                $section['key'] = 'section_' . $index;
+            }
+            if (!isset($section['fields']) || !is_array($section['fields'])) {
+                $section['fields'] = [];
+            }
+            if (!isset($section['columns'])) {
+                $section['columns'] = 2;
+            }
+            if (!isset($section['collapsible'])) {
+                $section['collapsible'] = false;
+            }
+        }
 
         return $schema;
     }
@@ -373,5 +444,134 @@ class SchemaNormalizer
         }
 
         return $schema;
+    }
+
+    /**
+     * Apply smart defaults to fields based on their type and properties.
+     *
+     * User-specified values are NEVER overridden - defaults only fill gaps.
+     * This reduces JSON schema size by making common patterns implicit:
+     *
+     * - auto_increment → readonly=true, show_in=["detail"]
+     * - readonly → show_in=["detail"]
+     * - password → show_in=["create", "edit"]
+     * - computed → show_in=["form"]
+     * - string/email → sortable=true, filterable=true
+     * - text/textarea → span="full"
+     * - boolean → sortable=true, filterable=true
+     * - integer/date/datetime → sortable=true
+     * - All fields → show_in=["list", "form", "detail"] if not set
+     *
+     * @param array $schema The schema array
+     *
+     * @return array The schema with smart defaults applied
+     */
+    public function applyFieldDefaults(array $schema): array
+    {
+        if (!isset($schema['fields']) || !is_array($schema['fields'])) {
+            return $schema;
+        }
+
+        foreach ($schema['fields'] as $fieldKey => &$field) {
+            $type = $field['type'] ?? 'string';
+
+            // Auto-increment implies readonly
+            if (!empty($field['auto_increment']) && !isset($field['readonly'])) {
+                $field['readonly'] = true;
+            }
+
+            // Type-based property defaults (sortable, filterable, span)
+            $this->applyTypeDefaults($field, $type);
+
+            // Smart show_in defaults (only if not already specified)
+            if (!isset($field['show_in'])) {
+                $field['show_in'] = $this->deriveShowIn($type, $field);
+            }
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Apply type-based property defaults to a field.
+     * Only sets properties that are not already explicitly defined.
+     *
+     * @param array $field The field configuration (by reference)
+     * @param string $type The field type
+     */
+    private function applyTypeDefaults(array &$field, string $type): void
+    {
+        switch ($type) {
+            case 'string':
+            case 'email':
+                if (!isset($field['sortable'])) {
+                    $field['sortable'] = true;
+                }
+                if (!isset($field['filterable'])) {
+                    $field['filterable'] = true;
+                }
+                break;
+
+            case 'integer':
+            case 'decimal':
+            case 'float':
+            case 'number':
+            case 'date':
+            case 'datetime':
+                if (!isset($field['sortable'])) {
+                    $field['sortable'] = true;
+                }
+                break;
+
+            case 'boolean':
+                if (!isset($field['sortable'])) {
+                    $field['sortable'] = true;
+                }
+                if (!isset($field['filterable'])) {
+                    $field['filterable'] = true;
+                }
+                break;
+
+            case 'text':
+            case 'textarea':
+                if (!isset($field['span'])) {
+                    $field['span'] = 'full';
+                }
+                break;
+        }
+    }
+
+    /**
+     * Derive smart show_in defaults based on field type and properties.
+     *
+     * @param string $type The field type
+     * @param array $field The field configuration
+     *
+     * @return array The derived show_in contexts
+     */
+    private function deriveShowIn(string $type, array $field): array
+    {
+        // Auto-increment: detail only (e.g., id field)
+        if (!empty($field['auto_increment'])) {
+            return ['detail'];
+        }
+
+        // Readonly: detail only (e.g., created_at, updated_at)
+        if (!empty($field['readonly'])) {
+            return ['detail'];
+        }
+
+        // Password: create and edit only (security - never list or detail)
+        if ($type === 'password') {
+            return ['create', 'edit'];
+        }
+
+        // Computed/virtual fields (e.g., role_ids): form only
+        if (!empty($field['computed'])) {
+            return ['form'];
+        }
+
+        // Default: show everywhere
+        return ['list', 'form', 'detail'];
     }
 }

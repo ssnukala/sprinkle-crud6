@@ -336,8 +336,14 @@ onMounted(async () => {
             <span class="uk-badge">{{ row[fieldKey] }}</span>
           </template>
           <template v-else-if="field.type === 'boolean'">
-            <span :class="row[fieldKey] ? 'uk-text-success' : 'uk-text-danger'">
-              {{ row[fieldKey] ? $t('YES') : $t('NO') }}
+            <span
+              class="uk-label"
+              :class="row[fieldKey]
+                ? `uk-label-${field.display?.true_style || 'success'}`
+                : `uk-label-${field.display?.false_style || 'danger'}`">
+              {{ row[fieldKey]
+                ? $t(field.display?.true_label || 'YES')
+                : $t(field.display?.false_label || 'NO') }}
             </span>
           </template>
           <template v-else>

@@ -133,6 +133,16 @@ class SchemaFilter
             ]);
         }
 
+        // Add sections if present (schema-level layout configuration for form/detail grouping)
+        if (isset($schema['sections'])) {
+            $filtered['sections'] = $schema['sections'];
+        }
+
+        // Add form_layout if present (schema-level column layout preference)
+        if (isset($schema['form_layout'])) {
+            $filtered['form_layout'] = $schema['form_layout'];
+        }
+
         // Add contexts section with filtered data for each context
         $filtered['contexts'] = [];
         foreach ($contexts as $context) {
@@ -171,6 +181,16 @@ class SchemaFilter
         // Add permissions if present (needed for permission checks)
         if (isset($schema['permissions'])) {
             $filtered['permissions'] = $schema['permissions'];
+        }
+
+        // Add sections if present (schema-level layout configuration)
+        if (isset($schema['sections'])) {
+            $filtered['sections'] = $schema['sections'];
+        }
+
+        // Add form_layout if present
+        if (isset($schema['form_layout'])) {
+            $filtered['form_layout'] = $schema['form_layout'];
         }
 
         // Get context-specific data
@@ -269,6 +289,11 @@ class SchemaFilter
                 if (isset($field['filter_type']) && ($field['filterable'] ?? false)) {
                     $data['fields'][$fieldKey]['filter_type'] = $field['filter_type'];
                 }
+
+                // Include display config if present (for status pills, custom labels)
+                if (isset($field['display'])) {
+                    $data['fields'][$fieldKey]['display'] = $field['display'];
+                }
             }
         }
 
@@ -329,6 +354,16 @@ class SchemaFilter
                 // Include default value for display purposes
                 if (isset($field['default'])) {
                     $data['fields'][$fieldKey]['default'] = $field['default'];
+                }
+
+                // Include display config if present (for status pills, custom labels)
+                if (isset($field['display'])) {
+                    $data['fields'][$fieldKey]['display'] = $field['display'];
+                }
+
+                // Include span if present (per-field width control for layout)
+                if (isset($field['span'])) {
+                    $data['fields'][$fieldKey]['span'] = $field['span'];
                 }
             }
         }
@@ -452,9 +487,29 @@ class SchemaFilter
                 if (($field['type'] ?? '') === 'smartlookup') {
                     $this->includeSmartlookupFields($field, $data['fields'][$fieldKey]);
                 }
+
+                // Include span if present (per-field width control for layout)
+                if (isset($field['span'])) {
+                    $data['fields'][$fieldKey]['span'] = $field['span'];
+                }
+
+                // Include display config if present (for status pills, custom labels)
+                if (isset($field['display'])) {
+                    $data['fields'][$fieldKey]['display'] = $field['display'];
+                }
+
+                // Include options for select/enum fields
+                if (isset($field['options'])) {
+                    $data['fields'][$fieldKey]['options'] = $field['options'];
+                }
+
+                // Include ui hint if present (for boolean toggle/select variants)
+                if (isset($field['ui'])) {
+                    $data['fields'][$fieldKey]['ui'] = $field['ui'];
+                }
             }
         }
-        
+
         return $data;
     }
 

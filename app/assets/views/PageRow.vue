@@ -17,6 +17,7 @@ import CRUD6AutoLookup from '../components/CRUD6/AutoLookup.vue'
 import type { CRUD6Response, CRUD6Interface } from '@ssnukala/sprinkle-crud6/interfaces'
 import { debugLog, debugWarn, debugError } from '../utils/debug'
 import { getLookupConfig } from '../composables/useCRUD6FieldRenderer'
+import CRUD6ToggleSwitch from '../components/CRUD6/ToggleSwitch.vue'
 
 /**
  * Variables and composables
@@ -146,6 +147,14 @@ const flattenedSchema = computed(() => {
             // Preserve contexts for child components that need access to all fields
             // (e.g., Info.vue needs form context fields for action modals like password change)
             contexts: schema.value.contexts,
+        }
+
+        // Pass through layout properties
+        if (schema.value.sections) {
+            flattened.sections = schema.value.sections
+        }
+        if (schema.value.form_layout) {
+            flattened.form_layout = schema.value.form_layout
         }
         
         // Merge 'detail' context data if present (for detail view display)
@@ -441,6 +450,113 @@ function getLookupAttributes(field: any) {
         required: field.required
     }
 }
+
+/**
+ * Editable fields filtered from the flattened schema
+ */
+const editableFields = computed(() => {
+    if (!flattenedSchema.value?.fields) return {}
+    return Object.fromEntries(
+        Object.entries(flattenedSchema.value.fields).filter(([key, field]: [string, any]) => field.editable !== false)
+    )
+})
+
+/**
+ * Whether the schema defines sections for grouped form layout
+ */
+const hasSections = computed(() => {
+    return flattenedSchema.value?.sections && Array.isArray(flattenedSchema.value.sections) && flattenedSchema.value.sections.length > 0
+})
+
+/**
+ * Organized sections with their resolved editable fields.
+ * Fields not listed in any section go into an implicit "Other" section at the end.
+ */
+const organizedSections = computed(() => {
+    if (!hasSections.value || !flattenedSchema.value?.sections) return []
+
+    const sectionedFieldKeys = new Set<string>()
+    const sections = flattenedSchema.value.sections.map((section: any) => {
+        const sectionFields: [string, any][] = []
+        for (const fieldKey of section.fields) {
+            if (editableFields.value[fieldKey]) {
+                sectionFields.push([fieldKey, editableFields.value[fieldKey]])
+                sectionedFieldKeys.add(fieldKey)
+            }
+        }
+        return { ...section, resolvedFields: sectionFields }
+    }).filter((s: any) => s.resolvedFields.length > 0)
+
+    // Collect unsectioned fields into an implicit "Other" section
+    const unsectionedFields: [string, any][] = Object.entries(editableFields.value)
+        .filter(([key]) => !sectionedFieldKeys.has(key))
+    if (unsectionedFields.length > 0) {
+        sections.push({
+            key: '_other',
+            title: 'CRUD6.SECTION.OTHER',
+            icon: null,
+            columns: 2,
+            collapsible: false,
+            resolvedFields: unsectionedFields
+        })
+    }
+
+    return sections
+})
+
+/**
+ * Unified form sections: wraps editable fields in sections (real or implicit flat).
+ * This avoids template duplication between sectioned and flat layouts.
+ */
+const formSections = computed(() => {
+    if (hasSections.value) {
+        return organizedSections.value.map((s: any) => ({
+            ...s,
+            showHeader: s.key !== '_other' || organizedSections.value.length > 1
+        }))
+    }
+    // Single implicit section for flat layout
+    const layout = flattenedSchema.value?.form_layout || '2-column'
+    const columns = layout === '1-column' ? 1 : layout === '3-column' ? 3 : 2
+    return [{
+        key: '_flat',
+        title: null,
+        icon: null,
+        columns,
+        collapsible: false,
+        showHeader: false,
+        resolvedFields: Object.entries(editableFields.value)
+    }]
+})
+
+/**
+ * Get UIKit grid class for a section's column count
+ */
+function getSectionGridClass(columns: number): string {
+    switch (columns) {
+        case 1: return 'uk-child-width-1-1'
+        case 3: return 'uk-child-width-1-1 uk-child-width-1-2@s uk-child-width-1-3@m'
+        case 2:
+        default: return 'uk-child-width-1-1 uk-child-width-1-2@s'
+    }
+}
+
+/**
+ * Get UIKit width class for per-field span or legacy width override
+ */
+function getFieldSpanClass(field: any): string {
+    if (field.span) {
+        switch (field.span) {
+            case 'full': return 'uk-width-1-1'
+            case 'third': return 'uk-width-1-3@m'
+            default: return ''
+        }
+    }
+    if (field.width) {
+        return `uk-width-${field.width}`
+    }
+    return ''
+}
 </script>
 
 <template>
@@ -495,112 +611,165 @@ function getLookupAttributes(field: any) {
                 <div class="uk-card-body">
                     <!-- Dynamic Form based on schema -->
                     <form v-if="flattenedSchema && record" @submit.prevent="saveRecord" class="uk-form-stacked">
-                        <div class="uk-grid-small" uk-grid>
-                            <div
-                                v-for="[fieldKey, field] in Object.entries(flattenedSchema.fields)"
-                                :key="fieldKey"
-                                :class="field.width || 'uk-width-1-2'"
-                                v-if="field.editable !== false">
-                                
-                                <label :for="fieldKey" class="uk-form-label">
-                                    {{ field.label || fieldKey }}
-                                    <span v-if="field.required" class="uk-text-danger">*</span>
-                                </label>
-                                
-                                <!-- SmartLookup field -->
-                                <CRUD6AutoLookup
-                                    v-if="field.type === 'smartlookup'"
-                                    v-bind="getLookupAttributes(field)"
-                                    v-model="record[fieldKey]"
-                                />
-                                
-                                <!-- Text input -->
-                                <input
-                                    v-else-if="field.type === 'string' || !field.type"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    type="text"
-                                    class="uk-input"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
-                                />
-                                
-                                <!-- Number input -->
-                                <input
-                                    v-else-if="['integer', 'decimal', 'float'].includes(field.type)"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    type="number"
-                                    class="uk-input"
-                                    :required="field.required"
-                                    :step="field.type === 'integer' ? '1' : 'any'"
-                                />
-                                
-                                <!-- Boolean checkbox -->
-                                <label v-else-if="field.type === 'boolean'" class="uk-form-label">
+                        <!-- Unified section-aware layout (sectioned or flat, no duplication) -->
+                        <div v-for="section in formSections" :key="section.key" :class="{ 'uk-margin-medium-bottom': formSections.length > 1 }">
+                            <!-- Section header (only for named sections) -->
+                            <template v-if="section.showHeader">
+                                <div class="uk-flex uk-flex-middle uk-margin-small-bottom">
+                                    <font-awesome-icon v-if="section.icon" :icon="section.icon" class="uk-margin-small-right uk-text-muted" />
+                                    <h4 class="uk-margin-remove">{{ $t(section.title) }}</h4>
+                                </div>
+                                <hr class="uk-margin-remove-top uk-margin-small-bottom" />
+                            </template>
+
+                            <!-- Section fields grid -->
+                            <div class="uk-grid-small" :class="getSectionGridClass(section.columns)" uk-grid>
+                                <div
+                                    v-for="[fieldKey, field] in section.resolvedFields"
+                                    :key="fieldKey"
+                                    :class="getFieldSpanClass(field)">
+
+                                    <label :for="fieldKey" class="uk-form-label">
+                                        {{ field.label || fieldKey }}
+                                        <span v-if="field.required" class="uk-text-danger">*</span>
+                                    </label>
+
+                                    <!-- SmartLookup field -->
+                                    <CRUD6AutoLookup
+                                        v-if="field.type === 'smartlookup'"
+                                        v-bind="getLookupAttributes(field)"
+                                        v-model="record[fieldKey]"
+                                    />
+
+                                    <!-- Select/Enum field -->
+                                    <select
+                                        v-else-if="field.type === 'select'"
+                                        :id="fieldKey"
+                                        class="uk-select"
+                                        :required="field.required"
+                                        v-model="record[fieldKey]">
+                                        <option value="" disabled>{{ field.placeholder || $t('CRUD6.SELECT_PLACEHOLDER') }}</option>
+                                        <option
+                                            v-for="opt in (field.options || [])"
+                                            :key="opt.value"
+                                            :value="opt.value">
+                                            {{ opt.label }}
+                                        </option>
+                                    </select>
+
+                                    <!-- Text input (string, email, url) -->
                                     <input
+                                        v-else-if="field.type === 'string' || field.type === 'email' || field.type === 'url' || !field.type"
                                         :id="fieldKey"
                                         v-model="record[fieldKey]"
-                                        type="checkbox"
-                                        class="uk-checkbox"
+                                        :type="field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : 'text'"
+                                        class="uk-input"
+                                        :required="field.required"
+                                        :placeholder="field.placeholder"
                                     />
-                                    {{ field.label || fieldKey }}
-                                </label>
-                                
-                                <!-- Date input -->
-                                <input
-                                    v-else-if="field.type === 'date'"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    type="date"
-                                    class="uk-input"
-                                    :required="field.required"
-                                />
-                                
-                                <!-- DateTime input -->
-                                <input
-                                    v-else-if="field.type === 'datetime'"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    type="datetime-local"
-                                    class="uk-input"
-                                    :required="field.required"
-                                />
-                                
-                                <!-- Text area -->
-                                <textarea
-                                    v-else-if="field.type === 'text'"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    class="uk-textarea"
-                                    :rows="field.rows || 3"
-                                    :required="field.required"
-                                    :placeholder="field.placeholder"
-                                ></textarea>
-                                
-                                <!-- JSON field -->
-                                <textarea
-                                    v-else-if="field.type === 'json'"
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    class="uk-textarea"
-                                    :rows="field.rows || 5"
-                                    placeholder="Enter valid JSON"
-                                ></textarea>
-                                
-                                <!-- Default text input -->
-                                <input
-                                    v-else
-                                    :id="fieldKey"
-                                    v-model="record[fieldKey]"
-                                    type="text"
-                                    class="uk-input"
-                                    :required="field.required"
-                                />
-                                
-                                <small v-if="field.description" class="uk-text-muted">
-                                    {{ field.description }}
-                                </small>
+
+                                    <!-- Number input -->
+                                    <input
+                                        v-else-if="['integer', 'decimal', 'float', 'number'].includes(field.type)"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="number"
+                                        class="uk-input"
+                                        :required="field.required"
+                                        :step="field.type === 'integer' ? '1' : 'any'"
+                                    />
+
+                                    <!-- Password input -->
+                                    <input
+                                        v-else-if="field.type === 'password'"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="password"
+                                        class="uk-input"
+                                        :required="field.required"
+                                        autocomplete="new-password"
+                                    />
+
+                                    <!-- Boolean field (toggle, select, or checkbox based on ui property from JSON) -->
+                                    <template v-else-if="field.type === 'boolean'">
+                                        <CRUD6ToggleSwitch
+                                            v-if="field.ui === 'toggle'"
+                                            :id="fieldKey"
+                                            v-model="record[fieldKey]" />
+                                        <select
+                                            v-else-if="field.ui === 'select'"
+                                            :id="fieldKey"
+                                            class="uk-select"
+                                            v-model="record[fieldKey]">
+                                            <option :value="true">{{ $t(field.display?.true_label || 'YES') }}</option>
+                                            <option :value="false">{{ $t(field.display?.false_label || 'NO') }}</option>
+                                        </select>
+                                        <label v-else class="uk-form-label">
+                                            <input
+                                                :id="fieldKey"
+                                                v-model="record[fieldKey]"
+                                                type="checkbox"
+                                                class="uk-checkbox"
+                                            />
+                                            {{ field.label || fieldKey }}
+                                        </label>
+                                    </template>
+
+                                    <!-- Date input -->
+                                    <input
+                                        v-else-if="field.type === 'date'"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="date"
+                                        class="uk-input"
+                                        :required="field.required"
+                                    />
+
+                                    <!-- DateTime input -->
+                                    <input
+                                        v-else-if="field.type === 'datetime'"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="datetime-local"
+                                        class="uk-input"
+                                        :required="field.required"
+                                    />
+
+                                    <!-- Text area -->
+                                    <textarea
+                                        v-else-if="field.type === 'text' || field.type === 'textarea'"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        class="uk-textarea"
+                                        :rows="field.rows || 3"
+                                        :required="field.required"
+                                        :placeholder="field.placeholder"
+                                    ></textarea>
+
+                                    <!-- JSON field -->
+                                    <textarea
+                                        v-else-if="field.type === 'json'"
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        class="uk-textarea"
+                                        :rows="field.rows || 5"
+                                        placeholder="Enter valid JSON"
+                                    ></textarea>
+
+                                    <!-- Default text input -->
+                                    <input
+                                        v-else
+                                        :id="fieldKey"
+                                        v-model="record[fieldKey]"
+                                        type="text"
+                                        class="uk-input"
+                                        :required="field.required"
+                                    />
+
+                                    <small v-if="field.description" class="uk-text-muted">
+                                        {{ field.description }}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </form>

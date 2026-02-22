@@ -110,6 +110,73 @@ const formLayoutClass = computed(() => {
 })
 
 /**
+ * Whether the schema defines sections for grouped form layout
+ */
+const hasSections = computed(() => {
+    return schema.value?.sections && Array.isArray(schema.value.sections) && schema.value.sections.length > 0
+})
+
+/**
+ * Organized sections with their resolved editable fields.
+ * Fields not listed in any section go into an implicit "Other" section at the end.
+ */
+const organizedSections = computed(() => {
+    if (!hasSections.value || !schema.value?.sections) return []
+
+    const sectionedFieldKeys = new Set<string>()
+    const sections = schema.value.sections.map((section: any) => {
+        const sectionFields: [string, any][] = []
+        for (const fieldKey of section.fields) {
+            if (editableFields.value[fieldKey]) {
+                sectionFields.push([fieldKey, editableFields.value[fieldKey]])
+                sectionedFieldKeys.add(fieldKey)
+            }
+        }
+        return { ...section, resolvedFields: sectionFields }
+    }).filter((s: any) => s.resolvedFields.length > 0)
+
+    // Collect unsectioned fields into an implicit "Other" section
+    const unsectionedFields: [string, any][] = Object.entries(editableFields.value)
+        .filter(([key]) => !sectionedFieldKeys.has(key))
+    if (unsectionedFields.length > 0) {
+        sections.push({
+            key: '_other',
+            title: 'CRUD6.SECTION.OTHER',
+            icon: null,
+            columns: 2,
+            collapsible: false,
+            resolvedFields: unsectionedFields
+        })
+    }
+
+    return sections
+})
+
+/**
+ * Get UIKit grid class for a section's column count
+ */
+function getSectionGridClass(columns: number): string {
+    switch (columns) {
+        case 1: return 'uk-child-width-1-1'
+        case 3: return 'uk-child-width-1-1 uk-child-width-1-2@s uk-child-width-1-3@m'
+        case 2:
+        default: return 'uk-child-width-1-1 uk-child-width-1-2@s'
+    }
+}
+
+/**
+ * Get UIKit width class for per-field span override
+ */
+function getFieldSpanClass(field: any): string {
+    if (!field.span) return ''
+    switch (field.span) {
+        case 'full': return 'uk-width-1-1'
+        case 'third': return 'uk-width-1-3@m'
+        default: return ''
+    }
+}
+
+/**
  * Helper function to check if a field is disabled/non-editable
  * @param field - The field configuration object
  * @returns true if field should be disabled
@@ -327,28 +394,101 @@ function getLookupAttributes(field: any) {
     <!-- Dynamic form based on schema -->
     <form v-else-if="schema" v-on:submit.prevent="submitForm()">
         <fieldset class="uk-fieldset uk-form-stacked">
-            <!-- Dynamic fields grid based on schema layout configuration -->
+
+            <!-- SECTIONED LAYOUT (when sections defined in schema) -->
+            <template v-if="hasSections">
+                <div v-for="section in organizedSections" :key="section.key" class="uk-margin-medium-bottom">
+                    <!-- Section header -->
+                    <div v-if="section.key !== '_other' || organizedSections.length > 1" class="uk-flex uk-flex-middle uk-margin-small-bottom">
+                        <font-awesome-icon
+                            v-if="section.icon"
+                            :icon="section.icon"
+                            class="uk-margin-small-right uk-text-muted" />
+                        <h4 class="uk-margin-remove">{{ $t(section.title) }}</h4>
+                    </div>
+                    <hr v-if="section.key !== '_other' || organizedSections.length > 1" class="uk-margin-remove-top uk-margin-small-bottom" />
+
+                    <!-- Section fields grid -->
+                    <div class="uk-grid-small" :class="getSectionGridClass(section.columns)" uk-grid>
+                        <div
+                            v-for="[fieldKey, field] in section.resolvedFields"
+                            :key="fieldKey"
+                            class="uk-margin"
+                            :class="getFieldSpanClass(field)">
+
+                            <label class="uk-form-label" :for="getFieldId(fieldKey)">
+                                {{ field.label || fieldKey }}
+                                <span v-if="field.required" class="uk-text-danger">*</span>
+                            </label>
+                            <span v-if="field.description" class="uk-text-meta">{{ field.description }}</span>
+                            <div class="uk-inline uk-width-1-1">
+                                <!-- Field icon -->
+                                <font-awesome-icon class="fa-form-icon" :icon="getFieldIcon(field, fieldKey)" fixed-width />
+                                <!-- Slug lock button -->
+                                <button v-if="fieldKey === 'slug'" class="uk-button uk-button-default uk-form-button" type="button" data-test="btn-toggle-slug-lock" :uk-tooltip="$t('OVERRIDE')" @click="slugLocked = !slugLocked">
+                                    <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
+                                </button>
+                                <!-- SmartLookup -->
+                                <CRUD6AutoLookup v-if="field.type === 'smartlookup'" v-bind="getLookupAttributes(field)" v-model="formData[fieldKey]" />
+                                <!-- Google Address -->
+                                <GoogleAddress v-else-if="isAddressType(field.type)" :field-key="fieldKey" :placeholder="field.placeholder || field.label || 'Enter address'" :required="field.required" :disabled="isFieldDisabled(field)" :address-fields="field.address_fields" v-model="formData[fieldKey]" @address-selected="handleAddressSelected" />
+                                <!-- Select/Enum -->
+                                <select v-else-if="field.type === 'select'" :id="getFieldId(fieldKey)" class="uk-select" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="isFieldDisabled(field)" v-model="formData[fieldKey]">
+                                    <option value="" disabled>{{ field.placeholder || 'Select...' }}</option>
+                                    <option v-for="opt in (field.options || [])" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                </select>
+                                <!-- Text inputs -->
+                                <input v-else-if="['string', 'email', 'url', 'phone', 'zip'].includes(field.type) || !field.type" :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" :type="getInputType(field.type || 'string')" :pattern="getInputPattern(field.type, field.validation)" :placeholder="field.placeholder || field.label || fieldKey" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="fieldKey === 'slug' ? slugLocked : isFieldDisabled(field)" :autocomplete="getAutocompleteAttribute(fieldKey, field.type)" v-model="formData[fieldKey]" />
+                                <!-- Number -->
+                                <input v-else-if="['number', 'integer', 'decimal', 'float'].includes(field.type)" :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" type="number" :placeholder="field.placeholder || field.label || fieldKey" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :step="field.type === 'integer' ? '1' : 'any'" :disabled="isFieldDisabled(field)" autocomplete="off" v-model="formData[fieldKey]" />
+                                <!-- Password -->
+                                <input v-else-if="field.type === 'password'" :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" type="password" autocomplete="new-password" :placeholder="field.placeholder || field.label || fieldKey" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="isFieldDisabled(field)" v-model="formData[fieldKey]" />
+                                <!-- Date -->
+                                <input v-else-if="field.type === 'date'" :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" type="date" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="isFieldDisabled(field)" :autocomplete="getAutocompleteAttribute(fieldKey, field.type)" v-model="formData[fieldKey]" />
+                                <!-- DateTime -->
+                                <input v-else-if="field.type === 'datetime'" :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" type="datetime-local" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="isFieldDisabled(field)" autocomplete="off" v-model="formData[fieldKey]" />
+                                <!-- Textarea -->
+                                <textarea v-else-if="field.type === 'text' || field.type === 'textarea' || field.type?.startsWith('textarea-') || field.type?.startsWith('text-')" :id="getFieldId(fieldKey)" class="uk-textarea" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" :placeholder="field.placeholder || field.label || fieldKey" :aria-label="field.label || fieldKey" :data-test="fieldKey" :rows="parseTextareaConfig(field.type).rows" :cols="parseTextareaConfig(field.type).cols" :required="field.required" :disabled="isFieldDisabled(field)" v-model="formData[fieldKey]" />
+                                <!-- Boolean -->
+                                <template v-else-if="isBooleanType(field.type)">
+                                    <select v-if="getBooleanUIType(field.type) === 'select'" :id="getFieldId(fieldKey)" class="uk-select" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" :data-test="fieldKey" :disabled="isFieldDisabled(field)" :required="field.required" v-model="formData[fieldKey]"><option :value="true">Yes</option><option :value="false">No</option></select>
+                                    <CRUD6ToggleSwitch v-else-if="getBooleanUIType(field.type) === 'toggle'" :id="getFieldId(fieldKey)" :data-test="fieldKey" :disabled="isFieldDisabled(field)" v-model="formData[fieldKey]" />
+                                    <label v-else class="uk-form-label"><input :id="getFieldId(fieldKey)" class="uk-checkbox" type="checkbox" :data-test="fieldKey" :disabled="isFieldDisabled(field)" v-model="formData[fieldKey]" /> {{ field.label || fieldKey }}</label>
+                                </template>
+                                <!-- Default -->
+                                <input v-else :id="getFieldId(fieldKey)" class="uk-input" :class="{ 'uk-form-danger': r$[fieldKey]?.$error }" type="text" :placeholder="field.placeholder || field.label || fieldKey" :aria-label="field.label || fieldKey" :data-test="fieldKey" :required="field.required" :disabled="isFieldDisabled(field)" :autocomplete="getAutocompleteAttribute(fieldKey, field.type)" v-model="formData[fieldKey]" />
+                                <!-- Validation errors -->
+                                <UFFormValidationError :errors="(r$ && r$.$errors && r$.$errors[fieldKey]) || []" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- FLAT LAYOUT (backward compatible, no sections) -->
+            <template v-else>
             <div class="uk-grid-small" :class="formLayoutClass" uk-grid>
                 <!-- Dynamic fields based on schema -->
-                <div 
-                    v-for="[fieldKey, field] in Object.entries(editableFields)" 
+                <div
+                    v-for="[fieldKey, field] in Object.entries(editableFields)"
                     :key="fieldKey"
-                    class="uk-margin">
-                
+                    class="uk-margin"
+                    :class="getFieldSpanClass(field)">
+
                     <label class="uk-form-label" :for="getFieldId(fieldKey)">
                         {{ field.label || fieldKey }}
                         <span v-if="field.required" class="uk-text-danger">*</span>
                     </label>
-                    
+
                     <span v-if="field.description" class="uk-text-meta">{{ field.description }}</span>
-                    
+
                     <div class="uk-inline uk-width-1-1">
                     <!-- Field icon -->
-                    <font-awesome-icon 
-                        class="fa-form-icon" 
-                        :icon="getFieldIcon(field, fieldKey)" 
+                    <font-awesome-icon
+                        class="fa-form-icon"
+                        :icon="getFieldIcon(field, fieldKey)"
                         fixed-width />
-                    
+
                     <!-- Special handling for slug field with lock button -->
                     <button
                         v-if="fieldKey === 'slug'"
@@ -359,14 +499,14 @@ function getLookupAttributes(field: any) {
                         @click="slugLocked = !slugLocked">
                         <font-awesome-icon fixed-width :icon="slugLocked ? 'lock' : 'lock-open'" />
                     </button>
-                    
+
                     <!-- SmartLookup field -->
                     <CRUD6AutoLookup
                         v-if="field.type === 'smartlookup'"
                         v-bind="getLookupAttributes(field)"
                         v-model="formData[fieldKey]"
                     />
-                    
+
                     <!-- Google Address field with autocomplete and geocoding -->
                     <GoogleAddress
                         v-else-if="isAddressType(field.type)"
@@ -378,7 +518,27 @@ function getLookupAttributes(field: any) {
                         v-model="formData[fieldKey]"
                         @address-selected="handleAddressSelected"
                     />
-                    
+
+                    <!-- Select/Enum field -->
+                    <select
+                        v-else-if="field.type === 'select'"
+                        :id="getFieldId(fieldKey)"
+                        class="uk-select"
+                        :class="{ 'uk-form-danger': r$[fieldKey]?.$error }"
+                        :aria-label="field.label || fieldKey"
+                        :data-test="fieldKey"
+                        :required="field.required"
+                        :disabled="isFieldDisabled(field)"
+                        v-model="formData[fieldKey]">
+                        <option value="" disabled>{{ field.placeholder || 'Select...' }}</option>
+                        <option
+                            v-for="opt in (field.options || [])"
+                            :key="opt.value"
+                            :value="opt.value">
+                            {{ opt.label }}
+                        </option>
+                    </select>
+
                     <!-- Text input (including email, url, phone, zip) -->
                     <input
                         v-else-if="['string', 'email', 'url', 'phone', 'zip'].includes(field.type) || !field.type"
@@ -394,7 +554,7 @@ function getLookupAttributes(field: any) {
                         :disabled="fieldKey === 'slug' ? slugLocked : isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Number input -->
                     <input
                         v-else-if="['number', 'integer', 'decimal', 'float'].includes(field.type)"
@@ -410,7 +570,7 @@ function getLookupAttributes(field: any) {
                         :disabled="isFieldDisabled(field)"
                         autocomplete="off"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Password input -->
                     <input
                         v-else-if="field.type === 'password'"
@@ -425,7 +585,7 @@ function getLookupAttributes(field: any) {
                         :required="field.required"
                         :disabled="isFieldDisabled(field)"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Date input -->
                     <input
                         v-else-if="field.type === 'date'"
@@ -439,7 +599,7 @@ function getLookupAttributes(field: any) {
                         :disabled="isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- DateTime input -->
                     <input
                         v-else-if="field.type === 'datetime'"
@@ -453,7 +613,7 @@ function getLookupAttributes(field: any) {
                         :disabled="isFieldDisabled(field)"
                         autocomplete="off"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Textarea for text fields (supports text, textarea, textarea-rXcY formats) -->
                     <textarea
                         v-else-if="field.type === 'text' || field.type === 'textarea' || field.type?.startsWith('textarea-') || field.type?.startsWith('text-')"
@@ -468,7 +628,7 @@ function getLookupAttributes(field: any) {
                         :required="field.required"
                         :disabled="isFieldDisabled(field)"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Boolean fields - Toggle switch, Checkbox, or Yes/No select -->
                     <template v-else-if="isBooleanType(field.type)">
                         <!-- Yes/No Select Dropdown (boolean-yn) -->
@@ -484,7 +644,7 @@ function getLookupAttributes(field: any) {
                             <option :value="true">Yes</option>
                             <option :value="false">No</option>
                         </select>
-                        
+
                         <!-- Toggle Switch (boolean-tgl, boolean-toggle) -->
                         <CRUD6ToggleSwitch
                             v-else-if="getBooleanUIType(field.type) === 'toggle'"
@@ -492,7 +652,7 @@ function getLookupAttributes(field: any) {
                             :data-test="fieldKey"
                             :disabled="isFieldDisabled(field)"
                             v-model="formData[fieldKey]" />
-                        
+
                         <!-- Standard Checkbox (boolean) -->
                         <label v-else class="uk-form-label">
                             <input
@@ -505,7 +665,7 @@ function getLookupAttributes(field: any) {
                             {{ field.label || fieldKey }}
                         </label>
                     </template>
-                    
+
                     <!-- Default text input for unknown types -->
                     <input
                         v-else
@@ -520,12 +680,13 @@ function getLookupAttributes(field: any) {
                         :disabled="isFieldDisabled(field)"
                         :autocomplete="getAutocompleteAttribute(fieldKey, field.type)"
                         v-model="formData[fieldKey]" />
-                    
+
                     <!-- Validation errors -->
                     <UFFormValidationError :errors="(r$ && r$.$errors && r$.$errors[fieldKey]) || []" />
                 </div>
             </div>
             </div>
+            </template>
 
             <!-- Form actions -->
             <div class="uk-text-right" uk-margin>

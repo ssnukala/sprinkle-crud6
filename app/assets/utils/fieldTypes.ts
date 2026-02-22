@@ -36,6 +36,7 @@ export const FIELD_TYPE_MAP: Record<string, string> = {
     'boolean-tgl': 'checkbox',
     'boolean-toggle': 'checkbox',
     'address': 'text',
+    'select': 'select',
 }
 
 /**
